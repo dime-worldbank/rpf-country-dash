@@ -878,12 +878,14 @@ def update_education_subnational_motivation_narrative(country_name, year):
     Input("country-select", "value"),
     Input("year-slider-edu", "value"),
     Input("education-expenditure-type", "value"),
+    Input("stored-data-subnat-boundaries", "data"),
 )
 def update_education_expenditure_map(
-    subnational_data, country_data, country, year, expenditure_type,
+    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries
 ):
     return update_func_expenditure_map(
-        subnational_data, country_data, country, year, expenditure_type, 'Education'
+        subnational_data, country_data, country, year,
+        expenditure_type, subnat_boundaries, 'Education'
     )
 
 
@@ -893,11 +895,14 @@ def update_education_expenditure_map(
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
     Input("year-slider-edu", "value"),
+    Input("stored-data-subnat-boundaries", "data"),
 )
 def update_education_index_map(
-    subnational_data, country_data, country, year
+    subnational_data, country_data, country, year, subnat_boundaries
 ):
-    return update_hd_index_map(subnational_data, country_data, country, year, 'Education')
+    return update_hd_index_map(
+        subnational_data, country_data, country, year, subnat_boundaries, 'Education'
+    )
 
 
 @callback(

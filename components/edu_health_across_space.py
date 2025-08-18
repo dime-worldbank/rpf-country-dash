@@ -8,6 +8,7 @@ import traceback
 from dash import html
 from components.year_slider import get_slider_config
 from utils import (
+    add_disputed_overlay,
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
@@ -201,6 +202,7 @@ def update_func_expenditure_map(
     country,
     year,
     expenditure_type,
+    subnat_boundaries,
     func,
 ):
     if (
@@ -223,7 +225,8 @@ def update_func_expenditure_map(
     if expenditure_type not in df.columns:
         return empty_plot(f"{expenditure_type} data not available")
 
-    geojson = subnational_data["boundaries"]
+    geojson = subnat_boundaries[country]
+    disputed_geojson = subnational_data['disputed_boundaries']
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
     lat, lon = [
@@ -259,6 +262,7 @@ def update_func_expenditure_map(
         featureidkey="properties.region",
         zoom=zoom,
     ).data[0]
+
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False 
     fig.add_trace(no_data_trace)
@@ -270,6 +274,7 @@ def update_func_expenditure_map(
     )
 
     fig.update_traces(hovertemplate=hover_template_str)
+    add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
         title=f"Subnational {func} Spending",
@@ -318,7 +323,7 @@ FUNC_OUTCOME_MAP = {
     ],
 }
 def update_hd_index_map(
-    subnational_data, country_data, country, year, func,
+    subnational_data, country_data, country, year, subnat_boundaries, func,
 ):
     if (
         not subnational_data
@@ -340,8 +345,10 @@ def update_hd_index_map(
     outcome_name, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
 
-    geojson = subnational_data["boundaries"]
+    geojson = subnat_boundaries[country]
     filtered_geojson = filter_geojson_by_country(geojson, country)
+
+    disputed_geojson = subnational_data['disputed_boundaries']
 
     lat, lon = [
         country_data["basic_country_info"][country].get(k)
@@ -388,6 +395,7 @@ def update_hd_index_map(
             + f"<b>{outcome_name}:</b> " + "%{customdata}<br>"
             + "<extra></extra>",
     )
+    add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
         title=f"Subnational {outcome_name}",

@@ -1,6 +1,14 @@
 import os
+import time
+import logging
+import threading
 import pandas as pd
 from databricks import sql
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 SERVER_HOSTNAME = os.getenv("SERVER_HOSTNAME")
 HTTP_PATH = os.getenv("HTTP_PATH")
@@ -9,6 +17,9 @@ PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 
+# Cache tuning (env overrides optional)
+QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
+QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 
 class QueryService:
     _instance = None
@@ -20,6 +31,12 @@ class QueryService:
         return QueryService._instance
 
     def __init__(self):
+        # Simple TTL cache: {query: (expires_at_epoch, dataframe)}
+        self._cache = {}
+        self._cache_lock = threading.Lock()
+        self._cache_ttl = QUERY_CACHE_TTL_SECONDS
+        self._cache_max_entries = QUERY_CACHE_MAX_ENTRIES
+
         self.country_whitelist = None
         if PUBLIC_ONLY:
             query = f"""
@@ -29,21 +46,65 @@ class QueryService:
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
 
+    # ---- Cache helpers -------------------------------------------------------
+    def _cache_get(self, key):
+        now = time.time()
+        with self._cache_lock:
+            hit = self._cache.get(key)
+            if not hit:
+                return None
+            expires_at, df = hit
+            if now >= expires_at:
+                # expired; remove and miss
+                del self._cache[key]
+                return None
+            return df
+
+    def _cache_set(self, key, df):
+        expires_at = time.time() + self._cache_ttl
+        with self._cache_lock:
+            # Evict oldest one if we exceed max size (simple FIFO)
+            if len(self._cache) >= self._cache_max_entries:
+                oldest_key = next(iter(self._cache))
+                del self._cache[oldest_key]
+            self._cache[key] = (expires_at, df)
+
+    def clear_cache(self):
+        with self._cache_lock:
+            self._cache.clear()
+        logging.info("Query cache cleared")
+
+    def invalidate_query(self, query: str):
+        with self._cache_lock:
+            removed = self._cache.pop(query, None) is not None
+        if removed:
+            logging.info("Invalidated cache for query: %s", query)
+
+    # ---- Cached databricks query ---------------------------------------------
     def execute_query(self, query):
         """
         Executes a query and returns the result as a pandas DataFrame.
         """
-        conn = sql.connect(
-            server_hostname=SERVER_HOSTNAME,
-            http_path=HTTP_PATH,
+        # Try cache first
+        cached = self._cache_get(query)
+        if cached is not None:
+            logging.info("CACHE HIT for query (TTL=%ss): %s", self._cache_ttl, query)
+            return cached.copy(deep=True)
+
+        start = time.time()
+        with sql.connect(
+            server_hostname = SERVER_HOSTNAME,
+            http_path = HTTP_PATH,
             access_token=ACCESS_TOKEN,
-        )
-        cursor = conn.cursor()
-        cursor.execute(query)
-        df = cursor.fetchall_arrow().to_pandas()
-        cursor.close()
-        conn.close()
-        return df
+        ) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            df = cursor.fetchall_arrow().to_pandas()
+
+        logging.info(f"DB MISS (queried) took {time.time() - start:.2f} sec. query: {query}")
+
+        self._cache_set(query, df)
+        return df.copy(deep=True)
 
     def fetch_data(self, query):
         df = self.execute_query(query)
@@ -122,7 +183,15 @@ class QueryService:
             SELECT country_name, admin1_region, boundary
             FROM prd_mega.{INDICATOR_SCHEMA}.admin1_boundaries_gold
             WHERE country_name IN ('{country_list}')
-            ORDER BY country_name
+        """
+        return self.fetch_data(query)
+
+    def get_disputed_boundaries(self, countries):
+        country_list = "', '".join(countries)
+        query = f"""
+            SELECT country_name, boundary, region_name
+            FROM prd_mega.{INDICATOR_SCHEMA}.admin0_disputed_boundaries_gold
+            WHERE country_name IN ('{country_list}')
         """
         return self.fetch_data(query)
 

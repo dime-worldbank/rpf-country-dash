@@ -122,13 +122,14 @@ def layout():
         dummy_div,
     ]
 
-    if not AUTH_ENABLED or current_user.is_authenticated:
+    if not AUTH_ENABLED or (current_user and current_user.is_authenticated):
         html_contents.extend(
             [
                 dcc.Store(id="stored-data"),
                 dcc.Store(id="stored-basic-country-data"),
                 dcc.Store(id="stored-data-subnational"),
                 dcc.Store(id="stored-data-func-econ"),
+                dcc.Store(id="stored-data-subnat-boundaries"),
             ]
         )
 
@@ -236,16 +237,16 @@ def fetch_func_data_once(data):
 def fetch_subnational_data_once(data, country_data):
     if data is None:
         countries = country_data["countries"]
-        df = db.get_adm_boundaries(countries)
+        df_disputed = db.get_disputed_boundaries(countries)
 
-        boundaries_geojson = {
+        disputed_geojson = {
             "type": "FeatureCollection",
             "features": [
                 {
-                    "properties": {"country": x[0], "region": x[1]},
-                    "geometry": json.loads(x[2]),
+                    "properties": {"country": x[0], "region": x[2]},
+                    "geometry": json.loads(x[1]),
                 }
-                for x in zip(df.country_name, df.admin1_region, df.boundary)
+                for x in zip(df_disputed.country_name, df_disputed.boundary, df_disputed.region_name)
             ],
         }
 
@@ -256,7 +257,7 @@ def fetch_subnational_data_once(data, country_data):
 
         return {
             "subnational_poverty_index": poverty_df.to_dict("records"),
-            "boundaries": boundaries_geojson,
+            "disputed_boundaries": disputed_geojson,
             "expenditure_by_country_geo1_year": geo1_df.to_dict("records"),
             "expenditure_and_outcome_by_country_geo1_func_year": geo1_func_df.to_dict("records"),
             "expenditure_by_country_sub_func_year": geo0_sub_func_df.to_dict("records"),
@@ -335,6 +336,36 @@ def fetch_country_data_once(countries, subnational_data, country_data):
 
         return {"basic_country_info": country_info}
     return no_update
+
+
+@app.callback(
+    Output("stored-data-subnat-boundaries", "data"),
+    Input("stored-data-subnat-boundaries", "data"),
+    Input("country-select", "value"),
+)
+def fetch_subnat_boundary_data_once(geo_data, country):
+    if geo_data is None:
+        data_to_store = {}
+    else:
+        data_to_store = geo_data
+
+    if data_to_store.get(country):
+        return data_to_store
+
+    db = QueryService.get_instance()
+    df = db.get_adm_boundaries([country])
+    boundaries_geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "properties": {"country": x[0], "region": x[1]},
+                "geometry": json.loads(x[2]),
+            }
+            for x in zip(df.country_name, df.admin1_region, df.boundary)
+        ],
+    }
+    data_to_store[country] = boundaries_geojson
+    return data_to_store
 
 
 if __name__ == "__main__":
