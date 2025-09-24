@@ -19,19 +19,15 @@ INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Cache tuning (env overrides optional)
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
-server_hostname = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
 def credential_provider():
     print("Initializing credential provider...")
-    try:
-        config = Config(
-            host = f"https://{server_hostname}",
-            client_id     = os.getenv("DATABRICKS_CLIENT_ID"),
-            client_secret = os.getenv("DATABRICKS_CLIENT_SECRET"))
-        return oauth_service_principal(config)
-    except Exception as e:
-        print("Error initializing credential provider:", e)
-        raise
+    config = Config(
+        host = f"https://{SERVER_HOSTNAME}",
+        client_id     = os.getenv("DATABRICKS_CLIENT_ID"),
+        client_secret = os.getenv("DATABRICKS_CLIENT_SECRET"))
+    return oauth_service_principal(config)
 
 
 class QueryService:
@@ -49,6 +45,7 @@ class QueryService:
         self._cache_lock = threading.Lock()
         self._cache_ttl = QUERY_CACHE_TTL_SECONDS
         self._cache_max_entries = QUERY_CACHE_MAX_ENTRIES
+
         self.country_whitelist = None
         if PUBLIC_ONLY:
             query = f"""
@@ -104,17 +101,14 @@ class QueryService:
             return cached.copy(deep=True)
 
         start = time.time()
-        try:
-            with sql.connect(
-                server_hostname =  server_hostname,
-                http_path = os.getenv("DATABRICKS_HTTP_PATH"),
-                credential_provider=credential_provider,
-            ) as conn:
-                cursor = conn.cursor()
-                cursor.execute(query)
-                df = cursor.fetchall_arrow().to_pandas()
-        except Exception as e:
-            print("Connection failed with error:", e)
+        with sql.connect(
+            server_hostname = SERVER_HOSTNAME,
+            http_path = os.getenv("DATABRICKS_HTTP_PATH"),
+            credential_provider=credential_provider,
+        ) as conn:
+            cursor = conn.cursor()
+            cursor.execute(query)
+            df = cursor.fetchall_arrow().to_pandas()
 
         logging.info(f"DB MISS (queried) took {time.time() - start:.2f} sec. query: {query}")
 
