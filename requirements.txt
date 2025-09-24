@@ -3,6 +3,7 @@ dash-bootstrap-components==1.6.0
 pandas>=2.0
 rsconnect-python
 databricks-sql-connector[pyarrow]
+databricks-sdk
 gunicorn
 shapely
 flask_login
