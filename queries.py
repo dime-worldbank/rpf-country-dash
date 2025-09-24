@@ -4,22 +4,31 @@ import logging
 import threading
 import pandas as pd
 from databricks import sql
+from databricks.sdk.core import Config, oauth_service_principal
+from databricks.sdk import WorkspaceClient
+
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
-SERVER_HOSTNAME = os.getenv("SERVER_HOSTNAME")
-HTTP_PATH = os.getenv("HTTP_PATH")
-ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
-
 # Cache tuning (env overrides optional)
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
+SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+
+def credential_provider():
+    print("Initializing credential provider...")
+    config = Config(
+        host = f"https://{SERVER_HOSTNAME}",
+        client_id     = os.getenv("DATABRICKS_CLIENT_ID"),
+        client_secret = os.getenv("DATABRICKS_CLIENT_SECRET"))
+    return oauth_service_principal(config)
+
 
 class QueryService:
     _instance = None
@@ -94,8 +103,8 @@ class QueryService:
         start = time.time()
         with sql.connect(
             server_hostname = SERVER_HOSTNAME,
-            http_path = HTTP_PATH,
-            access_token=ACCESS_TOKEN,
+            http_path = os.getenv("DATABRICKS_HTTP_PATH"),
+            credential_provider=credential_provider,
         ) as conn:
             cursor = conn.cursor()
             cursor.execute(query)
