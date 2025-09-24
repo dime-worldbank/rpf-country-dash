@@ -21,7 +21,7 @@ QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
-def credential_provider():
+def credentials_provider():
     print("Initializing credential provider...")
     config = Config(
         host = f"https://{SERVER_HOSTNAME}",
@@ -104,7 +104,7 @@ class QueryService:
         with sql.connect(
             server_hostname = SERVER_HOSTNAME,
             http_path = os.getenv("DATABRICKS_HTTP_PATH"),
-            credential_provider=credential_provider,
+            credentials_provider=credentials_provider,
         ) as conn:
             cursor = conn.cursor()
             cursor.execute(query)
