@@ -58,7 +58,7 @@ class WWBIDataService:
         Get specific WWBI indicators.
 
         Args:
-            indicator_codes: List of indicator codes (e.g., ['BI.EMP.FRML.PB.ZS'])
+            indicator_codes: List of indicator codes (e.g., ['BI.EMP.PWRK.PB.ZS'])
             country_whitelist: Optional list of countries to filter by
 
         Returns:
@@ -99,7 +99,7 @@ class WWBIDataService:
     def get_public_private_employment(self, country_whitelist=None):
         """Get public vs private sector employment data"""
         indicator_codes = [
-            'BI.EMP.FRML.PB.ZS',  # Public sector as % of formal employment
+            'BI.EMP.PWRK.PB.ZS',
             'BI.EMP.PWRK.PB.FE.ZS',  # Female public employment share
             'BI.EMP.PWRK.PB.MA.ZS',  # Male public employment share
         ]
@@ -122,12 +122,12 @@ class WWBIDataService:
     def get_employment_composition(self, country_whitelist=None):
         """Get public sector employment composition by sector"""
         indicator_codes = [
-            'BI.EMP.FRML.ED.PB.ZS',  # Education workers as % of public employees
-            'BI.EMP.FRML.HE.PB.ZS',  # Health workers
-            'BI.EMP.FRML.CA.PB.ZS',  # Core admin workers
-            'BI.EMP.FRML.PS.PB.ZS',  # Public safety workers
-            'BI.EMP.FRML.SS.PB.ZS',  # Social security workers
-            'BI.EMP.FRML.PA.PB.ZS',  # Public administration workers
+            'BI.EMP.PWRK.ED.PB.ZS',  # Education workers as % of public employees
+            'BI.EMP.PWRK.HE.PB.ZS',  # Health workers
+            'BI.EMP.PWRK.CA.PB.ZS',  # Core admin workers
+            'BI.EMP.PWRK.PS.PB.ZS',  # Public safety workers
+            'BI.EMP.PWRK.SS.PB.ZS',  # Social security workers
+            'BI.EMP.PWRK.PA.PB.ZS',  # Public administration workers
         ]
         return self.get_indicator_pivot(indicator_codes, country_whitelist)
 
@@ -140,6 +140,6 @@ class WWBIDataService:
             'BI.EMP.PUBS.FE.SN.ZS',  # Female managers
             'BI.EMP.PUBS.FE.PN.ZS',  # Female professionals
             'BI.EMP.PUBS.FE.CK.ZS',  # Female clerks
-            'BI.EMP.FRML.PS.PB.ZS',  # Public safety (for comparison)
+            'BI.EMP.PWRK.PS.PB.ZS',  # Public safety (for comparison)
         ]
         return self.get_indicator_pivot(indicator_codes, country_whitelist)

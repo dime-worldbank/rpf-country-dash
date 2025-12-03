@@ -292,27 +292,27 @@ def public_private_narrative(df, country):
         latest = df[df['year'] == latest_year].iloc[0]
         earliest = df[df['year'] == earliest_year].iloc[0]
 
-        public_share_latest = latest['BI.EMP.FRML.PB.ZS'] * 100
-        public_share_earliest = earliest['BI.EMP.FRML.PB.ZS'] * 100
+        public_share_latest = latest['BI.EMP.PWRK.PB.ZS'] * 100
+        public_share_earliest = earliest['BI.EMP.PWRK.PB.ZS'] * 100
         trend = "increased" if public_share_latest > public_share_earliest else "decreased"
         ratio = (100 - public_share_latest) / public_share_latest
 
-        text = f"In {country}, the public sector accounts for {public_share_latest:.1f}% of total formal employment as of {int(latest_year)}, meaning approximately 1 in {int(100/public_share_latest)} formally employed workers work for the government. "
+        text = f"In {country}, the public sector accounts for {public_share_latest:.1f}% of total salaried employment as of {int(latest_year)}, meaning approximately 1 in {int(100/public_share_latest)} salaried employed workers work for the government. "
 
         if earliest_year != latest_year:
             text += f"Between {int(earliest_year)} and {int(latest_year)}, the public sector's share has {trend} from {public_share_earliest:.1f}% to {public_share_latest:.1f}%. "
 
-        text += f"For every worker employed in the public sector, there were approximately {ratio:.0f} workers in the private formal sector. "
+        text += f"For every worker employed in the public sector, there were approximately {ratio:.0f} workers in the private salaried sector. "
 
         if pd.notna(latest.get('BI.EMP.PWRK.PB.FE.ZS')):
             female_public = latest['BI.EMP.PWRK.PB.FE.ZS'] * 100
             gap = female_public - public_share_latest
             if gap > 0:
-                text += f"{female_public:.1f}% of female workers are employed in the public sector while the public sector accounts for only {public_share_latest:.1f}% of total formal employment, a {gap:.1f} percentage point difference suggesting that public sector jobs are more accessible to women."
+                text += f"{female_public:.1f}% of female workers are employed in the public sector while the public sector accounts for only {public_share_latest:.1f}% of total salaried employment, a {gap:.1f} percentage point difference suggesting that public sector jobs are more accessible to women."
             elif gap < 0:
-                text += f"{female_public:.1f}% of female workers are employed in the public sector while the public sector accounts for {public_share_latest:.1f}% of total formal employment, a {abs(gap):.1f} percentage point gap suggesting that public sector jobs are less accessible to women."
+                text += f"{female_public:.1f}% of female workers are employed in the public sector while the public sector accounts for {public_share_latest:.1f}% of total salaried employment, a {abs(gap):.1f} percentage point gap suggesting that public sector jobs are less accessible to women."
             else:
-                text += f"{female_public:.1f}% of female workers are employed in the public sector, matching the public sector's {public_share_latest:.1f}% share of total formal employment."
+                text += f"{female_public:.1f}% of female workers are employed in the public sector, matching the public sector's {public_share_latest:.1f}% share of total salaried employment."
 
         return text
     except Exception as e:
@@ -332,16 +332,14 @@ def render_public_private(data, country):
 
     df = pd.DataFrame(data["employment"])
     df = filter_country_sort_year(df, country)
-    print('========================>')
-    print(df)
 
-    if df.empty or 'BI.EMP.FRML.PB.ZS' not in df.columns:
+    if df.empty or 'BI.EMP.PWRK.PB.ZS' not in df.columns:
         return (
             empty_plot("No data available for this country"),
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
 
-    df = df.dropna(subset=['BI.EMP.FRML.PB.ZS'])
+    df = df.dropna(subset=['BI.EMP.PWRK.PB.ZS'])
 
     if df.empty:
         return (
@@ -351,7 +349,7 @@ def render_public_private(data, country):
 
     fig = go.Figure()
 
-    df['public_share_pct'] = df['BI.EMP.FRML.PB.ZS'] * 100
+    df['public_share_pct'] = df['BI.EMP.PWRK.PB.ZS'] * 100
     df['private_share_pct'] = 100 - df['public_share_pct']
 
     fig.add_trace(
@@ -381,8 +379,8 @@ def render_public_private(data, country):
     fig.update_layout(
         barmode="stack",
         plot_bgcolor="white",
-        title="What % of formal jobs are public vs private sector?",
-        yaxis_title="Percentage of formal employment",
+        title="What % of salaried jobs are public vs private sector?",
+        yaxis_title="Percentage of salaried employment",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         annotations=[
             dict(
@@ -557,12 +555,12 @@ def composition_narrative(comp_df, wage_df, country):
         earliest_comp = comp_df[comp_df['year'] == earliest_year].iloc[0]
 
         sectors = []
-        if pd.notna(latest_comp.get('BI.EMP.FRML.ED.PB.ZS')):
-            sectors.append(('education', latest_comp['BI.EMP.FRML.ED.PB.ZS'] * 100, earliest_comp.get('BI.EMP.FRML.ED.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.FRML.ED.PB.ZS')) else None))
-        if pd.notna(latest_comp.get('BI.EMP.FRML.CA.PB.ZS')):
-            sectors.append(('core public administration', latest_comp['BI.EMP.FRML.CA.PB.ZS'] * 100, earliest_comp.get('BI.EMP.FRML.CA.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.FRML.CA.PB.ZS')) else None))
-        if pd.notna(latest_comp.get('BI.EMP.FRML.HE.PB.ZS')):
-            sectors.append(('health', latest_comp['BI.EMP.FRML.HE.PB.ZS'] * 100, earliest_comp.get('BI.EMP.FRML.HE.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.FRML.HE.PB.ZS')) else None))
+        if pd.notna(latest_comp.get('BI.EMP.PWRK.ED.PB.ZS')):
+            sectors.append(('education', latest_comp['BI.EMP.PWRK.ED.PB.ZS'] * 100, earliest_comp.get('BI.EMP.PWRK.ED.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.PWRK.ED.PB.ZS')) else None))
+        if pd.notna(latest_comp.get('BI.EMP.PWRK.CA.PB.ZS')):
+            sectors.append(('core public administration', latest_comp['BI.EMP.PWRK.CA.PB.ZS'] * 100, earliest_comp.get('BI.EMP.PWRK.CA.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.PWRK.CA.PB.ZS')) else None))
+        if pd.notna(latest_comp.get('BI.EMP.PWRK.HE.PB.ZS')):
+            sectors.append(('health', latest_comp['BI.EMP.PWRK.HE.PB.ZS'] * 100, earliest_comp.get('BI.EMP.PWRK.HE.PB.ZS') * 100 if pd.notna(earliest_comp.get('BI.EMP.PWRK.HE.PB.ZS')) else None))
 
         sectors.sort(key=lambda x: x[1], reverse=True)
 
@@ -637,11 +635,11 @@ def render_composition(data, country):
     fig = go.Figure()
 
     sector_map = {
-        'BI.EMP.FRML.ED.PB.ZS': ('Education', 'rgb(17, 141, 255)'),
-        'BI.EMP.FRML.HE.PB.ZS': ('Health', 'rgb(255, 0, 102)'),
-        'BI.EMP.FRML.CA.PB.ZS': ('Core Admin', 'rgb(0, 176, 80)'),
-        'BI.EMP.FRML.PS.PB.ZS': ('Public Safety', 'rgb(255, 153, 0)'),
-        'BI.EMP.FRML.SS.PB.ZS': ('Social Security', 'rgb(153, 102, 255)'),
+        'BI.EMP.PWRK.ED.PB.ZS': ('Education', 'rgb(17, 141, 255)'),
+        'BI.EMP.PWRK.HE.PB.ZS': ('Health', 'rgb(255, 0, 102)'),
+        'BI.EMP.PWRK.CA.PB.ZS': ('Core Admin', 'rgb(0, 176, 80)'),
+        'BI.EMP.PWRK.PS.PB.ZS': ('Public Safety', 'rgb(255, 153, 0)'),
+        'BI.EMP.PWRK.SS.PB.ZS': ('Social Security', 'rgb(153, 102, 255)'),
     }
 
     for col, (name, color) in sector_map.items():
