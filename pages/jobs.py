@@ -417,28 +417,34 @@ def wage_premium_narrative(df, country):
         latest = df_with_overall[df_with_overall['year'] == df_with_overall['year'].max()].iloc[0]
         earliest = df_with_overall[df_with_overall['year'] == df_with_overall['year'].min()].iloc[0]
 
-        premium_latest = latest['BI.WAG.PREM.PB']
-        premium_earliest = earliest['BI.WAG.PREM.PB']
+        def format_premium(val):
+            direction = "more" if val >= 0 else "less"
+            return f"{abs(val):.1f}% {direction}"
 
-        trend = "increased" if premium_latest > premium_earliest else "decreased"
+        premium_latest_pct = latest['BI.WAG.PREM.PB'] * 100
+        premium_earliest_pct = earliest['BI.WAG.PREM.PB'] * 100
+        latest_phrase = format_premium(premium_latest_pct)
+        earliest_signed_phrase = f"{premium_earliest_pct:.1f}%"
 
-        text = f"Public sector workers in {country} earn, on average, {premium_latest:.1f}% more than comparable private sector workers as of {int(latest['year'])}. "
+        trend = "increased" if premium_latest_pct > premium_earliest_pct else "decreased"
+
+        text = f"Public sector workers in {country} earn, on average, {latest_phrase} than comparable private sector workers as of {int(latest['year'])}. "
 
         if int(earliest['year']) != int(latest['year']):
-            text += f"This premium has {trend} from {premium_earliest:.1f}% in {int(earliest['year'])}, suggesting that public sector wages have grown {'faster' if premium_latest > premium_earliest else 'slower'} than private sector wages. "
+            text += f"This premium has {trend} from {earliest_signed_phrase} in {int(earliest['year'])}, suggesting that public sector wages have grown {'faster' if premium_latest_pct > premium_earliest_pct else 'slower'} than private sector wages. "
 
         if pd.notna(latest.get('BI.WAG.PREM.ED.GP')) or pd.notna(latest.get('BI.WAG.PREM.HE.GP')):
             text += "The premium varies across sectors: "
             premiums = []
             if pd.notna(latest.get('BI.WAG.PREM.ED.GP')):
-                premiums.append(f"education workers enjoy a premium of {latest['BI.WAG.PREM.ED.GP']:.1f}%")
+                premiums.append(f"education workers see {format_premium(latest['BI.WAG.PREM.ED.GP'] * 100)}")
             if pd.notna(latest.get('BI.WAG.PREM.HE.GP')):
-                premiums.append(f"health workers see {latest['BI.WAG.PREM.HE.GP']:.1f}%")
+                premiums.append(f"health workers see {format_premium(latest['BI.WAG.PREM.HE.GP'] * 100)}")
             text += " while ".join(premiums) + ". "
 
         if pd.notna(latest.get('BI.WAG.PREM.PB.FE')):
-            female_premium = latest['BI.WAG.PREM.PB.FE']
-            text += f"Female workers in the public sector experience a wage premium of {female_premium:.1f}% compared to private sector female workers, suggesting that public sector employment provides relatively better compensation for women."
+            female_premium_pct = latest['BI.WAG.PREM.PB.FE'] * 100
+            text += f"Female workers in the public sector experience a wage premium of {format_premium(female_premium_pct)} compared to private sector female workers, suggesting that public sector employment provides relatively better compensation for women."
 
         return text
     except Exception as e:
