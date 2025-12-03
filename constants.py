@@ -2,7 +2,7 @@ from enum import Enum
 import plotly.express as px
 
 
-START_YEAR = 2010
+START_YEAR = 2000
 
 TREND_THRESHOLDS = 0.4
 

@@ -99,6 +99,7 @@ sidebar = html.Div(
                     "Education", href=get_relative_path("education"), active="exact"
                 ),
                 dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
+                dbc.NavLink("Jobs", href=get_relative_path("jobs"), active="exact"),
                 dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
             ],
             vertical=True,
