@@ -296,8 +296,9 @@ def public_private_narrative(df, country):
         public_share_earliest = earliest['BI.EMP.PWRK.PB.ZS'] * 100
         trend = "increased" if public_share_latest > public_share_earliest else "decreased"
         ratio = (100 - public_share_latest) / public_share_latest
+        workers_per_public = max(1, round(100 / public_share_latest))
 
-        text = f"In {country}, the public sector accounts for {public_share_latest:.1f}% of total salaried employment as of {int(latest_year)}, meaning approximately 1 in {int(100/public_share_latest)} salaried employed workers work for the government. "
+        text = f"In {country}, the public sector accounts for {public_share_latest:.1f}% of total salaried employment as of {int(latest_year)}, meaning approximately 1 in {workers_per_public} salaried employed workers work for the government. "
 
         if earliest_year != latest_year:
             text += f"Between {int(earliest_year)} and {int(latest_year)}, the public sector's share has {trend} from {public_share_earliest:.1f}% to {public_share_latest:.1f}%. "
@@ -736,7 +737,7 @@ def render_wage_bill(data, country):
         plot_bgcolor="white",
         title="Which functions consume the most wage spending?",
         yaxis_title="Real wage bill expenditure (inflation-adjusted)",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="bottom", y=0.9, xanchor="right", x=1),
         annotations=[
             dict(
                 xref="paper",
@@ -761,27 +762,39 @@ def render_wage_bill(data, country):
 def gender_narrative(df, country):
     try:
         df = df.sort_values('year')
-        latest_year = df['year'].max()
-        latest = df[df['year'] == latest_year].iloc[0]
 
-        if pd.notna(latest.get('BI.EMP.PWRK.PB.FE.ZS')):
-            overall_female = latest['BI.EMP.PWRK.PB.FE.ZS'] * 100
-            text = f"Women comprise {overall_female:.1f}% of all public sector employment in {country} as of {int(latest_year)}. "
-        else:
+        def latest_value(col):
+            if col not in df.columns:
+                return None, None
+            non_null = df.dropna(subset=[col])
+            if non_null.empty:
+                return None, None
+            latest_row = non_null.loc[non_null['year'].idxmax()]
+            return latest_row[col], latest_row['year']
+
+        overall_val, overall_year = latest_value('BI.EMP.PWRK.PB.FE.ZS')
+        if overall_val is None:
             return "Gender employment data is not available for this country."
 
+        overall_female = overall_val * 100
+        text = f"Women comprise {overall_female:.1f}% of all public sector employment in {country} as of {int(overall_year)}. "
+
         sectors = []
-        if pd.notna(latest.get('BI.EMP.PUBS.FE.ED.ZS')):
-            sectors.append(f"{latest['BI.EMP.PUBS.FE.ED.ZS']*100:.0f}% of education workers")
-        if pd.notna(latest.get('BI.EMP.PUBS.FE.HE.ZS')):
-            sectors.append(f"{latest['BI.EMP.PUBS.FE.HE.ZS']*100:.0f}% of health workers")
+        edu_val, _ = latest_value('BI.EMP.PUBS.FE.ED.ZS')
+        if edu_val is not None:
+            sectors.append(f"{edu_val*100:.0f}% of education workers")
+        health_val, _ = latest_value('BI.EMP.PUBS.FE.HE.ZS')
+        if health_val is not None:
+            sectors.append(f"{health_val*100:.0f}% of health workers")
 
         if sectors:
             text += f"Gender representation varies across sectors: women represent {' and '.join(sectors)}. "
 
-        if pd.notna(latest.get('BI.EMP.PUBS.FE.PN.ZS')) and pd.notna(latest.get('BI.EMP.PUBS.FE.SN.ZS')):
-            prof_share = latest['BI.EMP.PUBS.FE.PN.ZS'] * 100
-            mgr_share = latest['BI.EMP.PUBS.FE.SN.ZS'] * 100
+        prof_val, _ = latest_value('BI.EMP.PUBS.FE.PN.ZS')
+        mgr_val, _ = latest_value('BI.EMP.PUBS.FE.SN.ZS')
+        if prof_val is not None and mgr_val is not None:
+            prof_share = prof_val * 100
+            mgr_share = mgr_val * 100
             gap = prof_share - mgr_share
             text += f"While women hold {prof_share:.0f}% of professional positions in the public sector, they occupy only {mgr_share:.0f}% of managerial positions. This {gap:.0f} percentage point gap indicates a 'glass ceiling' effect."
 
@@ -810,12 +823,6 @@ def render_gender(data, country):
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
 
-    latest_year = df['year'].max()
-    df_latest = df[df['year'] == latest_year].iloc[0]
-
-    categories = []
-    female_values = []
-
     category_map = {
         'BI.EMP.PWRK.PB.FE.ZS': 'Overall Public Sector',
         'BI.EMP.PUBS.FE.ED.ZS': 'Education',
@@ -825,10 +832,27 @@ def render_gender(data, country):
         'BI.EMP.PUBS.FE.CK.ZS': 'Clerks',
     }
 
+    def latest_value(col):
+        if col not in df.columns:
+            return None, None
+        non_null = df.dropna(subset=[col])
+        if non_null.empty:
+            return None, None
+        latest_row = non_null.loc[non_null['year'].idxmax()]
+        return latest_row[col] * 100, int(latest_row['year'])
+
+    categories = []
+    female_values = []
+    male_values = []
+    year_labels = []
+
     for col, label in category_map.items():
-        if col in df_latest.index and pd.notna(df_latest[col]):
+        val, year_val = latest_value(col)
+        if val is not None:
             categories.append(label)
-            female_values.append(df_latest[col] * 100)
+            female_values.append(val)
+            male_values.append(100 - val)
+            year_labels.append(year_val)
 
     if not categories:
         return (
@@ -836,7 +860,7 @@ def render_gender(data, country):
             "Gender employment data is not available for this country.",
         )
 
-    male_values = [100 - v for v in female_values]
+    latest_year = max(year_labels)
 
     fig = go.Figure()
 
@@ -847,8 +871,10 @@ def render_gender(data, country):
             x=female_values,
             orientation='h',
             marker_color='deeppink',
-            text=[f"{v:.1f}%" for v in female_values],
+            text=[f"{v:.1f}% ({y})" for v, y in zip(female_values, year_labels)],
             textposition='inside',
+            customdata=year_labels,
+            hovertemplate="%{y}<br>Female: %{x:.1f}%<br>Year: %{customdata}<extra></extra>",
         )
     )
 
@@ -859,8 +885,10 @@ def render_gender(data, country):
             x=male_values,
             orientation='h',
             marker_color='darkblue',
-            text=[f"{v:.1f}%" for v in male_values],
+            text=[f"{v:.1f}% ({y})" for v, y in zip(male_values, year_labels)],
             textposition='inside',
+            customdata=year_labels,
+            hovertemplate="%{y}<br>Male: %{x:.1f}%<br>Year: %{customdata}<extra></extra>",
         )
     )
 
