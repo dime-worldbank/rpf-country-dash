@@ -213,23 +213,180 @@ def get_percentage_change_text(percent):
         return f"decreased by {-1 * percent:.0%}"
 
 
+# TODO: add unit tests
+def get_ts_correlation_text(
+    df,
+    x_col,
+    y_col,
+    *,
+    min_n_unknown=6,         # below this: "unknown"
+    min_n_caution=10,        # below this: add small-sample caution
+    warn_delta=0.25,         # warn if levels vs changes differ a lot
+    use_logdiff_for_x=True,  # spending: log-diff by default
+):
+    """
+    Time-series correlation narrative for national spending (real currency) vs outcome index (0-1).
+
+    Primary statistic: Pearson correlation on transformed series:
+      - x (spending): log difference Δlog(x) if possible, else % change, else first difference
+      - y (outcome index): first difference Δy
+
+    Secondary diagnostic: Pearson correlation on levels (x, y) to flag trend-driven/spurious patterns.
+
+    Params
+    ------
+    df: DataFrame
+    x_col / y_col: {"col_name": str, "display": str}
+    min_n_unknown: int
+        If effective sample size after transformation is < min_n_unknown, return "unknown".
+    min_n_caution: int
+        If effective sample size < min_n_caution, append a caution note.
+    warn_delta: float
+        If |corr_levels - corr_changes| >= warn_delta or sign differs, warn about trend sensitivity.
+    use_logdiff_for_x: bool
+        Try log-diff for x when x values are strictly positive.
+    """
+
+    x = x_col["col_name"]
+    y = y_col["col_name"]
+    x_name = x_col["display"]
+    y_name = y_col["display"]
+
+    d0 = df[[x, y]].dropna()
+    if d0.shape[0] < min_n_unknown:
+        return (
+            f"the association between {y_name} and {x_name} is unknown due to limited time coverage "
+            f"or insufficient variability."
+        )
+
+    # --- Transformations ---
+    # y: first difference (index 0-1 -> percentage-point-like change)
+    dy = d0[y].diff()
+
+    # x: prefer log difference (approx % change), fallback to % change, fallback to first diff
+    x_series = d0[x].astype(float)
+
+    dx = None
+    x_transform_label = None
+
+    if use_logdiff_for_x and (x_series > 0).all():
+        dx = np.log(x_series).diff()
+        x_transform_label = "log change (approx. % change)"
+    else:
+        # % change requires previous value > 0
+        prev = x_series.shift(1)
+        pct = x_series.diff() / prev
+        if (prev > 0).all():
+            dx = pct
+            x_transform_label = "% change"
+        else:
+            dx = x_series.diff()
+            x_transform_label = "absolute change"
+
+    dchg = np.c_[dx.values, dy.values]
+    # drop rows where either diff is nan/inf (first row will be nan by construction)
+    mask = np.isfinite(dchg).all(axis=1)
+    dx2 = dx[mask]
+    dy2 = dy[mask]
+
+    n_eff = int(min(dx2.shape[0], dy2.shape[0]))
+    if n_eff < min_n_unknown:
+        return (
+            f"the association between {y_name} and {x_name} is unknown due to limited time coverage "
+            f"or insufficient variability."
+        )
+
+    corr_changes = float(dx2.corr(dy2, method="pearson"))
+    if isnan(corr_changes):
+        return (
+            f"the association between {y_name} and {x_name} is unknown due to limited data availability "
+            f"or variability."
+        )
+
+    # Secondary diagnostic: levels correlation (often trend-driven)
+    corr_levels = float(d0[x].corr(d0[y], method="pearson"))
+
+    # Trend sensitivity flag: sign flip or big divergence levels vs changes
+    trend_sensitive = False
+    if not isnan(corr_levels):
+        if np.sign(corr_levels) != np.sign(corr_changes):
+            trend_sensitive = True
+        elif abs(corr_levels - corr_changes) >= warn_delta:
+            trend_sensitive = True
+
+    # --- Narrative pieces ---
+    if corr_changes > 0:
+        direction = "positive"
+        assoc_phrase = "faster growth in"
+    else:
+        direction = "inverse"
+        assoc_phrase = "slower growth in"
+
+    intensity = None
+    for threshold, pcc_text in sorted(CORRELATION_THRESHOLDS.items(), key=lambda kv: float(kv[0])):
+        if abs(corr_changes) <= float(threshold):
+            intensity = pcc_text
+            break
+
+    if intensity == "no":
+        text = (
+            f"there is no clear association between year-to-year changes in {y_name} and "
+            f"{x_name}."
+        )
+    else:
+        text = (
+            f"the correlation between year-to-year changes in {y_name} and {x_name} is "
+            f"{corr_changes:.1f}, indicating a {intensity} {direction} relationship. "
+            f"Years with {assoc_phrase} {x_name} are generally associated with "
+            f"{'larger' if corr_changes > 0 else 'smaller'} improvements in {y_name}."
+        )
+
+    notes = []
+    notes.append(f"{x_name} is measured as {x_transform_label}, and {y_name} as year-to-year changes.")
+
+    if n_eff < min_n_caution:
+        notes.append("interpret with caution due to limited time coverage")
+
+    if trend_sensitive:
+        notes.append("the association appears sensitive to long-term trends (levels correlation differs from changes)")
+
+    if notes:
+        text += " Note: " + "; ".join(notes) + "."
+
+    return text
+
+
+# TODO: rename to get_subnat_correlation_text & use in subnat analysis
+# TODO: adjust language based on number of data points
 def get_correlation_text(df, x_col, y_col):
     """
-    Get the correlation text based on the PCC value
+    Get the correlation text based on Spearman correlation with Pearson as secondary check
     :param df: DataFrame
     :param x_col: {"col_name": str, "display": str} // col_name is the column name in the DataFrame and display is the name to be displayed in the text
     :param y_col: {"col_name": str, "display": str} // col_name is the column name in the DataFrame and display is the name to be displayed in the text
     :return: str
     """
-    pcc = df[x_col["col_name"]].corr(df[y_col["col_name"]])
+    spearman_corr = df[x_col["col_name"]].corr(df[y_col["col_name"]], method='spearman')
+    pearson_corr = df[x_col["col_name"]].corr(df[y_col["col_name"]], method='pearson')
 
     x_display_name = x_col["display"]
     y_display_name = y_col["display"]
 
-    if isnan(pcc) or df.shape[0] <= 2:
+    if isnan(spearman_corr) or df.shape[0] <= 2:
         return f"the correlation between {x_display_name} and {y_display_name} is unknown due to limited data availability or variability."
 
-    if pcc > 0:
+    corr = spearman_corr
+
+    opposite_signs = False
+    if not isnan(pearson_corr):
+        if (spearman_corr > 0 and pearson_corr < 0) or (spearman_corr < 0 and pearson_corr > 0):
+            opposite_signs = True
+
+    # TODO: try handling outliers before giving up
+    if opposite_signs:
+        return f"the association between {y_display_name} and {x_display_name} is sensitive to outliers."
+
+    if corr > 0:
         direction = "positive"
         association = "higher"
     else:
@@ -238,14 +395,14 @@ def get_correlation_text(df, x_col, y_col):
 
     intensity = None
     for threshold, pcc_text in sorted(CORRELATION_THRESHOLDS.items()):
-        if abs(pcc) <= float(threshold):
+        if abs(corr) <= float(threshold):
             intensity = pcc_text
             break
 
     if intensity == "no":
         return f"there is no correlation between {y_display_name} and {x_display_name}."
 
-    text = f"the correlation between {y_display_name} and {x_display_name} is {pcc:.1f}, indicating a {intensity} {direction} relationship. Higher {y_display_name} is generally associated with {association} {x_display_name}."""
+    text = f"the correlation between {y_display_name} and {x_display_name} is {corr:.1f}, indicating a {intensity} {direction} relationship. Higher {y_display_name} is generally associated with {association} {x_display_name}."""
     return text
 
 
