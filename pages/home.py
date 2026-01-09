@@ -680,7 +680,7 @@ def subnational_spending_narrative(
 
     if top_n_percentage > exp_thresh:
         exp_narrative = f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure,\
-            indicating a significant concentration in these areas."
+            indicating a significant concentration in these areas. (Select the Total expenditure option above to see the breakdown by total amount)."
     else:
         exp_narrative = f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."
 
@@ -703,7 +703,7 @@ def subnational_spending_narrative(
     else:
         corr_narrative = ""
 
-    return f"{exp_narrative} {per_capita_narrative} {corr_narrative}"
+    return f"{per_capita_narrative} {corr_narrative} {exp_narrative}"
 
 
 
