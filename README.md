@@ -13,9 +13,10 @@ Get connection details for the SQL Warehouse compute resource which is used for 
 Export the obtained information to the following environment variables, update them in .env file:
 
 ```bash
-ACCESS_TOKEN="[access token]"
-SERVER_HOSTNAME="[server hostname, e.g. adb-12345678.12.azuredatabricks.net"
-HTTP_PATH="[http path, e.g. /sql/1.0/warehouses/abcdxxx123]"
+DATABRICKS_CLIENT_ID="YOUR_CLIENT_ID_HERE"
+DATABRICKS_CLIENT_SECRET="YOUR_CLIENT_SECRET_HERE"
+DATABRICKS_HTTP_PATH="YOUR_HTTP_PATH_HERE"
+DATABRICKS_SERVER_HOSTNAME="YOUR_SERVER_HOSTNAME_HERE"
 ```
 
 Then to setup and verify the app works locally:
