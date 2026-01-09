@@ -159,6 +159,7 @@ def create_func_growth_figure(df, exp_type):
                     width=2,
                     dash="dot" if func == "Overall budget" else "solid",
                 ),
+                legendgroup='primary' if func != "Overall budget" else "secondary",
                 marker=dict(size=4, opacity=0.8),
                 hovertemplate=(
                     "<b>Functional Category:</b> %{fullData.name}<br>"
@@ -178,6 +179,9 @@ def create_func_growth_figure(df, exp_type):
         legend_title_text="",
         hovermode="closest",
         template="plotly_white",
+        legend=dict(
+            tracegroupgap=10
+        ),
         annotations=[
             dict(
                 xref="paper",
