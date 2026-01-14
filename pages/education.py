@@ -618,22 +618,7 @@ def render_public_private_figure(private_data, public_data, country):
     ].apply(millify)
 
     fig = go.Figure()
-    fig.add_trace(
-        go.Bar(
-            name="Private Expenditure",
-            y=merged["year"].astype(str),
-            x=merged.private_percentage,
-            orientation="h",
-            customdata=merged.real_expenditure_private_formatted,
-            hovertemplate="%{customdata}",
-            marker=dict(
-                color="rgb(255, 191, 0)",
-            ),
-            text=merged.private_percentage,
-            texttemplate="%{text:.0%}",
-            textposition="auto",
-        )
-    )
+
 
     merged["real_expenditure_public_formatted"] = merged[
         "real_expenditure_public"
@@ -654,10 +639,27 @@ def render_public_private_figure(private_data, public_data, country):
             textposition="auto",
         )
     )
+
+    fig.add_trace(
+        go.Bar(
+            name="Private Expenditure",
+            y=merged["year"].astype(str),
+            x=merged.private_percentage,
+            orientation="h",
+            customdata=merged.real_expenditure_private_formatted,
+            hovertemplate="%{customdata}",
+            marker=dict(
+                color="rgb(255, 191, 0)",
+            ),
+            text=merged.private_percentage,
+            texttemplate="%{text:.0%}",
+            textposition="auto",
+        )
+    )
     fig.update_layout(
         barmode="stack",
         plot_bgcolor="white",
-        legend=dict(orientation="h", yanchor="bottom", y=1),
+        legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
         annotations=[
             dict(
