@@ -679,11 +679,13 @@ def subnational_spending_narrative(
         correlation = per_capita_expenditure.corr(poverty_rates)
 
     if top_n_percentage > exp_thresh:
-        exp_narrative = f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure,\
-            indicating a significant concentration in these areas. (Select the Total expenditure option above to see the breakdown by total amount)."
+        exp_narrative = [
+            f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure, indicating a significant concentration in these areas. ",
+        ]
     else:
-        exp_narrative = f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."
+        exp_narrative = [f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."]
 
+    exp_narrative.append( html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
     if per_capita_range > per_capita_thresh:
         per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {per_capita_expenditure.min():,.2f} \
             to {per_capita_expenditure.max():,.2f}, with a median of {per_capita_median:,.2f}. This indicates substantial variation in resource allocation per person."
@@ -703,7 +705,7 @@ def subnational_spending_narrative(
     else:
         corr_narrative = ""
 
-    return f"{per_capita_narrative} {corr_narrative} {exp_narrative}"
+    return [f"{per_capita_narrative} {corr_narrative} "] + exp_narrative
 
 
 
