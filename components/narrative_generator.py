@@ -1,16 +1,23 @@
 from utils import millify
 
+# Coefficient of Variation thresholds for narrative generation
+CV_LOW_THRESHOLD = 5
+CV_MODERATE_THRESHOLD = 15
+
 def get_segment_narrative(insight_df):
+    if insight_df is None or insight_df.empty:
+        return
+    
     metric = insight_df['metric_name'].iloc[0]
     segments = insight_df['segments'].iloc[0]
     cv = insight_df['cv_value'].iloc[0]
     narrative = []
-    #TODO : refine the logic to add narratives on accelerteration/deceleration, for now just consolidate same direction
+    #TODO : refine the logic to add narratives on acceleration/deceleration, for now just consolidate same direction
     segments = consolidate_segments(segments)
     if len(segments) == 0:
-        if cv < 5:
+        if cv < CV_LOW_THRESHOLD:
             return f"{metric} remained highly stable and range-bound"
-        elif 5 <= cv <= 15:
+        elif CV_LOW_THRESHOLD <= cv <= CV_MODERATE_THRESHOLD:
             return f"{metric} showed moderate fluctuations around a consistent mean"
         else:
             return f"{metric} exhibited significant volatility without a clear direction"

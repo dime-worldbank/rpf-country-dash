@@ -498,9 +498,12 @@ def per_capita_figure(df):
 
 def overview_narrative(df, insight_df):
     country = df.country_name.iloc[0]
-    trend_narrative =  get_segment_narrative(insight_df)
-    trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
-    text = f"After accounting for inflation, {trend_narrative} "
+    trend_narrative = get_segment_narrative(insight_df)
+    if trend_narrative:
+        trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
+        text = f"After accounting for inflation, {trend_narrative} "
+    else:
+        text = ""
     latest = df[df.year == df.year.max()].iloc[0].to_dict()
     end_year = latest["year"]
     decentral_mean = df.expenditure_decentralization.mean() * 100
