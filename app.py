@@ -130,6 +130,7 @@ def layout():
                 dcc.Store(id="stored-data-subnational"),
                 dcc.Store(id="stored-data-func-econ"),
                 dcc.Store(id="stored-data-subnat-boundaries"),
+                dcc.Store(id="stored-data-insights"),
             ]
         )
 
@@ -182,6 +183,14 @@ def fetch_data_once(data):
         }
     return no_update
 
+@app.callback(Output("stored-data-insights", "data"), Input("stored-data-insights", "data"))
+def fetch_insight_data_once(data):
+    if data is None:
+        df = db.get_expenditure_insight()
+        return {
+            "expenditure_insights": df.to_dict("records"),
+        }
+    return no_update
 
 @app.callback(
     Output("stored-data-func-econ", "data"), Input("stored-data-func-econ", "data")
