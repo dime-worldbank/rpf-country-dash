@@ -875,6 +875,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
+    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Poverty rate:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
 
     fig.update_layout(
@@ -908,9 +909,9 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
             ),
         ],
     )
-    fig.update_traces(
-        hovertemplate="<b>Region:</b> %{location}<br>"
-        + "<b>Poverty rate:</b> %{z:.2f}%<br>"
+    fig.data[0].hovertemplate = (
+        "<b>Region:</b> %{location}<br>"
+        + "<b>Poverty rate:</b> %{z:.2f}%<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
