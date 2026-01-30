@@ -439,7 +439,7 @@ def per_capita_figure(df):
         go.Scatter(
             name="Poverty Rate",
             x=df.year,
-            y=df.poor215,
+            y=df.poverty_rate,
             mode="lines+markers",
             line=dict(color="darkred", shape="spline", dash="dot"),
             connectgaps=True,
@@ -675,7 +675,7 @@ def subnational_spending_narrative(
     per_capita_range = per_capita_expenditure.max() - per_capita_expenditure.min()
     per_capita_median = per_capita_expenditure.median()
     if not df_poverty.empty:
-        poverty_rates = df_poverty.groupby("region_name")["poor215"].mean()
+        poverty_rates = df_poverty.groupby("region_name")["poverty_rate"].mean()
         correlation = per_capita_expenditure.corr(poverty_rates)
 
     if top_n_percentage > exp_thresh:
@@ -840,7 +840,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         return empty_plot("Sub-national poverty data not available")
     # TODO align accents across all datasets
     df["region_name"] = df.region_name.map(lambda x: remove_accents(x))
-    poverty_col = "poor215"
+    poverty_col = "poverty_rate"
     country_name = df.country_name.iloc[0]
     year = df.year.iloc[0]
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
@@ -1181,7 +1181,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         subnational_data["disputed_boundaries"], country
     )
     filtered_geojson = filter_geojson_by_country(geojson, country)
-    df = pd.DataFrame(subnational_data["subnational_poverty_index"])
+    df = pd.DataFrame(subnational_data["subnational_poverty_rate"])
     df = filter_country_sort_year(df, country)
 
     legend_min, legend_max = country_data["basic_country_info"][country].get(
@@ -1226,7 +1226,7 @@ def render_subnational_spending_narrative(
     if year is None or not subnational_data or not country_data or not country:
         return "Data not available"
 
-    df_poverty = pd.DataFrame(subnational_data["subnational_poverty_index"])
+    df_poverty = pd.DataFrame(subnational_data["subnational_poverty_rate"])
     df_poverty = filter_country_sort_year(df_poverty, country)
 
     available_years = country_data["basic_country_info"][country].get(

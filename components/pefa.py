@@ -93,7 +93,7 @@ def pefa_overall_figure(df, pov_df):
         go.Scatter(
             name="Poverty Rate",
             x=pov_df.year,
-            y=pov_df.poor215,
+            y=pov_df.poverty_rate,
             mode="lines+markers",
             line=dict(color="darkred", shape="spline", dash="dot"),
             connectgaps=True,
