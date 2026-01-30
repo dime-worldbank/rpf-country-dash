@@ -6,7 +6,7 @@ CV_MODERATE_THRESHOLD = 15
 
 def get_segment_narrative(insight_df):
     if insight_df is None or insight_df.empty:
-        return
+        return ""
     
     metric = insight_df['metric_name'].iloc[0]
     segments = insight_df['segments'].iloc[0]
@@ -69,7 +69,12 @@ def consolidate_segments(segments):
             # Merge segments
             last_seg['end_year'] = seg['end_year']
             last_seg['end_value'] = seg['end_value']
-            last_seg['slope'] = (last_seg['end_value'] - last_seg['start_value']) / (last_seg['end_year'] - last_seg['start_year'])
+            duration = last_seg['end_year'] - last_seg['start_year']
+            if duration != 0:
+                last_seg['slope'] = (last_seg['end_value'] - last_seg['start_value']) / duration
+            else:
+                # Zero duration: treat as flat slope to avoid division by zero
+                last_seg['slope'] = 0
         else:
             consolidated.append(seg)
     
