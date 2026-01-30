@@ -738,6 +738,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
+    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
 
     fig.update_layout(
@@ -761,9 +762,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
             )
         ],
     )
-    fig.update_traces(
-        hovertemplate="<b>Region:</b> %{location}<br>" + "<b>Expenditure:</b> %{z}<br>"
-    )
+    fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{z}<extra></extra>"
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
     return fig
 
@@ -804,6 +803,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
+    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Per capita expenditure:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
 
     fig.update_layout(
@@ -826,10 +826,9 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
             )
         ],
     )
-    fig.update_traces(
-        hovertemplate="<b>Region:</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{z}<br>"
-        + "<extra></extra>"
+    fig.data[0].hovertemplate = (
+        "<b>Region:</b> %{location}<br>"
+        + "<b>Per capita expenditure:</b> %{z}<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
