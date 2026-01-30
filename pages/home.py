@@ -435,6 +435,7 @@ def total_figure(df):
 def per_capita_figure(df):
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
     fig.add_trace(
         go.Scatter(
             name="Poverty Rate",
@@ -858,6 +859,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         range_color=[zmin, zmax],
         mapbox_style="carto-positron",
     )
+    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
 
     no_data_trace = px.choropleth_mapbox(
         df_no_data,
