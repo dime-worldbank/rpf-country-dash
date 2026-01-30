@@ -18,9 +18,9 @@ def get_segment_narrative(insight_df):
         if cv < CV_LOW_THRESHOLD:
             return f"{metric} remained highly stable and range-bound"
         elif CV_LOW_THRESHOLD <= cv <= CV_MODERATE_THRESHOLD:
-            return f"{metric} showed moderate fluctuations around a consistent mean"
+            return f"{metric} showed moderate fluctuations around a consistent mean."
         else:
-            return f"{metric} exhibited significant volatility without a clear direction"
+            return f"{metric} exhibited significant volatility without a clear direction."
     if len(segments) == 1:
         seg = segments[0]
         start_val = seg['start_value']
