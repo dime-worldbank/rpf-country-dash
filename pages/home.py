@@ -840,8 +840,12 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     if df[df.region_name != "National"].empty:
         return empty_plot("Sub-national poverty data not available")
     # TODO align accents across all datasets
+    df = df.copy()
     df["region_name"] = df.region_name.map(lambda x: remove_accents(x))
     poverty_col = "poverty_rate"
+    df[poverty_col] = df[poverty_col] * 100
+    zmin = zmin * 100 if zmin is not None else None
+    zmax = zmax * 100 if zmax is not None else None
     country_name = df.country_name.iloc[0]
     year = df.year.iloc[0]
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
@@ -898,7 +902,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text="Poverty rate at $2.15 (2017 PPP). Source: SPID and GSAP, World Bank",
+                text="Poverty rate (income-level specific threshold). Source: SPID and GSAP, World Bank",
                 showarrow=False,
                 font=dict(size=12),
             ),
@@ -906,7 +910,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
     fig.update_traces(
         hovertemplate="<b>Region:</b> %{location}<br>"
-        + "<b>Poverty rate (2.15):</b> %{z}<br>"
+        + "<b>Poverty rate:</b> %{z:.2f}%<br>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
