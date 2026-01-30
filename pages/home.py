@@ -918,7 +918,7 @@ def render_overview_total_figure(data, country, insights_data):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
     insights_df = pd.DataFrame(insights_data["expenditure_insights"])
-    insights_df = insights_df[(insights_df["country_name"] == country) &(insights_df['dimension_filter'] == "Total")]
+    insights_df = insights_df[(insights_df["country_name"] == country) & (insights_df['dimension_filter'] == "Total")]
     return total_figure(df), per_capita_figure(df), overview_narrative(df, insights_df)
 
 

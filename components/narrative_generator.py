@@ -12,7 +12,7 @@ def get_segment_narrative(insight_df):
     segments = insight_df['segments'].iloc[0]
     cv = insight_df['cv_value'].iloc[0]
     narrative = []
-    #TODO : refine the logic to add narratives on acceleration/deceleration, for now just consolidate same direction
+    # TODO : refine the logic to add narratives on acceleration/deceleration, for now just consolidate same direction
     segments = consolidate_segments(segments)
     if len(segments) == 0:
         if cv < CV_LOW_THRESHOLD:
