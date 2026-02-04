@@ -835,7 +835,14 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     return fig
 
 
-def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom):
+INCOME_LEVEL_THRESHOLD = {
+    "LIC": ("$3.00", "Low Income"),
+    "LMC": ("$4.20", "Lower Middle Income"),
+    "UMC": ("$8.30", "Upper Middle Income"),
+    "HIC": ("$8.30", "High Income"),
+}
+
+def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level=None):
     if df[df.region_name != "National"].empty:
         return empty_plot("Sub-national poverty data not available")
     # TODO align accents across all datasets
@@ -902,7 +909,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text="Poverty rate (income-level specific threshold). Source: SPID and GSAP, World Bank",
+                text=_get_poverty_source_text(income_level),
                 showarrow=False,
                 font=dict(size=12),
             ),
@@ -915,6 +922,13 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
     return fig
+
+
+def _get_poverty_source_text(income_level):
+    if income_level and income_level in INCOME_LEVEL_THRESHOLD:
+        threshold, level_name = INCOME_LEVEL_THRESHOLD[income_level]
+        return f"Poverty rate ({threshold} threshold for {level_name} country). Source: SPID and GSAP, World Bank"
+    return "Poverty rate ($3.00 threshold). Source: SPID and GSAP, World Bank"
 
 
 @callback(
@@ -1207,6 +1221,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     if not relevant_years or df.empty:
         return empty_plot("Poverty data not available for this time period")
 
+    income_level = country_data["basic_country_info"][country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
@@ -1216,6 +1231,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         lat,
         lon,
         zoom,
+        income_level,
     )
 
 
