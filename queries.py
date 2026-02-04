@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
-BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
+BOOST_SCHEMA = 'boost'
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Cache tuning (env overrides optional)
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
@@ -173,7 +173,7 @@ class QueryService:
     def get_basic_country_data(self, countries):
         country_list = "', '".join(countries)
         query = f"""
-            SELECT country_name, display_lon, display_lat, zoom, income_level
+            SELECT country_name, display_lon, display_lat, zoom, income_level, currency_name, currency_code
             FROM prd_mega.{INDICATOR_SCHEMA}.country
             WHERE country_name IN ('{country_list}')
         """
