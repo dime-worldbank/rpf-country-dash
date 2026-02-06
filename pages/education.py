@@ -8,6 +8,7 @@ from plotly.subplots import make_subplots
 from constants import MAP_DISCLAIMER
 from queries import QueryService
 from utils import (
+    add_currency_column,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -396,9 +397,9 @@ def render_education_content(tab):
 
 
 def total_edu_figure(df, currency_name, currency_code):
-    df['central_expenditure_formatted'] = df['central_expenditure'].apply(lambda x: format_currency(x, currency_code))
-    df['decentralized_expenditure_formatted'] = df['decentralized_expenditure'].apply(lambda x: format_currency(x, currency_code))
-    df['real_expenditure_formatted'] = df['real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'central_expenditure', currency_code)
+    add_currency_column(df, 'decentralized_expenditure', currency_code)
+    add_currency_column(df, 'real_expenditure', currency_code)
     fig = go.Figure()
 
     if df is None:
@@ -630,8 +631,8 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    merged["real_expenditure_private_formatted"] = merged['real_expenditure_private'].apply(lambda x: format_currency(x, currency_code))
-    merged["real_expenditure_public_formatted"] = merged['real_expenditure_public'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(merged, 'real_expenditure_private', currency_code)
+    add_currency_column(merged, 'real_expenditure_public', currency_code)
     fig = go.Figure()
 
 
@@ -757,7 +758,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
     currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
     currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
 
-    pub_exp['per_capita_real_expenditure_formatted'] = pub_exp['per_capita_real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(

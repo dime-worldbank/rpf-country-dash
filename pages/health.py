@@ -9,6 +9,7 @@ import traceback
 from constants import MAP_DISCLAIMER
 from queries import QueryService
 from utils import (
+    add_currency_column,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -406,9 +407,9 @@ def total_health_figure(df, currency_code, currency_name):
 
     if df is None:
         return fig
-    df['real_expenditure_formatted'] = df['real_expenditure'].apply(lambda x: format_currency(x, currency_code))
-    df['real_central_expenditure_formatted'] = df['central_expenditure'].apply(lambda x: format_currency(x, currency_code))
-    df['real_decentralized_expenditure_formatted'] = df['decentralized_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'real_expenditure', currency_code)
+    add_currency_column(df, 'central_expenditure', currency_code)
+    add_currency_column(df, 'decentralized_expenditure', currency_code)
     fig.add_trace(
         go.Scatter(
             name="Inflation Adjusted",
@@ -424,7 +425,7 @@ def total_health_figure(df, currency_code, currency_name):
     fig.add_trace(
         go.Bar(
             name="Central",
-            customdata=df['real_central_expenditure_formatted'],
+            customdata=df['central_expenditure_formatted'],
             x=df.year,
             y=df.central_expenditure,
             marker_color="rgb(17, 141, 255)",
@@ -434,7 +435,7 @@ def total_health_figure(df, currency_code, currency_name):
     fig.add_trace(
         go.Bar(
             name="Regional",
-            customdata=df['real_decentralized_expenditure_formatted'],
+            customdata=df['decentralized_expenditure_formatted'],
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
@@ -633,16 +634,11 @@ def render_public_private_figure(private_data, public_data, country, country_dat
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    merged["real_expenditure_private_formatted"] = merged[
-        "real_expenditure_private"
-    ].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(merged, 'real_expenditure_private', currency_code)
+    add_currency_column(merged, 'real_expenditure_public', currency_code)
 
     fig = go.Figure()
 
-
-    merged["real_expenditure_public_formatted"] = merged[
-        "real_expenditure_public"
-    ].apply(lambda x: format_currency(x, currency_code))
     fig.add_trace(
         go.Bar(
             name="Public Expenditure",
@@ -745,7 +741,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     pub_exp = filter_country_sort_year(pub_exp, country)
     currency_code = country_data['basic_country_info'][country]['currency_code']
     currency_name = country_data['basic_country_info'][country]['currency_name']
-    pub_exp['per_capital_real_expenditure_formatted'] = pub_exp['per_capita_real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -765,7 +761,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     fig.add_trace(
         go.Scatter(
             name="Inflation adjusted per capita public spending",
-            customdata=pub_exp['per_capital_real_expenditure_formatted'],
+            customdata=pub_exp['per_capita_real_expenditure_formatted'],
             x=pub_exp.year,
             y=pub_exp.per_capita_real_expenditure,
             mode="lines",

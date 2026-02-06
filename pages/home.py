@@ -8,6 +8,7 @@ from utils import add_disputed_overlay
 from plotly.subplots import make_subplots
 import numpy as np
 from utils import (
+    add_currency_column,
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
@@ -386,9 +387,9 @@ def render_overview_content(tab):
 
 def total_figure(df, currency_name, currency_code):
     fig = go.Figure()
-    df['real_expenditure_formatted'] = df['real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'real_expenditure', currency_code)
     df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code))
-    df['decentralized_expenditure_formatted'] = df['decentralized_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'decentralized_expenditure', currency_code)
     fig.add_trace(
         go.Scatter(
             name="Inflation Adjusted",
@@ -445,8 +446,8 @@ def total_figure(df, currency_name, currency_code):
 
 
 def per_capita_figure(df, currency_name, currency_code):
-    df['per_capita_expenditure_formatted'] = df['per_capita_expenditure'].apply(lambda x: format_currency(x, currency_code))
-    df['real_per_capita_expenditure_formatted'] = df['per_capita_real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'per_capita_expenditure', currency_code)
+    add_currency_column(df, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
 
@@ -470,7 +471,7 @@ def per_capita_figure(df, currency_name, currency_code):
             y=df.per_capita_real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
-            customdata=np.column_stack([df['real_per_capita_expenditure_formatted']]),
+            customdata=np.column_stack([df['per_capita_real_expenditure_formatted']]),
             hovertemplate="<b>Real Per Capita</b>: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,

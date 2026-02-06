@@ -8,6 +8,7 @@ import traceback
 from dash import html
 from components.year_slider import get_slider_config
 from utils import (
+    add_currency_column,
     add_disputed_overlay,
     empty_plot,
     filter_country_sort_year,
@@ -76,7 +77,7 @@ def _central_vs_regional_fig(data, func, currency_code):
     if central_vs_regional.empty:
         return empty_plot("No data available for this period", fig_title)
 
-    central_vs_regional['real_expenditure_formatted'] = central_vs_regional['real_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
     fig = go.Figure(
         data=[
             go.Pie(
@@ -239,7 +240,7 @@ def update_func_expenditure_map(
 
     # Drop NaN values and format
     df = df.dropna(subset=[expenditure_type])
-    df[expenditure_type + '_formatted'] = df[expenditure_type].apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, expenditure_type, currency_code)
 
     # Identify regions without data
     all_regions = [
@@ -248,8 +249,6 @@ def update_func_expenditure_map(
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
-    
-
     
     # Set up hover template for data regions
     hover_template_str = (
