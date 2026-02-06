@@ -430,3 +430,6 @@ def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
     return fig
 
 
+def format_currency(value, currency_code):
+    """Format a number as currency with the given currency code."""
+    return f"{currency_code} {millify(value)}"

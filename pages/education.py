@@ -10,6 +10,7 @@ from queries import QueryService
 from utils import (
     empty_plot,
     filter_country_sort_year,
+    format_currency,
     generate_error_prompt,
     get_correlation_text,
     get_percentage_change_text,
@@ -394,7 +395,10 @@ def render_education_content(tab):
         )
 
 
-def total_edu_figure(df):
+def total_edu_figure(df, currency_name, currency_code):
+    df['central_expenditure_formatted'] = df['central_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    df['decentralized_expenditure_formatted'] = df['decentralized_expenditure'].apply(lambda x: format_currency(x, currency_code))
+    df['real_expenditure_formatted'] = df['real_expenditure'].apply(lambda x: format_currency(x, currency_code))
     fig = go.Figure()
 
     if df is None:
@@ -406,6 +410,8 @@ def total_edu_figure(df):
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
+            customdata=np.column_stack([df.real_expenditure_formatted]),
+            hovertemplate="<b>Real Expenditure</b>: %{customdata[0]}<extra></extra>",
         ),
     )
     fig.add_trace(
@@ -414,6 +420,8 @@ def total_edu_figure(df):
             x=df.year,
             y=df.central_expenditure,
             marker_color="rgb(17, 141, 255)",
+            customdata=np.column_stack([df.central_expenditure_formatted]),
+            hovertemplate="<b>Central</b>: %{customdata[0]}<extra></extra>",
         ),
     )
     fig.add_trace(
@@ -422,6 +430,8 @@ def total_edu_figure(df):
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
+            customdata=np.column_stack([df.decentralized_expenditure_formatted]),
+            hovertemplate="<b>Regional</b>: %{customdata[0]}<extra></extra>",
         ),
     )
 
@@ -429,7 +439,7 @@ def total_edu_figure(df):
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
-        hovermode="x",
+        hovermode="x unified",
         title="How has govt spending on education changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
@@ -439,7 +449,7 @@ def total_edu_figure(df):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
+                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -520,22 +530,26 @@ def education_narrative(data, country):
     Output("education-total", "figure"),
     Output("education-narrative", "children"),
     Input("stored-data-education-total", "data"),
+    Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
 )
-def render_overview_total_figure(data, country):
+def render_overview_total_figure(data, basic_country_data, country):
     if data is None:
         return None
 
     all_countries = pd.DataFrame(data["edu_public_expenditure"])
     df = filter_country_sort_year(all_countries, country)
-
+    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
+    currency_name = basic_info['currency_name']
+    currency_code = basic_info['currency_code']
+    
     if df.empty:
         return (
             empty_plot("No data available for this period"),
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
 
-    fig = total_edu_figure(df)
+    fig = total_edu_figure(df, currency_name, currency_code)
     return fig, education_narrative(data, country)
 
 
@@ -569,11 +583,14 @@ def public_private_narrative(df, country):
     Input("stored-data-education-private", "data"),
     Input("stored-data-education-total", "data"),
     Input("country-select", "value"),
+    Input('stored-basic-country-data', 'data')
 )
-def render_public_private_figure(private_data, public_data, country):
+def render_public_private_figure(private_data, public_data, country,basic_country_data):
     if not private_data or not public_data:
         return
-
+    
+    currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
+    currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
     fig_title = "What % was spent by the govt vs household?"
 
     private = pd.DataFrame(private_data["edu_private_expenditure"])
@@ -613,16 +630,12 @@ def render_public_private_figure(private_data, public_data, country):
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    merged["real_expenditure_private_formatted"] = merged[
-        "real_expenditure_private"
-    ].apply(millify)
-
+    merged["real_expenditure_private_formatted"] = merged['real_expenditure_private'].apply(lambda x: format_currency(x, currency_code))
+    merged["real_expenditure_public_formatted"] = merged['real_expenditure_public'].apply(lambda x: format_currency(x, currency_code))
     fig = go.Figure()
 
 
-    merged["real_expenditure_public_formatted"] = merged[
-        "real_expenditure_public"
-    ].apply(millify)
+
     fig.add_trace(
         go.Bar(
             name="Public Expenditure",
@@ -630,7 +643,7 @@ def render_public_private_figure(private_data, public_data, country):
             x=merged.public_percentage,
             orientation="h",
             customdata=merged.real_expenditure_public_formatted,
-            hovertemplate="$%{customdata}",
+            hovertemplate="%{customdata}",
             marker=dict(
                 color="darkblue",
             ),
@@ -667,7 +680,7 @@ def render_public_private_figure(private_data, public_data, country):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
+                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -725,8 +738,9 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country):
     Input("stored-data-education-outcome", "data"),
     Input("stored-data-education-total", "data"),
     Input("country-select", "value"),
+    Input('stored-basic-country-data', 'data')
 )
-def render_education_outcome(outcome_data, total_data, country):
+def render_education_outcome(outcome_data, total_data, country, basic_country_data):
     if not total_data or not outcome_data:
         return
 
@@ -740,6 +754,10 @@ def render_education_outcome(outcome_data, total_data, country):
     pub_exp = pd.DataFrame(total_data["edu_public_expenditure"])
     pub_exp = filter_country_sort_year(pub_exp, country)
 
+    currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
+    currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
+
+    pub_exp['per_capita_real_expenditure_formatted'] = pub_exp['per_capita_real_expenditure'].apply(lambda x: format_currency(x, currency_code))
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
@@ -774,6 +792,8 @@ def render_education_outcome(outcome_data, total_data, country):
             mode="lines",
             marker_color="darkblue",
             opacity=0.6,
+            customdata=np.column_stack([pub_exp.per_capita_real_expenditure_formatted]),
+            hovertemplate="<b>Per Capita Public Spending</b>: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -789,6 +809,7 @@ def render_education_outcome(outcome_data, total_data, country):
             x=0,
             bgcolor="rgba(0,0,0,0)",
         ),
+        hovermode="x unified",
         title=dict(
             text="How has education outcome changed?",
             y=0.95,
@@ -803,7 +824,7 @@ def render_education_outcome(outcome_data, total_data, country):
                 x=-0,
                 y=-0.2,
                 text="Source: Education index measured by years of education: UNDP through GDL. <br>"
-                "BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
+                f"BOOST ({currency_name}), CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -856,10 +877,12 @@ def update_education_year_range(data, country):
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
     Input("year-slider-edu", "value"),
+    Input('stored-basic-country-data', 'data')
 )
-def render_education_subnat_overview(func_econ_data, sub_func_data, country, selected_year):
+def render_education_subnat_overview(func_econ_data, sub_func_data, country, selected_year, country_data):
+    currency_code = country_data['basic_country_info'][country]['currency_code']
     return render_func_subnat_overview(
-        func_econ_data, sub_func_data, country, selected_year, 'Education'
+        func_econ_data, sub_func_data, country, selected_year, 'Education', currency_code
     )
 
 
@@ -913,6 +936,8 @@ def update_education_index_map(
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
     Input("year-slider-edu", "value"),
+    Input('stored-basic-country-data', 'data'),
 )
-def render_education_subnat_rank(subnational_data, country, base_year):
-    return render_func_subnat_rank(subnational_data, country, base_year, 'Education')
+def render_education_subnat_rank(subnational_data, country, base_year, country_data):
+    currency_code = country_data['basic_country_info'][country]['currency_code']
+    return render_func_subnat_rank(subnational_data, country, base_year, 'Education', currency_code)
