@@ -753,7 +753,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
             mode="lines+markers",
             line=dict(color="deeppink", shape="spline", dash="dot"),
             connectgaps=True,
-            hovertemplate="<b>UHC Index</b>: %{y:.1f}<extra></extra>",
+            hovertemplate="UHC Index: %{y:.1f}<extra></extra>",
         ),
         secondary_y=True,
     )
@@ -767,7 +767,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
             mode="lines",
             marker_color="darkblue",
             opacity=0.6,
-            hovertemplate="<b>Per capita real public expenditure</b>: %{customdata}<extra></extra>",
+            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -797,7 +797,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: UHC: WHO; BOOST ({currency_name}): World Bank; Population: UN, Eurostat",
+                text=f"Source: UHC: WHO; BOOST ({currency_name}): World Bank; <br> Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )

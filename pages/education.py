@@ -794,7 +794,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
             marker_color="darkblue",
             opacity=0.6,
             customdata=np.column_stack([pub_exp.per_capita_real_expenditure_formatted]),
-            hovertemplate="<b>Per Capita Public Spending</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )

@@ -398,7 +398,7 @@ def total_figure(df, currency_name, currency_code):
             mode="lines+markers",
             marker_color="darkblue",
             customdata=np.column_stack([df['real_expenditure_formatted']]),
-            hovertemplate="<b>Real Expenditure</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Inflation Adjusted Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
@@ -408,7 +408,7 @@ def total_figure(df, currency_name, currency_code):
             y=df.expenditure - df.decentralized_expenditure,
             marker_color="rgb(17, 141, 255)",
             customdata=np.column_stack([df['central_expenditure_formatted']]),
-            hovertemplate="<b>Central</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Central Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
@@ -418,7 +418,7 @@ def total_figure(df, currency_name, currency_code):
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
             customdata=np.column_stack([df['decentralized_expenditure_formatted']]),
-            hovertemplate="<b>Regional</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Regional Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
 
@@ -435,7 +435,7 @@ def total_figure(df, currency_name, currency_code):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text=f"Source: BOOST {currency_name} & CPI: World Bank",
+                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -472,7 +472,7 @@ def per_capita_figure(df, currency_name, currency_code):
             mode="lines+markers",
             marker_color="darkblue",
             customdata=np.column_stack([df['per_capita_real_expenditure_formatted']]),
-            hovertemplate="<b>Real Per Capita</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -483,7 +483,7 @@ def per_capita_figure(df, currency_name, currency_code):
             y=df.per_capita_expenditure,
             marker_color="#686dc3",
             customdata=np.column_stack([df['per_capita_expenditure_formatted']]),
-            hovertemplate="<b>Per Capita</b>: %{customdata[0]}<extra></extra>",
+            hovertemplate="Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -507,7 +507,7 @@ def per_capita_figure(df, currency_name, currency_code):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text="Source: BOOST, CPI, Poverty Rate: World Bank; Population: UN, Eurostat",
+                text=f"Source: BOOST ({currency_name}) , CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -559,7 +559,7 @@ def overview_narrative(df):
     return text
 
 
-def functional_figure(df):
+def functional_figure(df, currency_name):
     categories = sorted(df.func.unique(), reverse=True)
 
     fig = go.Figure()
@@ -593,7 +593,7 @@ def functional_figure(df):
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text="Expenditure % by COFOG categories. Source: BOOST",
+                text=f"Expenditure % by COFOG categories. Source: BOOST ({currency_name})",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -779,7 +779,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text=f"Regional spending (in {currency_name}). Source: BOOST",
+                text=f"Regional Spending. Source: BOOST ({currency_name})",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -845,7 +845,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
                 yref="paper",
                 x=0,
                 y=-0.2,
-                text=f"Per capita regional spending({currency_name}). Source: BOOST",
+                text=f" Regional Spending. Source: BOOST ({currency_name})",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -980,11 +980,12 @@ def render_overview_func_figure(data, country, basic_country_data):
         func_df["expenditure"] / func_df["expenditure_total"]
     ) * 100
     currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_name = basic_country_data["basic_country_info"][country]["currency_name"]
     func_df["expenditure_formatted"] = func_df["expenditure"].apply(
         lambda x: format_currency(x, currency_code)
     )
 
-    return functional_figure(func_df), functional_narrative(func_df)
+    return functional_figure(func_df, currency_name), functional_narrative(func_df)
 
 
 @callback(
@@ -1004,8 +1005,9 @@ def render_overview_econ_figure(data, country, basic_country_data):
     ) * 100
 
     currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_name = basic_country_data["basic_country_info"][country]["currency_name"]
 
-    return economic_figure(econ_df, currency_code), economic_narrative(econ_df)
+    return economic_figure(econ_df, currency_code, currency_name), economic_narrative(econ_df)
 
 
 ECON_CAT_MAP = {
@@ -1025,7 +1027,7 @@ ECON_COLORS = {
 }
 
 
-def economic_figure(df, currency_code=None):
+def economic_figure(df, currency_code, currency_name):
     categories = sorted(df.econ.unique(), reverse=True)
 
     fig = go.Figure()
@@ -1063,7 +1065,7 @@ def economic_figure(df, currency_code=None):
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text="Expenditure % by economic categories. Source: BOOST",
+                text=f"Expenditure % by economic categories. Source: BOOST ({currency_name})",
                 showarrow=False,
                 font=dict(size=12),
             )
