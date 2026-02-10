@@ -744,6 +744,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     fig.update_layout(
         title="How much was spent in each region?",
         plot_bgcolor="white",
+        margin=dict(l=40, r=40, t=60, b=80),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -758,7 +759,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
                 y=-0.2,
                 text="Regional spending. Source: BOOST",
                 showarrow=False,
-                font=dict(size=12),
+                font=dict(size=10),
             )
         ],
     )
@@ -809,6 +810,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     fig.update_layout(
         title="How much was spent per person in each region?",
         plot_bgcolor="white",
+        margin=dict(l=40, r=40, t=60, b=80),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -822,7 +824,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
                 y=-0.2,
                 text="Per capita regional spending. Source: BOOST",
                 showarrow=False,
-                font=dict(size=12),
+                font=dict(size=10),
             )
         ],
     )
@@ -887,6 +889,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     fig.update_layout(
         title="What percent of the population is living in poverty?",
         plot_bgcolor="white",
+        margin=dict(l=40, r=40, t=60, b=80),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -899,9 +902,9 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 x=0,
                 y=-0.13,
                 xanchor="left",
-                text=f"Displaying data from {year}",
+                text=f"Displaying data from {year}. {_get_poverty_source_text(income_level)}",
                 showarrow=False,
-                font=dict(size=12),
+                font=dict(size=10),
             ),
             dict(
                 xref="paper",
@@ -909,9 +912,9 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text=_get_poverty_source_text(income_level),
+                text="Source: SPID and GSAP, World Bank.",
                 showarrow=False,
-                font=dict(size=12),
+                font=dict(size=10),
             ),
         ],
     )
@@ -927,8 +930,8 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
 def _get_poverty_source_text(income_level):
     if income_level and income_level in INCOME_LEVEL_THRESHOLD:
         threshold, level_name = INCOME_LEVEL_THRESHOLD[income_level]
-        return f"Poverty rate ({threshold} threshold for {level_name} country). Source: SPID and GSAP, World Bank"
-    return "Poverty rate ($3.00 threshold). Source: SPID and GSAP, World Bank"
+        return f"Poverty rate ({threshold} threshold for {level_name} country)."
+    return "Poverty rate ($3.00 threshold)."
 
 
 @callback(
