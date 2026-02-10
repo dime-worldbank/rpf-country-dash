@@ -89,11 +89,12 @@ def pefa_overall_figure(df, pov_df):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
     fig.add_trace(
         go.Scatter(
             name="Poverty Rate",
             x=pov_df.year,
-            y=pov_df.poor215,
+            y=pov_df.poverty_rate,
             mode="lines+markers",
             line=dict(color="darkred", shape="spline", dash="dot"),
             connectgaps=True,
