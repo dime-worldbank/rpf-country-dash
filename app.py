@@ -23,11 +23,9 @@ from queries import QueryService
 from server import server
 from utils import get_login_path, get_prefixed_path
 
-dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
     __name__,
     server=server,
-    external_stylesheets=[dbc.themes.QUARTZ, dbc_css],
     suppress_callback_exceptions=True,
     use_pages=True,
 )
