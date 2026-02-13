@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from pandas.testing import assert_frame_equal
-from utils import filter_country_sort_year, get_correlation_text, calculate_cagr
+from utils import filter_country_sort_year, get_correlation_text, calculate_cagr, format_currency, add_currency_column
 
 class TestUtils(unittest.TestCase):
 
@@ -88,6 +88,106 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(calculate_cagr(float('nan'), 200, 5))
         self.assertIsNone(calculate_cagr(0, 200, 5))
         self.assertIsNone(calculate_cagr(-100, 200, 5))
+
+    def test_format_currency_small_value(self):
+        # Test formatting small values (less than 1000)
+        result = format_currency(100, "ALL")
+        self.assertEqual(result, "ALL 100.00")
+        
+        result = format_currency(999.99, "BTN")
+        self.assertEqual(result, "BTN 999.99")
+
+    def test_format_currency_thousands(self):
+        # Test formatting thousands
+        result = format_currency(1500, "ALL")
+        self.assertEqual(result, "ALL 1.50 K")
+        
+        result = format_currency(50000, "BTN")
+        self.assertEqual(result, "BTN 50.00 K")
+
+    def test_format_currency_millions(self):
+        # Test formatting millions
+        result = format_currency(1500000, "BTN")
+        self.assertEqual(result, "BTN 1.50 M")
+        
+        result = format_currency(250000000, "ALL")
+        self.assertEqual(result, "ALL 250.00 M")
+
+    def test_format_currency_billions(self):
+        # Test formatting billions
+        result = format_currency(1500000000, "ALL")
+        self.assertEqual(result, "ALL 1.50 B")
+        
+        result = format_currency(75000000000, "BTN")
+        self.assertEqual(result, "BTN 75.00 B")
+
+    def test_format_currency_zero(self):
+        # Test formatting zero value
+        result = format_currency(0, "ALL")
+        self.assertEqual(result, "ALL 0.00")
+
+    def test_format_currency_negative(self):
+        # Test formatting negative values
+        result = format_currency(-1500, "BTN")
+        self.assertEqual(result, "BTN -1.50 K")
+        
+        result = format_currency(-1000000, "ALL")
+        self.assertEqual(result, "ALL -1.00 M")
+
+    def test_add_currency_column_basic(self):
+        # Test adding a formatted currency column
+        df = pd.DataFrame({
+            'amount': [100, 1500, 1500000, 0]
+        })
+        
+        formatted_col = add_currency_column(df, 'amount', 'ALL')
+        
+        self.assertEqual(formatted_col, 'amount_formatted')
+        self.assertIn('amount_formatted', df.columns)
+        self.assertEqual(df['amount_formatted'].iloc[0], 'ALL 100.00')
+        self.assertEqual(df['amount_formatted'].iloc[1], 'ALL 1.50 K')
+        self.assertEqual(df['amount_formatted'].iloc[2], 'ALL 1.50 M')
+        self.assertEqual(df['amount_formatted'].iloc[3], 'ALL 0.00')
+
+    def test_add_currency_column_custom_suffix(self):
+        # Test adding a formatted currency column with custom suffix
+        df = pd.DataFrame({
+            'revenue': [50000, 100000, 250000]
+        })
+        
+        formatted_col = add_currency_column(df, 'revenue', 'BTN', suffix='_display')
+        
+        self.assertEqual(formatted_col, 'revenue_display')
+        self.assertIn('revenue_display', df.columns)
+        self.assertEqual(df['revenue_display'].iloc[0], 'BTN 50.00 K')
+        self.assertEqual(df['revenue_display'].iloc[1], 'BTN 100.00 K')
+        self.assertEqual(df['revenue_display'].iloc[2], 'BTN 250.00 K')
+
+    def test_add_currency_column_different_currencies(self):
+        # Test with different currency codes
+        df = pd.DataFrame({
+            'price': [1000, 2000, 3000]
+        })
+        
+        formatted_col = add_currency_column(df, 'price', 'ALL')
+        
+        self.assertEqual(formatted_col, 'price_formatted')
+        self.assertEqual(df['price_formatted'].iloc[0], 'ALL 1.00 K')
+        self.assertEqual(df['price_formatted'].iloc[1], 'ALL 2.00 K')
+        self.assertEqual(df['price_formatted'].iloc[2], 'ALL 3.00 K')
+
+    def test_add_currency_column_negative_values(self):
+        # Test adding a formatted currency column with negative values
+        df = pd.DataFrame({
+            'balance': [-1500, 1000, -250000]
+        })
+        
+        formatted_col = add_currency_column(df, 'balance', 'BTN')
+        
+        self.assertEqual(formatted_col, 'balance_formatted')
+        self.assertEqual(df['balance_formatted'].iloc[0], 'BTN -1.50 K')
+        self.assertEqual(df['balance_formatted'].iloc[1], 'BTN 1.00 K')
+        self.assertEqual(df['balance_formatted'].iloc[2], 'BTN -250.00 K')
 
 if __name__ == '__main__':
     unittest.main()
