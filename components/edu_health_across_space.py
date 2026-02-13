@@ -77,7 +77,7 @@ def _central_vs_regional_fig(data, func, currency_code):
     if central_vs_regional.empty:
         return empty_plot("No data available for this period", fig_title)
 
-    add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
+    formatted_col = add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
     fig = go.Figure(
         data=[
             go.Pie(
@@ -85,7 +85,7 @@ def _central_vs_regional_fig(data, func, currency_code):
                 values=central_vs_regional["real_expenditure"],
                 hole=0.5,
                 marker=dict(colors=["rgb(17, 141, 255)", "rgb(160, 209, 255)"]),
-                customdata=np.stack(central_vs_regional["real_expenditure_formatted"]),
+                customdata=np.stack(central_vs_regional[formatted_col]),
                 hovertemplate="<b>Real expenditure</b>: %{customdata}<br>"
                 + "<extra></extra>",
             )

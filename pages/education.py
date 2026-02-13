@@ -396,9 +396,9 @@ def render_education_content(tab):
 
 
 def total_edu_figure(df, currency_name, currency_code):
-    add_currency_column(df, 'central_expenditure', currency_code)
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
-    add_currency_column(df, 'real_expenditure', currency_code)
+    central_expenditure_formatted = add_currency_column(df, 'central_expenditure', currency_code)
+    decentralized_expenditure_formatted = add_currency_column(df, 'decentralized_expenditure', currency_code)
+    real_expenditure_formatted = add_currency_column(df, 'real_expenditure', currency_code)
     fig = go.Figure()
 
     if df is None:
@@ -410,7 +410,7 @@ def total_edu_figure(df, currency_name, currency_code):
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
-            customdata=np.column_stack([df.real_expenditure_formatted]),
+            customdata=np.column_stack([df[real_expenditure_formatted]]),
             hovertemplate="<b>Real Expenditure</b>: %{customdata[0]}<extra></extra>",
         ),
     )
@@ -420,7 +420,7 @@ def total_edu_figure(df, currency_name, currency_code):
             x=df.year,
             y=df.central_expenditure,
             marker_color="rgb(17, 141, 255)",
-            customdata=np.column_stack([df.central_expenditure_formatted]),
+            customdata=np.column_stack([df[central_expenditure_formatted]]),
             hovertemplate="<b>Central</b>: %{customdata[0]}<extra></extra>",
         ),
     )
@@ -430,7 +430,7 @@ def total_edu_figure(df, currency_name, currency_code):
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
-            customdata=np.column_stack([df.decentralized_expenditure_formatted]),
+            customdata=np.column_stack([df[decentralized_expenditure_formatted]]),
             hovertemplate="<b>Regional</b>: %{customdata[0]}<extra></extra>",
         ),
     )
@@ -630,8 +630,8 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    add_currency_column(merged, 'real_expenditure_private', currency_code)
-    add_currency_column(merged, 'real_expenditure_public', currency_code)
+    real_expenditure_private_formatted = add_currency_column(merged, 'real_expenditure_private', currency_code)
+    real_expenditure_public_formatted = add_currency_column(merged, 'real_expenditure_public', currency_code)
     fig = go.Figure()
 
 
@@ -642,7 +642,7 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
             y=merged["year"].astype(str),
             x=merged.public_percentage,
             orientation="h",
-            customdata=merged.real_expenditure_public_formatted,
+            customdata=merged[real_expenditure_public_formatted],
             hovertemplate="%{customdata}",
             marker=dict(
                 color="darkblue",
@@ -659,7 +659,7 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
             y=merged["year"].astype(str),
             x=merged.private_percentage,
             orientation="h",
-            customdata=merged.real_expenditure_private_formatted,
+            customdata=merged[real_expenditure_private_formatted],
             hovertemplate="%{customdata}",
             marker=dict(
                 color="rgb(255, 191, 0)",
@@ -757,7 +757,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
     currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
     currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
 
-    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
+    formatted_col = add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
@@ -792,7 +792,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
             mode="lines",
             marker_color="darkblue",
             opacity=0.6,
-            customdata=np.column_stack([pub_exp.per_capita_real_expenditure_formatted]),
+            customdata=np.column_stack([pub_exp[formatted_col]]),
             hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
