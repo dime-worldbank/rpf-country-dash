@@ -855,7 +855,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     )
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{z}<extra></extra>"
+        + "<b>Per capita expenditure:</b> %{customdata[0]}}<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 

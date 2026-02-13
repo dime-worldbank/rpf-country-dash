@@ -250,13 +250,7 @@ def update_func_expenditure_map(
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
     
-    # Set up hover template for data regions
-    hover_template_str = (
-        "<b>Region:</b> %{location}<br>"
-        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{customdata[0]}}<br>"
-        "<extra></extra>"
-    )
-    
+
     fig = px.choropleth_mapbox(
         df,
         geojson=filtered_geojson,
@@ -269,9 +263,6 @@ def update_func_expenditure_map(
         mapbox_style="carto-positron",
         hover_data={expenditure_type: False}  # Hide raw value
     )
-    
-    # Apply hover template to the main trace
-    fig.update_traces(hovertemplate=hover_template_str)
 
     # Add trace for regions without data
     no_data_trace = px.choropleth_mapbox(
@@ -290,7 +281,7 @@ def update_func_expenditure_map(
 
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
-        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{z:,.2f}}<extra></extra>"
+        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{customdata[0]}}<extra></extra>"
     )
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
