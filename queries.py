@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
-BOOST_SCHEMA = 'boost'
+BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Cache tuning (env overrides optional)
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min

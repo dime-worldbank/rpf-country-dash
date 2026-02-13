@@ -11,7 +11,6 @@ from utils import (
     add_currency_column,
     empty_plot,
     filter_country_sort_year,
-    format_currency,
     generate_error_prompt,
     get_correlation_text,
     get_percentage_change_text,
@@ -590,8 +589,8 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
     if not private_data or not public_data:
         return
     
-    currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
-    currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
+    currency_code = pd.DataFrame(basic_country_data['basic_country_info'])[country]['currency_code']
+    currency_name = pd.DataFrame(basic_country_data['basic_country_info'])[country]['currency_name']
     fig_title = "What % was spent by the govt vs household?"
 
     private = pd.DataFrame(private_data["edu_private_expenditure"])

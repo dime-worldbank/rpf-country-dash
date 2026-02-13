@@ -441,7 +441,7 @@ def add_currency_column(df, column_name, currency_code, suffix='_formatted'):
     
     Args:
         df: DataFrame to modify
-        column_name: Name of the source column or Series to format
+        column_name: Name of the source column
         currency_code: Currency code for formatting
         suffix: Suffix for new column name (default: '_formatted')
     
