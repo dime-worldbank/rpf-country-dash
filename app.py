@@ -23,11 +23,9 @@ from queries import QueryService
 from server import server
 from utils import get_login_path, get_prefixed_path
 
-dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = Dash(
     __name__,
     server=server,
-    external_stylesheets=[dbc.themes.QUARTZ, dbc_css],
     suppress_callback_exceptions=True,
     use_pages=True,
 )
@@ -250,13 +248,13 @@ def fetch_subnational_data_once(data, country_data):
             ],
         }
 
-        poverty_df = db.get_subnational_poverty_index(countries)
+        poverty_df = db.get_subnational_poverty_rate(countries)
         geo1_df = db.get_expenditure_by_country_geo1_year()
         geo1_func_df = db.expenditure_and_outcome_by_country_geo1_func_year()
         geo0_sub_func_df = db.get_expenditure_by_country_sub_func_year()
 
         return {
-            "subnational_poverty_index": poverty_df.to_dict("records"),
+            "subnational_poverty_rate": poverty_df.to_dict("records"),
             "disputed_boundaries": disputed_geojson,
             "expenditure_by_country_geo1_year": geo1_df.to_dict("records"),
             "expenditure_and_outcome_by_country_geo1_func_year": geo1_func_df.to_dict("records"),
@@ -299,8 +297,8 @@ def fetch_country_data_once(countries, subnational_data, country_data):
             columns=["country_name", "year"],
         )
         poverty_df = pd.DataFrame(
-            subnational_data["subnational_poverty_index"],
-            columns=["country_name", "year", "poor215"],
+            subnational_data["subnational_poverty_rate"],
+            columns=["country_name", "year", "poverty_rate"],
         )
 
         expenditure_years = (
@@ -316,7 +314,7 @@ def fetch_country_data_once(countries, subnational_data, country_data):
 
         poverty_level_stats = (
             pd.merge(country_df, poverty_df, on="country_name")
-            .groupby("income_level")["poor215"]
+            .groupby("income_level")["poverty_rate"]
             .agg(["min", "max"])
             .reset_index()
         )

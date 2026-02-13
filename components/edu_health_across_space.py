@@ -285,8 +285,13 @@ def update_func_expenditure_map(
     
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>No data available</b><extra></extra>"
+    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{expenditure_type.replace('_', ' ').title()}:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
+
+    fig.data[0].hovertemplate = (
+        "<b>Region:</b> %{location}<br>"
+        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{z:,.2f}}<extra></extra>"
+    )
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
@@ -407,11 +412,16 @@ def update_hd_index_map(
         zoom=zoom,
     ).data[0]
     no_data_trace.legendgroup = "no-data"
-    no_data_trace.showlegend = False 
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>No data available</b><extra></extra>"
+    no_data_trace.showlegend = False
+    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{outcome_name}:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
 
-
+    formatted_outcome_index = df['outcome_index'].map(format_fn).values
+    fig.data[0].customdata = formatted_outcome_index
+    fig.data[0].hovertemplate = (
+        "<b>Region:</b> %{location}<br>"
+        + f"<b>{outcome_name}:</b> " + "%{customdata}<extra></extra>"
+    )
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(

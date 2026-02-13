@@ -204,10 +204,10 @@ class QueryService:
         """
         return self.fetch_data(query)
 
-    def get_subnational_poverty_index(self, countries):
+    def get_subnational_poverty_rate(self, countries):
         country_list = "', '".join(countries)
         query = f"""
-            SELECT * FROM prd_mega.{INDICATOR_SCHEMA}.subnational_poverty_index
+            SELECT * FROM prd_mega.{INDICATOR_SCHEMA}.subnational_poverty_rate
             WHERE country_name IN ('{country_list}')
         """
         return self.fetch_data(query)
