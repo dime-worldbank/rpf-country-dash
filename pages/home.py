@@ -140,10 +140,20 @@ def render_overview_content(tab):
                             lg={"size": 8, "offset": 0},
                         ),
                         dbc.Col(
-                            html.P(
-                                id="functional-narrative",
-                                children="loading...",
-                            ),
+                            [
+                                html.P(
+                                    id="functional-narrative",
+                                    children="loading...",
+                                ),
+                                html.P(
+                                    id="health-narrative",
+                                    children="loading...",
+                                ),
+                                html.P(
+                                    id="education-narrative",
+                                    children="loading...",
+                                ),
+                            ],
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -961,6 +971,25 @@ def render_overview_func_figure(data, country):
     ) * 100
 
     return functional_figure(func_df), functional_narrative(func_df)
+
+
+@callback(
+    Output("health-narrative", "children"),
+    Output("education-narrative", "children"),
+    Input("stored-data-insights", "data"),
+    Input("country-select", "value"),
+)
+def render_sector_narratives(insights_data, country):
+    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
+    country_df = insights_df[insights_df["country_name"] == country]
+
+    health_df = country_df[country_df["dimension_filter"] == "Health"]
+    education_df = country_df[country_df["dimension_filter"] == "Education"]
+
+    health_text = get_segment_narrative(health_df)
+    education_text = get_segment_narrative(education_df)
+
+    return health_text, education_text
 
 
 @callback(
