@@ -461,6 +461,9 @@ def health_narrative(data, country, insight_df):
     spending = filter_country_sort_year(spending, country)
     spending.dropna(subset=["real_expenditure", "central_expenditure"], inplace=True)
 
+    start_year = spending.year.min()
+    end_year = spending.year.max()
+
     trend_narrative = get_segment_narrative(insight_df)
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
