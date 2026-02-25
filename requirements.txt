@@ -11,4 +11,3 @@ bcrypt
 dotenv
 plotly==5.22.0
 colormath
-trend-narrative
