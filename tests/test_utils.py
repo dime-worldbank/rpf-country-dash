@@ -123,54 +123,34 @@ class TestFormatCurrency(unittest.TestCase):
         self.assertTrue(result.startswith("BTN "))
 
 
+
 class TestAddCurrencyColumn(unittest.TestCase):
 
     def setUp(self):
-        # Realistic public expenditure values for Bhutan and Kenya
         self.df = pd.DataFrame({
             "expenditure": [1_000, 500_000, 2_000_000_000],
             "country": ["Bhutan", "Kenya", "Kenya"]
         })
 
-    def test_default_suffix_added(self):
-        # Should create a new column named "expenditure_formatted"
-        col_name = add_currency_column(self.df, "expenditure", "BTN")
-        self.assertEqual(col_name, "expenditure_formatted")
+    def test_formatted_column_created(self):
+        add_currency_column(self.df, "expenditure", "BTN")
         self.assertIn("expenditure_formatted", self.df.columns)
 
     def test_formatted_values_correct_btn(self):
-        # Bhutan Ngultrum formatting
         add_currency_column(self.df, "expenditure", "BTN")
         self.assertEqual(self.df["expenditure_formatted"].iloc[0], "BTN 1.00 K")
         self.assertEqual(self.df["expenditure_formatted"].iloc[1], "BTN 500.00 K")
         self.assertEqual(self.df["expenditure_formatted"].iloc[2], "BTN 2.00 B")
 
     def test_formatted_values_correct_kes(self):
-        # Kenyan Shilling formatting
         add_currency_column(self.df, "expenditure", "KES")
         self.assertEqual(self.df["expenditure_formatted"].iloc[0], "KES 1.00 K")
         self.assertEqual(self.df["expenditure_formatted"].iloc[1], "KES 500.00 K")
         self.assertEqual(self.df["expenditure_formatted"].iloc[2], "KES 2.00 B")
 
-    def test_custom_suffix(self):
-        col_name = add_currency_column(self.df, "expenditure", "KES", suffix="_kes")
-        self.assertEqual(col_name, "expenditure_kes")
-        self.assertIn("expenditure_kes", self.df.columns)
-
     def test_original_column_unchanged(self):
         add_currency_column(self.df, "expenditure", "BTN")
-        # Original numeric column should be untouched
         self.assertEqual(self.df["expenditure"].iloc[0], 1_000)
-
-    def test_series_column_name(self):
-        # NOTE: passing a Series as column_name is not currently supported —
-        # add_currency_column derives the new column name from series.name correctly,
-        # but then calls df[series] which raises a KeyError.
-        # This test documents the bug; the function should be updated to use
-        # df[column_name.name] when column_name is a Series.
-        series = self.df["expenditure"]
-        with self.assertRaises(KeyError):
-            add_currency_column(self.df, series, "KES")
 
 
 class TestFormatCurrencyYaxis(unittest.TestCase):

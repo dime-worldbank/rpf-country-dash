@@ -435,19 +435,7 @@ def format_currency(value, currency_code):
     return f"{currency_code} {millify(value)}"
 
 
-def add_currency_column(df, column_name, currency_code, suffix='_formatted'):
-    """
-    Add a formatted currency column to a dataframe.
-    
-    Args:
-        df: DataFrame to modify
-        column_name: Name of the source column or Series to format
-        currency_code: Currency code for formatting
-        suffix: Suffix for new column name (default: '_formatted')
-    
-    Returns:
-        The formatted column name
-    """
-    formatted_col = column_name + suffix if isinstance(column_name, str) else column_name.name + suffix
-    df[formatted_col] = df[column_name].apply(lambda x: format_currency(x, currency_code))
-    return formatted_col
+def add_currency_column(df, column_name, currency_code):
+    df[f'{column_name}_formatted'] = df[column_name].apply(lambda x: format_currency(x, currency_code))
+
+
