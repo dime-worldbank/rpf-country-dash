@@ -28,6 +28,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
+from components import get_segment_narrative
 
 db = QueryService.get_instance()
 
@@ -449,18 +450,20 @@ def total_edu_figure(df):
     return fig
 
 
-def education_narrative(data, country):
+def education_narrative(data, country, insight_df):
     spending = pd.DataFrame(data["edu_public_expenditure"])
     spending = filter_country_sort_year(spending, country)
     spending.dropna(subset=["real_expenditure", "central_expenditure"], inplace=True)
 
     start_year = spending.year.min()
     end_year = spending.year.max()
-    start_value = spending[spending.year == start_year].real_expenditure.values[0]
-    end_value = spending[spending.year == end_year].real_expenditure.values[0]
-    spending_growth_rate = (end_value - start_value) / start_value
-    trend = "increased" if end_value > start_value else "decreased"
-    text = f"Between {start_year} and {end_year} after adjusting for inflation, total public spending on education in {country} has {trend} from ${millify(start_value)} to ${millify(end_value)}, reflecting a growth rate of {spending_growth_rate:.0%}. "
+
+    trend_narrative = get_segment_narrative(insight_df)
+    if trend_narrative:
+        trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
+        text = f"After accounting for inflation, {trend_narrative} "
+    else:
+        text = ""
 
     spending["real_central_expenditure"] = (
         spending.real_expenditure / spending.expenditure * spending.central_expenditure
@@ -521,8 +524,9 @@ def education_narrative(data, country):
     Output("education-narrative", "children"),
     Input("stored-data-education-total", "data"),
     Input("country-select", "value"),
+    Input("stored-data-insights", "data"),
 )
-def render_overview_total_figure(data, country):
+def render_overview_total_figure(data, country, insights_data):
     if data is None:
         return None
 
@@ -535,8 +539,14 @@ def render_overview_total_figure(data, country):
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
 
+    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
+    insight_df = insights_df[
+        (insights_df["country_name"] == country) &
+        (insights_df["dimension_filter"] == "Education")
+    ]
+
     fig = total_edu_figure(df)
-    return fig, education_narrative(data, country)
+    return fig, education_narrative(data, country, insight_df)
 
 
 def public_private_narrative(df, country):
