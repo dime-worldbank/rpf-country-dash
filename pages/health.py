@@ -468,7 +468,7 @@ def total_health_figure(df, currency_code, currency_name):
     return fig
 
 
-def health_narrative(data, country, insight_df, currency_code):
+def health_narrative(data, country, insight_df):
     spending = pd.DataFrame(data["health_public_expenditure"])
     spending = filter_country_sort_year(spending, country)
     spending.dropna(subset=["real_expenditure", "central_expenditure"], inplace=True)
@@ -566,7 +566,7 @@ def render_overview_total_figure(data, country, country_data, insights_data):
     ]
 
     fig = total_health_figure(df, currency_code, currency_name)
-    return fig, health_narrative(data, country, currency_code, insight_df)
+    return fig, health_narrative(data, country, insight_df)
 
 
 def public_private_narrative(df, country):

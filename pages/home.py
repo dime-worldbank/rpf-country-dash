@@ -542,8 +542,7 @@ def overview_narrative(df, insight_df):
 
 
 
-
-def functional_figure(df, currency_name):
+def functional_figure(df,currency_name):
     categories = sorted(df.func.unique(), reverse=True)
 
     fig = go.Figure()
@@ -967,7 +966,14 @@ def update_heading(country):
 def render_overview_total_figure(data, basic_country_data, country, insights_data):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
-    return total_figure(df), per_capita_figure(df), overview_narrative(df)
+    
+    # Extract currency_name once at callback level
+    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
+    currency_name = basic_info['currency_name']
+    currency_code = basic_info['currency_code']
+    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
+    insights_df = insights_df[(insights_df["country_name"] == country) & (insights_df['dimension_filter'] == "Total")]
+    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df, insights_df)
 
 
 @callback(
