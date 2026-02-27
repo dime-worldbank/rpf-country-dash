@@ -838,7 +838,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     )
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{customdata[0]}}<extra></extra>"
+        + "<b>Per capita expenditure:</b> %{customdata[0]}<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
@@ -1181,8 +1181,8 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
     currency_code = country_data["basic_country_info"][country]["currency_code"]
-    df['expenditure_formatted'] = df['expenditure'].apply(lambda x: f"{format_currency(x, currency_code)}")
-    df['per_capita_expenditure_formatted'] = df['per_capita_expenditure'].apply(lambda x: f"{format_currency(x, currency_code)}")
+    add_currency_column(df, 'expenditure', currency_code)
+    add_currency_column(df, 'per_capita_expenditure', currency_code)
 
     if df.empty or year not in df.year.unique():
         return empty_plot("No expenditure data available for the selected year")
