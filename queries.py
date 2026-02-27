@@ -173,7 +173,7 @@ class QueryService:
     def get_basic_country_data(self, countries):
         country_list = "', '".join(countries)
         query = f"""
-            SELECT country_name, display_lon, display_lat, zoom, income_level
+            SELECT country_name, display_lon, display_lat, zoom, income_level, currency_name, currency_code
             FROM prd_mega.{INDICATOR_SCHEMA}.country
             WHERE country_name IN ('{country_list}')
         """

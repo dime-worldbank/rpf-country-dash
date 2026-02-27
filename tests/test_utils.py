@@ -1,7 +1,8 @@
 import unittest
 import pandas as pd
+import plotly.graph_objects as go
 from pandas.testing import assert_frame_equal
-from utils import filter_country_sort_year, get_correlation_text, calculate_cagr
+from utils import filter_country_sort_year, get_correlation_text, calculate_cagr, format_currency, add_currency_column, format_currency_yaxis
 
 class TestUtils(unittest.TestCase):
 
@@ -88,6 +89,101 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(calculate_cagr(float('nan'), 200, 5))
         self.assertIsNone(calculate_cagr(0, 200, 5))
         self.assertIsNone(calculate_cagr(-100, 200, 5))
+
+class TestFormatCurrency(unittest.TestCase):
+
+    def test_thousands(self):
+        # Bhutan: 1,000 BTN (Ngultrum) should format as "BTN 1.00 K"
+        result = format_currency(1000, "BTN")
+        self.assertEqual(result, "BTN 1.00 K")
+
+    def test_millions(self):
+        # Kenya: 1.5M KES (Shilling) — typical government budget figure
+        result = format_currency(1_500_000, "KES")
+        self.assertEqual(result, "KES 1.50 M")
+
+    def test_billions(self):
+        # Kenya: 2B KES — national GDP scale
+        result = format_currency(2_000_000_000, "KES")
+        self.assertEqual(result, "KES 2.00 B")
+
+    def test_small_value(self):
+        # Bhutan: 250 BTN — values under 1000 have no suffix
+        result = format_currency(250, "BTN")
+        self.assertEqual(result, "BTN 250.00")
+
+    def test_zero(self):
+        # Zero value edge case with Kenyan Shilling
+        result = format_currency(0, "KES")
+        self.assertEqual(result, "KES 0.00")
+
+    def test_currency_code_used(self):
+        # Ensure the BTN prefix appears in the output
+        result = format_currency(5000, "BTN")
+        self.assertTrue(result.startswith("BTN "))
+
+
+
+class TestAddCurrencyColumn(unittest.TestCase):
+
+    def setUp(self):
+        self.df = pd.DataFrame({
+            "expenditure": [1_000, 500_000, 2_000_000_000],
+            "country": ["Bhutan", "Kenya", "Kenya"]
+        })
+
+    def test_formatted_column_created(self):
+        add_currency_column(self.df, "expenditure", "BTN")
+        self.assertIn("expenditure_formatted", self.df.columns)
+
+    def test_formatted_values_correct_btn(self):
+        add_currency_column(self.df, "expenditure", "BTN")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "BTN 1.00 K")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "BTN 500.00 K")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "BTN 2.00 B")
+
+    def test_formatted_values_correct_kes(self):
+        add_currency_column(self.df, "expenditure", "KES")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "KES 1.00 K")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "KES 500.00 K")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "KES 2.00 B")
+
+    def test_original_column_unchanged(self):
+        add_currency_column(self.df, "expenditure", "BTN")
+        self.assertEqual(self.df["expenditure"].iloc[0], 1_000)
+
+
+class TestFormatCurrencyYaxis(unittest.TestCase):
+
+    def setUp(self):
+        self.fig = go.Figure()
+
+    def test_yaxis_title_includes_currency_btn(self):
+        # Bhutan Ngultrum on a GDP chart
+        result = format_currency_yaxis(self.fig, "BTN", "GDP")
+        self.assertEqual(result.layout.yaxis.title.text, "GDP (BTN)")
+
+    def test_yaxis_title_includes_currency_kes(self):
+        # Kenya Shilling on a government expenditure chart
+        result = format_currency_yaxis(self.fig, "KES", "Government Expenditure")
+        self.assertEqual(result.layout.yaxis.title.text, "Government Expenditure (KES)")
+
+    def test_default_xaxis_tickformat(self):
+        result = format_currency_yaxis(self.fig, "KES", "GDP")
+        self.assertEqual(result.layout.xaxis.tickformat, "d")
+
+    def test_custom_xaxis_tickformat(self):
+        result = format_currency_yaxis(self.fig, "BTN", "GDP", x_format=".2f")
+        self.assertEqual(result.layout.xaxis.tickformat, ".2f")
+
+    def test_yaxis_is_fixed_range(self):
+        result = format_currency_yaxis(self.fig, "KES", "GDP")
+        self.assertTrue(result.layout.yaxis.fixedrange)
+
+    def test_returns_figure(self):
+        result = format_currency_yaxis(self.fig, "BTN", "GDP")
+        self.assertIsInstance(result, go.Figure)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,10 +8,12 @@ import traceback
 from dash import html
 from components.year_slider import get_slider_config
 from utils import (
+    add_currency_column,
     add_disputed_overlay,
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
+    format_currency,
     generate_error_prompt,
     get_correlation_text,
     millify,
@@ -34,7 +36,7 @@ def update_year_slider(data, country, func):
     return get_slider_config(expenditure_years, outcome_years)
 
 
-def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func):
+def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code):
     if not func_econ_data or not sub_func_data or not country:
         return
 
@@ -54,8 +56,8 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
 
-    fig1 = _central_vs_regional_fig(data_by_func_sub_geo0, func)
-    fig2 = _sub_func_fig(data_by_func_sub_geo0, func)
+    fig1 = _central_vs_regional_fig(data_by_func_sub_geo0, func, currency_code)
+    fig2 = _sub_func_fig(data_by_func_sub_geo0, func, currency_code)
 
     narrative = _sub_func_narrative(
         data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func
@@ -67,7 +69,7 @@ def _subset_data(stored_data, year, country, func):
     data = filter_country_sort_year(data, country)
     return data.loc[(data.func == func) & (data.year == year)]
 
-def _central_vs_regional_fig(data, func):
+def _central_vs_regional_fig(data, func, currency_code):
     fig_title = f"Where was {func.lower()} spending directed?"
     central_vs_regional = (
         data.groupby("geo0").sum(numeric_only=True).reset_index()
@@ -75,6 +77,7 @@ def _central_vs_regional_fig(data, func):
     if central_vs_regional.empty:
         return empty_plot("No data available for this period", fig_title)
 
+    add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
     fig = go.Figure(
         data=[
             go.Pie(
@@ -82,11 +85,8 @@ def _central_vs_regional_fig(data, func):
                 values=central_vs_regional["real_expenditure"],
                 hole=0.5,
                 marker=dict(colors=["rgb(17, 141, 255)", "rgb(160, 209, 255)"]),
-                customdata=[
-                    millify(x)
-                    for x in np.stack(central_vs_regional["real_expenditure"])
-                ],
-                hovertemplate="<b>Real expenditure</b>: $%{customdata}<br>"
+                customdata=np.stack(central_vs_regional["real_expenditure_formatted"]),
+                hovertemplate="<b>Real expenditure</b>: %{customdata}<br>"
                 + "<extra></extra>",
             )
         ]
@@ -98,7 +98,7 @@ def _central_vs_regional_fig(data, func):
     )
     return fig
 
-def _sub_func_fig(data, func):
+def _sub_func_fig(data, func, currency_code):
     fig_title = f"How much did the gov spend on different levels of {func.lower()}?"
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
  
@@ -118,9 +118,9 @@ def _sub_func_fig(data, func):
         parent_totals[row["func_sub"]] = row["expenditure"]
         ids.append(row["func_sub"])
         parents.append("")
-        labels.append(f"{row['func_sub']}<br>{millify(row['expenditure'])} ({percent_of_total:.0f}%)")
+        labels.append(f"{row['func_sub']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_total:.0f}%)")
         values.append(row["expenditure"])
-        hover_texts.append(f"Real expenditure: {millify(row['real_expenditure'])}")
+        hover_texts.append(f"Real expenditure: {format_currency(row['real_expenditure'], currency_code)}")
 
     data_grouped = (
         data.groupby(["func_sub", "geo0"], sort=False).sum(numeric_only=True).reset_index()
@@ -135,8 +135,8 @@ def _sub_func_fig(data, func):
         parents.append(parent)
         values.append(row["expenditure"])
 
-        labels.append(f"{row['geo0']}<br>{millify(row['expenditure'])} ({percent_of_parent:.0f}%)")
-        hover_texts.append(f"Real expenditure: {millify(row['real_expenditure'])}")
+        labels.append(f"{row['geo0']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
+        hover_texts.append(f"Real expenditure: {format_currency(row['real_expenditure'], currency_code)}")
 
     fig.add_trace(
         go.Treemap(
@@ -205,6 +205,7 @@ def update_func_expenditure_map(
     subnat_boundaries,
     func,
 ):
+
     if (
         not subnational_data
         or not country_data
@@ -213,6 +214,7 @@ def update_func_expenditure_map(
     ):
         return empty_plot("Data not available")
 
+    currency_code = country_data['basic_country_info'][country]['currency_code']
     df = _subset_data(
         subnational_data['expenditure_and_outcome_by_country_geo1_func_year'],
         year, country, func
@@ -235,6 +237,10 @@ def update_func_expenditure_map(
     ]
     zoom = country_data["basic_country_info"][country]["zoom"]
 
+    # Drop NaN values and format
+    df = df.dropna(subset=[expenditure_type])
+    add_currency_column(df, expenditure_type, currency_code)
+
     # Identify regions without data
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
@@ -242,18 +248,22 @@ def update_func_expenditure_map(
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
+    
 
     fig = px.choropleth_mapbox(
         df,
         geojson=filtered_geojson,
         color=expenditure_type,
+        custom_data=[expenditure_type + '_formatted'],
         locations="adm1_name",
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         mapbox_style="carto-positron",
+        hover_data={expenditure_type: False}  # Hide raw value
     )
 
+    # Add trace for regions without data
     no_data_trace = px.choropleth_mapbox(
         df_no_data,
         geojson=filtered_geojson,
@@ -262,7 +272,7 @@ def update_func_expenditure_map(
         featureidkey="properties.region",
         zoom=zoom,
     ).data[0]
-
+    
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False
     no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{expenditure_type.replace('_', ' ').title()}:</b> Data not available<extra></extra>"
@@ -270,7 +280,7 @@ def update_func_expenditure_map(
 
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
-        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{z:,.2f}}<extra></extra>"
+        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{customdata[0]}}<extra></extra>"
     )
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
@@ -358,6 +368,7 @@ def update_hd_index_map(
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
     ]
+    df.dropna(subset=["outcome_index"], inplace=True)
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
@@ -372,6 +383,14 @@ def update_hd_index_map(
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         mapbox_style="carto-positron",
+    )
+
+    formatted_outcome_index = df['outcome_index'].map(format_fn).values
+    fig.update_traces(
+        customdata=formatted_outcome_index,
+        hovertemplate="<b>Region:</b> %{location}<br>"
+            + f"<b>{outcome_name}:</b> " + "%{customdata}<br>"
+            + "<extra></extra>",
     )
 
     no_data_trace = px.choropleth_mapbox(
@@ -430,7 +449,7 @@ def update_hd_index_map(
     return fig
 
 
-def render_func_subnat_rank(subnational_data, country, base_year, func):
+def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code):
     if not subnational_data or not country:
         return
 
@@ -459,7 +478,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func):
     dest = list(data_outcome_sorted.adm1_name)
     node_custom_data = [
         (
-            f"${millify(data_expenditure_sorted.iloc[i]['per_capita_expenditure'])}",
+            f"{format_currency(data_expenditure_sorted.iloc[i]['per_capita_expenditure'], currency_code)}",
             data_expenditure_sorted.iloc[i]["adm1_name"],
         )
         for i in range(n)

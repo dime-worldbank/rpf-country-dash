@@ -9,8 +9,10 @@ import traceback
 from constants import MAP_DISCLAIMER
 from queries import QueryService
 from utils import (
+    add_currency_column,
     empty_plot,
     filter_country_sort_year,
+    format_currency,
     generate_error_prompt,
     get_correlation_text,
     get_percentage_change_text,
@@ -401,34 +403,44 @@ def render_health_content(tab):
         )
 
 
-def total_health_figure(df):
+def total_health_figure(df, currency_code):
     fig = go.Figure()
 
     if df is None:
         return fig
+    add_currency_column(df, 'real_expenditure', currency_code)
+    add_currency_column(df, 'central_expenditure', currency_code)
+    add_currency_column(df, 'decentralized_expenditure', currency_code)
     fig.add_trace(
         go.Scatter(
             name="Inflation Adjusted",
+            customdata=df['real_expenditure_formatted'],
             x=df.year,
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
+            hovertemplate="<b>Real Expenditure</b>: %{customdata}<extra></extra>",
+
         ),
     )
     fig.add_trace(
         go.Bar(
             name="Central",
+            customdata=df['central_expenditure_formatted'],
             x=df.year,
             y=df.central_expenditure,
             marker_color="rgb(17, 141, 255)",
+            hovertemplate="<b>Real Central Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
     fig.add_trace(
         go.Bar(
             name="Regional",
+            customdata=df['decentralized_expenditure_formatted'],
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
+            hovertemplate="<b>Real Decentralized Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
 
@@ -436,7 +448,7 @@ def total_health_figure(df):
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
-        hovermode="x",
+        hovermode="x unified",
         title="How has govt spending on health changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
@@ -530,9 +542,10 @@ def health_narrative(data, country, insight_df):
     Output("health-narrative", "children"),
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
     Input("stored-data-insights", "data"),
 )
-def render_overview_total_figure(data, country, insights_data):
+def render_overview_total_figure(data, country, country_data, insights_data):
     if data is None:
         return None
 
@@ -544,14 +557,14 @@ def render_overview_total_figure(data, country, insights_data):
             empty_plot("No data available for this period"),
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
-
+    currency_code = country_data['basic_country_info'][country]['currency_code']
     insights_df = pd.DataFrame(insights_data["expenditure_insights"])
     insight_df = insights_df[
         (insights_df["country_name"] == country) &
         (insights_df["dimension_filter"] == "Health")
     ]
 
-    fig = total_health_figure(df)
+    fig = total_health_figure(df, currency_code)
     return fig, health_narrative(data, country, insight_df)
 
 
@@ -585,12 +598,14 @@ def public_private_narrative(df, country):
     Input("stored-data-health-private", "data"),
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
 )
-def render_public_private_figure(private_data, public_data, country):
+def render_public_private_figure(private_data, public_data, country, country_data):
     if not private_data or not public_data:
         return
 
     fig_title = "What % was spent by the govt vs household?"
+    currency_code = country_data['basic_country_info'][country]['currency_code']
 
     private = pd.DataFrame(private_data["health_private_expenditure"])
     private = filter_country_sort_year(private, country)
@@ -627,16 +642,11 @@ def render_public_private_figure(private_data, public_data, country):
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    merged["real_expenditure_private_formatted"] = merged[
-        "real_expenditure_private"
-    ].apply(millify)
+    add_currency_column(merged, 'real_expenditure_private', currency_code)
+    add_currency_column(merged, 'real_expenditure_public', currency_code)
 
     fig = go.Figure()
 
-
-    merged["real_expenditure_public_formatted"] = merged[
-        "real_expenditure_public"
-    ].apply(millify)
     fig.add_trace(
         go.Bar(
             name="Public Expenditure",
@@ -644,7 +654,7 @@ def render_public_private_figure(private_data, public_data, country):
             x=merged.public_percentage,
             orientation="h",
             customdata=merged.real_expenditure_public_formatted,
-            hovertemplate="$%{customdata}",
+            hovertemplate="<b>Real Public Expenditure </b>: %{customdata}<extra></extra>",
             marker=dict(
                 color="darkblue",
             ),
@@ -661,7 +671,7 @@ def render_public_private_figure(private_data, public_data, country):
             x=merged.private_percentage,
             orientation="h",
             customdata=merged.real_expenditure_private_formatted,
-            hovertemplate="%{customdata}",
+            hovertemplate="<b>Real Private Expenditure</b>: %{customdata}<extra></extra>",
             marker=dict(
                 color="rgb(255, 191, 0)",
             ),
@@ -726,8 +736,9 @@ def outcome_narrative(outcome_df, expenditure_df, country):
     Input("stored-data-health-outcome", "data"),
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
 )
-def render_health_outcome(outcome_data, total_data, country):
+def render_health_outcome(outcome_data, total_data, country, country_data):
     if not total_data or not outcome_data:
         return
 
@@ -736,7 +747,9 @@ def render_health_outcome(outcome_data, total_data, country):
 
     pub_exp = pd.DataFrame(total_data["health_public_expenditure"])
     pub_exp = filter_country_sort_year(pub_exp, country)
-
+    currency_code = country_data['basic_country_info'][country]['currency_code']
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
+    
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
@@ -747,6 +760,7 @@ def render_health_outcome(outcome_data, total_data, country):
             mode="lines+markers",
             line=dict(color="deeppink", shape="spline", dash="dot"),
             connectgaps=True,
+            hovertemplate="UHC Index: %{y:.1f}<extra></extra>",
         ),
         secondary_y=True,
     )
@@ -754,17 +768,20 @@ def render_health_outcome(outcome_data, total_data, country):
     fig.add_trace(
         go.Scatter(
             name="Inflation adjusted per capita public spending",
+            customdata=pub_exp['per_capita_real_expenditure_formatted'],
             x=pub_exp.year,
             y=pub_exp.per_capita_real_expenditure,
             mode="lines",
             marker_color="darkblue",
             opacity=0.6,
+            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata}<extra></extra>",
         ),
         secondary_y=False,
     )
 
     fig.update_layout(
         plot_bgcolor="white",
+        hovermode="x unified",
         height=500,
         legend=dict(
             orientation="h",
@@ -787,7 +804,7 @@ def render_health_outcome(outcome_data, total_data, country):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text="Source: UHC: WHO; BOOST: World Bank; Population: UN, Eurostat",
+                text="Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -839,10 +856,12 @@ def update_health_year_range(data, country):
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
+    Input("stored-basic-country-data", "data"),
 )
-def render_health_subnat_overview(func_data, sub_func_data, country, selected_year):
+def render_health_subnat_overview(func_data, sub_func_data, country, selected_year, country_data):
+    currency_code = country_data['basic_country_info'][country]['currency_code']
     return render_func_subnat_overview(
-        func_data, sub_func_data, country, selected_year, 'Health'
+        func_data, sub_func_data, country, selected_year, 'Health', currency_code
     )
 
 @callback(
@@ -895,6 +914,8 @@ def update_health_index_map(
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
+    Input("stored-basic-country-data", "data"),
 )
-def render_health_subnat_rank(subnational_data, country, base_year):
-    return render_func_subnat_rank(subnational_data, country, base_year, 'Health')
+def render_health_subnat_rank(subnational_data, country, base_year, country_data):
+    currency_code = country_data['basic_country_info'][country]['currency_code']
+    return render_func_subnat_rank(subnational_data, country, base_year, 'Health', currency_code)

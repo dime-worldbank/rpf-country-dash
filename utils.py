@@ -421,3 +421,21 @@ def add_disputed_overlay(fig, disputed_geojson, zoom):
             lons, lats = zip(*exterior)
             add_dashed_line(lons, lats)
     return fig
+
+
+def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
+    """Format chart axes with currency unit."""
+    fig.update_xaxes(tickformat=x_format)
+    fig.update_yaxes(fixedrange=True, title_text=f"{y_title} ({currency_name})")
+    return fig
+
+
+def format_currency(value, currency_code):
+    """Format a number as currency with the given currency code."""
+    return f"{currency_code} {millify(value)}"
+
+
+def add_currency_column(df, column_name, currency_code):
+    df[f'{column_name}_formatted'] = df[column_name].apply(lambda x: format_currency(x, currency_code))
+
+

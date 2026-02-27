@@ -8,11 +8,15 @@ from utils import add_disputed_overlay
 from plotly.subplots import make_subplots
 import numpy as np
 from utils import (
+    add_currency_column,
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
     remove_accents,
     require_login,
+    format_currency_yaxis,
+    format_currency,
+    millify
 )
 
 from components import slider, get_slider_config, pefa, budget_increment_analysis, get_segment_narrative
@@ -381,8 +385,11 @@ def render_overview_content(tab):
         )
 
 
-def total_figure(df):
+def total_figure(df, currency_name, currency_code):
     fig = go.Figure()
+    add_currency_column(df, 'real_expenditure', currency_code)
+    df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code))
+    add_currency_column(df, 'decentralized_expenditure', currency_code)
     fig.add_trace(
         go.Scatter(
             name="Inflation Adjusted",
@@ -390,6 +397,8 @@ def total_figure(df):
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
+            customdata=np.column_stack([df['real_expenditure_formatted']]),
+            hovertemplate="Inflation Adjusted Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
@@ -398,6 +407,8 @@ def total_figure(df):
             x=df.year,
             y=df.expenditure - df.decentralized_expenditure,
             marker_color="rgb(17, 141, 255)",
+            customdata=np.column_stack([df['central_expenditure_formatted']]),
+            hovertemplate="Central Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
@@ -406,16 +417,18 @@ def total_figure(df):
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color="rgb(160, 209, 255)",
+            customdata=np.column_stack([df['decentralized_expenditure_formatted']]),
+            hovertemplate="Regional Expenditure: %{customdata[0]}<extra></extra>",
         )
     )
 
-    fig.update_xaxes(tickformat="d")
-    fig.update_yaxes(fixedrange=True)
+    format_currency_yaxis(fig, currency_name, "Total Expenditure")
     fig.update_layout(
         barmode="stack",
         title="How has total expenditure changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
+        hovermode="x unified",
         annotations=[
             dict(
                 xref="paper",
@@ -432,7 +445,9 @@ def total_figure(df):
     return fig
 
 
-def per_capita_figure(df):
+def per_capita_figure(df, currency_name, currency_code):
+    add_currency_column(df, 'per_capita_expenditure', currency_code)
+    add_currency_column(df, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
@@ -456,6 +471,8 @@ def per_capita_figure(df):
             y=df.per_capita_real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
+            customdata=np.column_stack([df['per_capita_real_expenditure_formatted']]),
+            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -465,18 +482,21 @@ def per_capita_figure(df):
             x=df.year,
             y=df.per_capita_expenditure,
             marker_color="#686dc3",
+            customdata=np.column_stack([df['per_capita_expenditure_formatted']]),
+            hovertemplate="Per Capita Public Spending: %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
 
     fig.update_xaxes(tickformat="d")
-    fig.update_yaxes(title_text="Per Capita Expenditure", secondary_y=False)
+    fig.update_yaxes(title_text=f"Per Capita Expenditure ({currency_name})", secondary_y=False, fixedrange=True)
     fig.update_yaxes(
         title_text="Poverty Rate (%)",
         secondary_y=True,
         range=[-1, 100],
     )
     fig.update_layout(
+        hovermode="x unified",
         barmode="stack",
         title="How has per capita expenditure changed over time?",
         plot_bgcolor="white",
@@ -487,7 +507,7 @@ def per_capita_figure(df):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text="Source: BOOST, CPI, Poverty Rate: World Bank; Population: UN, Eurostat",
+                text="Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -535,10 +555,10 @@ def functional_figure(df):
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=FUNC_COLORS[cat],
-                customdata=cat_df["expenditure"],
+                customdata=cat_df["expenditure_formatted"],
                 hovertemplate=(
                     "<b>Year</b>: %{x}<br>"
-                    "<b>Expenditure</b>: %{customdata:,} (%{y:.1f}%)"
+                    "<b>Expenditure</b>: %{customdata} (%{y:.1f}%)"
                 ),
             )
         )
@@ -640,6 +660,7 @@ def format_func_cat(row):
 def subnational_spending_narrative(
     df_spending,
     df_poverty,
+    currency_code,
     top_n=3,
     exp_thresh=0.5,
     per_capita_thresh=1000,
@@ -671,11 +692,11 @@ def subnational_spending_narrative(
 
     exp_narrative.append( html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
     if per_capita_range > per_capita_thresh:
-        per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {per_capita_expenditure.min():,.2f} \
-            to {per_capita_expenditure.max():,.2f}, with a median of {per_capita_median:,.2f}. This indicates substantial variation in resource allocation per person."
+        per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {format_currency(per_capita_expenditure.min(), currency_code)} \
+            to {format_currency(per_capita_expenditure.max(), currency_code)}, with a median of {format_currency(per_capita_median, currency_code)}. This indicates substantial variation in resource allocation per person."
     else:
-        per_capita_narrative = f"Per capita spending ranges from {per_capita_expenditure.min():,.2f} to {per_capita_expenditure.max():,.2f}, \
-            with a median of {per_capita_median:,.2f}. The distribution is relatively even across regions."
+        per_capita_narrative = f"Per capita spending ranges from {format_currency(per_capita_expenditure.min(), currency_code)} to {format_currency(per_capita_expenditure.max(), currency_code)}, \
+            with a median of {format_currency(per_capita_median, currency_code)}. The distribution is relatively even across regions."
     if not df_poverty.empty:
         if abs(correlation) > corr_thresholds[1]:
             corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f},\
@@ -703,6 +724,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     country_name = df.country_name.iloc[0]
     fig = px.choropleth_mapbox(
         df,
+        custom_data=["expenditure_formatted"],
         geojson=geojson,
         color="expenditure",
         locations="adm1_name",
@@ -725,7 +747,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     no_data_trace.showlegend = False
     no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> Data not available<extra></extra>"
     fig.add_trace(no_data_trace)
-
+    
     fig.update_layout(
         title="How much was spent in each region?",
         plot_bgcolor="white",
@@ -742,7 +764,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text="Regional spending. Source: BOOST",
+                text="Regional Spending. Source: BOOST",
                 showarrow=False,
                 font=dict(size=10),
             )
@@ -777,6 +799,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
         mapbox_style="carto-positron",
         zoom=zoom,
         range_color=[zmin, zmax],
+        custom_data=["per_capita_expenditure_formatted"]
     )
 
     no_data_trace = px.choropleth_mapbox(
@@ -807,7 +830,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
                 yref="paper",
                 x=0,
                 y=-0.2,
-                text="Per capita regional spending. Source: BOOST",
+                text=" Regional Spending. Source: BOOST",
                 showarrow=False,
                 font=dict(size=10),
             )
@@ -815,7 +838,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
     )
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{z}<extra></extra>"
+        + "<b>Per capita expenditure:</b> %{customdata[0]}<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 
@@ -855,6 +878,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         zoom=zoom,
         range_color=[zmin, zmax],
         mapbox_style="carto-positron",
+        hover_data={"region_name": True, poverty_col: ":.2f"},
     )
     # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
 
@@ -865,6 +889,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         locations="region_name",
         featureidkey="properties.region",
         zoom=zoom,
+        hover_data={"region_name": True},
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
@@ -934,15 +959,21 @@ def update_heading(country):
     Output("overview-per-capita", "figure"),
     Output("overview-narrative", "children"),
     Input("stored-data", "data"),
+    Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
     Input("stored-data-insights", "data")
 )
-def render_overview_total_figure(data, country, insights_data):
+def render_overview_total_figure(data, basic_country_data, country, insights_data):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
+    
+    # Extract currency_name once at callback level
+    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
+    currency_name = basic_info['currency_name']
+    currency_code = basic_info['currency_code']
     insights_df = pd.DataFrame(insights_data["expenditure_insights"])
     insights_df = insights_df[(insights_df["country_name"] == country) & (insights_df['dimension_filter'] == "Total")]
-    return total_figure(df), per_capita_figure(df), overview_narrative(df, insights_df)
+    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df, insights_df)
 
 
 @callback(
@@ -950,8 +981,9 @@ def render_overview_total_figure(data, country, insights_data):
     Output("functional-narrative", "children"),
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
+    Input('stored-basic-country-data', 'data')
 )
-def render_overview_func_figure(data, country):
+def render_overview_func_figure(data, country, basic_country_data):
     all_countries = pd.DataFrame(data["expenditure_by_country_func_year"])
     func_df = filter_country_sort_year(all_countries, country)
     total_per_year = func_df.groupby("year")["expenditure"].sum().reset_index()
@@ -959,6 +991,10 @@ def render_overview_func_figure(data, country):
     func_df["percentage"] = (
         func_df["expenditure"] / func_df["expenditure_total"]
     ) * 100
+    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    func_df["expenditure_formatted"] = func_df["expenditure"].apply(
+        lambda x: format_currency(x, currency_code)
+    )
 
     return functional_figure(func_df), functional_narrative(func_df)
 
@@ -968,8 +1004,9 @@ def render_overview_func_figure(data, country):
     Output("economic-narrative", "children"),
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
+    Input('stored-basic-country-data', 'data')
 )
-def render_overview_econ_figure(data, country):
+def render_overview_econ_figure(data, country, basic_country_data):
     all_countries = pd.DataFrame(data["expenditure_by_country_econ_year"])
     econ_df = filter_country_sort_year(all_countries, country)
     total_per_year = econ_df.groupby("year")["expenditure"].sum().reset_index()
@@ -978,7 +1015,9 @@ def render_overview_econ_figure(data, country):
         econ_df["expenditure"] / econ_df["expenditure_total"]
     ) * 100
 
-    return economic_figure(econ_df), economic_narrative(econ_df)
+    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+
+    return economic_figure(econ_df, currency_code), economic_narrative(econ_df)
 
 
 ECON_CAT_MAP = {
@@ -998,23 +1037,27 @@ ECON_COLORS = {
 }
 
 
-def economic_figure(df):
+def economic_figure(df, currency_code):
     categories = sorted(df.econ.unique(), reverse=True)
 
     fig = go.Figure()
 
     for cat in categories:
         cat_df = df[df.econ == cat]
+        cat_df_with_formatted = cat_df.copy()
+        cat_df_with_formatted['expenditure_formatted'] = cat_df_with_formatted['expenditure'].apply(
+            lambda x: format_currency(x, currency_code)
+        )
         fig.add_trace(
             go.Bar(
                 name=ECON_CAT_MAP[cat],
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=ECON_COLORS[cat],
-                customdata=cat_df["expenditure"],
+                customdata=np.column_stack([cat_df_with_formatted['expenditure_formatted']]),
                 hovertemplate=(
                     "<b>Year</b>: %{x}<br>"
-                    "<b>Expenditure</b>: %{customdata:,} (%{y:.1f}%)"
+                    "<b>Expenditure</b>: %{customdata} (%{y:.1f}%)"
                 ),
             )
         )
@@ -1137,6 +1180,9 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     df = pd.DataFrame(data["expenditure_by_country_geo1_year"])
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
+    currency_code = country_data["basic_country_info"][country]["currency_code"]
+    add_currency_column(df, 'expenditure', currency_code)
+    add_currency_column(df, 'per_capita_expenditure', currency_code)
 
     if df.empty or year not in df.year.unique():
         return empty_plot("No expenditure data available for the selected year")
@@ -1245,6 +1291,7 @@ def render_subnational_spending_narrative(
     available_years = country_data["basic_country_info"][country].get(
         "poverty_years", []
     )
+    currency_code = country_data["basic_country_info"][country]["currency_code"]
     relevant_years = [x for x in available_years if x <= year]
 
     if not relevant_years or df_poverty.empty:
@@ -1259,7 +1306,7 @@ def render_subnational_spending_narrative(
     if df_spending.empty:
         return "No spending data available"
 
-    return subnational_spending_narrative(df_spending, df_poverty)
+    return subnational_spending_narrative(df_spending, df_poverty, currency_code)
 
 
 @callback(
