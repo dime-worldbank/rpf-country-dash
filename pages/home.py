@@ -19,7 +19,7 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis
+from components import slider, get_slider_config, pefa, budget_increment_analysis, get_segment_narrative
 from components.disclaimer_div import disclaimer_tooltip
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from queries import QueryService
@@ -517,34 +517,16 @@ def per_capita_figure(df, currency_name, currency_code):
     return fig
 
 
-def overview_narrative(df):
+def overview_narrative(df, insight_df):
     country = df.country_name.iloc[0]
-    earliest = df[df.year == df.year.min()].iloc[0].to_dict()
+    trend_narrative = get_segment_narrative(insight_df)
+    if trend_narrative:
+        trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
+        text = f"After accounting for inflation, {trend_narrative} "
+    else:
+        text = ""
     latest = df[df.year == df.year.max()].iloc[0].to_dict()
-    start_year = earliest["year"]
     end_year = latest["year"]
-    latest_year_with_real_exp = df[df.real_expenditure.notnull()].year.max()
-    latest_real_exp = df[df.year == latest_year_with_real_exp].iloc[0].to_dict()
-
-    total_percent_diff = (
-        100
-        * (latest_real_exp["real_expenditure"] - earliest["real_expenditure"])
-        / earliest["real_expenditure"]
-    )
-    total_trend = "increased" if total_percent_diff > 0 else "decreased"
-
-    per_capita_percent_diff = (
-        100
-        * (
-            latest_real_exp["per_capita_real_expenditure"]
-            - earliest["per_capita_real_expenditure"]
-        )
-        / earliest["per_capita_real_expenditure"]
-    )
-    per_capita_trend = "increased" if per_capita_percent_diff > 0 else "decreased"
-
-    text = f"After accounting for inflation, total public spending has {total_trend} by {total_percent_diff:.1f}% and per capita spending has {per_capita_trend} by {per_capita_percent_diff:.1f}% between {start_year} and {latest_year_with_real_exp}. "
-
     decentral_mean = df.expenditure_decentralization.mean() * 100
     decentral_latest = latest["expenditure_decentralization"] * 100
     decentral_text = f"On average, {decentral_mean:.1f}% of total public spending is executed by local/regional government. "
@@ -557,6 +539,8 @@ def overview_narrative(df):
     )
 
     return text
+
+
 
 
 def functional_figure(df, currency_name):
@@ -978,16 +962,12 @@ def update_heading(country):
     Input("stored-data", "data"),
     Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
+    Input("stored-data-insights", "data")
 )
-def render_overview_total_figure(data, basic_country_data, country):
+def render_overview_total_figure(data, basic_country_data, country, insights_data):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
-    
-    # Extract currency_name once at callback level
-    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
-    currency_name = basic_info['currency_name']
-    currency_code = basic_info['currency_code']
-    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df)
+    return total_figure(df), per_capita_figure(df), overview_narrative(df)
 
 
 @callback(

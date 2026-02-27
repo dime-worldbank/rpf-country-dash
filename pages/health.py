@@ -28,6 +28,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
+from components import get_segment_narrative
 
 db = QueryService.get_instance()
 
@@ -467,18 +468,20 @@ def total_health_figure(df, currency_code, currency_name):
     return fig
 
 
-def health_narrative(data, country, currency_code):
+def health_narrative(data, country, insight_df, currency_code):
     spending = pd.DataFrame(data["health_public_expenditure"])
     spending = filter_country_sort_year(spending, country)
     spending.dropna(subset=["real_expenditure", "central_expenditure"], inplace=True)
 
     start_year = spending.year.min()
     end_year = spending.year.max()
-    start_value = spending[spending.year == start_year].real_expenditure.values[0]
-    end_value = spending[spending.year == end_year].real_expenditure.values[0]
-    spending_growth_rate = (end_value - start_value) / start_value
-    trend = "increased" if end_value > start_value else "decreased"
-    text = f"Between {start_year} and {end_year} after adjusting for inflation, total public spending on health in {country} has {trend} from {format_currency(start_value, currency_code)} to {format_currency(end_value, currency_code)}, reflecting a growth rate of {spending_growth_rate:.0%}. "
+
+    trend_narrative = get_segment_narrative(insight_df)
+    if trend_narrative:
+        trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
+        text = f"After accounting for inflation, {trend_narrative} "
+    else:
+        text = ""
 
     spending["real_central_expenditure"] = (
         spending.real_expenditure / spending.expenditure * spending.central_expenditure
@@ -540,8 +543,9 @@ def health_narrative(data, country, currency_code):
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-data-insights", "data"),
 )
-def render_overview_total_figure(data, country, country_data):
+def render_overview_total_figure(data, country, country_data, insights_data):
     if data is None:
         return None
 
@@ -555,8 +559,14 @@ def render_overview_total_figure(data, country, country_data):
         )
     currency_code = country_data['basic_country_info'][country]['currency_code']
     currency_name = country_data['basic_country_info'][country]['currency_name']
+    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
+    insight_df = insights_df[
+        (insights_df["country_name"] == country) &
+        (insights_df["dimension_filter"] == "Health")
+    ]
+
     fig = total_health_figure(df, currency_code, currency_name)
-    return fig, health_narrative(data, country, currency_code)
+    return fig, health_narrative(data, country, currency_code, insight_df)
 
 
 def public_private_narrative(df, country):
