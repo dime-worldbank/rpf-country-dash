@@ -215,7 +215,6 @@ def update_func_expenditure_map(
         return empty_plot("Data not available")
 
     currency_code = country_data['basic_country_info'][country]['currency_code']
-    currency_name = country_data['basic_country_info'][country]['currency_name']
     df = _subset_data(
         subnational_data['expenditure_and_outcome_by_country_geo1_func_year'],
         year, country, func
@@ -310,7 +309,7 @@ def update_func_expenditure_map(
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text=f"Source: BOOST Database ({currency_name}), World Bank",
+                text="Source: BOOST Database, World Bank",
                 showarrow=False,
                 font=dict(size=12),
             ),

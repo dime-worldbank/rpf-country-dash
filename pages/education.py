@@ -397,7 +397,7 @@ def render_education_content(tab):
         )
 
 
-def total_edu_figure(df, currency_name, currency_code):
+def total_edu_figure(df, currency_code):
     add_currency_column(df, 'central_expenditure', currency_code)
     add_currency_column(df, 'decentralized_expenditure', currency_code)
     add_currency_column(df, 'real_expenditure', currency_code)
@@ -451,7 +451,7 @@ def total_edu_figure(df, currency_name, currency_code):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
+                text="Source: BOOST & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -545,7 +545,6 @@ def render_overview_total_figure(data, basic_country_data, country, insights_dat
     all_countries = pd.DataFrame(data["edu_public_expenditure"])
     df = filter_country_sort_year(all_countries, country)
     basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
-    currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
     
     if df.empty:
@@ -560,7 +559,7 @@ def render_overview_total_figure(data, basic_country_data, country, insights_dat
         (insights_df["dimension_filter"] == "Education")
     ]
 
-    fig = total_edu_figure(df, currency_name, currency_code)
+    fig = total_edu_figure(df, currency_code)
     return fig, education_narrative(data, country, insight_df)
 
 
@@ -601,7 +600,6 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
         return
     
     currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
-    currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
     fig_title = "What % was spent by the govt vs household?"
 
     private = pd.DataFrame(private_data["edu_private_expenditure"])
@@ -691,7 +689,7 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
+                text="Source: BOOST & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -766,7 +764,6 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
     pub_exp = filter_country_sort_year(pub_exp, country)
 
     currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
-    currency_name = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_name']
 
     add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -835,7 +832,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
                 x=-0,
                 y=-0.2,
                 text="Source: Education index measured by years of education: UNDP through GDL. <br>"
-                f"BOOST ({currency_name}), CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
+                "BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )

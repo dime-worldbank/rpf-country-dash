@@ -435,7 +435,7 @@ def total_figure(df, currency_name, currency_code):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text=f"Source: BOOST ({currency_name}) & CPI: World Bank",
+                text="Source: BOOST & CPI: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -507,7 +507,7 @@ def per_capita_figure(df, currency_name, currency_code):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text=f"Source: BOOST ({currency_name}) , CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
+                text="Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -542,7 +542,7 @@ def overview_narrative(df, insight_df):
 
 
 
-def functional_figure(df,currency_name):
+def functional_figure(df):
     categories = sorted(df.func.unique(), reverse=True)
 
     fig = go.Figure()
@@ -576,7 +576,7 @@ def functional_figure(df,currency_name):
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text=f"Expenditure % by COFOG categories. Source: BOOST ({currency_name})",
+                text="Expenditure % by COFOG categories. Source: BOOST",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -714,7 +714,7 @@ def subnational_spending_narrative(
 
 
 
-def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, currency_name):
+def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
@@ -764,7 +764,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text=f"Regional Spending. Source: BOOST ({currency_name})",
+                text="Regional Spending. Source: BOOST",
                 showarrow=False,
                 font=dict(size=10),
             )
@@ -775,7 +775,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     return fig
 
 
-def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, zmax, lat, lon, zoom, currency_name):
+def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, zmax, lat, lon, zoom):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
@@ -830,7 +830,7 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
                 yref="paper",
                 x=0,
                 y=-0.2,
-                text=f" Regional Spending. Source: BOOST ({currency_name})",
+                text=" Regional Spending. Source: BOOST",
                 showarrow=False,
                 font=dict(size=10),
             )
@@ -992,12 +992,11 @@ def render_overview_func_figure(data, country, basic_country_data):
         func_df["expenditure"] / func_df["expenditure_total"]
     ) * 100
     currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
-    currency_name = basic_country_data["basic_country_info"][country]["currency_name"]
     func_df["expenditure_formatted"] = func_df["expenditure"].apply(
         lambda x: format_currency(x, currency_code)
     )
 
-    return functional_figure(func_df, currency_name), functional_narrative(func_df)
+    return functional_figure(func_df), functional_narrative(func_df)
 
 
 @callback(
@@ -1017,9 +1016,8 @@ def render_overview_econ_figure(data, country, basic_country_data):
     ) * 100
 
     currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
-    currency_name = basic_country_data["basic_country_info"][country]["currency_name"]
 
-    return economic_figure(econ_df, currency_code, currency_name), economic_narrative(econ_df)
+    return economic_figure(econ_df, currency_code), economic_narrative(econ_df)
 
 
 ECON_CAT_MAP = {
@@ -1039,7 +1037,7 @@ ECON_COLORS = {
 }
 
 
-def economic_figure(df, currency_code, currency_name):
+def economic_figure(df, currency_code):
     categories = sorted(df.econ.unique(), reverse=True)
 
     fig = go.Figure()
@@ -1077,7 +1075,7 @@ def economic_figure(df, currency_code, currency_name):
                 yref="paper",
                 x=-0.1,
                 y=-0.2,
-                text=f"Expenditure % by economic categories. Source: BOOST ({currency_name})",
+                text="Expenditure % by economic categories. Source: BOOST",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -1183,7 +1181,6 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
     currency_code = country_data["basic_country_info"][country]["currency_code"]
-    currency_name = country_data["basic_country_info"][country]["currency_name"]
     df['expenditure_formatted'] = df['expenditure'].apply(lambda x: f"{format_currency(x, currency_code)}")
     df['per_capita_expenditure_formatted'] = df['per_capita_expenditure'].apply(lambda x: f"{format_currency(x, currency_code)}")
 
@@ -1210,7 +1207,6 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lat,
             lon,
             zoom,
-            currency_name
         )
     else:
         return regional_spending_choropleth(
@@ -1222,7 +1218,6 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lat,
             lon,
             zoom,
-            currency_name
         )
 
 

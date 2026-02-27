@@ -403,7 +403,7 @@ def render_health_content(tab):
         )
 
 
-def total_health_figure(df, currency_code, currency_name):
+def total_health_figure(df, currency_code):
     fig = go.Figure()
 
     if df is None:
@@ -458,7 +458,7 @@ def total_health_figure(df, currency_code, currency_name):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: BOOST ({currency_name}): World Bank",
+                text="Source: BOOST: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -558,14 +558,13 @@ def render_overview_total_figure(data, country, country_data, insights_data):
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
     currency_code = country_data['basic_country_info'][country]['currency_code']
-    currency_name = country_data['basic_country_info'][country]['currency_name']
     insights_df = pd.DataFrame(insights_data["expenditure_insights"])
     insight_df = insights_df[
         (insights_df["country_name"] == country) &
         (insights_df["dimension_filter"] == "Health")
     ]
 
-    fig = total_health_figure(df, currency_code, currency_name)
+    fig = total_health_figure(df, currency_code)
     return fig, health_narrative(data, country, insight_df)
 
 
@@ -607,7 +606,6 @@ def render_public_private_figure(private_data, public_data, country, country_dat
 
     fig_title = "What % was spent by the govt vs household?"
     currency_code = country_data['basic_country_info'][country]['currency_code']
-    currency_name = country_data['basic_country_info'][country]['currency_name']
 
     private = pd.DataFrame(private_data["health_private_expenditure"])
     private = filter_country_sort_year(private, country)
@@ -693,7 +691,7 @@ def render_public_private_figure(private_data, public_data, country, country_dat
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: Household exp: WHO, Public exp from BOOST ({currency_name}): World Bank",
+                text="Source: Household exp: WHO, Public exp from BOOST: World Bank",
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -750,7 +748,6 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     pub_exp = pd.DataFrame(total_data["health_public_expenditure"])
     pub_exp = filter_country_sort_year(pub_exp, country)
     currency_code = country_data['basic_country_info'][country]['currency_code']
-    currency_name = country_data['basic_country_info'][country]['currency_name']
     add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -807,7 +804,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
                 yref="paper",
                 x=-0,
                 y=-0.2,
-                text=f"Source: UHC: WHO; BOOST ({currency_name}): World Bank; <br> Population: UN, Eurostat",
+                text="Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
                 showarrow=False,
                 font=dict(size=12),
             )
