@@ -19,7 +19,8 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis, get_segment_narrative
+from components import slider, get_slider_config, pefa, budget_increment_analysis
+from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from queries import QueryService
@@ -517,9 +518,19 @@ def per_capita_figure(df, currency_name, currency_code):
     return fig
 
 
-def overview_narrative(df, insight_df):
+def overview_narrative(df):
     country = df.country_name.iloc[0]
-    trend_narrative = get_segment_narrative(insight_df)
+
+    # Compute segments on-the-fly (filter only on real_expenditure to match pre-computed)
+    plot_df = (
+        df.dropna(subset=["real_expenditure"])
+        .groupby("year")["real_expenditure"].sum()
+        .reset_index()
+        .sort_values("year")
+    )
+    extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
+    trend_narrative = get_segment_narrative(extractor=extractor, metric="total real expenditure")
+
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
         text = f"After accounting for inflation, {trend_narrative} "
@@ -961,19 +972,16 @@ def update_heading(country):
     Input("stored-data", "data"),
     Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
-    Input("stored-data-insights", "data")
 )
-def render_overview_total_figure(data, basic_country_data, country, insights_data):
+def render_overview_total_figure(data, basic_country_data, country):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
-    
+
     # Extract currency_name once at callback level
     basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
     currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
-    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
-    insights_df = insights_df[(insights_df["country_name"] == country) & (insights_df['dimension_filter'] == "Total")]
-    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df, insights_df)
+    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df)
 
 
 @callback(
