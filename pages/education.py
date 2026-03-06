@@ -733,6 +733,13 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         comparison_format=".1f",
     )
 
+    both_insufficient = (
+        attendance_result["method"] == "insufficient_data" and
+        poverty_result["method"] == "insufficient_data"
+    )
+    if both_insufficient:
+        return "The relationship between education spending and outcomes cannot be determined due to limited data availability."
+
     poverty_narrative = poverty_result["narrative"]
     poverty_narrative = poverty_narrative[0].lower() + poverty_narrative[1:]
     return f"{attendance_result['narrative']} Meanwhile, {poverty_narrative}"
