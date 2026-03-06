@@ -5,11 +5,7 @@ The function signature (insight_df) is kept for compatibility with home.py.
 All logic now lives in: https://github.com/yukinko-iwasaki/trend-narrative
 """
 
-from trend_narrative import (
-    get_segment_narrative as _get_segment_narrative,
-    consolidate_segments,
-    millify,
-)
+from trend_narrative import get_segment_narrative as _get_segment_narrative
 
 
 def get_segment_narrative(insight_df):
