@@ -11,4 +11,7 @@ bcrypt
 dotenv
 plotly==5.22.0
 colormath
--e ../trend-narrative # TODO: update to trend-narrative>=0.3.0 once published
+
+# To test trend correlation usage in local package: -e ../trend-narrative
+# TODO: update to trend-narrative>=0.3.0 once published
+trend-narrative
