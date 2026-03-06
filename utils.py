@@ -136,6 +136,8 @@ millnames = ["", " K", " M", " B", " T"]
 
 def millify(n):
     n = float(n)
+    if math.isnan(n):
+        return "N/A"
     millidx = max(
         0,
         min(

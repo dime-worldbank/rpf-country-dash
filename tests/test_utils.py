@@ -2,7 +2,16 @@ import unittest
 import pandas as pd
 import plotly.graph_objects as go
 from pandas.testing import assert_frame_equal
-from utils import filter_country_sort_year, get_correlation_text, calculate_cagr, format_currency, add_currency_column, format_currency_yaxis
+import math
+from utils import (
+    filter_country_sort_year,
+    get_correlation_text,
+    calculate_cagr,
+    format_currency,
+    add_currency_column,
+    format_currency_yaxis,
+    millify,
+)
 
 class TestUtils(unittest.TestCase):
 
@@ -183,6 +192,29 @@ class TestFormatCurrencyYaxis(unittest.TestCase):
     def test_returns_figure(self):
         result = format_currency_yaxis(self.fig, "BTN", "GDP")
         self.assertIsInstance(result, go.Figure)
+
+
+class TestMillify(unittest.TestCase):
+
+    def test_nan_returns_na(self):
+        result = millify(float('nan'))
+        self.assertEqual(result, "N/A")
+
+    def test_thousands(self):
+        result = millify(1500)
+        self.assertEqual(result, "1.50 K")
+
+    def test_millions(self):
+        result = millify(2_000_000)
+        self.assertEqual(result, "2.00 M")
+
+    def test_small_number(self):
+        result = millify(750)
+        self.assertEqual(result, "750.00")
+
+    def test_zero(self):
+        result = millify(0)
+        self.assertEqual(result, "0.00")
 
 
 if __name__ == '__main__':
