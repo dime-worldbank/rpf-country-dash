@@ -91,14 +91,14 @@ class TestUtils(unittest.TestCase):
         result = get_correlation_text(df, self.x_col, self.y_col)
         self.assertIn("insufficient data points", result)
 
-    def test_outlier_sensitive(self):
+    def test_outlier_robust(self):
+        # Spearman is robust to outliers - the extreme value (100) doesn't flip the correlation
         df = pd.DataFrame({
             "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             "y": [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 100]
         })
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("sensitive to outliers", result)
-        # Should still report the rank-based (Spearman) correlation
+        # Rank-based correlation correctly identifies the inverse relationship
         self.assertIn("inverse relationship", result)
 
     def test_large_sample_significant(self):

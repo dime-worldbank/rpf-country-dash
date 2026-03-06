@@ -284,16 +284,10 @@ def get_correlation_text(df, x_col, y_col):
     if n < THRESHOLD_INSUFFICIENT:
         return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points."
 
-    # Compute correlations (spearmanr returns NaN if either variable has no variance)
+    # Use Spearman (rank-based) correlation - robust to outliers
     spearman_corr, p_value = stats.spearmanr(data[x], data[y])
     if isnan(spearman_corr):
         return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data."
-
-    pearson_corr = data[x].corr(data[y], method="pearson")
-    outlier_sensitive = (
-        not isnan(pearson_corr) and
-        spearman_corr * pearson_corr < 0
-    )
 
     # Determine direction and intensity
     direction = "positive" if spearman_corr > 0 else "inverse"
@@ -318,15 +312,13 @@ def get_correlation_text(df, x_col, y_col):
 
     # Assemble narrative based on confidence level
     if n < THRESHOLD_CORRELATION:
-        intro = f"with only {n} data points, the correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
+        intro = f"with only {n} data points, the rank-based correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
         caveat = "However, this should be interpreted with caution."
     else:
-        intro = f"the correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
+        intro = f"the rank-based correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
         caveat = f"However, {confidence['caveat']}." if confidence["caveat"] else ""
 
-    outlier_note = " Note: this result is sensitive to outliers." if outlier_sensitive else ""
-
-    return f"{intro} {relation}. {association_text} {caveat}{outlier_note}"
+    return f"{intro} {relation}. {association_text} {caveat}".strip()
 
 
 def detect_trend(df, x_col):
