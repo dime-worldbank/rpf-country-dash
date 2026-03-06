@@ -12,6 +12,7 @@ from utils import (
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
+    get_correlation_text,
     remove_accents,
     require_login,
     format_currency_yaxis,
@@ -675,7 +676,6 @@ def subnational_spending_narrative(
     top_n=3,
     exp_thresh=0.5,
     per_capita_thresh=1000,
-    corr_thresholds=(0.3, 0.7),
 ):
     total_expenditure = (
         df_spending.groupby("adm1_name")["expenditure"]
@@ -690,9 +690,6 @@ def subnational_spending_narrative(
     ].mean()
     per_capita_range = per_capita_expenditure.max() - per_capita_expenditure.min()
     per_capita_median = per_capita_expenditure.median()
-    if not df_poverty.empty:
-        poverty_rates = df_poverty.groupby("region_name")["poverty_rate"].mean()
-        correlation = per_capita_expenditure.corr(poverty_rates)
 
     if top_n_percentage > exp_thresh:
         exp_narrative = [
@@ -701,25 +698,30 @@ def subnational_spending_narrative(
     else:
         exp_narrative = [f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."]
 
-    exp_narrative.append( html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
+    exp_narrative.append(html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
+
     if per_capita_range > per_capita_thresh:
         per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {format_currency(per_capita_expenditure.min(), currency_code)} \
             to {format_currency(per_capita_expenditure.max(), currency_code)}, with a median of {format_currency(per_capita_median, currency_code)}. This indicates substantial variation in resource allocation per person."
     else:
         per_capita_narrative = f"Per capita spending ranges from {format_currency(per_capita_expenditure.min(), currency_code)} to {format_currency(per_capita_expenditure.max(), currency_code)}, \
             with a median of {format_currency(per_capita_median, currency_code)}. The distribution is relatively even across regions."
+
+    corr_narrative = ""
     if not df_poverty.empty:
-        if abs(correlation) > corr_thresholds[1]:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f},\
-                indicating a strong inverse relationship. Higher per capita spending is generally associated with lower poverty rates."
-        elif abs(correlation) > corr_thresholds[0]:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f}, \
-                suggesting a moderate inverse relationship. Generally, higher per capita spending is associated with lower poverty, though exceptions exist."
-        else:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f}, \
-                indicating a weak inverse relationship. There is little consistent pattern between higher per capita spending and poverty rates."
-    else:
-        corr_narrative = ""
+        poverty_rates = df_poverty.groupby("region_name")["poverty_rate"].mean()
+        corr_df = pd.DataFrame({
+            "per_capita": per_capita_expenditure,
+            "poverty": poverty_rates
+        }).dropna()
+
+        if len(corr_df) >= 3:
+            corr_narrative = get_correlation_text(
+                corr_df,
+                x_col={"col_name": "poverty", "display": "poverty rates"},
+                y_col={"col_name": "per_capita", "display": "per capita spending"},
+            )
+            corr_narrative = corr_narrative[0].upper() + corr_narrative[1:]
 
     return [f"{per_capita_narrative} {corr_narrative} "] + exp_narrative
 
