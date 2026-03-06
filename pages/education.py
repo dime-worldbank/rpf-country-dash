@@ -13,7 +13,6 @@ from utils import (
     filter_country_sort_year,
     format_currency,
     generate_error_prompt,
-    get_correlation_text,
     get_percentage_change_text,
     millify,
     require_login,
@@ -31,6 +30,7 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components import get_segment_narrative
+from trend_narrative import get_relationship_narrative
 
 db = QueryService.get_instance()
 
@@ -704,40 +704,38 @@ def outcome_measure(country):
     return f"To check if this is the case for {country}, we can use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on education, use school attendance rate of 6-17 year-old children to proximate access to education, and use learning poverty rate as an indicator for education quality."
 
 
-def outcome_narrative(outcome_df, pov_df, expenditure_df, country):
-    try:
-        start_year = expenditure_df.year.min()
-        end_year = expenditure_df.year.max()
+def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code):
+    exp_df = expenditure_df.dropna(subset=["per_capita_real_expenditure"])
+    att_df = outcome_df.dropna(subset=["attendance_6to17yo"])
+    pov_df_clean = pov_df.dropna(subset=["learning_poverty_rate"])
 
-        merged = pd.merge(outcome_df, expenditure_df, on=["year"], how="inner")
-        x_col = {
-            "display": "6-17 year-old school attendance",
-            "col_name": "attendance_6to17yo",
-        }
-        y_col = {
-            "display": "per capita public spending",
-            "col_name": "per_capita_real_expenditure",
-        }
-        PCC = get_correlation_text(merged, x_col, y_col)
+    spending_fmt = lambda x: format_currency(x, currency_code)
 
-        text = f"From {start_year} to {end_year}, {PCC}"
+    attendance_result = get_relationship_narrative(
+        reference_years=exp_df["year"].values,
+        reference_values=exp_df["per_capita_real_expenditure"].values,
+        comparison_years=att_df["year"].values,
+        comparison_values=att_df["attendance_6to17yo"].values,
+        reference_name="per capita education spending",
+        comparison_name="school attendance (6-17 year-olds)",
+        reference_format=spending_fmt,
+        comparison_format=".1f",
+    )
 
-        merged = pd.merge(pov_df, expenditure_df, on=["year"], how="inner")
-        x_col = {
-            "display": "learning poverty rate",
-            "col_name": "learning_poverty_rate",
-        }
-        y_col = {
-            "display": "per capita public spending",
-            "col_name": "per_capita_real_expenditure",
-        }
-        PCC = get_correlation_text(merged, x_col, y_col)
+    poverty_result = get_relationship_narrative(
+        reference_years=exp_df["year"].values,
+        reference_values=exp_df["per_capita_real_expenditure"].values,
+        comparison_years=pov_df_clean["year"].values,
+        comparison_values=pov_df_clean["learning_poverty_rate"].values,
+        reference_name="per capita education spending",
+        comparison_name="learning poverty rate",
+        reference_format=spending_fmt,
+        comparison_format=".1f",
+    )
 
-        text += f" Meanwhile, {PCC}"
-    except:
-        traceback.print_exc()
-        return generate_error_prompt("GENERIC_ERROR")
-    return text
+    poverty_narrative = poverty_result["narrative"]
+    poverty_narrative = poverty_narrative[0].lower() + poverty_narrative[1:]
+    return f"{attendance_result['narrative']} Meanwhile, {poverty_narrative}"
 
 
 @callback(
@@ -846,7 +844,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
     fig.update_yaxes(range=[0, 1.2], tickformat=".0%", secondary_y=True)
 
     measure = outcome_measure(country)
-    narrative = outcome_narrative(indicator, learning_poverty, pub_exp, country)
+    narrative = outcome_narrative(indicator, learning_poverty, pub_exp, country, currency_code)
     return fig, measure, narrative
 
 

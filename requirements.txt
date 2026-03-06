@@ -11,4 +11,4 @@ bcrypt
 dotenv
 plotly==5.22.0
 colormath
-trend-narrative
+-e ../trend-narrative # TODO: update to trend-narrative>=0.3.0 once published

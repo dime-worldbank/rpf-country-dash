@@ -14,7 +14,6 @@ from utils import (
     filter_country_sort_year,
     format_currency,
     generate_error_prompt,
-    get_correlation_text,
     get_percentage_change_text,
     millify,
     require_login,
@@ -29,6 +28,7 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components import get_segment_narrative
+from trend_narrative import get_relationship_narrative
 
 db = QueryService.get_instance()
 
@@ -706,27 +706,21 @@ def outcome_measure():
     return f"We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome."
 
 
-def outcome_narrative(outcome_df, expenditure_df, country):
-    try:
-        start_year = expenditure_df.year.min()
-        end_year = expenditure_df.year.max()
+def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
+    exp_df = expenditure_df.dropna(subset=["per_capita_real_expenditure"])
+    out_df = outcome_df.dropna(subset=["universal_health_coverage_index"])
 
-        merged = pd.merge(outcome_df, expenditure_df, on=["year"], how="inner")
-        x_col = {
-            "display": "universal health coverage index",
-            "col_name": "universal_health_coverage_index",
-        }
-        y_col = {
-            "display": "per capita public spending",
-            "col_name": "per_capita_real_expenditure",
-        }
-        PCC = get_correlation_text(merged, x_col, y_col)
-
-        text = f"From {start_year} to {end_year}, {PCC}"
-    except:
-        traceback.print_exc()
-        return generate_error_prompt("GENERIC_ERROR")
-    return text
+    result = get_relationship_narrative(
+        reference_years=exp_df["year"].values,
+        reference_values=exp_df["per_capita_real_expenditure"].values,
+        comparison_years=out_df["year"].values,
+        comparison_values=out_df["universal_health_coverage_index"].values,
+        reference_name="per capita health spending",
+        comparison_name="universal health coverage index",
+        reference_format=lambda x: format_currency(x, currency_code),
+        comparison_format=".1f",
+    )
+    return result["narrative"]
 
 
 @callback(
@@ -817,7 +811,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     )
     fig.update_yaxes(range=[0, 120], secondary_y=True)
 
-    narrative = outcome_narrative(uhc, pub_exp, country)
+    narrative = outcome_narrative(uhc, pub_exp, country, currency_code)
     return fig, outcome_measure(), narrative
 
 
