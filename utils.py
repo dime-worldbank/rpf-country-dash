@@ -276,87 +276,57 @@ def get_correlation_text(df, x_col, y_col):
 
     Intended for cross-sectional/subnational comparisons.
     """
-    x = x_col["col_name"]
-    y = y_col["col_name"]
-
+    x, y = x_col["col_name"], y_col["col_name"]
+    x_name, y_name = x_col["display"], y_col["display"]
     data = df[[x, y]].dropna()
-
-    x_display_name = x_col["display"]
-    y_display_name = y_col["display"]
-
     n = data.shape[0]
 
-    if n < 3:
-        return (
-            f"the correlation between {x_display_name} and {y_display_name} cannot be "
-            f"determined due to insufficient data points."
-        )
+    if n < THRESHOLD_INSUFFICIENT:
+        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points."
 
-    if np.std(data[x]) == 0 or np.std(data[y]) == 0:
-        return (
-            f"the correlation between {x_display_name} and {y_display_name} cannot be "
-            f"determined due to no variability in the data."
-        )
-
+    # Compute correlations (spearmanr returns NaN if either variable has no variance)
     spearman_corr, p_value = stats.spearmanr(data[x], data[y])
-    pearson_corr = data[x].corr(data[y], method="pearson")
-
     if isnan(spearman_corr):
-        return (
-            f"the correlation between {x_display_name} and {y_display_name} cannot be "
-            f"determined due to limited data variability."
-        )
+        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data."
 
-    if not isnan(pearson_corr):
-        if (spearman_corr > 0 and pearson_corr < 0) or (spearman_corr < 0 and pearson_corr > 0):
-            return (
-                f"the association between {y_display_name} and {x_display_name} is "
-                f"sensitive to outliers."
-            )
+    pearson_corr = data[x].corr(data[y], method="pearson")
+    outlier_sensitive = (
+        not isnan(pearson_corr) and
+        spearman_corr * pearson_corr < 0
+    )
 
-    corr = spearman_corr
-
-    if corr > 0:
-        direction = "positive"
-        association = "higher"
-    else:
-        direction = "inverse"
-        association = "lower"
-
-    intensity = None
-    for threshold, corr_text in sorted(CORRELATION_THRESHOLDS.items()):
-        if abs(corr) <= float(threshold):
-            intensity = corr_text
-            break
+    # Determine direction and intensity
+    direction = "positive" if spearman_corr > 0 else "inverse"
+    association = "higher" if spearman_corr > 0 else "lower"
+    intensity = next(
+        (text for threshold, text in sorted(CORRELATION_THRESHOLDS.items())
+         if abs(spearman_corr) <= threshold),
+        "very strong"
+    )
 
     if intensity == "no":
-        return f"there is no apparent correlation between {y_display_name} and {x_display_name}."
+        return f"there is no apparent correlation between {y_name} and {x_name}."
 
+    # Build narrative components
     confidence = assess_statistical_confidence(n, p_value)
+    relation = f"a {intensity} {direction} relationship"
 
     if confidence["is_significant"]:
-        association_text = f"Higher {y_display_name} is generally associated with {association} {x_display_name}."
+        association_text = f"Higher {y_name} is generally associated with {association} {x_name}."
     else:
-        association_text = f"Higher {y_display_name} may be associated with {association} {x_display_name}."
+        association_text = f"Higher {y_name} may be associated with {association} {x_name}."
 
-    if confidence["confidence"] == "low" and n < THRESHOLD_CORRELATION:
-        return (
-            f"with only {n} data points, the correlation between {y_display_name} and "
-            f"{x_display_name} ({corr:.2f}) tentatively suggests a {intensity} {direction} "
-            f"relationship. {association_text} However, this should be interpreted with caution."
-        )
+    # Assemble narrative based on confidence level
+    if n < THRESHOLD_CORRELATION:
+        intro = f"with only {n} data points, the correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
+        caveat = "However, this should be interpreted with caution."
+    else:
+        intro = f"the correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
+        caveat = f"However, {confidence['caveat']}." if confidence["caveat"] else ""
 
-    if confidence["caveat"]:
-        return (
-            f"the correlation between {y_display_name} and {x_display_name} is {corr:.2f}, "
-            f"{confidence['verb']} a {intensity} {direction} relationship. {association_text} "
-            f"However, {confidence['caveat']}."
-        )
+    outlier_note = " Note: this result is sensitive to outliers." if outlier_sensitive else ""
 
-    return (
-        f"the correlation between {y_display_name} and {x_display_name} is {corr:.2f}, "
-        f"{confidence['verb']} a {intensity} {direction} relationship. {association_text}"
-    )
+    return f"{intro} {relation}. {association_text} {caveat}{outlier_note}"
 
 
 def detect_trend(df, x_col):

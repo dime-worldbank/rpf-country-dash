@@ -79,12 +79,12 @@ class TestUtils(unittest.TestCase):
     def test_no_variability_x(self):
         df = pd.DataFrame({"x": [1, 1, 1], "y": [2, 3, 4]})
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("no variability", result)
+        self.assertIn("insufficient variability", result)
 
     def test_no_variability_y(self):
         df = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [5, 5, 5, 5, 5]})
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("no variability", result)
+        self.assertIn("insufficient variability", result)
 
     def test_insufficient_data_points(self):
         df = pd.DataFrame({"x": [1, 2], "y": [2, 4]})
@@ -98,6 +98,8 @@ class TestUtils(unittest.TestCase):
         })
         result = get_correlation_text(df, self.x_col, self.y_col)
         self.assertIn("sensitive to outliers", result)
+        # Should still report the rank-based (Spearman) correlation
+        self.assertIn("inverse relationship", result)
 
     def test_large_sample_significant(self):
         df = pd.DataFrame({
