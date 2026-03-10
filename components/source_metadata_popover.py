@@ -3,53 +3,234 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 
-# Maps each button index to the source_key(s) used for metadata lookup.
-# Values are either a single string or a list of strings for charts that
-# combine multiple data sources.
-# Used by the single MATCH callback in app.py.
-BUTTON_SOURCE_MAP = {
+# ---------------------------------------------------------------------------
+# Chart-level metadata for the ⓘ info buttons.
+# Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
+# Static descriptive fields live here; dynamic per-country coverage years
+# are merged in at runtime from pipeline queries.
+#
+# Fields:
+#   title         – modal header / chart name
+#   description   – optional explanatory text (methodology, derivation, etc.)
+#   source_name   – attribution line
+#   framework_url – optional link to methodology/framework documentation
+#   coverage_keys – list of pipeline keys used to look up year ranges
+#                   ("boost" for BOOST expenditure, or an indicator_key
+#                   from indicator_data_availability)
+# ---------------------------------------------------------------------------
+CHART_METADATA = {
+    # ------------------------------------------------------------------
     # Home – Over Time
-    "home-total-exp": "boost",
-    "home-percapita-exp": "boost",
-    "home-func-breakdown": "boost",
-    "home-func-growth": "boost",
-    "home-econ-breakdown": "boost",
-    "home-pefa-overall": ["pefa_by_pillar", "subnational_poverty_rate"],
-    "home-pefa-pillar": ["pefa_by_pillar"],
+    # ------------------------------------------------------------------
+    "home-total-exp": {
+        "title": "Total Expenditure",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-percapita-exp": {
+        "title": "Per Capita Expenditure",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-func-breakdown": {
+        "title": "Spending by Functional Categories",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-func-growth": {
+        "title": "Budget Growth by Functional Categories",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-econ-breakdown": {
+        "title": "Spending by Economic Categories",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-pefa-overall": {
+        "title": "Quality of Budget Institutions (Overall)",
+        "source_name": "PEFA Secretariat",
+
+        "framework_url": "https://www.pefa.org/resources/pefa-2016-framework",
+        "description": (
+            "PEFA assessments use letter grades (A to D, with + "
+            "modifiers). For this dashboard, grades are converted to "
+            "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
+            "D=1). The overall score is the mean of all pillar scores. "
+            "Data covers both the 2011 framework (28 indicators, 6 "
+            "pillars) and the 2016 framework (31 indicators, 7 pillars)."
+        ),
+        "coverage_keys": ["pefa_by_pillar", "subnational_poverty_rate"],
+    },
+    "home-pefa-pillar": {
+        "title": "Quality of Budget Institutions (By Pillar)",
+        "source_name": "PEFA Secretariat",
+
+        "framework_url": "https://www.pefa.org/resources/pefa-2016-framework",
+        "description": (
+            "PEFA assessments use letter grades (A to D, with + "
+            "modifiers). For this dashboard, grades are converted to "
+            "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
+            "D=1). Pillar scores are the arithmetic mean of their "
+            "constituent indicators. "
+            "Data covers both the 2011 framework (28 indicators, 6 "
+            "pillars) and the 2016 framework (31 indicators, 7 pillars). "
+            "The 2016 framework introduced Pillar 3 (Asset & Liability "
+            "Management) and reorganised indicator groupings across "
+            "pillars."
+        ),
+        "coverage_keys": ["pefa_by_pillar"],
+    },
+    # ------------------------------------------------------------------
     # Home – Across Space
-    "home-regional-spending": "boost",
-    "home-regional-poverty": "subnational_poverty_rate",
+    # ------------------------------------------------------------------
+    "home-regional-spending": {
+        "title": "Regional Expenditure",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "home-regional-poverty": {
+        "title": "Poverty by Region",
+        "source_name": "World Bank",
+
+        "coverage_keys": ["subnational_poverty_rate"],
+    },
+    # ------------------------------------------------------------------
     # Education – Over Time
-    "edu-public-private": ["boost", "edu_private_expenditure"],
-    "edu-total": "boost",
-    "edu-outcome": ["boost", "learning_poverty_rate",],
-    "edu-opvcap": "boost",
+    # ------------------------------------------------------------------
+    "edu-public-private": {
+        "title": "Who Pays for Education?",
+        "source_name": "World Bank BOOST / ICP",
+        "description": (
+            "Public expenditure from BOOST. Private expenditure derived "
+            "as total education spending from the International "
+            "Comparison Program (ICP) minus BOOST public education "
+            "expenditure."
+        ),
+        "coverage_keys": ["boost", "edu_private_expenditure"],
+    },
+    "edu-total": {
+        "title": "Total Education Expenditure",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "edu-outcome": {
+        "title": "Public Spending & Education Outcome",
+        "source_name": "World Bank BOOST / World Bank",
+
+        "description": (
+            "Public education expenditure from BOOST, combined with "
+            "the learning poverty rate."
+        ),
+        "coverage_keys": ["boost", "learning_poverty_rate"],
+    },
+    "edu-opvcap": {
+        "title": "Operational vs. Capital Spending",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    # ------------------------------------------------------------------
     # Education – Across Space
-    "edu-central-regional": "boost",
-    "edu-sub-func": "boost",
-    "edu-expenditure-map": "boost",
-    "edu-outcome-map": "global_data_lab_hd_index",
-    "edu-subnational": ["boost", "global_data_lab_hd_index"],
+    # ------------------------------------------------------------------
+    "edu-central-regional": {
+        "title": "Centrally vs. Geographically Allocated Education Spending",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "edu-sub-func": {
+        "title": "Education by Sub-functional Categories",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "edu-expenditure-map": {
+        "title": "Education Expenditure Map",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "edu-outcome-map": {
+        "title": "Education Outcomes Map",
+        "source_name": "Global Data Lab",
+        "coverage_keys": ["global_data_lab_hd_index"],
+    },
+    "edu-subnational": {
+        "title": "Public Spending vs. Education Outcomes Across Regions",
+        "source_name": "World Bank BOOST / Global Data Lab",
+        "coverage_keys": ["boost", "global_data_lab_hd_index"],
+    },
+    # ------------------------------------------------------------------
     # Health – Over Time
-    "health-public-private": ["boost", "health_private_expenditure"],
-    "health-total": "boost",
-    "health-outcome": ["boost", "universal_health_coverage_index_gho"],
-    "health-opvcap": "boost",
+    # ------------------------------------------------------------------
+    "health-public-private": {
+        "title": "Who Pays for Healthcare?",
+        "source_name": "World Bank BOOST / WHO",
+        "description": (
+            "Public expenditure from BOOST. Out-of-pocket expenditure "
+            "computed as CHE (current health expenditure in local "
+            "currency) multiplied by OOP % of CHE, then adjusted for "
+            "inflation using CPI. Source indicators: "
+            "GHED_CHEGDP_SHA2011, GHED_OOPSCHE_SHA2011."
+        ),
+        "coverage_keys": ["boost", "health_private_expenditure"],
+    },
+    "health-total": {
+        "title": "Total Health Expenditure",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "health-outcome": {
+        "title": "Public Spending & Health Outcome",
+        "source_name": "World Bank BOOST / WHO (GHO)",
+
+        "description": (
+            "Public health expenditure from BOOST, combined with the "
+            "Universal Health Coverage service coverage index."
+        ),
+        "coverage_keys": ["boost", "universal_health_coverage_index_gho"],
+    },
+    "health-opvcap": {
+        "title": "Operational vs. Capital Spending",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    # ------------------------------------------------------------------
     # Health – Across Space
-    "health-central-regional": "boost",
-    "health-sub-func": "boost",
-    "health-expenditure-map": "boost",
-    "health-outcome-map": "universal_health_coverage_index_gho",
-    "health-subnational": ["boost", "universal_health_coverage_index_gho"],
+    # ------------------------------------------------------------------
+    "health-central-regional": {
+        "title": "Centrally vs. Geographically Allocated Health Spending",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "health-sub-func": {
+        "title": "Health by Sub-functional Categories",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "health-expenditure-map": {
+        "title": "Health Expenditure Map",
+        "source_name": "World Bank BOOST",
+        "coverage_keys": ["boost"],
+    },
+    "health-outcome-map": {
+        "title": "Health Outcomes Map",
+        "source_name": "WHO (GHO)",
+
+        "coverage_keys": ["universal_health_coverage_index_gho"],
+    },
+    "health-subnational": {
+        "title": "Public Spending vs. Health Outcomes Across Regions",
+        "source_name": "World Bank BOOST / WHO (GHO)",
+
+        "coverage_keys": ["boost", "universal_health_coverage_index_gho"],
+    },
 }
 
 
 def source_info_button(index):
     """Renders a small circular info button with an (i) icon.
 
-    ``index`` is a short key such as ``"overview-boost"`` that appears in
-    :data:`BUTTON_SOURCE_MAP`.  The component id is a dict so that a single
-    Dash pattern-matching callback can service every button.
+    ``index`` is a chart key that appears in :data:`CHART_METADATA`.
+    The component id is a dict so that a single Dash pattern-matching
+    callback can service every button.
     """
     return html.Span(
         dbc.Button(
@@ -83,102 +264,51 @@ def _make_detail_row(label, value):
     )
 
 
-def _build_single_source_section(title, description=None, source_name=None,
-                                  source_url=None, country_name=None,
-                                  start_year=None, end_year=None):
-    """Build body children for a single data source."""
-    children = []
+def build_modal_children(info):
+    """
+    Build [ModalHeader, ModalBody] for a chart info modal.
 
-    children.append(
-        html.H6(title or "Unknown Source",
-                 style={"fontWeight": "bold", "marginBottom": "6px"})
-    )
+    ``info`` is a dict from :data:`CHART_METADATA` augmented with
+    ``country_name`` and ``coverage_lines`` by the callback.
+    """
+    title = info.get("title", "Source Details")
+    description = info.get("description")
+    source_name = info.get("source_name")
+    framework_url = info.get("framework_url")
+    coverage_lines = info.get("coverage_lines", [])
+
+    body = []
 
     if description:
-        children.append(
-            html.P(description, style={"color": "#555", "marginBottom": "8px",
+        body.append(
+            html.P(description, style={"color": "#555", "marginBottom": "12px",
                                         "fontSize": "0.9rem"})
         )
 
-    if source_url:
-        source_content = html.Span([
-            html.Span(f"{source_name}, ") if source_name else "",
-            html.A(
-                source_url,
-                href=source_url,
-                target="_blank",
-                rel="noopener noreferrer",
-                style={"wordBreak": "break-all"},
-            ),
-        ])
-    elif source_name:
-        source_content = html.Span(source_name)
-    else:
-        source_content = None
+    # Source attribution
+    if source_name:
+        body.append(_make_detail_row("Source", html.Span(source_name)))
 
-    if source_content:
-        children.append(_make_detail_row("Source", source_content))
+    # Framework link
+    if framework_url:
+        link = html.A(
+            framework_url,
+            href=framework_url,
+            target="_blank",
+            rel="noopener noreferrer",
+            style={"wordBreak": "break-all"},
+        )
+        body.append(_make_detail_row("Framework", link))
 
-    if start_year and end_year and country_name:
-        coverage = f"{country_name}: {start_year}\u2013{end_year}"
-        children.append(_make_detail_row("Coverage", coverage))
-
-    return children
-
-
-def build_modal_children(info):
-    """
-    Build the children list for a dbc.Modal given a single source info dict.
-
-    ``info`` has keys: title, description, source_name, source_url,
-    country_name, start_year, end_year.
-    Returns [ModalHeader, ModalBody].
-    """
-    title = info.get("title") or info.get("source_key", "Source Details")
-
-    body_children = _build_single_source_section(
-        title=info.get("title"),
-        description=info.get("description"),
-        source_name=info.get("source_name"),
-        source_url=info.get("source_url"),
-        country_name=info.get("country_name"),
-        start_year=info.get("start_year"),
-        end_year=info.get("end_year"),
-    )
-
-    return [
-        dbc.ModalHeader(dbc.ModalTitle(title), close_button=True),
-        dbc.ModalBody(body_children),
-    ]
-
-
-def build_multi_source_modal_children(source_infos):
-    """
-    Build modal children for a chart with multiple data sources.
-
-    ``source_infos`` is a list of dicts, each with keys:
-        title, description, source_name, source_url,
-        country_name, start_year, end_year
-    """
-    body_children = []
-    for i, info in enumerate(source_infos):
-        if i > 0:
-            body_children.append(html.Hr(style={"margin": "12px 0"}))
-        body_children.extend(
-            _build_single_source_section(
-                title=info.get("title"),
-                description=info.get("description"),
-                source_name=info.get("source_name"),
-                source_url=info.get("source_url"),
-                country_name=info.get("country_name"),
-                start_year=info.get("start_year"),
-                end_year=info.get("end_year"),
-            )
+    # Coverage years
+    if coverage_lines:
+        body.append(
+            _make_detail_row("Coverage", html.Span(", ".join(coverage_lines)))
         )
 
     return [
-        dbc.ModalHeader(dbc.ModalTitle("Data Sources"), close_button=True),
-        dbc.ModalBody(body_children),
+        dbc.ModalHeader(dbc.ModalTitle(title), close_button=True),
+        dbc.ModalBody(body),
     ]
 
 
@@ -193,60 +323,48 @@ def empty_modal(index):
     )
 
 
-def get_source_info(source_key, country, source_meta, expenditure_data=None):
+# ---------------------------------------------------------------------------
+# Coverage-year helpers — extract year ranges from pipeline query results.
+# ---------------------------------------------------------------------------
+
+def get_coverage_years(key, country, source_meta, expenditure_data=None):
     """
-    Extract source metadata from the queried data stores.
+    Return ``(start_year, end_year)`` for a coverage key and country.
 
-    Returns a dict with keys: title, description, source_name, source_url,
-    country_name, start_year, end_year.
+    *key* is either ``"boost"`` (looks up from expenditure data) or an
+    indicator_key such as ``"pefa_by_pillar"`` (looks up from
+    ``indicator_data_availability``).
     """
-    result = {"source_key": source_key, "country_name": country}
+    if not country:
+        return None, None
 
-    if not source_meta or not country:
-        return result
-
-    if source_key == "boost":
-        # Look up from boost data availability table
-        boost_rows = pd.DataFrame(source_meta.get("boost_source_urls", []))
-        if not boost_rows.empty:
-            match = boost_rows[boost_rows.country_name == country]
-            if not match.empty:
-                row = match.iloc[0]
-                result["source_url"] = row.get("boost_source_url") or None
-                result["title"] = row.get("boost_title")
-                result["description"] = row.get("boost_description")
-                result["source_name"] = row.get("boost_source_name")
-
-        if expenditure_data:
-            exp_df = pd.DataFrame(
-                expenditure_data.get("expenditure_w_poverty_by_country_year", [])
-            )
-            country_df = (
-                exp_df[exp_df.country_name == country]
-                if not exp_df.empty else exp_df
-            )
-            if not country_df.empty:
-                result["start_year"] = int(country_df.year.min())
-                result["end_year"] = int(country_df.year.max())
-    else:
-        # Look up from indicator data availability table
-        indicator_rows = pd.DataFrame(
-            source_meta.get("indicator_availability", [])
+    if key == "boost":
+        if not expenditure_data:
+            return None, None
+        exp_df = pd.DataFrame(
+            expenditure_data.get("expenditure_w_poverty_by_country_year", [])
         )
-        if not indicator_rows.empty:
-            match = indicator_rows[
-                (indicator_rows.country_name == country)
-                & (indicator_rows.indicator_key == source_key)
-            ]
-            if not match.empty:
-                row = match.iloc[0]
-                result["source_url"] = row.get("source_url") or None
-                result["title"] = row.get("title")
-                result["description"] = row.get("description")
-                result["source_name"] = row.get("source_name")
-                if pd.notna(row.get("start_year")):
-                    result["start_year"] = int(row["start_year"])
-                if pd.notna(row.get("end_year")):
-                    result["end_year"] = int(row["end_year"])
+        if exp_df.empty:
+            return None, None
+        country_df = exp_df[exp_df.country_name == country]
+        if country_df.empty:
+            return None, None
+        return int(country_df.year.min()), int(country_df.year.max())
 
-    return result
+    if not source_meta:
+        return None, None
+    indicator_rows = pd.DataFrame(
+        source_meta.get("indicator_availability", [])
+    )
+    if indicator_rows.empty:
+        return None, None
+    match = indicator_rows[
+        (indicator_rows.country_name == country)
+        & (indicator_rows.indicator_key == key)
+    ]
+    if match.empty:
+        return None, None
+    row = match.iloc[0]
+    start = int(row["start_year"]) if pd.notna(row.get("start_year")) else None
+    end = int(row["end_year"]) if pd.notna(row.get("end_year")) else None
+    return start, end

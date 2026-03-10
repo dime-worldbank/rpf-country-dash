@@ -20,10 +20,9 @@ from dash import (
 
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
 from components.source_metadata_popover import (
-    BUTTON_SOURCE_MAP,
+    CHART_METADATA,
     build_modal_children,
-    build_multi_source_modal_children,
-    get_source_info,
+    get_coverage_years,
 )
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
@@ -391,10 +390,8 @@ def fetch_subnat_boundary_data_once(geo_data, country):
 def fetch_source_metadata_once(data):
     if data is None:
         indicator_df = db.get_indicator_data_availability()
-        boost_df = db.get_boost_source_url()
         return {
             "indicator_availability": indicator_df.to_dict("records"),
-            "boost_source_urls": boost_df.to_dict("records"),
         }
     return no_update
 
@@ -409,24 +406,21 @@ def fetch_source_metadata_once(data):
     prevent_initial_call=True,
 )
 def toggle_source_info_modal(n_clicks, country, source_meta, data):
-    if not n_clicks or not source_meta:
+    if not n_clicks:
         return no_update, no_update
 
     index = ctx.triggered_id["index"]
-    source_keys = BUTTON_SOURCE_MAP.get(index, index)
+    chart_meta = CHART_METADATA.get(index, {})
 
-    # Support both single string and list of source keys
-    if isinstance(source_keys, str):
-        info = get_source_info(source_keys, country, source_meta, data)
-        children = build_modal_children(info)
-    else:
-        source_infos = [
-            get_source_info(sk, country, source_meta, data)
-            for sk in source_keys
-        ]
-        children = build_multi_source_modal_children(source_infos)
+    # Build coverage lines from pipeline data
+    coverage_lines = []
+    for key in chart_meta.get("coverage_keys", []):
+        start, end = get_coverage_years(key, country, source_meta, data)
+        if start and end:
+            coverage_lines.append(f"{start}\u2013{end}")
 
-    return True, children
+    info = {**chart_meta, "country_name": country, "coverage_lines": coverage_lines}
+    return True, build_modal_children(info)
 
 
 if __name__ == "__main__":
