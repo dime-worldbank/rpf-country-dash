@@ -6,17 +6,17 @@ import dash_bootstrap_components as dbc
 # ---------------------------------------------------------------------------
 # Chart-level metadata for the ⓘ info buttons.
 # Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
-# Static descriptive fields live here; dynamic per-country coverage years
-# are merged in at runtime from pipeline queries.
+# Dynamic per-country coverage years and source URLs are merged at runtime.
 #
 # Fields:
-#   title         – modal header / chart name
-#   description   – optional explanatory text (methodology, derivation, etc.)
-#   source_name   – attribution line
-#   framework_url – optional link to methodology/framework documentation
-#   coverage_keys – list of pipeline keys used to look up year ranges
-#                   ("boost" for BOOST expenditure, or an indicator_key
-#                   from indicator_data_availability)
+#   title       – modal header / chart name
+#   description – optional chart-level explanatory text (methodology, etc.)
+#   sources     – list of data sources used by this chart, each with:
+#       key         – pipeline key for coverage-year and URL lookup
+#                     ("boost" or an indicator_key)
+#       label       – display name for this source section
+#       source_name – attribution line
+#       description – optional per-source explanatory text
 # ---------------------------------------------------------------------------
 CHART_METADATA = {
     # ------------------------------------------------------------------
@@ -24,203 +24,234 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "home-total-exp": {
         "title": "Total Expenditure",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "home-percapita-exp": {
-        "title": "Per Capita Expenditure",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "title": "Per Capita Expenditure & Poverty Rate",
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+            {"key": "poverty_rate", "label": "Poverty Rate", "source_name": "World Bank Poverty and Inequality Platform"},
+        ],
     },
     "home-func-breakdown": {
         "title": "Spending by Functional Categories",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "home-func-growth": {
         "title": "Budget Growth by Functional Categories",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "home-econ-breakdown": {
         "title": "Spending by Economic Categories",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "home-pefa-overall": {
         "title": "Quality of Budget Institutions (Overall)",
-        "source_name": "PEFA Secretariat",
-
-        "framework_url": "https://www.pefa.org/resources/pefa-2016-framework",
-        "description": (
-            "PEFA assessments use letter grades (A to D, with + "
-            "modifiers). For this dashboard, grades are converted to "
-            "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
-            "D=1). The overall score is the mean of all pillar scores. "
-            "Data covers both the 2011 framework (28 indicators, 6 "
-            "pillars) and the 2016 framework (31 indicators, 7 pillars)."
-        ),
-        "coverage_keys": ["pefa_by_pillar", "subnational_poverty_rate"],
+        "sources": [
+            {
+                "key": "pefa_by_pillar",
+                "label": "PEFA Assessment",
+                "source_name": "PEFA Secretariat",
+                "description": (
+                    "PEFA assessments use letter grades (A to D, with + "
+                    "modifiers). For this dashboard, grades are converted to "
+                    "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
+                    "D=1). The overall score is the mean of all pillar scores. "
+                    "Data covers both the 2011 framework (28 indicators, 6 "
+                    "pillars) and the 2016 framework (31 indicators, 7 pillars)."
+                ),
+            },
+        ],
     },
     "home-pefa-pillar": {
         "title": "Quality of Budget Institutions (By Pillar)",
-        "source_name": "PEFA Secretariat",
-
-        "framework_url": "https://www.pefa.org/resources/pefa-2016-framework",
-        "description": (
-            "PEFA assessments use letter grades (A to D, with + "
-            "modifiers). For this dashboard, grades are converted to "
-            "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
-            "D=1). Pillar scores are the arithmetic mean of their "
-            "constituent indicators. "
-            "Data covers both the 2011 framework (28 indicators, 6 "
-            "pillars) and the 2016 framework (31 indicators, 7 pillars). "
-            "The 2016 framework introduced Pillar 3 (Asset & Liability "
-            "Management) and reorganised indicator groupings across "
-            "pillars."
-        ),
-        "coverage_keys": ["pefa_by_pillar"],
+        "sources": [
+            {
+                "key": "pefa_by_pillar",
+                "label": "PEFA Assessment",
+                "source_name": "PEFA Secretariat",
+                "description": (
+                    "PEFA assessments use letter grades (A to D, with + "
+                    "modifiers). For this dashboard, grades are converted to "
+                    "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
+                    "D=1). Pillar scores are the arithmetic mean of their "
+                    "constituent indicators. "
+                    "Data covers both the 2011 framework (28 indicators, 6 "
+                    "pillars) and the 2016 framework (31 indicators, 7 pillars). "
+                    "The 2016 framework introduced Pillar 3 (Asset & Liability "
+                    "Management) and reorganised indicator groupings across "
+                    "pillars."
+                ),
+            },
+        ],
     },
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
     "home-regional-spending": {
         "title": "Regional Expenditure",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "home-regional-poverty": {
         "title": "Poverty by Region",
-        "source_name": "World Bank",
-
-        "coverage_keys": ["subnational_poverty_rate"],
+        "sources": [
+            {"key": "subnational_poverty_rate", "label": "Subnational Poverty Rate", "source_name": "World Bank"},
+        ],
     },
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
     "edu-public-private": {
         "title": "Who Pays for Education?",
-        "source_name": "World Bank BOOST / ICP",
-        "description": (
-            "Public expenditure from BOOST. Private expenditure derived "
-            "as total education spending from the International "
-            "Comparison Program (ICP) minus BOOST public education "
-            "expenditure."
-        ),
-        "coverage_keys": ["boost", "edu_private_expenditure"],
+        "sources": [
+            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
+            {
+                "key": "edu_private_expenditure",
+                "label": "Private Education Expenditure",
+                "source_name": "World Bank ICP",
+                "description": (
+                    "Derived as total education spending from the International "
+                    "Comparison Program (ICP) minus BOOST public education "
+                    "expenditure."
+                ),
+            },
+        ],
     },
     "edu-total": {
         "title": "Total Education Expenditure",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "edu-outcome": {
         "title": "Public Spending & Education Outcome",
-        "source_name": "World Bank BOOST / World Bank",
-
-        "description": (
-            "Public education expenditure from BOOST, combined with "
-            "the learning poverty rate."
-        ),
-        "coverage_keys": ["boost", "learning_poverty_rate"],
+        "sources": [
+            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
+            {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"},
+        ],
     },
     "edu-opvcap": {
         "title": "Operational vs. Capital Spending",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------
     "edu-central-regional": {
         "title": "Centrally vs. Geographically Allocated Education Spending",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "edu-sub-func": {
         "title": "Education by Sub-functional Categories",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "edu-expenditure-map": {
         "title": "Education Expenditure Map",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "edu-outcome-map": {
         "title": "Education Outcomes Map",
-        "source_name": "Global Data Lab",
-        "coverage_keys": ["global_data_lab_hd_index"],
+        "sources": [
+            {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
+        ],
     },
     "edu-subnational": {
         "title": "Public Spending vs. Education Outcomes Across Regions",
-        "source_name": "World Bank BOOST / Global Data Lab",
-        "coverage_keys": ["boost", "global_data_lab_hd_index"],
+        "sources": [
+            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
+            {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
+        ],
     },
     # ------------------------------------------------------------------
     # Health – Over Time
     # ------------------------------------------------------------------
     "health-public-private": {
         "title": "Who Pays for Healthcare?",
-        "source_name": "World Bank BOOST / WHO",
-        "description": (
-            "Public expenditure from BOOST. Out-of-pocket expenditure "
-            "computed as CHE (current health expenditure in local "
-            "currency) multiplied by OOP % of CHE, then adjusted for "
-            "inflation using CPI. Source indicators: "
-            "GHED_CHEGDP_SHA2011, GHED_OOPSCHE_SHA2011."
-        ),
-        "coverage_keys": ["boost", "health_private_expenditure"],
+        "sources": [
+            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
+            {
+                "key": "health_private_expenditure",
+                "label": "Out-of-Pocket Health Expenditure",
+                "source_name": "WHO Global Health Expenditure Database",
+                "description": (
+                    "Computed as CHE (current health expenditure in local "
+                    "currency) multiplied by OOP % of CHE, then adjusted for "
+                    "inflation using CPI. Source indicators: "
+                    "GHED_CHEGDP_SHA2011, GHED_OOPSCHE_SHA2011."
+                ),
+            },
+        ],
     },
     "health-total": {
         "title": "Total Health Expenditure",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "health-outcome": {
         "title": "Public Spending & Health Outcome",
-        "source_name": "World Bank BOOST / WHO (GHO)",
-
-        "description": (
-            "Public health expenditure from BOOST, combined with the "
-            "Universal Health Coverage service coverage index."
-        ),
-        "coverage_keys": ["boost", "universal_health_coverage_index_gho"],
+        "sources": [
+            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
+            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
+        ],
     },
     "health-opvcap": {
         "title": "Operational vs. Capital Spending",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     # ------------------------------------------------------------------
     # Health – Across Space
     # ------------------------------------------------------------------
     "health-central-regional": {
         "title": "Centrally vs. Geographically Allocated Health Spending",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "health-sub-func": {
         "title": "Health by Sub-functional Categories",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "health-expenditure-map": {
         "title": "Health Expenditure Map",
-        "source_name": "World Bank BOOST",
-        "coverage_keys": ["boost"],
+        "sources": [
+            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
+        ],
     },
     "health-outcome-map": {
         "title": "Health Outcomes Map",
-        "source_name": "WHO (GHO)",
-
-        "coverage_keys": ["universal_health_coverage_index_gho"],
+        "sources": [
+            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
+        ],
     },
     "health-subnational": {
         "title": "Public Spending vs. Health Outcomes Across Regions",
-        "source_name": "World Bank BOOST / WHO (GHO)",
-
-        "coverage_keys": ["boost", "universal_health_coverage_index_gho"],
+        "sources": [
+            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
+            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
+        ],
     },
 }
 
@@ -234,19 +265,37 @@ def source_info_button(index):
     """
     return html.Span(
         dbc.Button(
-            "\u24D8",  # circled information source
+            [
+                html.Span(
+                    "\u24D8",
+                    style={
+                        "fontSize": "16px",
+                        "marginRight": "4px",
+                        "verticalAlign": "middle",
+                    },
+                ),
+                html.Span(
+                    "Details",
+                    style={
+                        "fontSize": "13px",
+                        "verticalAlign": "middle",
+                    },
+                ),
+            ],
             id={"type": "source-info-btn", "index": index},
-            color="link",
             size="sm",
             style={
-                "padding": "0 4px",
-                "fontSize": "18px",
-                "color": "#6c757d",
+                "padding": "2px 10px",
+                "borderRadius": "16px",
                 "verticalAlign": "middle",
                 "textDecoration": "none",
+                "lineHeight": "1.5",
+                "backgroundColor": "rgba(255, 255, 255, 0.15)",
+                "color": "#ffffff",
+                "border": "1px solid rgba(255, 255, 255, 0.5)",
             },
         ),
-        style={"marginLeft": "8px"},
+        style={"marginLeft": "6px"},
     )
 
 
@@ -264,52 +313,95 @@ def _make_detail_row(label, value):
     )
 
 
+def _build_source_section(section):
+    """Build the Dash components for a single source section.
+
+    ``section`` is a dict with keys: label, source_name, and optionally
+    description, source_url, coverage.
+    """
+    children = []
+
+    # Section heading
+    children.append(
+        html.H6(
+            section.get("label", ""),
+            style={
+                "color": "#333",
+                "marginTop": "12px",
+                "marginBottom": "6px",
+                "borderBottom": "1px solid #dee2e6",
+                "paddingBottom": "4px",
+            },
+        )
+    )
+
+    # Per-source description (right under the heading)
+    desc = section.get("description")
+    if desc:
+        children.append(_make_detail_row("Methodology", html.Span(desc)))
+
+    # Source URL from pipeline (before source name)
+    source_url = section.get("source_url")
+    if source_url:
+        link = html.A(
+            source_url,
+            href=source_url,
+            target="_blank",
+            rel="noopener noreferrer",
+            style={"wordBreak": "break-all"},
+        )
+        children.append(_make_detail_row("More info", link))
+
+    # Source name
+    source_name = section.get("source_name")
+    if source_name:
+        children.append(_make_detail_row("Source", html.Span(source_name)))
+
+    # Coverage years
+    coverage = section.get("coverage")
+    if coverage:
+        children.append(_make_detail_row("Coverage", html.Span(coverage)))
+
+    return html.Div(children)
+
+
 def build_modal_children(info):
     """
     Build [ModalHeader, ModalBody] for a chart info modal.
 
     ``info`` is a dict from :data:`CHART_METADATA` augmented with
-    ``country_name`` and ``coverage_lines`` by the callback.
+    ``source_sections`` by the callback.
     """
-    title = info.get("title", "Source Details")
-    description = info.get("description")
-    source_name = info.get("source_name")
-    framework_url = info.get("framework_url")
-    coverage_lines = info.get("coverage_lines", [])
+    source_sections = info.get("source_sections", [])
 
     body = []
 
-    if description:
-        body.append(
-            html.P(description, style={"color": "#555", "marginBottom": "12px",
-                                        "fontSize": "0.9rem"})
+    # Close button
+    body.append(
+        html.Div(
+            html.Button(
+                "\u00D7",
+                id={"type": "source-info-close", "index": info.get("_index", "")},
+                style={
+                    "background": "none",
+                    "border": "none",
+                    "fontSize": "24px",
+                    "fontWeight": "bold",
+                    "color": "#333",
+                    "cursor": "pointer",
+                    "lineHeight": "1",
+                    "padding": "0",
+                },
+            ),
+            style={"textAlign": "right", "marginBottom": "4px"},
         )
+    )
 
-    # Source attribution
-    if source_name:
-        body.append(_make_detail_row("Source", html.Span(source_name)))
+    # Per-source sections
+    for section in source_sections:
+        body.append(_build_source_section(section))
 
-    # Framework link
-    if framework_url:
-        link = html.A(
-            framework_url,
-            href=framework_url,
-            target="_blank",
-            rel="noopener noreferrer",
-            style={"wordBreak": "break-all"},
-        )
-        body.append(_make_detail_row("Framework", link))
-
-    # Coverage years
-    if coverage_lines:
-        body.append(
-            _make_detail_row("Coverage", html.Span(", ".join(coverage_lines)))
-        )
-
-    return [
-        dbc.ModalHeader(dbc.ModalTitle(title), close_button=True),
-        dbc.ModalBody(body),
-    ]
+    return [dbc.ModalBody(body)]
 
 
 def empty_modal(index):

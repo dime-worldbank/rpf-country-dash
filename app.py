@@ -390,8 +390,10 @@ def fetch_subnat_boundary_data_once(geo_data, country):
 def fetch_source_metadata_once(data):
     if data is None:
         indicator_df = db.get_indicator_data_availability()
+        boost_urls_df = db.get_boost_source_urls()
         return {
             "indicator_availability": indicator_df.to_dict("records"),
+            "boost_source_urls": boost_urls_df.to_dict("records"),
         }
     return no_update
 
@@ -412,15 +414,59 @@ def toggle_source_info_modal(n_clicks, country, source_meta, data):
     index = ctx.triggered_id["index"]
     chart_meta = CHART_METADATA.get(index, {})
 
-    # Build coverage lines from pipeline data
-    coverage_lines = []
-    for key in chart_meta.get("coverage_keys", []):
+    # Build lookup map for indicator source URLs (now part of indicator_availability)
+    indicator_url_map = {}
+    for row in (source_meta or {}).get("indicator_availability", []):
+        url = row.get("source_url")
+        if url:
+            indicator_url_map[row["indicator_key"]] = url
+
+    boost_url = ""
+    if country:
+        for row in (source_meta or {}).get("boost_source_urls", []):
+            if row["country_name"] == country:
+                boost_url = row.get("boost_source_url", "")
+                break
+
+    # Build per-source sections
+    source_sections = []
+    for src in chart_meta.get("sources", []):
+        key = src["key"]
+        section = {
+            "label": src.get("label", ""),
+            "source_name": src.get("source_name", ""),
+            "description": src.get("description"),
+        }
+
+        # Coverage years
         start, end = get_coverage_years(key, country, source_meta, data)
         if start and end:
-            coverage_lines.append(f"{start}\u2013{end}")
+            section["coverage"] = f"{start}\u2013{end}"
 
-    info = {**chart_meta, "country_name": country, "coverage_lines": coverage_lines}
+        # Source URL from pipeline
+        if key == "boost":
+            if boost_url:
+                section["source_url"] = boost_url
+        else:
+            url = indicator_url_map.get(key)
+            if url:
+                section["source_url"] = url
+
+        source_sections.append(section)
+
+    info = {**chart_meta, "_index": index, "country_name": country, "source_sections": source_sections}
     return True, build_modal_children(info)
+
+
+@app.callback(
+    Output({"type": "source-info-modal", "index": MATCH}, "is_open", allow_duplicate=True),
+    Input({"type": "source-info-close", "index": MATCH}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def close_source_info_modal(n_clicks):
+    if n_clicks:
+        return False
+    return no_update
 
 
 if __name__ == "__main__":
