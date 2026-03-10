@@ -21,6 +21,7 @@ from utils import (
 
 from components import slider, get_slider_config, pefa, budget_increment_analysis, get_segment_narrative
 from components.disclaimer_div import disclaimer_tooltip
+from components.source_metadata_popover import source_info_button, empty_modal
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from queries import QueryService
 
@@ -80,9 +81,7 @@ def render_overview_content(tab):
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Total Expenditure",
-                        )
+                        html.H3(children="Total Expenditure")
                     )
                 ),
                 dbc.Row(
@@ -97,9 +96,13 @@ def render_overview_content(tab):
                     [
                         # How has total expenditure changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="overview-total", config={"displayModeBar": False}
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-total-exp"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="overview-total", config={"displayModeBar": False}
+                                ),
+                                empty_modal("home-total-exp"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -107,10 +110,14 @@ def render_overview_content(tab):
                         ),
                         # How has per capita expenditure changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="overview-per-capita",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-percapita-exp"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="overview-per-capita",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-percapita-exp"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -125,19 +132,21 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Spending by Functional Categories",
-                        )
+                        html.H3(children="Spending by Functional Categories")
                     )
                 ),
                 dbc.Row(
                     [
                         # How has sector prioritization changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="functional-breakdown",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-func-breakdown"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="functional-breakdown",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-func-breakdown"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -198,7 +207,11 @@ def render_overview_content(tab):
                             )
                         ], width=4),
                         dbc.Col(
-                            dcc.Graph(id="func-growth"),
+                            html.Div([
+                                html.Div(source_info_button("home-func-growth"), style={"textAlign": "right"}),
+                                dcc.Graph(id="func-growth"),
+                                empty_modal("home-func-growth"),
+                            ]),
                             width=8,
                         ),
                     ]
@@ -211,19 +224,21 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Spending by Economic Categories",
-                        )
+                        html.H3(children="Spending by Economic Categories")
                     )
                 ),
                 dbc.Row(
                     [
                         # How much was spent on each economic category?
                         dbc.Col(
-                            dcc.Graph(
-                                id="economic-breakdown",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-econ-breakdown"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="economic-breakdown",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-econ-breakdown"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -248,9 +263,7 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Quality of Budget Institutions",
-                        )
+                        html.H3(children="Quality of Budget Institutions")
                     )
                 ),
                 dbc.Row(
@@ -265,10 +278,14 @@ def render_overview_content(tab):
                     [
                         # How did the overall quality of budget institutions change over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="pefa-overall",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-pefa-overall"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="pefa-overall",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-pefa-overall"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -276,10 +293,14 @@ def render_overview_content(tab):
                         ),
                         # How did various pillars of the budget institutions change over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="pefa-by-pillar",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-pefa-pillar"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="pefa-by-pillar",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-pefa-pillar"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -347,10 +368,14 @@ def render_overview_content(tab):
                         ),
                         # How much was spent in each region?
                         dbc.Col(
-                            dcc.Graph(
-                                id="subnational-spending",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-regional-spending"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="subnational-spending",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-regional-spending"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -358,10 +383,14 @@ def render_overview_content(tab):
                         ),
                         # visualization of poverty by region
                         dbc.Col(
-                            dcc.Graph(
-                                id="subnational-poverty",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("home-regional-poverty"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="subnational-poverty",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("home-regional-poverty"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

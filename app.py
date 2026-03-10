@@ -11,12 +11,20 @@ from dash import (
     Input,
     Output,
     State,
+    MATCH,
+    ctx,
     page_container,
     page_registry,
     no_update,
 )
 
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
+from components.source_metadata_popover import (
+    BUTTON_SOURCE_MAP,
+    build_modal_children,
+    build_multi_source_modal_children,
+    get_source_info,
+)
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
@@ -129,6 +137,7 @@ def layout():
                 dcc.Store(id="stored-data-func-econ"),
                 dcc.Store(id="stored-data-subnat-boundaries"),
                 dcc.Store(id="stored-data-insights"),
+                dcc.Store(id="stored-source-metadata"),
             ]
         )
 
@@ -373,6 +382,51 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     }
     data_to_store[country] = boundaries_geojson
     return data_to_store
+
+
+@app.callback(
+    Output("stored-source-metadata", "data"),
+    Input("stored-source-metadata", "data"),
+)
+def fetch_source_metadata_once(data):
+    if data is None:
+        indicator_df = db.get_indicator_data_availability()
+        boost_df = db.get_boost_source_url()
+        return {
+            "indicator_availability": indicator_df.to_dict("records"),
+            "boost_source_urls": boost_df.to_dict("records"),
+        }
+    return no_update
+
+
+@app.callback(
+    Output({"type": "source-info-modal", "index": MATCH}, "is_open"),
+    Output({"type": "source-info-modal", "index": MATCH}, "children"),
+    Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
+    State("country-select", "value"),
+    State("stored-source-metadata", "data"),
+    State("stored-data", "data"),
+    prevent_initial_call=True,
+)
+def toggle_source_info_modal(n_clicks, country, source_meta, data):
+    if not n_clicks or not source_meta:
+        return no_update, no_update
+
+    index = ctx.triggered_id["index"]
+    source_keys = BUTTON_SOURCE_MAP.get(index, index)
+
+    # Support both single string and list of source keys
+    if isinstance(source_keys, str):
+        info = get_source_info(source_keys, country, source_meta, data)
+        children = build_modal_children(info)
+    else:
+        source_infos = [
+            get_source_info(sk, country, source_meta, data)
+            for sk in source_keys
+        ]
+        children = build_multi_source_modal_children(source_infos)
+
+    return True, children
 
 
 if __name__ == "__main__":

@@ -254,3 +254,19 @@ class QueryService:
             FROM prd_mega.{BOOST_SCHEMA}.expenditure_insights
         """
         return self.fetch_data(query)
+
+    def get_indicator_data_availability(self):
+        query = f"""
+            SELECT country_name, indicator_key, start_year, end_year,
+                   source_url, title, description, source_name
+            FROM prd_mega.{INDICATOR_SCHEMA}.indicator_data_availability
+        """
+        return self.fetch_data(query)
+
+    def get_boost_source_url(self):
+        query = f"""
+            SELECT country_name, boost_source_url,
+                   boost_title, boost_description, boost_source_name
+            FROM prd_mega.{BOOST_SCHEMA}.data_availability_test
+        """
+        return self.fetch_data(query)

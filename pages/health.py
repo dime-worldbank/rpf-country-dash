@@ -28,6 +28,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
+from components.source_metadata_popover import source_info_button, empty_modal
 from components import get_segment_narrative
 
 db = QueryService.get_instance()
@@ -131,9 +132,7 @@ def render_health_content(tab):
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Who Pays for Healthcare?",
-                        )
+                        html.H3(children="Who Pays for Healthcare?")
                     )
                 ),
                 dbc.Row(
@@ -152,20 +151,28 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-public-private",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-public-private"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-public-private",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-public-private"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-total",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-total"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-total",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-total"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -180,20 +187,20 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Public Spending & Health Outcome",
-                            ),
-                        ]
+                        html.H3(children="Public Spending & Health Outcome")
                     )
                 ),
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-outcome",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-outcome"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-outcome",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-outcome"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -224,11 +231,7 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Operational vs. Capital Spending",
-                            ),
-                        ]
+                        html.H3(children="Operational vs. Capital Spending")
                     )
                 ),
                 dbc.Row(
@@ -237,7 +240,14 @@ def render_health_content(tab):
                         dbc.Row(
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-health", width=6),
-                                dbc.Col(dcc.Graph(id="econ-breakdown-func-health"), width=6),
+                                dbc.Col(
+                                    html.Div([
+                                        html.Div(source_info_button("health-opvcap"), style={"textAlign": "right"}),
+                                        dcc.Graph(id="econ-breakdown-func-health"),
+                                        empty_modal("health-opvcap"),
+                                    ]),
+                                    width=6
+                                ),
                             ]
                         ),
                     ]
@@ -268,9 +278,7 @@ def render_health_content(tab):
                 dbc.Row(style={"height": "20px"}),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Centrally vs. Geographically Allocated Health Spending",
-                        )
+                        html.H3(children="Centrally vs. Geographically Allocated Health Spending")
                     )
                 ),
                 dbc.Row(
@@ -285,8 +293,22 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(dcc.Graph(id="health-central-vs-regional"), width=5),
-                        dbc.Col(dcc.Graph(id="health-sub-func"), width=7),
+                        dbc.Col(
+                            html.Div([
+                                html.Div(source_info_button("health-central-regional"), style={"textAlign": "right"}),
+                                dcc.Graph(id="health-central-vs-regional"),
+                                empty_modal("health-central-regional"),
+                            ]),
+                            width=5
+                        ),
+                        dbc.Col(
+                            html.Div([
+                                html.Div(source_info_button("health-sub-func"), style={"textAlign": "right"}),
+                                dcc.Graph(id="health-sub-func"),
+                                empty_modal("health-sub-func"),
+                            ]),
+                            width=7
+                        ),
                     ]
                 ),
                 dbc.Row(
@@ -353,20 +375,28 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-expenditure-map",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-expenditure-map"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-expenditure-map",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-expenditure-map"),
+                            ]),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-outcome-map",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-outcome-map"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-outcome-map",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-outcome-map"),
+                            ]),
                             xs=12,
                             sm=12,
                             md=6,
@@ -388,10 +418,14 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-subnational",
-                                config={"displayModeBar": False},
-                            ),
+                            html.Div([
+                                html.Div(source_info_button("health-subnational"), style={"textAlign": "right"}),
+                                dcc.Graph(
+                                    id="health-subnational",
+                                    config={"displayModeBar": False},
+                                ),
+                                empty_modal("health-subnational"),
+                            ]),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

@@ -3,3 +3,61 @@
     white-space: normal !important;
     color: white !important;
 }
+
+/* Source info button - subtle circular icon */
+.btn-link:focus {
+    box-shadow: none;
+}
+
+/* Source detail modal styling */
+.modal-content {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    opacity: 1 !important;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.modal-backdrop.show {
+    opacity: 0.5 !important;
+}
+
+.modal-header {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-header .btn-close {
+    filter: none !important;
+}
+
+.modal-title {
+    color: #212529 !important;
+}
+
+.modal-body {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.modal-body h6 {
+    color: #212529 !important;
+}
+
+.modal-body p {
+    color: #555555 !important;
+}
+
+.modal-body span {
+    color: #333333 !important;
+}
+
+.modal-body a {
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.modal-body a:hover {
+    text-decoration: underline;
+}
