@@ -341,11 +341,21 @@ def update_hd_index_map(
     ):
         return empty_plot("Data not available")
 
-    df = _subset_data(
-        subnational_data["expenditure_and_outcome_by_country_geo1_func_year"],
-        year, country, func
+    all_data = pd.DataFrame(
+        subnational_data["expenditure_and_outcome_by_country_geo1_func_year"]
     )
-    df = df[df.adm1_name != 'Central Scope']
+    all_data = filter_country_sort_year(all_data, country)
+    all_data = all_data[(all_data.func == func) & (all_data.adm1_name != 'Central Scope')]
+
+    outcome_data = all_data.dropna(subset=["outcome_index"])
+    available_years = sorted(outcome_data["year"].unique())
+    relevant_years = [y for y in available_years if y <= year]
+
+    if not relevant_years:
+        return empty_plot("No outcome data available for this period")
+
+    display_year = relevant_years[-1]
+    df = all_data[all_data.year == display_year].copy()
 
     if df.empty:
         return empty_plot("No data available for the selected year")
@@ -368,7 +378,7 @@ def update_hd_index_map(
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
     ]
-    df.dropna(subset=["outcome_index"], inplace=True)
+    df = df.dropna(subset=["outcome_index"])
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
@@ -429,7 +439,7 @@ def update_hd_index_map(
                 x=0,
                 y=-0.13,
                 xanchor="left",
-                text=f"Displaying data from {year}",
+                text=f"Displaying data from {display_year}",
                 showarrow=False,
                 font=dict(size=12),
             ),
