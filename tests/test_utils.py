@@ -2,7 +2,17 @@ import unittest
 import pandas as pd
 import plotly.graph_objects as go
 from pandas.testing import assert_frame_equal
-from utils import filter_country_sort_year, get_correlation_text, calculate_cagr, format_currency, add_currency_column, format_currency_yaxis
+import math
+from utils import (
+    filter_country_sort_year,
+    get_correlation_text,
+    assess_statistical_confidence,
+    calculate_cagr,
+    format_currency,
+    add_currency_column,
+    format_currency_yaxis,
+    millify,
+)
 
 class TestUtils(unittest.TestCase):
 
@@ -48,35 +58,97 @@ class TestUtils(unittest.TestCase):
         result_df = filter_country_sort_year(self.df, 'Canada', start_year=2010)
         assert_frame_equal(result_df.reset_index(drop=True), expected_df)
 
-    def test_positive_strong_correlation(self):
+    def test_positive_strong_correlation_small_sample(self):
         df = pd.DataFrame({"x": [1, 2, 3], "y": [2, 4, 6]})
         result = get_correlation_text(df, self.x_col, self.y_col)
         self.assertIn("very strong positive", result)
+        self.assertIn("only 3 data points", result)
+        self.assertIn("caution", result)
 
-    def test_negative_moderate_correlation(self):
+    def test_negative_strong_correlation_small_sample(self):
         df = pd.DataFrame({"x": [1, 2, 3], "y": [-1, -2, -3]})
         result = get_correlation_text(df, self.x_col, self.y_col)
         self.assertIn("very strong inverse", result)
+        self.assertIn("caution", result)
 
     def test_weak_correlation(self):
         df = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [1, 2, 1.5, 3.5, 1]})
         result = get_correlation_text(df, self.x_col, self.y_col)
         self.assertRegex(result, r"weak positive")
 
-    def test_no_correlation(self):
-        df = pd.DataFrame({"x": [1, 1, 1], "y": [2, 3, 4]})  # constant x
+    def test_no_variability_x(self):
+        df = pd.DataFrame({"x": [1, 1, 1], "y": [2, 3, 4]})
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("unknown due to limited data", result)
+        self.assertIn("insufficient variability", result)
 
-    def test_no_association(self):
-        df = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [5, 5, 5, 5, 5]})  # constant y
+    def test_no_variability_y(self):
+        df = pd.DataFrame({"x": [1, 2, 3, 4, 5], "y": [5, 5, 5, 5, 5]})
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("unknown due to limited data", result)
+        self.assertIn("insufficient variability", result)
 
-    def test_not_enough_data_points(self):
+    def test_insufficient_data_points(self):
         df = pd.DataFrame({"x": [1, 2], "y": [2, 4]})
         result = get_correlation_text(df, self.x_col, self.y_col)
-        self.assertIn("unknown due to limited data", result)
+        self.assertIn("insufficient data points", result)
+
+    def test_outlier_robust(self):
+        # Spearman is robust to outliers - the extreme value (100) doesn't flip the correlation
+        df = pd.DataFrame({
+            "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "y": [12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 100]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        # Rank-based correlation correctly identifies the inverse relationship
+        self.assertIn("inverse relationship", result)
+
+    def test_large_sample_significant(self):
+        df = pd.DataFrame({
+            "x": list(range(1, 21)),
+            "y": [v * 2 + 0.1 for v in range(1, 21)]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("indicates", result)
+        self.assertNotIn("not statistically significant", result)
+
+    def test_medium_sample_not_significant(self):
+        df = pd.DataFrame({
+            "x": [1, 2, 3, 4, 5, 6, 7],
+            "y": [3, 1, 4, 2, 5, 3, 4]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("not statistically significant", result)
+
+    def test_no_apparent_correlation(self):
+        df = pd.DataFrame({
+            "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            "y": [5, 3, 6, 4, 5, 4, 6, 3, 5, 4]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("no apparent correlation", result)
+
+    def test_uses_spearman_robust_to_outliers(self):
+        df = pd.DataFrame({
+            "x": [1, 2, 3, 4, 5, 6, 7, 8, 9, 100],
+            "y": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("very strong positive", result)
+
+    def test_significant_uses_generally_associated(self):
+        df = pd.DataFrame({
+            "x": list(range(1, 21)),
+            "y": [v * 2 for v in range(1, 21)]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("is generally associated with", result)
+
+    def test_not_significant_uses_may_be_associated(self):
+        df = pd.DataFrame({
+            "x": [1, 2, 3, 4, 5, 6, 7],
+            "y": [3, 1, 4, 2, 5, 3, 4]
+        })
+        result = get_correlation_text(df, self.x_col, self.y_col)
+        self.assertIn("may be associated with", result)
         
     def test_cagr_invalid_years(self):
         self.assertIsNone(calculate_cagr(100, 200, None))
@@ -89,6 +161,51 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(calculate_cagr(float('nan'), 200, 5))
         self.assertIsNone(calculate_cagr(0, 200, 5))
         self.assertIsNone(calculate_cagr(-100, 200, 5))
+
+
+class TestAssessStatisticalConfidence(unittest.TestCase):
+
+    def test_insufficient_data(self):
+        result = assess_statistical_confidence(n=2, p_value=0.01)
+        self.assertEqual(result["confidence"], "insufficient")
+        self.assertEqual(result["verb"], "cannot be determined")
+        self.assertIn("insufficient data points", result["caveat"])
+        self.assertFalse(result["is_significant"])
+
+    def test_low_confidence_below_correlation_threshold(self):
+        result = assess_statistical_confidence(n=4, p_value=0.01)
+        self.assertEqual(result["confidence"], "low")
+        self.assertEqual(result["verb"], "tentatively suggests")
+        self.assertIn("caution", result["caveat"])
+        self.assertFalse(result["is_significant"])
+
+    def test_low_confidence_not_significant(self):
+        result = assess_statistical_confidence(n=10, p_value=0.15)
+        self.assertEqual(result["confidence"], "low")
+        self.assertEqual(result["verb"], "suggests")
+        self.assertIn("not statistically significant", result["caveat"])
+        self.assertFalse(result["is_significant"])
+
+    def test_high_confidence_significant(self):
+        result = assess_statistical_confidence(n=7, p_value=0.05)
+        self.assertEqual(result["confidence"], "high")
+        self.assertEqual(result["verb"], "indicates")
+        self.assertIsNone(result["caveat"])
+        self.assertTrue(result["is_significant"])
+
+    def test_boundary_p_threshold(self):
+        result_above = assess_statistical_confidence(n=10, p_value=0.11)
+        self.assertEqual(result_above["confidence"], "low")
+        self.assertFalse(result_above["is_significant"])
+
+        result_at = assess_statistical_confidence(n=10, p_value=0.10)
+        self.assertEqual(result_at["confidence"], "high")
+        self.assertTrue(result_at["is_significant"])
+
+    def test_custom_p_threshold(self):
+        result = assess_statistical_confidence(n=10, p_value=0.08, p_threshold=0.05)
+        self.assertEqual(result["confidence"], "low")
+        self.assertFalse(result["is_significant"])
 
 class TestFormatCurrency(unittest.TestCase):
 
@@ -183,6 +300,29 @@ class TestFormatCurrencyYaxis(unittest.TestCase):
     def test_returns_figure(self):
         result = format_currency_yaxis(self.fig, "BTN", "GDP")
         self.assertIsInstance(result, go.Figure)
+
+
+class TestMillify(unittest.TestCase):
+
+    def test_nan_returns_na(self):
+        result = millify(float('nan'))
+        self.assertEqual(result, "N/A")
+
+    def test_thousands(self):
+        result = millify(1500)
+        self.assertEqual(result, "1.50 K")
+
+    def test_millions(self):
+        result = millify(2_000_000)
+        self.assertEqual(result, "2.00 M")
+
+    def test_small_number(self):
+        result = millify(750)
+        self.assertEqual(result, "750.00")
+
+    def test_zero(self):
+        result = millify(0)
+        self.assertEqual(result, "0.00")
 
 
 if __name__ == '__main__':

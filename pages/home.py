@@ -12,6 +12,7 @@ from utils import (
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
+    get_correlation_text,
     remove_accents,
     require_login,
     format_currency_yaxis,
@@ -19,7 +20,8 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis, get_segment_narrative
+from components import slider, get_slider_config, pefa, budget_increment_analysis
+from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from queries import QueryService
@@ -517,9 +519,19 @@ def per_capita_figure(df, currency_name, currency_code):
     return fig
 
 
-def overview_narrative(df, insight_df):
+def overview_narrative(df):
     country = df.country_name.iloc[0]
-    trend_narrative = get_segment_narrative(insight_df)
+
+    # Compute segments on-the-fly (filter only on real_expenditure to match pre-computed)
+    plot_df = (
+        df.dropna(subset=["real_expenditure"])
+        .groupby("year")["real_expenditure"].sum()
+        .reset_index()
+        .sort_values("year")
+    )
+    extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
+    trend_narrative = get_segment_narrative(extractor=extractor, metric="total real expenditure")
+
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
         text = f"After accounting for inflation, {trend_narrative} "
@@ -664,7 +676,6 @@ def subnational_spending_narrative(
     top_n=3,
     exp_thresh=0.5,
     per_capita_thresh=1000,
-    corr_thresholds=(0.3, 0.7),
 ):
     total_expenditure = (
         df_spending.groupby("adm1_name")["expenditure"]
@@ -679,9 +690,6 @@ def subnational_spending_narrative(
     ].mean()
     per_capita_range = per_capita_expenditure.max() - per_capita_expenditure.min()
     per_capita_median = per_capita_expenditure.median()
-    if not df_poverty.empty:
-        poverty_rates = df_poverty.groupby("region_name")["poverty_rate"].mean()
-        correlation = per_capita_expenditure.corr(poverty_rates)
 
     if top_n_percentage > exp_thresh:
         exp_narrative = [
@@ -690,25 +698,30 @@ def subnational_spending_narrative(
     else:
         exp_narrative = [f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."]
 
-    exp_narrative.append( html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
+    exp_narrative.append(html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
+
     if per_capita_range > per_capita_thresh:
         per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {format_currency(per_capita_expenditure.min(), currency_code)} \
             to {format_currency(per_capita_expenditure.max(), currency_code)}, with a median of {format_currency(per_capita_median, currency_code)}. This indicates substantial variation in resource allocation per person."
     else:
         per_capita_narrative = f"Per capita spending ranges from {format_currency(per_capita_expenditure.min(), currency_code)} to {format_currency(per_capita_expenditure.max(), currency_code)}, \
             with a median of {format_currency(per_capita_median, currency_code)}. The distribution is relatively even across regions."
+
+    corr_narrative = ""
     if not df_poverty.empty:
-        if abs(correlation) > corr_thresholds[1]:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f},\
-                indicating a strong inverse relationship. Higher per capita spending is generally associated with lower poverty rates."
-        elif abs(correlation) > corr_thresholds[0]:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f}, \
-                suggesting a moderate inverse relationship. Generally, higher per capita spending is associated with lower poverty, though exceptions exist."
-        else:
-            corr_narrative = f"The correlation between per capita spending and poverty rates is {correlation:.2f}, \
-                indicating a weak inverse relationship. There is little consistent pattern between higher per capita spending and poverty rates."
-    else:
-        corr_narrative = ""
+        poverty_rates = df_poverty.groupby("region_name")["poverty_rate"].mean()
+        corr_df = pd.DataFrame({
+            "per_capita": per_capita_expenditure,
+            "poverty": poverty_rates
+        }).dropna()
+
+        if len(corr_df) >= 3:
+            corr_narrative = get_correlation_text(
+                corr_df,
+                x_col={"col_name": "poverty", "display": "poverty rates"},
+                y_col={"col_name": "per_capita", "display": "per capita spending"},
+            )
+            corr_narrative = corr_narrative[0].upper() + corr_narrative[1:]
 
     return [f"{per_capita_narrative} {corr_narrative} "] + exp_narrative
 
@@ -961,19 +974,16 @@ def update_heading(country):
     Input("stored-data", "data"),
     Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
-    Input("stored-data-insights", "data")
 )
-def render_overview_total_figure(data, basic_country_data, country, insights_data):
+def render_overview_total_figure(data, basic_country_data, country):
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
-    
+
     # Extract currency_name once at callback level
     basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
     currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
-    insights_df = pd.DataFrame(insights_data["expenditure_insights"])
-    insights_df = insights_df[(insights_df["country_name"] == country) & (insights_df['dimension_filter'] == "Total")]
-    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df, insights_df)
+    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df)
 
 
 @callback(

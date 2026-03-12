@@ -247,10 +247,3 @@ class QueryService:
         """
         df = self.execute_query(query)
         return dict(zip(df["username"], df["salted_password"]))
-
-    def get_expenditure_insight(self):
-        query = f"""
-            SELECT *
-            FROM prd_mega.{BOOST_SCHEMA}.expenditure_insights
-        """
-        return self.fetch_data(query)
