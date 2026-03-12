@@ -231,7 +231,7 @@ def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
     - n >= 5: correlation analysis with p < 0.10 for significance
 
     Returns dict with:
-    - confidence: "insufficient", "low", "moderate", "high"
+    - confidence: "insufficient", "low", "high"
     - verb: "cannot be determined", "tentatively suggests", "suggests", "indicates"
     - caveat: optional caveat string or None
     - is_significant: whether result is statistically significant
@@ -271,8 +271,8 @@ def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
 def get_correlation_text(df, x_col, y_col):
     """
     Get the correlation text based on Spearman correlation with statistical rigor.
-    Uses Spearman as primary (robust to outliers), Pearson as secondary to detect
-    outlier sensitivity. Adjusts narrative based on sample size and significance.
+    Uses Spearman (rank-based, robust to outliers) and adjusts the narrative based
+    on sample size and statistical significance.
 
     Intended for cross-sectional/subnational comparisons.
     """
