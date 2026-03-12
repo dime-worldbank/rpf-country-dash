@@ -18,7 +18,6 @@ from utils import (
     require_login,
 )
 import numpy as np
-import traceback
 from components.year_slider import slider, get_slider_config
 from components.func_operational_vs_capital_spending import render_econ_breakdown
 from components.edu_health_across_space import (
