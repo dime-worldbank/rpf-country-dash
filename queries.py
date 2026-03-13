@@ -262,5 +262,3 @@ class QueryService:
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)
-
-        return dict(zip(df["username"], df["salted_password"]))

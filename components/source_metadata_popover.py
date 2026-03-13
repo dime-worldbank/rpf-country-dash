@@ -339,10 +339,11 @@ def _build_source_section(section, country_name=None):
 
 def build_modal_children(info):
     """
-    Build [ModalHeader, ModalBody] for a chart info modal.
+    Build the ModalBody contents for a chart info modal.
 
     ``info`` is a dict from :data:`CHART_METADATA` augmented with
     ``source_sections`` by the callback.
+    Returns a list containing a single :class:`dbc.ModalBody`.
     """
     source_sections = info.get("source_sections", [])
 
