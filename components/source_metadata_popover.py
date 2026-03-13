@@ -432,17 +432,17 @@ def get_coverage_years(key, country, source_meta, expenditure_data=None):
         return None, None
 
     if key == "boost":
-        if not expenditure_data:
+        if not source_meta:
             return None, None
-        exp_df = pd.DataFrame(
-            expenditure_data.get("expenditure_w_poverty_by_country_year", [])
-        )
-        if exp_df.empty:
-            return None, None
-        country_df = exp_df[exp_df.country_name == country]
-        if country_df.empty:
-            return None, None
-        return int(country_df.year.min()), int(country_df.year.max())
+        boost_rows = source_meta.get("boost_source_urls", [])
+        for row in boost_rows:
+            if row.get("country_name") == country:
+                start = row.get("boost_earliest_year")
+                end = row.get("boost_latest_year")
+                if start and end:
+                    return int(start), int(end)
+                return None, None
+        return None, None
 
     if not source_meta:
         return None, None
