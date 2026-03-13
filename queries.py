@@ -259,7 +259,7 @@ class QueryService:
     def get_boost_source_urls(self):
         query = f"""
             SELECT country_name, boost_source_url, boost_earliest_year, boost_latest_year
-            FROM prd_mega.{BOOST_SCHEMA}.data_availability_test
+            FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)
 

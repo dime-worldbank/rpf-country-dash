@@ -9,8 +9,6 @@ import dash_bootstrap_components as dbc
 # Dynamic per-country coverage years and source URLs are merged at runtime.
 #
 # Fields:
-#   title       – modal header / chart name
-#   description – optional chart-level explanatory text (methodology, etc.)
 #   sources     – list of data sources used by this chart, each with:
 #       key         – pipeline key for coverage-year and URL lookup
 #                     ("boost" or an indicator_key)
@@ -23,38 +21,32 @@ CHART_METADATA = {
     # Home – Over Time
     # ------------------------------------------------------------------
     "home-total-exp": {
-        "title": "Total Expenditure",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "home-percapita-exp": {
-        "title": "Per Capita Expenditure & Poverty Rate",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
             {"key": "poverty_rate", "label": "Poverty Rate", "source_name": "World Bank Poverty and Inequality Platform"},
         ],
     },
     "home-func-breakdown": {
-        "title": "Spending by Functional Categories",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "home-func-growth": {
-        "title": "Budget Growth by Functional Categories",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "home-econ-breakdown": {
-        "title": "Spending by Economic Categories",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "home-pefa-overall": {
-        "title": "Quality of Budget Institutions (Overall)",
         "sources": [
             {
                 "key": "pefa_by_pillar",
@@ -72,7 +64,6 @@ CHART_METADATA = {
         ],
     },
     "home-pefa-pillar": {
-        "title": "Quality of Budget Institutions (By Pillar)",
         "sources": [
             {
                 "key": "pefa_by_pillar",
@@ -97,13 +88,11 @@ CHART_METADATA = {
     # Home – Across Space
     # ------------------------------------------------------------------
     "home-regional-spending": {
-        "title": "Regional Expenditure",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "home-regional-poverty": {
-        "title": "Poverty by Region",
         "sources": [
             {"key": "subnational_poverty_rate", "label": "Subnational Poverty Rate", "source_name": "World Bank"},
         ],
@@ -112,7 +101,6 @@ CHART_METADATA = {
     # Education – Over Time
     # ------------------------------------------------------------------
     "edu-public-private": {
-        "title": "Who Pays for Education?",
         "sources": [
             {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
             {
@@ -128,13 +116,11 @@ CHART_METADATA = {
         ],
     },
     "edu-total": {
-        "title": "Total Education Expenditure",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "edu-outcome": {
-        "title": "Public Spending & Education Outcome",
         "sources": [
             {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
             {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"},
@@ -142,7 +128,6 @@ CHART_METADATA = {
         ],
     },
     "edu-opvcap": {
-        "title": "Operational vs. Capital Spending",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
@@ -151,31 +136,26 @@ CHART_METADATA = {
     # Education – Across Space
     # ------------------------------------------------------------------
     "edu-central-regional": {
-        "title": "Centrally vs. Geographically Allocated Education Spending",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "edu-sub-func": {
-        "title": "Education by Sub-functional Categories",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "edu-expenditure-map": {
-        "title": "Education Expenditure Map",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "edu-outcome-map": {
-        "title": "Education Outcomes Map",
         "sources": [
             {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
         ],
     },
     "edu-subnational": {
-        "title": "Public Spending vs. Education Outcomes Across Regions",
         "sources": [
             {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
             {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
@@ -185,7 +165,6 @@ CHART_METADATA = {
     # Health – Over Time
     # ------------------------------------------------------------------
     "health-public-private": {
-        "title": "Who Pays for Healthcare?",
         "sources": [
             {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
             {
@@ -201,20 +180,17 @@ CHART_METADATA = {
         ],
     },
     "health-total": {
-        "title": "Total Health Expenditure",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "health-outcome": {
-        "title": "Public Spending & Health Outcome",
         "sources": [
             {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
             {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
         ],
     },
     "health-opvcap": {
-        "title": "Operational vs. Capital Spending",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
@@ -223,31 +199,26 @@ CHART_METADATA = {
     # Health – Across Space
     # ------------------------------------------------------------------
     "health-central-regional": {
-        "title": "Centrally vs. Geographically Allocated Health Spending",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "health-sub-func": {
-        "title": "Health by Sub-functional Categories",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "health-expenditure-map": {
-        "title": "Health Expenditure Map",
         "sources": [
             {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
         ],
     },
     "health-outcome-map": {
-        "title": "Health Outcomes Map",
         "sources": [
             {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
         ],
     },
     "health-subnational": {
-        "title": "Public Spending vs. Health Outcomes Across Regions",
         "sources": [
             {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
             {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
@@ -413,6 +384,7 @@ def empty_modal(index):
         is_open=False,
         centered=True,
         size="lg",
+        className="source-info-modal",
     )
 
 

@@ -404,12 +404,14 @@ def toggle_source_info_modal(n_clicks, country, source_meta, data):
     index = ctx.triggered_id["index"]
     chart_meta = CHART_METADATA.get(index, {})
 
-    # Build lookup map for indicator source URLs (now part of indicator_availability)
+    # Build lookup map for indicator source URLs, filtered by selected country
     indicator_url_map = {}
-    for row in (source_meta or {}).get("indicator_availability", []):
-        url = row.get("source_url")
-        if url:
-            indicator_url_map[row["indicator_key"]] = url
+    if country:
+        for row in (source_meta or {}).get("indicator_availability", []):
+            if row.get("country_name") == country:
+                url = row.get("source_url")
+                if url:
+                    indicator_url_map[row["indicator_key"]] = url
 
     boost_url = ""
     if country:
