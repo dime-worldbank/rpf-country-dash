@@ -6,6 +6,7 @@ import math
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from scipy import stats
 from colormath.color_objects import sRGBColor, CMYKColor
 from colormath.color_conversions import convert_color
 from auth import AUTH_ENABLED
@@ -136,6 +137,8 @@ millnames = ["", " K", " M", " B", " T"]
 
 def millify(n):
     n = float(n)
+    if math.isnan(n):
+        return "N/A"
     millidx = max(
         0,
         min(
@@ -213,40 +216,109 @@ def get_percentage_change_text(percent):
         return f"decreased by {-1 * percent:.0%}"
 
 
+THRESHOLD_INSUFFICIENT = 3  # Minimum for any analysis
+THRESHOLD_CORRELATION = 5   # Minimum for correlation analysis
+P_THRESHOLD = 0.10          # Threshold for statistical significance
+
+
+def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
+    """
+    Assess statistical confidence based on sample size and p-value.
+
+    Thresholds aligned with trend-narrative library:
+    - n < 3: insufficient data for any analysis
+    - n < 5: too few for correlation, descriptive only
+    - n >= 5: correlation analysis with p < 0.10 for significance
+
+    Returns dict with:
+    - confidence: "insufficient", "low", "high"
+    - verb: "cannot be determined", "tentatively suggests", "suggests", "indicates"
+    - caveat: optional caveat string or None
+    - is_significant: whether result is statistically significant
+    """
+    if n < THRESHOLD_INSUFFICIENT:
+        return {
+            "confidence": "insufficient",
+            "verb": "cannot be determined",
+            "caveat": "due to insufficient data points",
+            "is_significant": False,
+        }
+
+    if n < THRESHOLD_CORRELATION:
+        return {
+            "confidence": "low",
+            "verb": "tentatively suggests",
+            "caveat": f"with only {n} data points, this should be interpreted with caution",
+            "is_significant": False,
+        }
+
+    if p_value > p_threshold:
+        return {
+            "confidence": "low",
+            "verb": "suggests",
+            "caveat": f"this is not statistically significant (p={p_value:.2f}, n={n})",
+            "is_significant": False,
+        }
+
+    return {
+        "confidence": "high",
+        "verb": "indicates",
+        "caveat": None,
+        "is_significant": True,
+    }
+
+
 def get_correlation_text(df, x_col, y_col):
     """
-    Get the correlation text based on the PCC value
-    :param df: DataFrame
-    :param x_col: {"col_name": str, "display": str} // col_name is the column name in the DataFrame and display is the name to be displayed in the text
-    :param y_col: {"col_name": str, "display": str} // col_name is the column name in the DataFrame and display is the name to be displayed in the text
-    :return: str
+    Get the correlation text based on Spearman correlation with statistical rigor.
+    Uses Spearman (rank-based, robust to outliers) and adjusts the narrative based
+    on sample size and statistical significance.
+
+    Intended for cross-sectional/subnational comparisons.
     """
-    pcc = df[x_col["col_name"]].corr(df[y_col["col_name"]])
+    x, y = x_col["col_name"], y_col["col_name"]
+    x_name, y_name = x_col["display"], y_col["display"]
+    data = df[[x, y]].dropna()
+    n = data.shape[0]
 
-    x_display_name = x_col["display"]
-    y_display_name = y_col["display"]
+    if n < THRESHOLD_INSUFFICIENT:
+        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points."
 
-    if isnan(pcc) or df.shape[0] <= 2:
-        return f"the correlation between {x_display_name} and {y_display_name} is unknown due to limited data availability or variability."
+    # Use Spearman (rank-based) correlation - robust to outliers
+    spearman_corr, p_value = stats.spearmanr(data[x], data[y])
+    if isnan(spearman_corr):
+        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data."
 
-    if pcc > 0:
-        direction = "positive"
-        association = "higher"
-    else:
-        direction = "inverse"
-        association = "lower"
-
-    intensity = None
-    for threshold, pcc_text in sorted(CORRELATION_THRESHOLDS.items()):
-        if abs(pcc) <= float(threshold):
-            intensity = pcc_text
-            break
+    # Determine direction and intensity
+    direction = "positive" if spearman_corr > 0 else "inverse"
+    association = "higher" if spearman_corr > 0 else "lower"
+    intensity = next(
+        (text for threshold, text in sorted(CORRELATION_THRESHOLDS.items())
+         if abs(spearman_corr) <= threshold),
+        "very strong"
+    )
 
     if intensity == "no":
-        return f"there is no correlation between {y_display_name} and {x_display_name}."
+        return f"there is no apparent correlation between {y_name} and {x_name}."
 
-    text = f"the correlation between {y_display_name} and {x_display_name} is {pcc:.1f}, indicating a {intensity} {direction} relationship. Higher {y_display_name} is generally associated with {association} {x_display_name}."""
-    return text
+    # Build narrative components
+    confidence = assess_statistical_confidence(n, p_value)
+    relation = f"a {intensity} {direction} relationship"
+
+    if confidence["is_significant"]:
+        association_text = f"Higher {y_name} is generally associated with {association} {x_name}."
+    else:
+        association_text = f"Higher {y_name} may be associated with {association} {x_name}."
+
+    # Assemble narrative based on confidence level
+    if n < THRESHOLD_CORRELATION:
+        intro = f"with only {n} data points, the rank-based correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
+        caveat = "However, this should be interpreted with caution."
+    else:
+        intro = f"the rank-based correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
+        caveat = f"However, {confidence['caveat']}." if confidence["caveat"] else ""
+
+    return f"{intro} {relation}. {association_text} {caveat}".strip()
 
 
 def detect_trend(df, x_col):
