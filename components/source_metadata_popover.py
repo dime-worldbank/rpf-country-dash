@@ -14,7 +14,12 @@ _POVERTY_DESCRIPTION = (
     "and $8.30 for Upper Middle and High Income countries."
 )
 
-_BOOST = {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"}
+_BOOST = {
+    "key": "boost",
+    "label": "BOOST Expenditure Data",
+    "source_name": "World Bank BOOST",
+    "source_url": "https://www.worldbank.org/en/programs/boost-portal/country-data",
+}
 _BOOST_EDU = {**_BOOST, "label": "Public Education Expenditure"}
 _BOOST_HEALTH = {**_BOOST, "label": "Public Health Expenditure"}
 
@@ -89,13 +94,13 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Over Time
     # ------------------------------------------------------------------
-    "home-total-exp": {"sources": [_BOOST]},
-    "home-percapita-exp": {"sources": [_BOOST, _POVERTY_RATE]},
-    "home-func-breakdown": {"sources": [_BOOST]},
-    "home-func-growth": {"sources": [_BOOST]},
-    "home-econ-breakdown": {"sources": [_BOOST]},
-    "home-pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
-    "home-pefa-pillar": {"sources": [_PEFA]},
+    "overview-total": {"sources": [_BOOST]},
+    "overview-per-capita": {"sources": [_BOOST, _POVERTY_RATE]},
+    "functional-breakdown": {"sources": [_BOOST]},
+    "func-growth": {"sources": [_BOOST]},
+    "economic-breakdown": {"sources": [_BOOST]},
+    "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
+    "pefa-by-pillar": {"sources": [_PEFA]},
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
@@ -104,29 +109,29 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
-    "edu-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
-    "edu-total": {"sources": [_BOOST]},
-    "edu-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
-    "edu-opvcap": {"sources": [_BOOST]},
+    "education-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
+    "education-total": {"sources": [_BOOST]},
+    "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
+    "econ-breakdown-func-edu": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------
-    "edu-central-regional": {"sources": [_BOOST]},
-    "edu-sub-func": {"sources": [_BOOST]},
-    "edu-expenditure-map": {"sources": [_BOOST]},
-    "edu-outcome-map": {"sources": [_HD_INDEX]},
-    "edu-subnational": {"sources": [_BOOST_EDU, _HD_INDEX]},
+    "education-central-vs-regional": {"sources": [_BOOST]},
+    "education-sub-func": {"sources": [_BOOST]},
+    "education-expenditure-map": {"sources": [_BOOST]},
+    "education-outcome-map": {"sources": [_HD_INDEX]},
+    "education-subnational": {"sources": [_BOOST_EDU, _HD_INDEX]},
     # ------------------------------------------------------------------
     # Health – Over Time
     # ------------------------------------------------------------------
     "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
     "health-total": {"sources": [_BOOST]},
     "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
-    "health-opvcap": {"sources": [_BOOST]},
+    "econ-breakdown-func-health": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
     # Health – Across Space
     # ------------------------------------------------------------------
-    "health-central-regional": {"sources": [_BOOST]},
+    "health-central-vs-regional": {"sources": [_BOOST]},
     "health-sub-func": {"sources": [_BOOST]},
     "health-expenditure-map": {"sources": [_BOOST]},
     "health-outcome-map": {"sources": [_UHC]},
@@ -143,6 +148,7 @@ def source_info_button(index):
     return dbc.Button(
         "\u24D8",
         id={"type": "source-info-btn", "index": index},
+        #TODO consider moving this styling to css
         style={
             "fontSize": "18px",
             "width": "28px",
@@ -163,20 +169,23 @@ def source_info_button(index):
     )
 
 
-def chart_container(chart_id, graph_component, info_index):
+def chart_container(chart_id):
     """Wrap a chart with the Details button overlaid in top-right.
 
     Args:
-        chart_id: HTML id for the container
-        graph_component: The dcc.Graph component
-        info_index: The chart key for CHART_METADATA lookup
+        chart_id: HTML id for the container and chart metadata key
     """
+    from dash import dcc
+
+    graph = dcc.Graph(id=chart_id, config={"displayModeBar": False})
+
     return html.Div(
         [
-            source_info_button(info_index),
-            graph_component,
-            empty_modal(info_index),
+            source_info_button(chart_id),
+            graph,
+            empty_modal(chart_id),
         ],
+        id=chart_id,
         style={
             "position": "relative",
             "width": "100%",
@@ -191,11 +200,11 @@ def _make_detail_row(label, value):
         [
             html.Span(
                 f"{label}: ",
-                style={"fontWeight": "bold", "color": "#333"},
+                className="detail-label",
             ),
             html.Span(value),
         ],
-        style={"marginBottom": "8px"},
+        className="detail-row",
     )
 
 
@@ -211,13 +220,7 @@ def _build_source_section(section, country_name=None):
     children.append(
         html.H6(
             section.get("label", ""),
-            style={
-                "color": "#333",
-                "marginTop": "12px",
-                "marginBottom": "6px",
-                "borderBottom": "1px solid #dee2e6",
-                "paddingBottom": "4px",
-            },
+            className="source-section-heading",
         )
     )
 
@@ -234,7 +237,7 @@ def _build_source_section(section, country_name=None):
             href=source_url,
             target="_blank",
             rel="noopener noreferrer",
-            style={"wordBreak": "break-all"},
+            className="source-info-link",
         )
         children.append(_make_detail_row("More info", link))
 
@@ -249,7 +252,7 @@ def _build_source_section(section, country_name=None):
         label = f"Coverage for {country_name}" if country_name else "Coverage"
         children.append(_make_detail_row(label, html.Span(coverage)))
 
-    return html.Div(children)
+    return html.Div(children, className="rpf-source-section")
 
 
 def build_modal_children(info):
@@ -270,6 +273,7 @@ def build_modal_children(info):
             html.Button(
                 "\u00D7",
                 id={"type": "source-info-close", "index": info.get("_index", "")},
+                #TODO consider moving this styling to css
                 style={
                     "background": "none",
                     "border": "none",
@@ -289,7 +293,7 @@ def build_modal_children(info):
     for section in source_sections:
         body.append(_build_source_section(section, country_name=info.get("country_name")))
 
-    return [dbc.ModalBody(body)]
+    return [dbc.ModalBody(body, className="rpf-modal-body")]
 
 
 def empty_modal(index):
@@ -310,42 +314,31 @@ def empty_modal(index):
 
 def get_coverage_years(key, country, source_meta, expenditure_data=None):
     """
-    Return ``(start_year, end_year)`` for a coverage key and country.
+    Return ``(earliest_year, latest_year)`` for a coverage key and country.
 
-    *key* is either ``"boost"`` (looks up from expenditure data) or an
-    indicator_key such as ``"pefa_by_pillar"`` (looks up from
-    ``indicator_data_availability``).
+    *key* is either ``"boost"`` (looks up from boost_source_urls) or an
+    indicator_key such as ``"pefa_by_pillar"`` (looks up from indicator_availability).
     """
-    if not country:
+    if not country or not source_meta:
         return None, None
 
-    if key == "boost":
-        if not source_meta:
-            return None, None
-        boost_rows = source_meta.get("boost_source_urls", [])
-        for row in boost_rows:
-            if row.get("country_name") == country:
-                start = row.get("boost_earliest_year")
-                end = row.get("boost_latest_year")
-                if start and end:
-                    return int(start), int(end)
-                return None, None
-        return None, None
-
-    if not source_meta:
-        return None, None
-    indicator_rows = pd.DataFrame(
-        source_meta.get("indicator_availability", [])
+    # Select the appropriate data source
+    rows = (
+        source_meta.get("boost_source_urls", [])
+        if key == "boost"
+        else source_meta.get("indicator_availability", [])
     )
-    if indicator_rows.empty:
-        return None, None
-    match = indicator_rows[
-        (indicator_rows.country_name == country)
-        & (indicator_rows.indicator_key == key)
-    ]
-    if match.empty:
-        return None, None
-    row = match.iloc[0]
-    start = int(row["start_year"]) if pd.notna(row.get("start_year")) else None
-    end = int(row["end_year"]) if pd.notna(row.get("end_year")) else None
-    return start, end
+
+    # Find matching row
+    for row in rows:
+        if row.get("country_name") == country and (
+            key == "boost" or row.get("indicator_key") == key
+        ):
+            start = row.get("earliest_year")
+            end = row.get("latest_year")
+            # Convert to int, return None if missing
+            start = int(start) if start else None
+            end = int(end) if end else None
+            return start, end
+
+    return None, None

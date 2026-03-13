@@ -50,7 +50,7 @@ class QueryService:
         if PUBLIC_ONLY:
             query = f"""
                 SELECT country_name, boost_source_url
-                FROM prd_mega.{BOOST_SCHEMA}.data_availability_test
+                FROM prd_mega.{BOOST_SCHEMA}.data_availability
                 WHERE boost_public = 'Yes'
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
@@ -251,14 +251,18 @@ class QueryService:
 
     def get_indicator_data_availability(self):
         query = f"""
-            SELECT country_name, indicator_key, start_year, end_year, source_url
+            SELECT country_name, indicator_key, earliest_year, latest_year, source_url
             FROM prd_mega.{INDICATOR_SCHEMA}.indicator_data_availability
         """
         return self.fetch_data(query)
 
     def get_boost_source_urls(self):
         query = f"""
-            SELECT country_name, boost_source_url, boost_earliest_year, boost_latest_year
+            SELECT
+                country_name,
+                boost_source_url AS source_url,
+                boost_earliest_year AS earliest_year,
+                boost_latest_year AS latest_year
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)

@@ -141,13 +141,7 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "education-public-private",
-    dcc.Graph(
-                                    id="education-public-private",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-public-private",
-),
+    "education-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -155,13 +149,7 @@ def render_education_content(tab):
                         ),
                         dbc.Col(
                             chart_container(
-    "education-total",
-    dcc.Graph(
-                                    id="education-total",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-total",
-),
+    "education-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -183,13 +171,7 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "education-outcome",
-    dcc.Graph(
-                                    id="education-outcome",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-outcome",
-),
+    "education-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -236,10 +218,7 @@ def render_education_content(tab):
                                 dbc.Col(id="econ-breakdown-func-narrative-edu", width=6),
                                 dbc.Col(
                                     chart_container(
-    "econ-breakdown-func-edu",
-    dcc.Graph(id="econ-breakdown-func-edu", config={"displayModeBar": False}),
-    "edu-opvcap",
-),
+    "econ-breakdown-func-edu"),
                                     width=6
                                 ),
                             ]
@@ -289,18 +268,12 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "education-central-vs-regional",
-    dcc.Graph(id="education-central-vs-regional", config={"displayModeBar": False}),
-    "edu-central-regional",
-),
+    "education-central-vs-regional"),
                             width=5
                         ),
                         dbc.Col(
                             chart_container(
-    "education-sub-func",
-    dcc.Graph(id="education-sub-func", config={"displayModeBar": False}),
-    "edu-sub-func",
-),
+    "education-sub-func"),
                             width=7
                         ),
                     ]
@@ -368,13 +341,7 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "education-expenditure-map",
-    dcc.Graph(
-                                    id="education-expenditure-map",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-expenditure-map",
-),
+    "education-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -382,13 +349,7 @@ def render_education_content(tab):
                         ),
                         dbc.Col(
                             chart_container(
-    "education-outcome-map",
-    dcc.Graph(
-                                    id="education-outcome-map",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-outcome-map",
-),
+    "education-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -411,13 +372,7 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "education-subnational",
-    dcc.Graph(
-                                    id="education-subnational",
-                                    config={"displayModeBar": False},
-                                ),
-    "edu-subnational",
-),
+    "education-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

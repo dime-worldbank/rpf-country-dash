@@ -397,7 +397,7 @@ def fetch_source_metadata_once(data):
     State("stored-data", "data"),
     prevent_initial_call=True,
 )
-def toggle_source_info_modal(n_clicks, country, source_meta, data):
+def open_source_info_modal(n_clicks, country, source_meta, data):
     if not n_clicks:
         return no_update, no_update
 
@@ -437,12 +437,9 @@ def toggle_source_info_modal(n_clicks, country, source_meta, data):
 
         # Source URL: pipeline first, then fall back to config
         if key == "boost":
-            if boost_url:
-                section["source_url"] = boost_url
+            section["source_url"] = boost_url or src.get("source_url")
         else:
-            url = indicator_url_map.get(key) or src.get("source_url")
-            if url:
-                section["source_url"] = url
+            section["source_url"] = indicator_url_map.get(key) or src.get("source_url")
 
         source_sections.append(section)
 

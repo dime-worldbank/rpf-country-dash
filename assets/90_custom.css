@@ -1,40 +1,64 @@
+/* Detail row styling in modal */
+.detail-row {
+    margin-bottom: 8px;
+}
+
+.detail-label {
+    font-weight: bold;
+    color: #333;
+}
+
+/* Source section heading in modal */
+.source-section-heading {
+    color: #333;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 4px;
+}
+
+/* Source info link in modal */
+.source-info-link {
+    word-break: break-all;
+}
+
 .disclaimer-tooltip.tooltip .tooltip-inner {
     max-width: 500px !important;
     white-space: normal !important;
     color: white !important;
 }
 
-/* Source info modal styling – scoped to avoid affecting other modals */
+/* Source info modal styling – using custom class names for specificity */
 .source-info-modal .modal-content {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-    opacity: 1 !important;
+    background-color: #ffffff;
+    color: #212529;
+    opacity: 1;
     border: 1px solid #dee2e6;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-.source-info-modal .modal-body {
-    background-color: #ffffff !important;
-    color: #333333 !important;
+.rpf-modal-body {
+    background-color: #ffffff;
+    color: #333333;
 }
 
-.source-info-modal .modal-body h6 {
-    color: #212529 !important;
+.rpf-modal-body .source-section-heading {
+    color: #212529;
 }
 
-.source-info-modal .modal-body p {
-    color: #555555 !important;
+.rpf-modal-body p {
+    color: #555555;
 }
 
-.source-info-modal .modal-body span {
-    color: #333333 !important;
+.rpf-modal-body span {
+    color: #333333;
 }
 
-.source-info-modal .modal-body a {
+.rpf-modal-body a {
     color: #0d6efd;
     text-decoration: none;
 }
 
-.source-info-modal .modal-body a:hover {
+.rpf-modal-body a:hover {
     text-decoration: underline;
 }

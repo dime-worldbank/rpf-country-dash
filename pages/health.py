@@ -150,13 +150,7 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "health-public-private",
-    dcc.Graph(
-                                    id="health-public-private",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-public-private",
-),
+    "health-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -164,13 +158,7 @@ def render_health_content(tab):
                         ),
                         dbc.Col(
                             chart_container(
-    "health-total",
-    dcc.Graph(
-                                    id="health-total",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-total",
-),
+    "health-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -192,13 +180,7 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "health-outcome",
-    dcc.Graph(
-                                    id="health-outcome",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-outcome",
-),
+    "health-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -240,10 +222,7 @@ def render_health_content(tab):
                                 dbc.Col(id="econ-breakdown-func-narrative-health", width=6),
                                 dbc.Col(
                                     chart_container(
-    "econ-breakdown-func-health",
-    dcc.Graph(id="econ-breakdown-func-health", config={"displayModeBar": False}),
-    "health-opvcap",
-),
+    "econ-breakdown-func-health"),
                                     width=6
                                 ),
                             ]
@@ -293,18 +272,12 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "health-central-vs-regional",
-    dcc.Graph(id="health-central-vs-regional", config={"displayModeBar": False}),
-    "health-central-regional",
-),
+    "health-central-vs-regional"),
                             width=5
                         ),
                         dbc.Col(
                             chart_container(
-    "health-sub-func",
-    dcc.Graph(id="health-sub-func", config={"displayModeBar": False}),
-    "health-sub-func",
-),
+    "health-sub-func"),
                             width=7
                         ),
                     ]
@@ -374,13 +347,7 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "health-expenditure-map",
-    dcc.Graph(
-                                    id="health-expenditure-map",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-expenditure-map",
-),
+    "health-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -388,13 +355,7 @@ def render_health_content(tab):
                         ),
                         dbc.Col(
                             chart_container(
-    "health-outcome-map",
-    dcc.Graph(
-                                    id="health-outcome-map",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-outcome-map",
-),
+    "health-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -417,13 +378,7 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container(
-    "health-subnational",
-    dcc.Graph(
-                                    id="health-subnational",
-                                    config={"displayModeBar": False},
-                                ),
-    "health-subnational",
-),
+    "health-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

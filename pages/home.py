@@ -99,10 +99,7 @@ def render_overview_content(tab):
                         # How has total expenditure changed over time?
                         dbc.Col(
                             chart_container(
-                                "overview-total",
-                                dcc.Graph(id="overview-total", config={"displayModeBar": False}),
-                                "home-total-exp",
-                            ),
+                                "overview-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -111,13 +108,7 @@ def render_overview_content(tab):
                         # How has per capita expenditure changed over time?
                         dbc.Col(
                             chart_container(
-    "overview-per-capita",
-    dcc.Graph(
-                                    id="overview-per-capita",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-percapita-exp",
-),
+    "overview-per-capita"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -140,13 +131,7 @@ def render_overview_content(tab):
                         # How has sector prioritization changed over time?
                         dbc.Col(
                             chart_container(
-    "functional-breakdown",
-    dcc.Graph(
-                                    id="functional-breakdown",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-func-breakdown",
-),
+    "functional-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -208,10 +193,7 @@ def render_overview_content(tab):
                         ], width=4),
                         dbc.Col(
                             chart_container(
-    "func-growth",
-    dcc.Graph(id="func-growth", config={"displayModeBar": False}),
-    "home-func-growth",
-),
+    "func-growth"),
                             width=8,
                         ),
                     ]
@@ -232,13 +214,7 @@ def render_overview_content(tab):
                         # How much was spent on each economic category?
                         dbc.Col(
                             chart_container(
-    "economic-breakdown",
-    dcc.Graph(
-                                    id="economic-breakdown",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-econ-breakdown",
-),
+    "economic-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -279,13 +255,7 @@ def render_overview_content(tab):
                         # How did the overall quality of budget institutions change over time?
                         dbc.Col(
                             chart_container(
-    "pefa-overall",
-    dcc.Graph(
-                                    id="pefa-overall",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-pefa-overall",
-),
+    "pefa-overall"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -294,13 +264,7 @@ def render_overview_content(tab):
                         # How did various pillars of the budget institutions change over time?
                         dbc.Col(
                             chart_container(
-    "pefa-by-pillar",
-    dcc.Graph(
-                                    id="pefa-by-pillar",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-pefa-pillar",
-),
+    "pefa-by-pillar"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -369,13 +333,7 @@ def render_overview_content(tab):
                         # How much was spent in each region?
                         dbc.Col(
                             chart_container(
-    "subnational-spending",
-    dcc.Graph(
-                                    id="subnational-spending",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-regional-spending",
-),
+    "subnational-spending"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -384,13 +342,7 @@ def render_overview_content(tab):
                         # visualization of poverty by region
                         dbc.Col(
                             chart_container(
-    "subnational-poverty",
-    dcc.Graph(
-                                    id="subnational-poverty",
-                                    config={"displayModeBar": False},
-                                ),
-    "home-regional-poverty",
-),
+    "subnational-poverty"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
