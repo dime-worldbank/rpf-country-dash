@@ -138,6 +138,7 @@ CHART_METADATA = {
         "sources": [
             {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
             {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"},
+            {"key": "global_data_lab_attendance", "label": "School Attendance Rate", "source_name": "Global Data Lab"},
         ],
     },
     "edu-opvcap": {
@@ -192,10 +193,9 @@ CHART_METADATA = {
                 "label": "Out-of-Pocket Health Expenditure",
                 "source_name": "WHO Global Health Expenditure Database",
                 "description": (
-                    "Computed as CHE (current health expenditure in local "
-                    "currency) multiplied by OOP % of CHE, then adjusted for "
-                    "inflation using CPI. Source indicators: "
-                    "GHED_CHEGDP_SHA2011, GHED_OOPSCHE_SHA2011."
+                    "Out-of-pocket spending per person, calculated from "
+                    "total health expenditure and the share paid out of "
+                    "pocket, adjusted for inflation."
                 ),
             },
         ],
@@ -313,7 +313,7 @@ def _make_detail_row(label, value):
     )
 
 
-def _build_source_section(section):
+def _build_source_section(section, country_name=None):
     """Build the Dash components for a single source section.
 
     ``section`` is a dict with keys: label, source_name, and optionally
@@ -360,7 +360,8 @@ def _build_source_section(section):
     # Coverage years
     coverage = section.get("coverage")
     if coverage:
-        children.append(_make_detail_row("Coverage", html.Span(coverage)))
+        label = f"Coverage for {country_name}" if country_name else "Coverage"
+        children.append(_make_detail_row(label, html.Span(coverage)))
 
     return html.Div(children)
 
@@ -399,7 +400,7 @@ def build_modal_children(info):
 
     # Per-source sections
     for section in source_sections:
-        body.append(_build_source_section(section))
+        body.append(_build_source_section(section, country_name=info.get("country_name")))
 
     return [dbc.ModalBody(body)]
 
