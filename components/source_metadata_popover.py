@@ -135,45 +135,53 @@ CHART_METADATA = {
 
 
 def source_info_button(index):
-    """Renders a small circular info button with an (i) icon.
+    """Renders a small circular ⓘ info icon button.
 
+    Positioned absolutely in the top-right corner of the chart container.
     ``index`` is a chart key that appears in :data:`CHART_METADATA`.
-    The component id is a dict so that a single Dash pattern-matching
-    callback can service every button.
     """
-    return html.Span(
-        dbc.Button(
-            [
-                html.Span(
-                    "\u24D8",
-                    style={
-                        "fontSize": "16px",
-                        "marginRight": "4px",
-                        "verticalAlign": "middle",
-                    },
-                ),
-                html.Span(
-                    "Details",
-                    style={
-                        "fontSize": "13px",
-                        "verticalAlign": "middle",
-                    },
-                ),
-            ],
-            id={"type": "source-info-btn", "index": index},
-            size="sm",
-            style={
-                "padding": "2px 10px",
-                "borderRadius": "16px",
-                "verticalAlign": "middle",
-                "textDecoration": "none",
-                "lineHeight": "1.5",
-                "backgroundColor": "rgba(255, 255, 255, 0.15)",
-                "color": "#ffffff",
-                "border": "1px solid rgba(255, 255, 255, 0.5)",
-            },
-        ),
-        style={"marginLeft": "6px"},
+    return dbc.Button(
+        "\u24D8",
+        id={"type": "source-info-btn", "index": index},
+        style={
+            "fontSize": "18px",
+            "width": "28px",
+            "height": "28px",
+            "padding": "0",
+            "borderRadius": "50%",
+            "backgroundColor": "rgba(200, 200, 200, 0.3)",
+            "color": "#555555",
+            "border": "none",
+            "position": "absolute",
+            "top": "6px",
+            "right": "6px",
+            "zIndex": "1000",
+            "display": "flex",
+            "alignItems": "center",
+            "justifyContent": "center",
+        },
+    )
+
+
+def chart_container(chart_id, graph_component, info_index):
+    """Wrap a chart with the Details button overlaid in top-right.
+
+    Args:
+        chart_id: HTML id for the container
+        graph_component: The dcc.Graph component
+        info_index: The chart key for CHART_METADATA lookup
+    """
+    return html.Div(
+        [
+            source_info_button(info_index),
+            graph_component,
+            empty_modal(info_index),
+        ],
+        style={
+            "position": "relative",
+            "width": "100%",
+            "overflow": "visible",
+        },
     )
 
 

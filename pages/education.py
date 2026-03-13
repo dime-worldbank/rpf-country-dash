@@ -28,7 +28,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
-from components.source_metadata_popover import source_info_button, empty_modal
+from components.source_metadata_popover import chart_container, empty_modal
 from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
 
 db = QueryService.get_instance()
@@ -140,28 +140,28 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-public-private"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-public-private",
+    dcc.Graph(
                                     id="education-public-private",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-public-private"),
-                            ]),
+    "edu-public-private",
+),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-total"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-total",
+    dcc.Graph(
                                     id="education-total",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-total"),
-                            ]),
+    "edu-total",
+),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -182,14 +182,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-outcome"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-outcome",
+    dcc.Graph(
                                     id="education-outcome",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-outcome"),
-                            ]),
+    "edu-outcome",
+),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -235,11 +235,11 @@ def render_education_content(tab):
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-edu", width=6),
                                 dbc.Col(
-                                    html.Div([
-                                        html.Div(source_info_button("edu-opvcap"), style={"textAlign": "right"}),
-                                        dcc.Graph(id="econ-breakdown-func-edu"),
-                                        empty_modal("edu-opvcap"),
-                                    ]),
+                                    chart_container(
+    "econ-breakdown-func-edu",
+    dcc.Graph(id="econ-breakdown-func-edu", config={"displayModeBar": False}),
+    "edu-opvcap",
+),
                                     width=6
                                 ),
                             ]
@@ -288,19 +288,19 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-central-regional"), style={"textAlign": "right"}),
-                                dcc.Graph(id="education-central-vs-regional"),
-                                empty_modal("edu-central-regional"),
-                            ]),
+                            chart_container(
+    "education-central-vs-regional",
+    dcc.Graph(id="education-central-vs-regional", config={"displayModeBar": False}),
+    "edu-central-regional",
+),
                             width=5
                         ),
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-sub-func"), style={"textAlign": "right"}),
-                                dcc.Graph(id="education-sub-func"),
-                                empty_modal("edu-sub-func"),
-                            ]),
+                            chart_container(
+    "education-sub-func",
+    dcc.Graph(id="education-sub-func", config={"displayModeBar": False}),
+    "edu-sub-func",
+),
                             width=7
                         ),
                     ]
@@ -367,28 +367,28 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-expenditure-map"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-expenditure-map",
+    dcc.Graph(
                                     id="education-expenditure-map",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-expenditure-map"),
-                            ]),
+    "edu-expenditure-map",
+),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-outcome-map"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-outcome-map",
+    dcc.Graph(
                                     id="education-outcome-map",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-outcome-map"),
-                            ]),
+    "edu-outcome-map",
+),
                             xs=12,
                             sm=12,
                             md=6,
@@ -410,14 +410,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            html.Div([
-                                html.Div(source_info_button("edu-subnational"), style={"textAlign": "right"}),
-                                dcc.Graph(
+                            chart_container(
+    "education-subnational",
+    dcc.Graph(
                                     id="education-subnational",
                                     config={"displayModeBar": False},
                                 ),
-                                empty_modal("edu-subnational"),
-                            ]),
+    "edu-subnational",
+),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

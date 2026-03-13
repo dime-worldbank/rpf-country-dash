@@ -184,18 +184,6 @@ def _generate_econ_figure(data, func):
             x=0.5,
         ),
         margin=dict(l=20, r=20, t=50, b=80),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.13,
-                xanchor="left",
-                text="Source: BOOST Database, World Bank",
-                showarrow=False,
-                font=dict(size=12, color="grey"),
-            ),
-        ],
     )
     fig.update_traces(
             hovertemplate="%{y:.2f}%"
