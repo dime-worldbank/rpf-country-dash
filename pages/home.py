@@ -460,17 +460,6 @@ def total_figure(df, currency_name, currency_code):
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
         hovermode="x unified",
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.14,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -532,17 +521,6 @@ def per_capita_figure(df, currency_name, currency_code):
         title="How has per capita expenditure changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.14,
-                y=-0.2,
-                text="Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -611,17 +589,6 @@ def functional_figure(df):
         title="How has sector prioritization changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Expenditure % by COFOG categories. Source: BOOST",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -800,17 +767,6 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
             thickness=10,
         ),
         legend=dict(orientation="h", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Regional Spending. Source: BOOST",
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ],
     )
     fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{z}<extra></extra>"
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
@@ -866,17 +822,6 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
             orientation="v",
             thickness=10,
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                text=" Regional Spending. Source: BOOST",
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ],
     )
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
@@ -955,16 +900,6 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 y=-0.13,
                 xanchor="left",
                 text=f"Displaying data from {year}. {_get_poverty_source_text(income_level)}",
-                showarrow=False,
-                font=dict(size=10),
-            ),
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                xanchor="left",
-                text="Source: SPID and GSAP, World Bank.",
                 showarrow=False,
                 font=dict(size=10),
             ),
@@ -1108,17 +1043,6 @@ def economic_figure(df, currency_code):
         title="How much was spent on each economic category?",
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Expenditure % by economic categories. Source: BOOST",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig

@@ -477,17 +477,6 @@ def total_edu_figure(df, currency_code):
         title="How has govt spending on education changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -716,17 +705,6 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     narrative = public_private_narrative(merged, country)
@@ -863,18 +841,6 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
             xanchor="center",
             yanchor="top",
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: Education index measured by years of education: UNDP through GDL. <br>"
-                "BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
         hoverlabel_namelength=-1,
     )
 

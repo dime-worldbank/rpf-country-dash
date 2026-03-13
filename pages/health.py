@@ -484,17 +484,6 @@ def total_health_figure(df, currency_code):
         title="How has govt spending on health changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -719,17 +708,6 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: Household exp: WHO, Public exp from BOOST: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     narrative = public_private_narrative(merged, country)
@@ -826,17 +804,6 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
             xanchor="center",
             yanchor="top",
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
         hoverlabel_namelength=-1,
     )
 

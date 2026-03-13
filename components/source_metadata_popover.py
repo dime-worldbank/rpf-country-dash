@@ -4,226 +4,133 @@ import dash_bootstrap_components as dbc
 
 
 # ---------------------------------------------------------------------------
+# Shared source definitions – define once, reuse across charts.
+# Override fields per chart with {**_SOURCE, "label": "Custom Label"}.
+# ---------------------------------------------------------------------------
+
+_POVERTY_DESCRIPTION = (
+    "Poverty thresholds vary by country income classification: "
+    "$3.00 for Low Income, $4.20 for Lower Middle Income, "
+    "and $8.30 for Upper Middle and High Income countries."
+)
+
+_BOOST = {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"}
+_BOOST_EDU = {**_BOOST, "label": "Public Education Expenditure"}
+_BOOST_HEALTH = {**_BOOST, "label": "Public Health Expenditure"}
+
+_POVERTY_RATE = {
+    "key": "poverty_rate",
+    "label": "Poverty Rate",
+    "source_name": "World Bank Poverty and Inequality Platform",
+    "description": _POVERTY_DESCRIPTION,
+}
+
+_SUBNATIONAL_POVERTY = {
+    "key": "subnational_poverty_rate",
+    "label": "Subnational Poverty Rate",
+    "source_name": "World Bank",
+    "description": _POVERTY_DESCRIPTION,
+}
+
+_LEARNING_POVERTY = {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"}
+
+_HD_INDEX = {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"}
+
+_ATTENDANCE = {"key": "global_data_lab_attendance", "label": "School Attendance Rate", "source_name": "Global Data Lab"}
+
+_UHC = {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"}
+
+_PEFA = {
+    "key": "pefa_by_pillar",
+    "label": "PEFA Assessment",
+    "source_name": "PEFA Secretariat",
+    "description": (
+        "PEFA assessments use letter grades (A to D, with + "
+        "modifiers). For this dashboard, grades are converted to "
+        "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
+        "D=1). Pillar scores are the arithmetic mean of their "
+        "constituent indicators. "
+        "Data covers both the 2011 framework (28 indicators, 6 "
+        "pillars) and the 2016 framework (31 indicators, 7 pillars)."
+    ),
+}
+
+_EDU_PRIVATE = {
+    "key": "edu_private_expenditure",
+    "label": "Private Education Expenditure",
+    "source_name": "World Bank ICP",
+    "source_url": "https://www.worldbank.org/en/programs/icp/data",
+    "description": (
+        "Derived as total education spending from the International "
+        "Comparison Program (ICP) minus BOOST public education "
+        "expenditure."
+    ),
+}
+
+_HEALTH_PRIVATE = {
+    "key": "health_private_expenditure",
+    "label": "Out-of-Pocket Health Expenditure",
+    "source_name": "WHO Global Health Expenditure Database",
+    "source_url": "https://apps.who.int/nha/database/",
+    "description": (
+        "Out-of-pocket spending per person, calculated from "
+        "total health expenditure and the share paid out of "
+        "pocket, adjusted for inflation."
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
 # Chart-level metadata for the ⓘ info buttons.
 # Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
 # Dynamic per-country coverage years and source URLs are merged at runtime.
-#
-# Fields:
-#   sources     – list of data sources used by this chart, each with:
-#       key         – pipeline key for coverage-year and URL lookup
-#                     ("boost" or an indicator_key)
-#       label       – display name for this source section
-#       source_name – attribution line
-#       description – optional per-source explanatory text
 # ---------------------------------------------------------------------------
 CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Over Time
     # ------------------------------------------------------------------
-    "home-total-exp": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "home-percapita-exp": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-            {"key": "poverty_rate", "label": "Poverty Rate", "source_name": "World Bank Poverty and Inequality Platform"},
-        ],
-    },
-    "home-func-breakdown": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "home-func-growth": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "home-econ-breakdown": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "home-pefa-overall": {
-        "sources": [
-            {
-                "key": "pefa_by_pillar",
-                "label": "PEFA Assessment",
-                "source_name": "PEFA Secretariat",
-                "description": (
-                    "PEFA assessments use letter grades (A to D, with + "
-                    "modifiers). For this dashboard, grades are converted to "
-                    "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
-                    "D=1). The overall score is the mean of all pillar scores. "
-                    "Data covers both the 2011 framework (28 indicators, 6 "
-                    "pillars) and the 2016 framework (31 indicators, 7 pillars)."
-                ),
-            },
-        ],
-    },
-    "home-pefa-pillar": {
-        "sources": [
-            {
-                "key": "pefa_by_pillar",
-                "label": "PEFA Assessment",
-                "source_name": "PEFA Secretariat",
-                "description": (
-                    "PEFA assessments use letter grades (A to D, with + "
-                    "modifiers). For this dashboard, grades are converted to "
-                    "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
-                    "D=1). Pillar scores are the arithmetic mean of their "
-                    "constituent indicators. "
-                    "Data covers both the 2011 framework (28 indicators, 6 "
-                    "pillars) and the 2016 framework (31 indicators, 7 pillars). "
-                    "The 2016 framework introduced Pillar 3 (Asset & Liability "
-                    "Management) and reorganised indicator groupings across "
-                    "pillars."
-                ),
-            },
-        ],
-    },
+    "home-total-exp": {"sources": [_BOOST]},
+    "home-percapita-exp": {"sources": [_BOOST, _POVERTY_RATE]},
+    "home-func-breakdown": {"sources": [_BOOST]},
+    "home-func-growth": {"sources": [_BOOST]},
+    "home-econ-breakdown": {"sources": [_BOOST]},
+    "home-pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
+    "home-pefa-pillar": {"sources": [_PEFA]},
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
-    "home-regional-spending": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "home-regional-poverty": {
-        "sources": [
-            {"key": "subnational_poverty_rate", "label": "Subnational Poverty Rate", "source_name": "World Bank"},
-        ],
-    },
+    "home-regional-spending": {"sources": [_BOOST]},
+    "home-regional-poverty": {"sources": [_SUBNATIONAL_POVERTY]},
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
-    "edu-public-private": {
-        "sources": [
-            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
-            {
-                "key": "edu_private_expenditure",
-                "label": "Private Education Expenditure",
-                "source_name": "World Bank ICP",
-                "description": (
-                    "Derived as total education spending from the International "
-                    "Comparison Program (ICP) minus BOOST public education "
-                    "expenditure."
-                ),
-            },
-        ],
-    },
-    "edu-total": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "edu-outcome": {
-        "sources": [
-            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
-            {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"},
-            {"key": "global_data_lab_attendance", "label": "School Attendance Rate", "source_name": "Global Data Lab"},
-        ],
-    },
-    "edu-opvcap": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
+    "edu-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
+    "edu-total": {"sources": [_BOOST]},
+    "edu-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
+    "edu-opvcap": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------
-    "edu-central-regional": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "edu-sub-func": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "edu-expenditure-map": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "edu-outcome-map": {
-        "sources": [
-            {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
-        ],
-    },
-    "edu-subnational": {
-        "sources": [
-            {"key": "boost", "label": "Public Education Expenditure", "source_name": "World Bank BOOST"},
-            {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"},
-        ],
-    },
+    "edu-central-regional": {"sources": [_BOOST]},
+    "edu-sub-func": {"sources": [_BOOST]},
+    "edu-expenditure-map": {"sources": [_BOOST]},
+    "edu-outcome-map": {"sources": [_HD_INDEX]},
+    "edu-subnational": {"sources": [_BOOST_EDU, _HD_INDEX]},
     # ------------------------------------------------------------------
     # Health – Over Time
     # ------------------------------------------------------------------
-    "health-public-private": {
-        "sources": [
-            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
-            {
-                "key": "health_private_expenditure",
-                "label": "Out-of-Pocket Health Expenditure",
-                "source_name": "WHO Global Health Expenditure Database",
-                "description": (
-                    "Out-of-pocket spending per person, calculated from "
-                    "total health expenditure and the share paid out of "
-                    "pocket, adjusted for inflation."
-                ),
-            },
-        ],
-    },
-    "health-total": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "health-outcome": {
-        "sources": [
-            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
-            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
-        ],
-    },
-    "health-opvcap": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
+    "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
+    "health-total": {"sources": [_BOOST]},
+    "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
+    "health-opvcap": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
     # Health – Across Space
     # ------------------------------------------------------------------
-    "health-central-regional": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "health-sub-func": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "health-expenditure-map": {
-        "sources": [
-            {"key": "boost", "label": "BOOST Expenditure Data", "source_name": "World Bank BOOST"},
-        ],
-    },
-    "health-outcome-map": {
-        "sources": [
-            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
-        ],
-    },
-    "health-subnational": {
-        "sources": [
-            {"key": "boost", "label": "Public Health Expenditure", "source_name": "World Bank BOOST"},
-            {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"},
-        ],
-    },
+    "health-central-regional": {"sources": [_BOOST]},
+    "health-sub-func": {"sources": [_BOOST]},
+    "health-expenditure-map": {"sources": [_BOOST]},
+    "health-outcome-map": {"sources": [_UHC]},
+    "health-subnational": {"sources": [_BOOST_HEALTH, _UHC]},
 }
 
 

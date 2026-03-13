@@ -435,12 +435,12 @@ def toggle_source_info_modal(n_clicks, country, source_meta, data):
         if start and end:
             section["coverage"] = f"{start}\u2013{end}"
 
-        # Source URL from pipeline
+        # Source URL: pipeline first, then fall back to config
         if key == "boost":
             if boost_url:
                 section["source_url"] = boost_url
         else:
-            url = indicator_url_map.get(key)
+            url = indicator_url_map.get(key) or src.get("source_url")
             if url:
                 section["source_url"] = url
 
