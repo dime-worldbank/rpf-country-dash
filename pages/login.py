@@ -5,7 +5,7 @@ from dash import html, dcc, callback, Output, Input, State
 
 dash.register_page(__name__)
 
-def layout():
+def layout(**kwargs):
     return dbc.Container(
         [
             dbc.Row([

@@ -1,0 +1,311 @@
+/*
+ * WBG Bootstrap Theme
+ * Based on World Bank Group Brand Guidelines
+ *
+ * Activated via .theme-wbg class on root element.
+ * URL: ?theme=wbg
+ */
+
+/* =============================================================================
+   CSS CUSTOM PROPERTIES
+   ============================================================================= */
+
+:root {
+  --wbg-solid-blue: #002244;
+  --wbg-bright-blue: #009FDA;
+  --wbg-black: #000000;
+  --wbg-white: #FFFFFF;
+  --wbg-body-text: #333333;
+
+  --wbg-orange: #F05023;
+  --wbg-yellow: #FDB714;
+  --wbg-red: #EB1C2D;
+  --wbg-amber: #F78D28;
+  --wbg-teal: #009CA7;
+  --wbg-green: #00AB51;
+  --wbg-purple: #872B90;
+  --wbg-cyan: #00A996;
+
+  --wbg-font-primary: Arial, "Helvetica Neue", sans-serif;
+  --wbg-font-chart: "Open Sans", Arial, sans-serif;
+}
+
+/* =============================================================================
+   BASE THEME - Applied to html/body when theme is active
+   ============================================================================= */
+
+html:has(#app-container.theme-wbg) {
+  background-color: var(--wbg-solid-blue);
+}
+
+body:has(#app-container.theme-wbg) {
+  background: linear-gradient(135deg, var(--wbg-solid-blue) 0%, #001a33 100%);
+  background-attachment: fixed;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* =============================================================================
+   APP CONTAINER
+   ============================================================================= */
+
+#app-container.theme-wbg {
+  font-family: var(--wbg-font-primary);
+  color: var(--wbg-body-text);
+  background: transparent;
+  min-height: 100vh;
+}
+
+/* =============================================================================
+   SIDEBAR
+   ============================================================================= */
+
+#app-container.theme-wbg > div[style*="position: fixed"][style*="left: 0"] {
+  background-color: rgba(0, 34, 68, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+#app-container.theme-wbg > div[style*="position: fixed"][style*="left: 0"] hr {
+  border-color: rgba(255, 255, 255, 0.3);
+  opacity: 1;
+}
+
+/* =============================================================================
+   NAVIGATION
+   ============================================================================= */
+
+#app-container.theme-wbg .nav-pills .nav-link {
+  color: var(--wbg-white);
+}
+
+#app-container.theme-wbg .nav-pills .nav-link:hover:not(.active) {
+  color: var(--wbg-white);
+  background-color: rgba(0, 159, 218, 0.3);
+}
+
+#app-container.theme-wbg .nav-pills .nav-link.active,
+#app-container.theme-wbg .nav-pills .show > .nav-link {
+  background-color: var(--wbg-bright-blue);
+  color: var(--wbg-white);
+}
+
+/* =============================================================================
+   MAIN CONTENT PANEL
+   ============================================================================= */
+
+#app-container.theme-wbg #page-content {
+  background-color: var(--wbg-white);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  color: var(--wbg-body-text);
+}
+
+/* =============================================================================
+   TYPOGRAPHY
+   ============================================================================= */
+
+#app-container.theme-wbg #page-content h1,
+#app-container.theme-wbg #page-content h2,
+#app-container.theme-wbg #page-content h3,
+#app-container.theme-wbg #page-content h4,
+#app-container.theme-wbg #page-content h5,
+#app-container.theme-wbg #page-content h6 {
+  font-family: var(--wbg-font-primary);
+  color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg #page-content p,
+#app-container.theme-wbg #page-content span,
+#app-container.theme-wbg #page-content div,
+#app-container.theme-wbg #page-content label,
+#app-container.theme-wbg #page-content li,
+#app-container.theme-wbg #page-content td,
+#app-container.theme-wbg #page-content th {
+  color: var(--wbg-body-text);
+}
+
+#app-container.theme-wbg .text-muted {
+  color: #6c757d;
+}
+
+/* =============================================================================
+   FORMS & DROPDOWNS
+   ============================================================================= */
+
+#app-container.theme-wbg .form-select,
+#app-container.theme-wbg select,
+#app-container.theme-wbg .form-control {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--wbg-body-text);
+  background-color: var(--wbg-white);
+}
+
+#app-container.theme-wbg .form-select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23333333' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+}
+
+#app-container.theme-wbg .form-select:focus,
+#app-container.theme-wbg .form-control:focus {
+  border-color: var(--wbg-bright-blue);
+  box-shadow: 0 0 0 0.25rem rgba(0, 159, 218, 0.25);
+}
+
+#app-container.theme-wbg .form-select option,
+#app-container.theme-wbg select option {
+  color: var(--wbg-body-text);
+  background-color: var(--wbg-white);
+}
+
+/* =============================================================================
+   BUTTONS
+   ============================================================================= */
+
+#app-container.theme-wbg .btn-primary {
+  background-color: var(--wbg-solid-blue);
+  border-color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg .btn-primary:hover,
+#app-container.theme-wbg .btn-primary:focus {
+  background-color: #001a33;
+  border-color: #001a33;
+}
+
+#app-container.theme-wbg .btn-secondary {
+  background-color: var(--wbg-bright-blue);
+  border-color: var(--wbg-bright-blue);
+}
+
+#app-container.theme-wbg .btn-secondary:hover,
+#app-container.theme-wbg .btn-secondary:focus {
+  background-color: #0087bd;
+  border-color: #0087bd;
+}
+
+#app-container.theme-wbg .btn-outline-primary {
+  color: var(--wbg-solid-blue);
+  border-color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg .btn-outline-primary:hover {
+  background-color: var(--wbg-solid-blue);
+  color: var(--wbg-white);
+}
+
+/* =============================================================================
+   LINKS
+   ============================================================================= */
+
+#app-container.theme-wbg #page-content a {
+  color: var(--wbg-bright-blue);
+}
+
+#app-container.theme-wbg #page-content a:hover {
+  color: var(--wbg-solid-blue);
+}
+
+/* =============================================================================
+   CARDS
+   ============================================================================= */
+
+#app-container.theme-wbg .card {
+  border-color: rgba(0, 34, 68, 0.125);
+}
+
+#app-container.theme-wbg .card-header {
+  background-color: var(--wbg-solid-blue);
+  color: var(--wbg-white);
+}
+
+/* =============================================================================
+   TABLES
+   ============================================================================= */
+
+#app-container.theme-wbg .table > thead {
+  background-color: var(--wbg-solid-blue);
+  color: var(--wbg-white);
+}
+
+#app-container.theme-wbg .table-striped > tbody > tr:nth-of-type(odd) {
+  background-color: rgba(0, 34, 68, 0.03);
+}
+
+/* =============================================================================
+   ALERTS & BADGES
+   ============================================================================= */
+
+#app-container.theme-wbg .badge.bg-primary {
+  background-color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg .badge.bg-secondary {
+  background-color: var(--wbg-bright-blue);
+}
+
+#app-container.theme-wbg .alert-primary {
+  background-color: rgba(0, 34, 68, 0.1);
+  border-color: var(--wbg-solid-blue);
+  color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg .alert-info {
+  background-color: rgba(0, 159, 218, 0.1);
+  border-color: var(--wbg-bright-blue);
+  color: var(--wbg-solid-blue);
+}
+
+/* =============================================================================
+   TABS (Over Time / Across Space toggle)
+   ============================================================================= */
+
+#app-container.theme-wbg #page-content .nav-tabs {
+  border-bottom: 2px solid var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg #page-content .nav-tabs .nav-link {
+  color: var(--wbg-solid-blue);
+  background-color: var(--wbg-white);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+}
+
+#app-container.theme-wbg #page-content .nav-tabs .nav-link:hover {
+  color: var(--wbg-bright-blue);
+  background-color: rgba(0, 159, 218, 0.1);
+}
+
+#app-container.theme-wbg #page-content .nav-tabs .nav-link.active {
+  border-color: var(--wbg-solid-blue);
+  box-shadow: none;
+  outline: none;
+}
+
+/* =============================================================================
+   THEME INDICATOR
+   ============================================================================= */
+
+.theme-indicator {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  padding: 4px 8px;
+  font-size: 10px;
+  border-radius: 4px;
+  opacity: 0.7;
+  z-index: 9999;
+}
+
+#app-container.theme-wbg .theme-indicator {
+  background-color: var(--wbg-bright-blue);
+  color: var(--wbg-white);
+}
+
+#app-container.theme-quartz .theme-indicator {
+  background-color: #6c757d;
+  color: white;
+}

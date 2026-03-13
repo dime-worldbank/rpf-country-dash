@@ -14,7 +14,9 @@ from dash import (
     page_container,
     page_registry,
     no_update,
+    callback_context,
 )
+from urllib.parse import parse_qs, urlparse
 
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
 from flask_login import logout_user, current_user
@@ -110,10 +112,14 @@ content = html.Div(page_container, id="page-content", style=CONTENT_STYLE)
 
 dummy_div = html.Div(id="div-for-redirect")
 
+DEFAULT_THEME = "wbg"
+VALID_THEMES = ["wbg", "quartz"]
+
 
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
+        dcc.Store(id="theme-store", data=DEFAULT_THEME),
         header,
         sidebar,
         content,
@@ -131,7 +137,7 @@ def layout():
             ]
         )
 
-    return html.Div(html_contents)
+    return html.Div(html_contents, id="app-container", className=f"theme-{DEFAULT_THEME}")
 
 
 app.layout = layout
@@ -363,6 +369,30 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     }
     data_to_store[country] = boundaries_geojson
     return data_to_store
+
+
+@app.callback(
+    Output("app-container", "className"),
+    Output("theme-store", "data"),
+    Input("url", "search"),
+    State("theme-store", "data"),
+)
+def update_theme_from_url(search, current_theme):
+    """
+    Parse theme from URL parameter and update app styling.
+    Usage: ?theme=wbg or ?theme=quartz
+    """
+    theme = current_theme or DEFAULT_THEME
+
+    if search:
+        params = parse_qs(search.lstrip("?"))
+        url_theme = params.get("theme", [None])[0]
+        if url_theme and url_theme.lower() in VALID_THEMES:
+            theme = url_theme.lower()
+
+    theme_class = f"theme-{theme}"
+
+    return theme_class, theme
 
 
 if __name__ == "__main__":
