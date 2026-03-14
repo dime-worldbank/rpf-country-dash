@@ -24,7 +24,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 from server import server
 from utils import get_login_path, get_prefixed_path
-from viz_theme import DEFAULT_THEME, VALID_THEMES
+from viz_theme import DEFAULT_THEME, VALID_THEMES, init_plotly_theme
 
 app = Dash(
     __name__,
@@ -32,6 +32,8 @@ app = Dash(
     suppress_callback_exceptions=True,
     use_pages=True,
 )
+
+init_plotly_theme()
 
 HEADER_STYLE = {
     "display": "flex",

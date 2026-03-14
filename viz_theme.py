@@ -256,5 +256,8 @@ CHART_TEMPLATE = go.layout.Template(
     )
 )
 
-pio.templates["app"] = CHART_TEMPLATE
-pio.templates.default = "app"
+
+def init_plotly_theme():
+    """Register and set the app's Plotly template as the default. Call once at app startup."""
+    pio.templates["app"] = CHART_TEMPLATE
+    pio.templates.default = "app"
