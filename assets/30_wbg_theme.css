@@ -6,9 +6,6 @@
  * URL: ?theme=wbg
  */
 
-/* Import Open Sans for chart typography */
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
-
 /* =============================================================================
    CSS CUSTOM PROPERTIES
    ============================================================================= */
@@ -30,7 +27,6 @@
   --wbg-cyan: #00A996;
 
   --wbg-font-primary: Arial, "Helvetica Neue", sans-serif;
-  --wbg-font-chart: "Open Sans", Arial, sans-serif;
 }
 
 /* =============================================================================
