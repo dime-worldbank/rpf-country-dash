@@ -37,11 +37,11 @@
    BASE THEME - Applied to html/body when theme is active
    ============================================================================= */
 
-html:has(#app-container.theme-wbg) {
+html.theme-wbg {
   background-color: var(--wbg-solid-blue);
 }
 
-body:has(#app-container.theme-wbg) {
+body.theme-wbg {
   background: linear-gradient(135deg, var(--wbg-solid-blue) 0%, #001a33 100%);
   background-attachment: fixed;
   margin: 0;

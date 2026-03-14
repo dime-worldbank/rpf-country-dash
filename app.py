@@ -393,5 +393,18 @@ def update_theme_from_url(search, current_theme):
     return theme_class, theme
 
 
+app.clientside_callback(
+    """
+    function(theme) {
+        document.body.className = 'theme-' + (theme || 'wbg');
+        document.documentElement.className = 'theme-' + (theme || 'wbg');
+        return '';
+    }
+    """,
+    Output("div-for-redirect", "className"),
+    Input("theme-store", "data"),
+)
+
+
 if __name__ == "__main__":
     app.run(debug=True)
