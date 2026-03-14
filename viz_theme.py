@@ -48,13 +48,16 @@ def lighten_color(hex_color, factor=0.4):
 
 
 def add_opacity(color, opacity):
-    """Add opacity to a color. Supports hex (#RRGGBB) and rgb() formats."""
+    """Add opacity to a color. Supports hex (#RRGGBB), rgb(), and rgba() formats."""
     if color.startswith("#"):
         r, g, b = _hex_to_rgb(color)
         return f"rgba({r},{g},{b},{opacity})"
+    elif color.startswith("rgb"):
+        start = 5 if color.startswith("rgba(") else 4
+        parts = color[start:-1].split(",")
+        return f"rgba({parts[0].strip()},{parts[1].strip()},{parts[2].strip()},{opacity})"
     else:
-        first = color.split(")")[0]
-        return (first + "," + str(opacity) + ")").replace("rgb", "rgba")
+        return color
 
 
 # =============================================================================
