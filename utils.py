@@ -372,10 +372,6 @@ zoom = {
 }
 
 
-def add_opacity(rgb, opacity):
-    first = rgb.split(")")[0]
-    rgba = (first + "," + str(opacity) + ")").replace("rgb", "rgba")
-    return rgba
 
 
 def get_prefixed_path(pathname):

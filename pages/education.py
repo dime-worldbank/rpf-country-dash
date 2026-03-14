@@ -1,11 +1,12 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from constants import MAP_DISCLAIMER
+from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
     add_currency_column,
@@ -419,7 +420,7 @@ def total_edu_figure(df, currency_code):
             name="Central",
             x=df.year,
             y=df.central_expenditure,
-            marker_color="rgb(17, 141, 255)",
+            marker_color=CENTRAL_COLOR,
             customdata=np.column_stack([df.central_expenditure_formatted]),
             hovertemplate="<b>Central</b>: %{customdata[0]}<extra></extra>",
         ),
@@ -429,7 +430,7 @@ def total_edu_figure(df, currency_code):
             name="Regional",
             x=df.year,
             y=df.decentralized_expenditure,
-            marker_color="rgb(160, 209, 255)",
+            marker_color=REGIONAL_COLOR,
             customdata=np.column_stack([df.decentralized_expenditure_formatted]),
             hovertemplate="<b>Regional</b>: %{customdata[0]}<extra></extra>",
         ),
@@ -916,13 +917,14 @@ def update_education_subnational_motivation_narrative(country_name, year):
     Input("year-slider-edu", "value"),
     Input("education-expenditure-type", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_education_expenditure_map(
-    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries
+    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, theme
 ):
     return update_func_expenditure_map(
         subnational_data, country_data, country, year,
-        expenditure_type, subnat_boundaries, 'Education'
+        expenditure_type, subnat_boundaries, 'Education', theme=theme
     )
 
 
@@ -933,12 +935,13 @@ def update_education_expenditure_map(
     Input("country-select", "value"),
     Input("year-slider-edu", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_education_index_map(
-    subnational_data, country_data, country, year, subnat_boundaries
+    subnational_data, country_data, country, year, subnat_boundaries, theme
 ):
     return update_hd_index_map(
-        subnational_data, country_data, country, year, subnat_boundaries, 'Education'
+        subnational_data, country_data, country, year, subnat_boundaries, 'Education', theme=theme
     )
 
 

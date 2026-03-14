@@ -6,6 +6,9 @@
  * URL: ?theme=wbg
  */
 
+/* Import Open Sans for chart typography */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+
 /* =============================================================================
    CSS CUSTOM PROPERTIES
    ============================================================================= */
@@ -156,6 +159,29 @@ body:has(#app-container.theme-wbg) {
 #app-container.theme-wbg select option {
   color: var(--wbg-body-text);
   background-color: var(--wbg-white);
+}
+
+/* =============================================================================
+   RADIO BUTTONS & CHECKBOXES
+   ============================================================================= */
+
+#app-container.theme-wbg .form-check-input {
+  border-color: var(--wbg-solid-blue);
+  background-color: var(--wbg-white);
+}
+
+#app-container.theme-wbg .form-check-input:checked {
+  background-color: var(--wbg-bright-blue);
+  border-color: var(--wbg-bright-blue);
+}
+
+#app-container.theme-wbg .form-check-input:focus {
+  border-color: var(--wbg-bright-blue);
+  box-shadow: 0 0 0 0.25rem rgba(0, 159, 218, 0.25);
+}
+
+#app-container.theme-wbg .form-check-label {
+  color: var(--wbg-body-text);
 }
 
 /* =============================================================================

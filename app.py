@@ -24,6 +24,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 from server import server
 from utils import get_login_path, get_prefixed_path
+from viz_theme import DEFAULT_THEME, VALID_THEMES
 
 app = Dash(
     __name__,
@@ -111,9 +112,6 @@ sidebar = html.Div(
 content = html.Div(page_container, id="page-content", style=CONTENT_STYLE)
 
 dummy_div = html.Div(id="div-for-redirect")
-
-DEFAULT_THEME = "wbg"
-VALID_THEMES = ["wbg", "quartz"]
 
 
 def layout():

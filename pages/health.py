@@ -1,11 +1,12 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from constants import MAP_DISCLAIMER
+from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
     add_currency_column,
@@ -427,7 +428,7 @@ def total_health_figure(df, currency_code):
             customdata=df['central_expenditure_formatted'],
             x=df.year,
             y=df.central_expenditure,
-            marker_color="rgb(17, 141, 255)",
+            marker_color=CENTRAL_COLOR,
             hovertemplate="<b>Real Central Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
@@ -437,7 +438,7 @@ def total_health_figure(df, currency_code):
             customdata=df['decentralized_expenditure_formatted'],
             x=df.year,
             y=df.decentralized_expenditure,
-            marker_color="rgb(160, 209, 255)",
+            marker_color=REGIONAL_COLOR,
             hovertemplate="<b>Real Decentralized Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
@@ -876,13 +877,14 @@ def update_health_subnational_motivation_narrative(country_name, year):
     Input("year-slider-health", "value"),
     Input("health-expenditure-type", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_health_expenditure_map(
-    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries,
+    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, theme
 ):
     return update_func_expenditure_map(
         subnational_data, country_data, country, year,
-        expenditure_type, subnat_boundaries, 'Health'
+        expenditure_type, subnat_boundaries, 'Health', theme=theme
     )
 
 
@@ -893,12 +895,13 @@ def update_health_expenditure_map(
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_health_index_map(
-    subnational_data, country_data, country, year, subnat_boundaries,
+    subnational_data, country_data, country, year, subnat_boundaries, theme
 ):
     return update_hd_index_map(
-        subnational_data, country_data, country, year, subnat_boundaries, 'Health'
+        subnational_data, country_data, country, year, subnat_boundaries, 'Health', theme=theme
     )
 
 

@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -24,6 +24,7 @@ from components import slider, get_slider_config, pefa, budget_increment_analysi
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
+from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 
 
@@ -408,7 +409,7 @@ def total_figure(df, currency_name, currency_code):
             name="Central",
             x=df.year,
             y=df.expenditure - df.decentralized_expenditure,
-            marker_color="rgb(17, 141, 255)",
+            marker_color=CENTRAL_COLOR,
             customdata=np.column_stack([df['central_expenditure_formatted']]),
             hovertemplate="Central Expenditure: %{customdata[0]}<extra></extra>",
         )
@@ -418,7 +419,7 @@ def total_figure(df, currency_name, currency_code):
             name="Regional",
             x=df.year,
             y=df.decentralized_expenditure,
-            marker_color="rgb(160, 209, 255)",
+            marker_color=REGIONAL_COLOR,
             customdata=np.column_stack([df['decentralized_expenditure_formatted']]),
             hovertemplate="Regional Expenditure: %{customdata[0]}<extra></extra>",
         )
@@ -727,7 +728,7 @@ def subnational_spending_narrative(
 
 
 
-def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom):
+def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
@@ -746,6 +747,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         mapbox_style="carto-positron",
         zoom=zoom,
         range_color=[zmin, zmax],
+        color_continuous_scale=get_map_colorscale(theme),
     )
 
     no_data_trace = px.choropleth_mapbox(
@@ -788,7 +790,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     return fig
 
 
-def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, zmax, lat, lon, zoom):
+def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
@@ -812,7 +814,8 @@ def regional_percapita_spending_choropleth(geojson,disputed_geojson, df, zmin, z
         mapbox_style="carto-positron",
         zoom=zoom,
         range_color=[zmin, zmax],
-        custom_data=["per_capita_expenditure_formatted"]
+        custom_data=["per_capita_expenditure_formatted"],
+        color_continuous_scale=get_map_colorscale(theme),
     )
 
     no_data_trace = px.choropleth_mapbox(
@@ -865,7 +868,7 @@ INCOME_LEVEL_THRESHOLD = {
     "HIC": ("$8.30", "High Income"),
 }
 
-def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level=None):
+def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme):
     if df[df.region_name != "National"].empty:
         return empty_plot("Sub-national poverty data not available")
     # TODO align accents across all datasets
@@ -892,6 +895,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         range_color=[zmin, zmax],
         mapbox_style="carto-positron",
         hover_data={"region_name": True, poverty_col: ":.2f"},
+        color_continuous_scale=get_map_colorscale(theme),
     )
     # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
 
@@ -1040,7 +1044,7 @@ ECON_CAT_MAP = {
     "Other grants and transfers": "Grants and transfers",
     "Other expenses": "Other expenses",
 }
-ECON_PALETTE = px.colors.qualitative.Dark2
+ECON_PALETTE = QUALITATIVE_ALT
 ECON_COLORS = {
     cat: ECON_PALETTE[i % len(ECON_PALETTE)]
     for i, cat in enumerate(ECON_CAT_MAP.keys())
@@ -1173,8 +1177,9 @@ def update_year_range(data, country):
     Input("expenditure-plot-radio", "value"),
     Input("year-slider", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
-def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries):
+def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries, theme):
     if year is None or not data or not country_data or not country:
         return empty_plot("Data not available")
 
@@ -1217,6 +1222,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lat,
             lon,
             zoom,
+            theme=theme,
         )
     else:
         return regional_spending_choropleth(
@@ -1228,6 +1234,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lat,
             lon,
             zoom,
+            theme=theme,
         )
 
 
@@ -1238,8 +1245,9 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     Input("country-select", "value"),
     Input("year-slider", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
-def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries):
+def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries, theme):
     if year is None or not subnational_data or not country_data or not country:
         return empty_plot("Data not available")
 
@@ -1279,6 +1287,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         lon,
         zoom,
         income_level,
+        theme=theme,
     )
 
 

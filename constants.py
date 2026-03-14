@@ -1,4 +1,4 @@
-from wbg_colors import QUALITATIVE, create_category_color_map
+from viz_theme import QUALITATIVE, create_category_color_map
 
 
 START_YEAR = 2010
