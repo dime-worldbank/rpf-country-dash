@@ -69,7 +69,7 @@ def layout():
     Input("stored-data-func-econ", "data"),
 )
 def fetch_health_total_data_once(health_data, shared_data):
-    if health_data is None:
+    if health_data is None and shared_data:
         # filter shared data down to health specific
         exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
         pub_exp = exp_by_func[exp_by_func.func == "Health"]
@@ -552,8 +552,8 @@ def health_narrative(data, country):
     Input("stored-basic-country-data", "data"),
 )
 def render_overview_total_figure(data, country, country_data):
-    if data is None:
-        return None
+    if not data or not country_data:
+        return dash.no_update, dash.no_update
 
     all_countries = pd.DataFrame(data["health_public_expenditure"])
     df = filter_country_sort_year(all_countries, country)
@@ -603,7 +603,7 @@ def public_private_narrative(df, country):
 )
 def render_public_private_figure(private_data, public_data, country, country_data):
     if not private_data or not public_data:
-        return
+        return dash.no_update, dash.no_update
 
     fig_title = "What % was spent by the govt vs household?"
     currency_code = country_data['basic_country_info'][country]['currency_code']
@@ -735,7 +735,7 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
 )
 def render_health_outcome(outcome_data, total_data, country, country_data):
     if not total_data or not outcome_data:
-        return
+        return dash.no_update, dash.no_update, dash.no_update
 
     uhc = pd.DataFrame(outcome_data["uhc_index"])
     uhc = filter_country_sort_year(uhc, country)

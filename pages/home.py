@@ -66,7 +66,7 @@ def layout():
     Input("stored-data", "data"),
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
-    if pefa_data is None:
+    if pefa_data is None and shared_data:
         pefa = db.get_pefa(shared_data["countries"])
         return {
             "pefa": pefa.to_dict("records"),
@@ -980,6 +980,8 @@ def update_heading(country):
     Input("country-select", "value"),
 )
 def render_overview_total_figure(data, basic_country_data, country):
+    if not data or not basic_country_data:
+        return dash.no_update, dash.no_update, dash.no_update
     all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
     df = filter_country_sort_year(all_countries, country)
 
@@ -998,6 +1000,8 @@ def render_overview_total_figure(data, basic_country_data, country):
     Input('stored-basic-country-data', 'data')
 )
 def render_overview_func_figure(data, country, basic_country_data):
+    if not data or not basic_country_data:
+        return dash.no_update, dash.no_update
     all_countries = pd.DataFrame(data["expenditure_by_country_func_year"])
     func_df = filter_country_sort_year(all_countries, country)
     total_per_year = func_df.groupby("year")["expenditure"].sum().reset_index()
@@ -1021,6 +1025,8 @@ def render_overview_func_figure(data, country, basic_country_data):
     Input('stored-basic-country-data', 'data')
 )
 def render_overview_econ_figure(data, country, basic_country_data):
+    if not data or not basic_country_data:
+        return dash.no_update, dash.no_update
     all_countries = pd.DataFrame(data["expenditure_by_country_econ_year"])
     econ_df = filter_country_sort_year(all_countries, country)
     total_per_year = econ_df.groupby("year")["expenditure"].sum().reset_index()
@@ -1338,7 +1344,7 @@ def render_subnational_spending_narrative(
 )
 def render_pefa_overall(data, pefa_data, country):
     if not pefa_data or not data:
-        return
+        return dash.no_update, dash.no_update, dash.no_update
 
     pefa_df = pd.DataFrame(pefa_data["pefa"])
     country_pefa_df = filter_country_sort_year(pefa_df, country)

@@ -69,7 +69,7 @@ def layout():
     Input("stored-data-func-econ", "data"),
 )
 def fetch_edu_total_data_once(edu_data, shared_data):
-    if edu_data is None:
+    if edu_data is None and shared_data:
         # filter shared data down to education specific
         exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
         pub_exp = exp_by_func[exp_by_func.func == "Education"]
@@ -86,7 +86,7 @@ def fetch_edu_total_data_once(edu_data, shared_data):
     Input("stored-data", "data"),
 )
 def fetch_edu_outcome_data_once(edu_data, shared_data):
-    if edu_data is None:
+    if edu_data is None and shared_data:
         learning_poverty = db.get_learning_poverty_rate()
 
         hd_index = db.get_hd_index(shared_data["countries"])
@@ -545,8 +545,8 @@ def education_narrative(data, country):
     Input("country-select", "value"),
 )
 def render_overview_total_figure(data, basic_country_data, country):
-    if data is None:
-        return None
+    if not data or not basic_country_data:
+        return dash.no_update, dash.no_update
 
     all_countries = pd.DataFrame(data["edu_public_expenditure"])
     df = filter_country_sort_year(all_countries, country)
@@ -597,7 +597,7 @@ def public_private_narrative(df, country):
 )
 def render_public_private_figure(private_data, public_data, country,basic_country_data):
     if not private_data or not public_data:
-        return
+        return dash.no_update, dash.no_update
     
     currency_code = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]['currency_code']
     fig_title = "What % was spent by the govt vs household?"
@@ -756,7 +756,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
 )
 def render_education_outcome(outcome_data, total_data, country, basic_country_data):
     if not total_data or not outcome_data:
-        return
+        return dash.no_update, dash.no_update, dash.no_update
 
     indicator = pd.DataFrame(outcome_data["hd_index"])
     indicator = filter_country_sort_year(indicator, country)

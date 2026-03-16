@@ -239,7 +239,7 @@ def fetch_func_data_once(data):
     Input("stored-data", "data"),
 )
 def fetch_subnational_data_once(data, country_data):
-    if data is None:
+    if data is None and country_data:
         countries = country_data["countries"]
         df_disputed = db.get_disputed_boundaries(countries)
 
@@ -293,9 +293,9 @@ def display_data(data):
     Input("stored-basic-country-data", "data"),
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
-    if country_data is None:
-        countries = [x["label"] for x in countries]
-        country_df = db.get_basic_country_data(countries)
+    if country_data is None and countries and subnational_data:
+        country_labels = [x["label"] for x in countries]
+        country_df = db.get_basic_country_data(country_labels)
         country_info = country_df.set_index("country_name").T.to_dict()
 
         expenditure_df = pd.DataFrame(
@@ -348,6 +348,9 @@ def fetch_country_data_once(countries, subnational_data, country_data):
     Input("country-select", "value"),
 )
 def fetch_subnat_boundary_data_once(geo_data, country):
+    if not country:
+        return no_update
+
     if geo_data is None:
         data_to_store = {}
     else:

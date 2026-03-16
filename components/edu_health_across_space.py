@@ -41,7 +41,11 @@ def update_year_slider(data, country, func):
 
 def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code):
     if not func_econ_data or not sub_func_data or not country:
-        return
+        return (
+            empty_plot("Loading..."),
+            empty_plot("Loading..."),
+            "Loading...",
+        )
 
     data_by_func_admin0 = _subset_data(
         func_econ_data['expenditure_by_country_func_year'], selected_year, country, func
@@ -479,7 +483,7 @@ def update_hd_index_map(
 
 def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code):
     if not subnational_data or not country:
-        return
+        return empty_plot("Loading..."), "Loading..."
 
     data = _subset_data(
         subnational_data["expenditure_and_outcome_by_country_geo1_func_year"], 
