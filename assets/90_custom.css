@@ -38,20 +38,11 @@
 }
 
 .rpf-modal-body {
-    background-color: #ffffff;
     color: #333333;
 }
 
 .rpf-modal-body .source-section-heading {
     color: #212529;
-}
-
-.rpf-modal-body p {
-    color: #555555;
-}
-
-.rpf-modal-body span {
-    color: #333333;
 }
 
 .rpf-modal-body a {
@@ -96,8 +87,9 @@
 
 /* Modal close button wrapper */
 .source-info-close-wrapper {
-    text-align: right;
-    margin-bottom: 4px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
 }
 
 /* Modal close button */
@@ -106,12 +98,27 @@
     border: none;
     font-size: 24px;
     font-weight: bold;
-    color: #333;
+    color: #666;
     cursor: pointer;
     line-height: 1;
-    padding: 0;
 }
 
 .source-info-close-btn:hover {
     color: #000;
+}
+
+/* Modal body needs relative positioning for absolute close button */
+.rpf-modal-body {
+    position: relative;
+    padding-top: 12px;
+}
+
+/* Source section separator */
+.rpf-source-section {
+    padding: 12px 0;
+}
+
+.rpf-source-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
