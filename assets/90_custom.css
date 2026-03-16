@@ -62,3 +62,56 @@
 .rpf-modal-body a:hover {
     text-decoration: underline;
 }
+
+/* Chart container with info button overlay */
+.source-info-chart-container {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+}
+
+/* Info button styling */
+.source-info-btn {
+    font-size: 18px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: rgba(200, 200, 200, 0.3);
+    color: #555555;
+    border: none;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.source-info-btn:hover {
+    background-color: rgba(200, 200, 200, 0.5);
+}
+
+/* Modal close button wrapper */
+.source-info-close-wrapper {
+    text-align: right;
+    margin-bottom: 4px;
+}
+
+/* Modal close button */
+.source-info-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.source-info-close-btn:hover {
+    color: #000;
+}

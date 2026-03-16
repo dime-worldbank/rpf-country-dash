@@ -154,24 +154,7 @@ def source_info_button(index):
     return dbc.Button(
         "\u24D8",
         id={"type": "source-info-btn", "index": index},
-        #TODO consider moving this styling to css
-        style={
-            "fontSize": "18px",
-            "width": "28px",
-            "height": "28px",
-            "padding": "0",
-            "borderRadius": "50%",
-            "backgroundColor": "rgba(200, 200, 200, 0.3)",
-            "color": "#555555",
-            "border": "none",
-            "position": "absolute",
-            "top": "6px",
-            "right": "6px",
-            "zIndex": "1000",
-            "display": "flex",
-            "alignItems": "center",
-            "justifyContent": "center",
-        },
+        className="source-info-btn",
     )
 
 
@@ -192,11 +175,7 @@ def chart_container(chart_id):
             empty_modal(chart_id),
         ],
         id=chart_id,
-        style={
-            "position": "relative",
-            "width": "100%",
-            "overflow": "visible",
-        },
+        className="source-info-chart-container",
     )
 
 
@@ -279,19 +258,9 @@ def build_modal_children(info):
             html.Button(
                 "\u00D7",
                 id={"type": "source-info-close", "index": info.get("_index", "")},
-                #TODO consider moving this styling to css
-                style={
-                    "background": "none",
-                    "border": "none",
-                    "fontSize": "24px",
-                    "fontWeight": "bold",
-                    "color": "#333",
-                    "cursor": "pointer",
-                    "lineHeight": "1",
-                    "padding": "0",
-                },
+                className="source-info-close-btn",
             ),
-            style={"textAlign": "right", "marginBottom": "4px"},
+            className="source-info-close-wrapper",
         )
     )
 
