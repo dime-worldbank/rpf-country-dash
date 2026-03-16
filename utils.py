@@ -383,12 +383,12 @@ def get_login_path():
     return get_prefixed_path("login")
 
 
-THEME_QUERY_PARAMS = ["theme"]
+FILTERED_QUERY_PARAMS = ["theme", "country"]
 
 
 def require_login(layout_func):
     def wrapper(*args, **kwargs):
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in THEME_QUERY_PARAMS}
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in FILTERED_QUERY_PARAMS}
         if not AUTH_ENABLED or current_user.is_authenticated:
             return layout_func(*args, **filtered_kwargs)
         else:

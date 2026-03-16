@@ -106,9 +106,7 @@ sidebar = html.Div(
         dbc.Nav(
             [
                 dbc.NavLink("Overview", href=get_relative_path("home"), active="exact"),
-                dbc.NavLink(
-                    "Education", href=get_relative_path("education"), active="exact"
-                ),
+                dbc.NavLink("Education", href=get_relative_path("education"), active="exact"),
                 dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
                 dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
             ],
@@ -129,6 +127,7 @@ def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
+        dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
         sidebar,
         content,
@@ -170,11 +169,11 @@ def display_page_or_redirect(pathname, logout_clicks):
             or pathname == os.getenv("DEFAULT_ROOT_PATH", "/")
         ):
             return get_prefixed_path("home"), page_container
-        return pathname, page_container
+        return no_update, page_container
     else:
         if pathname != login_path:
             return login_path, page_container
-        return pathname, page_container
+        return no_update, page_container
 
 
 @app.callback(Output("logout-button", "style"), Input("url", "pathname"))
@@ -282,8 +281,14 @@ def fetch_subnational_data_once(data, country_data):
     Output("country-select", "options"),
     Output("country-select", "value"),
     Input("stored-data", "data"),
+    Input("url", "search"),
+    State("country-select", "value"),
 )
-def display_data(data):
+def display_data(data, search, current_country):
+    """
+    Populate country dropdown and optionally select country from URL.
+    Usage: ?country=Kenya or ?country=Kenya&theme=wbg
+    """
     def get_country_select_options(countries):
         options = list({"label": c, "value": c} for c in countries)
         options[0]["selected"] = True
@@ -291,7 +296,20 @@ def display_data(data):
 
     if data is not None:
         countries = data["countries"]
-        return get_country_select_options(countries), countries[0]
+        triggered_id = callback_context.triggered[0]["prop_id"] if callback_context.triggered else ""
+
+        # Only read from URL on initial load (stored-data trigger) or explicit URL change
+        if "stored-data" in triggered_id or not current_country:
+            selected_country = countries[0]
+            if search:
+                params = parse_qs(search.lstrip("?"))
+                url_country = params.get("country", [None])[0]
+                if url_country and url_country in countries:
+                    selected_country = url_country
+            return get_country_select_options(countries), selected_country
+
+        # URL changed but we already have a country selected - keep current
+        return get_country_select_options(countries), current_country
     return ["No data available"], ""
 
 
@@ -418,6 +436,42 @@ app.clientside_callback(
     """,
     Output("div-for-redirect", "className"),
     Input("theme-store", "data"),
+)
+
+
+app.clientside_callback(
+    """
+    function(country, pathname, theme, defaultTheme) {
+        var params = new URLSearchParams();
+        if (country) params.set('country', country);
+        if (theme && theme !== defaultTheme) params.set('theme', theme);
+        var queryString = params.toString();
+        var suffix = queryString ? '?' + queryString : '';
+
+        // Update nav link hrefs
+        document.querySelectorAll('#sidebar .nav-link').forEach(function(link) {
+            var base = link.getAttribute('href').split('?')[0];
+            link.setAttribute('href', base + suffix);
+        });
+
+        // Update current URL
+        if (country) {
+            var url = new URL(window.location);
+            url.search = queryString;
+            window.history.replaceState({}, '', url);
+        }
+
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("sidebar", "id"),
+    [
+        Input("country-select", "value"),
+        Input("url", "pathname"),
+        Input("theme-store", "data"),
+    ],
+    State("default-theme-store", "data"),
+    prevent_initial_call=True,
 )
 
 @app.callback(
