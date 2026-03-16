@@ -228,6 +228,14 @@ body.theme-wbg {
   color: var(--wbg-solid-blue);
 }
 
+#app-container.theme-wbg #logout-button {
+  color: var(--wbg-white);
+}
+
+#app-container.theme-wbg #logout-button:hover {
+  color: var(--wbg-bright-blue);
+}
+
 /* =============================================================================
    CARDS
    ============================================================================= */
