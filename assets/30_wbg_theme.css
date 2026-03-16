@@ -316,6 +316,20 @@ body.theme-wbg {
 }
 
 /* =============================================================================
+   SOURCE INFO BUTTON
+   ============================================================================= */
+
+#app-container.theme-wbg .source-info-btn:focus,
+#app-container.theme-wbg .source-info-btn {
+  background-color: rgba(0, 34, 68, 0.1);
+  color: var(--wbg-solid-blue);
+}
+
+#app-container.theme-wbg .source-info-btn:hover {
+  background-color: rgba(0, 34, 68, 0.2);
+}
+
+/* =============================================================================
    THEME INDICATOR
    ============================================================================= */
 
