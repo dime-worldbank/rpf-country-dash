@@ -6,6 +6,8 @@ Color palettes based on:
 - World Bank Data Visualization Guidelines (ColorBrewer 2.0 approved schemes)
 """
 
+import os
+
 import plotly.graph_objects as go
 import plotly.io as pio
 
@@ -13,8 +15,9 @@ import plotly.io as pio
 # THEME CONSTANTS
 # =============================================================================
 
-DEFAULT_THEME = "wbg"
 VALID_THEMES = ["wbg", "quartz"]
+_env_theme = os.getenv("DEFAULT_THEME", "").lower()
+DEFAULT_THEME = _env_theme if _env_theme in VALID_THEMES else "wbg"
 
 # =============================================================================
 # COLOR MANIPULATION UTILITIES
