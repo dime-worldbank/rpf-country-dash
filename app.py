@@ -419,15 +419,14 @@ def fetch_source_metadata_once(data):
     Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
     State("country-select", "value"),
     State("stored-source-metadata", "data"),
-    State("stored-data", "data"),
     prevent_initial_call=True,
 )
-def open_source_info_modal(n_clicks, country, source_meta, data):
+def open_source_info_modal(n_clicks, country, source_meta):
     if not n_clicks:
         return no_update, no_update
 
     index = ctx.triggered_id["index"]
-    info = build_modal_info(index, country, source_meta, data)
+    info = build_modal_info(index, country, source_meta)
     return True, build_modal_children(info)
 
 

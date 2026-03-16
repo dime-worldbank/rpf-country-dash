@@ -140,16 +140,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "education-public-private"),
+                            chart_container("education-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            chart_container(
-    "education-total"),
+                            chart_container("education-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -170,8 +168,7 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "education-outcome"),
+                            chart_container("education-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -217,8 +214,7 @@ def render_education_content(tab):
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-edu", width=6),
                                 dbc.Col(
-                                    chart_container(
-    "econ-breakdown-func-edu"),
+                                    chart_container("econ-breakdown-func-edu"),
                                     width=6
                                 ),
                             ]
@@ -267,13 +263,11 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "education-central-vs-regional"),
+                            chart_container("education-central-vs-regional"),
                             width=5
                         ),
                         dbc.Col(
-                            chart_container(
-    "education-sub-func"),
+                            chart_container("education-sub-func"),
                             width=7
                         ),
                     ]
@@ -340,16 +334,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "education-expenditure-map"),
+                            chart_container("education-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            chart_container(
-    "education-outcome-map"),
+                            chart_container("education-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -371,8 +363,7 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "education-subnational"),
+                            chart_container("education-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

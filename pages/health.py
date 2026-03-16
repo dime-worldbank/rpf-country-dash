@@ -149,16 +149,14 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "health-public-private"),
+                            chart_container("health-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            chart_container(
-    "health-total"),
+                            chart_container("health-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -179,8 +177,7 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "health-outcome"),
+                            chart_container("health-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -221,8 +218,7 @@ def render_health_content(tab):
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-health", width=6),
                                 dbc.Col(
-                                    chart_container(
-    "econ-breakdown-func-health"),
+                                    chart_container("econ-breakdown-func-health"),
                                     width=6
                                 ),
                             ]
@@ -271,13 +267,11 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "health-central-vs-regional"),
+                            chart_container("health-central-vs-regional"),
                             width=5
                         ),
                         dbc.Col(
-                            chart_container(
-    "health-sub-func"),
+                            chart_container("health-sub-func"),
                             width=7
                         ),
                     ]
@@ -346,16 +340,14 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "health-expenditure-map"),
+                            chart_container("health-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            chart_container(
-    "health-outcome-map"),
+                            chart_container("health-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -377,8 +369,7 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container(
-    "health-subnational"),
+                            chart_container("health-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},

@@ -287,7 +287,7 @@ def empty_modal(index):
 # Coverage-year helpers — extract year ranges from pipeline query results.
 # ---------------------------------------------------------------------------
 
-def get_coverage_years(key, country, source_meta, expenditure_data=None):
+def get_coverage_years(key, country, source_meta):
     """
     Return ``(earliest_year, latest_year)`` for a coverage key and country.
 
@@ -319,7 +319,7 @@ def get_coverage_years(key, country, source_meta, expenditure_data=None):
     return None, None
 
 
-def build_modal_info(chart_id, country, source_meta, expenditure_data=None):
+def build_modal_info(chart_id, country, source_meta):
     """
     Build the complete info dict for the modal.
 
@@ -331,7 +331,6 @@ def build_modal_info(chart_id, country, source_meta, expenditure_data=None):
         country: Selected country name
         source_meta: Dict with "boost_source_urls", "indicator_availability",
                      and "source_urls_by_country" from stored data
-        expenditure_data: Optional expenditure data for coverage lookup
 
     Returns:
         Dict with chart metadata, index, country, and source sections
@@ -352,7 +351,7 @@ def build_modal_info(chart_id, country, source_meta, expenditure_data=None):
         }
 
         # Coverage years
-        start, end = get_coverage_years(key, country, source_meta, expenditure_data)
+        start, end = get_coverage_years(key, country, source_meta)
         if start and end:
             section["coverage"] = f"{start}–{end}"
 

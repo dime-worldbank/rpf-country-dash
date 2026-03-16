@@ -98,8 +98,7 @@ def render_overview_content(tab):
                     [
                         # How has total expenditure changed over time?
                         dbc.Col(
-                            chart_container(
-                                "overview-total"),
+                            chart_container("overview-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -107,8 +106,7 @@ def render_overview_content(tab):
                         ),
                         # How has per capita expenditure changed over time?
                         dbc.Col(
-                            chart_container(
-    "overview-per-capita"),
+                            chart_container("overview-per-capita"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -130,8 +128,7 @@ def render_overview_content(tab):
                     [
                         # How has sector prioritization changed over time?
                         dbc.Col(
-                            chart_container(
-    "functional-breakdown"),
+                            chart_container("functional-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -192,8 +189,7 @@ def render_overview_content(tab):
                             )
                         ], width=4),
                         dbc.Col(
-                            chart_container(
-    "func-growth"),
+                            chart_container("func-growth"),
                             width=8,
                         ),
                     ]
@@ -213,8 +209,7 @@ def render_overview_content(tab):
                     [
                         # How much was spent on each economic category?
                         dbc.Col(
-                            chart_container(
-    "economic-breakdown"),
+                            chart_container("economic-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -254,8 +249,7 @@ def render_overview_content(tab):
                     [
                         # How did the overall quality of budget institutions change over time?
                         dbc.Col(
-                            chart_container(
-    "pefa-overall"),
+                            chart_container("pefa-overall"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -263,8 +257,7 @@ def render_overview_content(tab):
                         ),
                         # How did various pillars of the budget institutions change over time?
                         dbc.Col(
-                            chart_container(
-    "pefa-by-pillar"),
+                            chart_container("pefa-by-pillar"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -332,8 +325,7 @@ def render_overview_content(tab):
                         ),
                         # How much was spent in each region?
                         dbc.Col(
-                            chart_container(
-    "subnational-spending"),
+                            chart_container("subnational-spending"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -341,8 +333,7 @@ def render_overview_content(tab):
                         ),
                         # visualization of poverty by region
                         dbc.Col(
-                            chart_container(
-    "subnational-poverty"),
+                            chart_container("subnational-poverty"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
