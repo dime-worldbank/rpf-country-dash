@@ -28,6 +28,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
+from components.source_metadata_popover import chart_container, empty_modal
 from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
 
 db = QueryService.get_instance()
@@ -120,9 +121,7 @@ def render_education_content(tab):
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Who Pays for Education?",
-                        )
+                        html.H3(children="Who Pays for Education?")
                     )
                 ),
                 dbc.Row(
@@ -141,20 +140,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-public-private",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-total",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -169,20 +162,13 @@ def render_education_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Public Spending & Education Outcome",
-                            ),
-                        ]
+                        html.H3(children="Public Spending & Education Outcome")
                     )
                 ),
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-outcome",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -216,11 +202,7 @@ def render_education_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Operational vs. Capital Spending",
-                            ),
-                        ]
+                        html.H3(children="Operational vs. Capital Spending")
                     )
                 ),
                 dbc.Row(
@@ -231,7 +213,10 @@ def render_education_content(tab):
                         dbc.Row(
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-edu", width=6),
-                                dbc.Col(dcc.Graph(id="econ-breakdown-func-edu"), width=6),
+                                dbc.Col(
+                                    chart_container("econ-breakdown-func-edu"),
+                                    width=6
+                                ),
                             ]
                         ),
                     ]
@@ -262,9 +247,7 @@ def render_education_content(tab):
                 dbc.Row(style={"height": "20px"}),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Centrally vs. Geographically Allocated Education Spending",
-                        )
+                        html.H3(children="Centrally vs. Geographically Allocated Education Spending")
                     )
                 ),
                 dbc.Row(
@@ -279,8 +262,14 @@ def render_education_content(tab):
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(dcc.Graph(id="education-central-vs-regional"), width=5),
-                        dbc.Col(dcc.Graph(id="education-sub-func"), width=7),
+                        dbc.Col(
+                            chart_container("education-central-vs-regional"),
+                            width=5
+                        ),
+                        dbc.Col(
+                            chart_container("education-sub-func"),
+                            width=7
+                        ),
                     ]
                 ),
                 dbc.Row(
@@ -345,20 +334,14 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-expenditure-map",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-outcome-map",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -380,10 +363,7 @@ def render_education_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="education-subnational",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("education-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -443,17 +423,6 @@ def total_edu_figure(df, currency_code):
         title="How has govt spending on education changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -682,17 +651,6 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     narrative = public_private_narrative(merged, country)
@@ -829,18 +787,6 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
             xanchor="center",
             yanchor="top",
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: Education index measured by years of education: UNDP through GDL. <br>"
-                "BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
         hoverlabel_namelength=-1,
     )
 

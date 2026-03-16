@@ -11,12 +11,20 @@ from dash import (
     Input,
     Output,
     State,
+    MATCH,
+    ctx,
     page_container,
     page_registry,
     no_update,
 )
 
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
+from components.source_metadata_popover import (
+    CHART_METADATA,
+    build_modal_children,
+    build_modal_info,
+    get_coverage_years,
+)
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
@@ -128,6 +136,7 @@ def layout():
                 dcc.Store(id="stored-data-subnational"),
                 dcc.Store(id="stored-data-func-econ"),
                 dcc.Store(id="stored-data-subnat-boundaries"),
+                dcc.Store(id="stored-source-metadata"),
             ]
         )
 
@@ -363,6 +372,73 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     }
     data_to_store[country] = boundaries_geojson
     return data_to_store
+
+
+@app.callback(
+    Output("stored-source-metadata", "data"),
+    Input("stored-source-metadata", "data"),
+)
+def fetch_source_metadata_once(data):
+    if data is None:
+        indicator_df = db.get_indicator_data_availability()
+        boost_urls_df = db.get_boost_source_urls()
+
+        # Pre-build source URL maps indexed by country for efficient lookup
+        source_urls_by_country = {}
+
+        # Add BOOST URLs
+        for _, row in boost_urls_df.iterrows():
+            country = row["country_name"]
+            if country not in source_urls_by_country:
+                source_urls_by_country[country] = {}
+            url = row.get("source_url")
+            if url:
+                source_urls_by_country[country]["boost"] = url
+
+        # Add indicator URLs
+        for _, row in indicator_df.iterrows():
+            country = row["country_name"]
+            if country not in source_urls_by_country:
+                source_urls_by_country[country] = {}
+            url = row.get("source_url")
+            if url:
+                key = row["indicator_key"]
+                source_urls_by_country[country][key] = url
+
+        return {
+            "indicator_availability": indicator_df.to_dict("records"),
+            "boost_source_urls": boost_urls_df.to_dict("records"),
+            "source_urls_by_country": source_urls_by_country,
+        }
+    return no_update
+
+
+@app.callback(
+    Output({"type": "source-info-modal", "index": MATCH}, "is_open"),
+    Output({"type": "source-info-modal", "index": MATCH}, "children"),
+    Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
+    State("country-select", "value"),
+    State("stored-source-metadata", "data"),
+    prevent_initial_call=True,
+)
+def open_source_info_modal(n_clicks, country, source_meta):
+    if not n_clicks:
+        return no_update, no_update
+
+    index = ctx.triggered_id["index"]
+    info = build_modal_info(index, country, source_meta)
+    return True, build_modal_children(info)
+
+
+@app.callback(
+    Output({"type": "source-info-modal", "index": MATCH}, "is_open", allow_duplicate=True),
+    Input({"type": "source-info-close", "index": MATCH}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def close_source_info_modal(n_clicks):
+    if n_clicks:
+        return False
+    return no_update
 
 
 if __name__ == "__main__":

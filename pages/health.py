@@ -26,6 +26,7 @@ from components.edu_health_across_space import (
     render_func_subnat_rank,
 )
 from components.disclaimer_div import disclaimer_tooltip
+from components.source_metadata_popover import chart_container, empty_modal
 from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
 
 db = QueryService.get_instance()
@@ -129,9 +130,7 @@ def render_health_content(tab):
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Who Pays for Healthcare?",
-                        )
+                        html.H3(children="Who Pays for Healthcare?")
                     )
                 ),
                 dbc.Row(
@@ -150,20 +149,14 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-public-private",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-public-private"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-total",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -178,20 +171,13 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Public Spending & Health Outcome",
-                            ),
-                        ]
+                        html.H3(children="Public Spending & Health Outcome")
                     )
                 ),
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-outcome",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-outcome"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -222,11 +208,7 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        [
-                            html.H3(
-                                children="Operational vs. Capital Spending",
-                            ),
-                        ]
+                        html.H3(children="Operational vs. Capital Spending")
                     )
                 ),
                 dbc.Row(
@@ -235,7 +217,10 @@ def render_health_content(tab):
                         dbc.Row(
                             [
                                 dbc.Col(id="econ-breakdown-func-narrative-health", width=6),
-                                dbc.Col(dcc.Graph(id="econ-breakdown-func-health"), width=6),
+                                dbc.Col(
+                                    chart_container("econ-breakdown-func-health"),
+                                    width=6
+                                ),
                             ]
                         ),
                     ]
@@ -266,9 +251,7 @@ def render_health_content(tab):
                 dbc.Row(style={"height": "20px"}),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Centrally vs. Geographically Allocated Health Spending",
-                        )
+                        html.H3(children="Centrally vs. Geographically Allocated Health Spending")
                     )
                 ),
                 dbc.Row(
@@ -283,8 +266,14 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(dcc.Graph(id="health-central-vs-regional"), width=5),
-                        dbc.Col(dcc.Graph(id="health-sub-func"), width=7),
+                        dbc.Col(
+                            chart_container("health-central-vs-regional"),
+                            width=5
+                        ),
+                        dbc.Col(
+                            chart_container("health-sub-func"),
+                            width=7
+                        ),
                     ]
                 ),
                 dbc.Row(
@@ -351,20 +340,14 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-expenditure-map",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-expenditure-map"),
                             xs=12,
                             sm=12,
                             md=6,
                             lg=6,
                         ),
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-outcome-map",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-outcome-map"),
                             xs=12,
                             sm=12,
                             md=6,
@@ -386,10 +369,7 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Graph(
-                                id="health-subnational",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("health-subnational"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -450,17 +430,6 @@ def total_health_figure(df, currency_code):
         title="How has govt spending on health changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: BOOST: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -685,17 +654,6 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: Household exp: WHO, Public exp from BOOST: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     narrative = public_private_narrative(merged, country)
@@ -792,17 +750,6 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
             xanchor="center",
             yanchor="top",
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0,
-                y=-0.2,
-                text="Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
         hoverlabel_namelength=-1,
     )
 

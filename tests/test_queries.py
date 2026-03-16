@@ -63,6 +63,62 @@ class TestQueryService(unittest.TestCase):
         self.assertEqual(df.iloc[0]["country_name"], "Country1")
         self.assertEqual(df.iloc[0]["decentralized_expenditure"], 0)
 
+    def test_get_indicator_data_availability_returns_all_columns(self):
+        self.mock_execute_query.return_value = pd.DataFrame({
+            "country_name": ["Albania", "Albania"],
+            "indicator_key": ["poverty_rate", "pefa_by_pillar"],
+            "earliest_year": [2012, 2016],
+            "latest_year": [2020, 2022],
+            "source_url": ["https://example.com/pip", "https://example.com/pefa"],
+        })
+        df = self.query_service.get_indicator_data_availability()
+        self.assertEqual(len(df), 2)
+        self.assertListEqual(
+            list(df.columns),
+            ["country_name", "indicator_key", "earliest_year", "latest_year", "source_url"],
+        )
+
+    @patch("queries.PUBLIC_ONLY", True)
+    def test_get_indicator_data_availability_filters_by_whitelist(self):
+        self.query_service.country_whitelist = ["Albania"]
+        self.mock_execute_query.return_value = pd.DataFrame({
+            "country_name": ["Albania", "Brazil"],
+            "indicator_key": ["poverty_rate", "poverty_rate"],
+            "earliest_year": [2012, 2010],
+            "latest_year": [2020, 2021],
+            "source_url": ["https://example.com/1", "https://example.com/2"],
+        })
+        df = self.query_service.get_indicator_data_availability()
+        self.assertEqual(len(df), 1)
+        self.assertEqual(df.iloc[0]["country_name"], "Albania")
+
+    def test_get_boost_source_urls_returns_all_columns(self):
+        self.mock_execute_query.return_value = pd.DataFrame({
+            "country_name": ["Albania", "Kenya"],
+            "boost_source_url": ["https://example.com/alb", "https://example.com/ken"],
+            "boost_earliest_year": [2010, 2012],
+            "boost_latest_year": [2020, 2022],
+        })
+        df = self.query_service.get_boost_source_urls()
+        self.assertEqual(len(df), 2)
+        self.assertListEqual(
+            list(df.columns),
+            ["country_name", "boost_source_url", "boost_earliest_year", "boost_latest_year"],
+        )
+
+    @patch("queries.PUBLIC_ONLY", True)
+    def test_get_boost_source_urls_filters_by_whitelist(self):
+        self.query_service.country_whitelist = ["Kenya"]
+        self.mock_execute_query.return_value = pd.DataFrame({
+            "country_name": ["Albania", "Kenya"],
+            "boost_source_url": ["https://example.com/alb", "https://example.com/ken"],
+            "boost_earliest_year": [2010, 2012],
+            "boost_latest_year": [2020, 2022],
+        })
+        df = self.query_service.get_boost_source_urls()
+        self.assertEqual(len(df), 1)
+        self.assertEqual(df.iloc[0]["country_name"], "Kenya")
+
 if __name__ == "__main__":
     unittest.main()
 
