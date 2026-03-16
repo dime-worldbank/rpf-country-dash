@@ -23,6 +23,7 @@ from utils import (
 from components import slider, get_slider_config, pefa, budget_increment_analysis
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
+from components.source_metadata_popover import chart_container, empty_modal
 from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
@@ -83,9 +84,7 @@ def render_overview_content(tab):
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Total Expenditure",
-                        )
+                        html.H3(children="Total Expenditure")
                     )
                 ),
                 dbc.Row(
@@ -100,9 +99,7 @@ def render_overview_content(tab):
                     [
                         # How has total expenditure changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="overview-total", config={"displayModeBar": False}
-                            ),
+                            chart_container("overview-total"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -110,10 +107,7 @@ def render_overview_content(tab):
                         ),
                         # How has per capita expenditure changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="overview-per-capita",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("overview-per-capita"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -128,19 +122,14 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Spending by Functional Categories",
-                        )
+                        html.H3(children="Spending by Functional Categories")
                     )
                 ),
                 dbc.Row(
                     [
                         # How has sector prioritization changed over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="functional-breakdown",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("functional-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -201,7 +190,7 @@ def render_overview_content(tab):
                             )
                         ], width=4),
                         dbc.Col(
-                            dcc.Graph(id="func-growth"),
+                            chart_container("func-growth"),
                             width=8,
                         ),
                     ]
@@ -214,19 +203,14 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Spending by Economic Categories",
-                        )
+                        html.H3(children="Spending by Economic Categories")
                     )
                 ),
                 dbc.Row(
                     [
                         # How much was spent on each economic category?
                         dbc.Col(
-                            dcc.Graph(
-                                id="economic-breakdown",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("economic-breakdown"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -251,9 +235,7 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(
-                            children="Quality of Budget Institutions",
-                        )
+                        html.H3(children="Quality of Budget Institutions")
                     )
                 ),
                 dbc.Row(
@@ -268,10 +250,7 @@ def render_overview_content(tab):
                     [
                         # How did the overall quality of budget institutions change over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="pefa-overall",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("pefa-overall"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -279,10 +258,7 @@ def render_overview_content(tab):
                         ),
                         # How did various pillars of the budget institutions change over time?
                         dbc.Col(
-                            dcc.Graph(
-                                id="pefa-by-pillar",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("pefa-by-pillar"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -350,10 +326,7 @@ def render_overview_content(tab):
                         ),
                         # How much was spent in each region?
                         dbc.Col(
-                            dcc.Graph(
-                                id="subnational-spending",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("subnational-spending"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -361,10 +334,7 @@ def render_overview_content(tab):
                         ),
                         # visualization of poverty by region
                         dbc.Col(
-                            dcc.Graph(
-                                id="subnational-poverty",
-                                config={"displayModeBar": False},
-                            ),
+                            chart_container("subnational-poverty"),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -432,17 +402,6 @@ def total_figure(df, currency_name, currency_code):
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
         hovermode="x unified",
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.14,
-                y=-0.2,
-                text="Source: BOOST & CPI: World Bank",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -504,17 +463,6 @@ def per_capita_figure(df, currency_name, currency_code):
         title="How has per capita expenditure changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.14,
-                y=-0.2,
-                text="Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -583,17 +531,6 @@ def functional_figure(df):
         title="How has sector prioritization changed over time?",
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Expenditure % by COFOG categories. Source: BOOST",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
@@ -773,17 +710,6 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
             thickness=10,
         ),
         legend=dict(orientation="h", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Regional Spending. Source: BOOST",
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ],
     )
     fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{z}<extra></extra>"
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
@@ -840,17 +766,6 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
             orientation="v",
             thickness=10,
         ),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                text=" Regional Spending. Source: BOOST",
-                showarrow=False,
-                font=dict(size=10),
-            )
-        ],
     )
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
@@ -930,16 +845,6 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 y=-0.13,
                 xanchor="left",
                 text=f"Displaying data from {year}. {_get_poverty_source_text(income_level)}",
-                showarrow=False,
-                font=dict(size=10),
-            ),
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                xanchor="left",
-                text="Source: SPID and GSAP, World Bank.",
                 showarrow=False,
                 font=dict(size=10),
             ),
@@ -1089,17 +994,6 @@ def economic_figure(df, currency_code):
         title="How much was spent on each economic category?",
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
-        annotations=[
-            dict(
-                xref="paper",
-                yref="paper",
-                x=-0.1,
-                y=-0.2,
-                text="Expenditure % by economic categories. Source: BOOST",
-                showarrow=False,
-                font=dict(size=12),
-            )
-        ],
     )
 
     return fig
