@@ -22,6 +22,7 @@ from components.func_operational_vs_capital_spending import prepare_prop_econ_by
 from components.source_metadata_popover import (
     CHART_METADATA,
     build_modal_children,
+    build_modal_info,
     get_coverage_years,
 )
 from flask_login import logout_user, current_user
@@ -381,9 +382,33 @@ def fetch_source_metadata_once(data):
     if data is None:
         indicator_df = db.get_indicator_data_availability()
         boost_urls_df = db.get_boost_source_urls()
+
+        # Pre-build source URL maps indexed by country for efficient lookup
+        source_urls_by_country = {}
+
+        # Add BOOST URLs
+        for _, row in boost_urls_df.iterrows():
+            country = row["country_name"]
+            if country not in source_urls_by_country:
+                source_urls_by_country[country] = {}
+            url = row.get("source_url")
+            if url:
+                source_urls_by_country[country]["boost"] = url
+
+        # Add indicator URLs
+        for _, row in indicator_df.iterrows():
+            country = row["country_name"]
+            if country not in source_urls_by_country:
+                source_urls_by_country[country] = {}
+            url = row.get("source_url")
+            if url:
+                key = row["indicator_key"]
+                source_urls_by_country[country][key] = url
+
         return {
             "indicator_availability": indicator_df.to_dict("records"),
             "boost_source_urls": boost_urls_df.to_dict("records"),
+            "source_urls_by_country": source_urls_by_country,
         }
     return no_update
 
@@ -402,48 +427,7 @@ def open_source_info_modal(n_clicks, country, source_meta, data):
         return no_update, no_update
 
     index = ctx.triggered_id["index"]
-    chart_meta = CHART_METADATA.get(index, {})
-
-    # Build lookup map for indicator source URLs, filtered by selected country
-    indicator_url_map = {}
-    if country:
-        for row in (source_meta or {}).get("indicator_availability", []):
-            if row.get("country_name") == country:
-                url = row.get("source_url")
-                if url:
-                    indicator_url_map[row["indicator_key"]] = url
-
-    boost_url = ""
-    if country:
-        for row in (source_meta or {}).get("boost_source_urls", []):
-            if row["country_name"] == country:
-                boost_url = row.get("boost_source_url", "")
-                break
-
-    # Build per-source sections
-    source_sections = []
-    for src in chart_meta.get("sources", []):
-        key = src["key"]
-        section = {
-            "label": src.get("label", ""),
-            "source_name": src.get("source_name", ""),
-            "description": src.get("description"),
-        }
-
-        # Coverage years
-        start, end = get_coverage_years(key, country, source_meta, data)
-        if start and end:
-            section["coverage"] = f"{start}\u2013{end}"
-
-        # Source URL: pipeline first, then fall back to config
-        if key == "boost":
-            section["source_url"] = boost_url or src.get("source_url")
-        else:
-            section["source_url"] = indicator_url_map.get(key) or src.get("source_url")
-
-        source_sections.append(section)
-
-    info = {**chart_meta, "_index": index, "country_name": country, "source_sections": source_sections}
+    info = build_modal_info(index, country, source_meta, data)
     return True, build_modal_children(info)
 
 

@@ -50,7 +50,7 @@ class QueryService:
         if PUBLIC_ONLY:
             query = f"""
                 SELECT country_name, boost_source_url
-                FROM prd_mega.{BOOST_SCHEMA}.data_availability
+                FROM prd_mega.{BOOST_SCHEMA}.data_availability_test
                 WHERE boost_public = 'Yes'
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()

@@ -2,6 +2,8 @@ import pandas as pd
 from dash import html
 import dash_bootstrap_components as dbc
 
+from constants import START_YEAR
+
 
 # ---------------------------------------------------------------------------
 # Shared source definitions – define once, reuse across charts.
@@ -12,6 +14,10 @@ _POVERTY_DESCRIPTION = (
     "Poverty thresholds vary by country income classification: "
     "$3.00 for Low Income, $4.20 for Lower Middle Income, "
     "and $8.30 for Upper Middle and High Income countries."
+)
+
+_SUBNATIONAL_POVERTY_DESCRIPTION = (
+    _POVERTY_DESCRIPTION + " Subnational poverty rates come from both Global Subnational Atlas of Poverty (GSAP) and Subnational Poverty and Inequality Database (SPID)"
 )
 
 _BOOST = {
@@ -34,7 +40,7 @@ _SUBNATIONAL_POVERTY = {
     "key": "subnational_poverty_rate",
     "label": "Subnational Poverty Rate",
     "source_name": "World Bank",
-    "description": _POVERTY_DESCRIPTION,
+    "description": _SUBNATIONAL_POVERTY_DESCRIPTION,
 }
 
 _LEARNING_POVERTY = {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"}
@@ -104,8 +110,8 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
-    "home-regional-spending": {"sources": [_BOOST]},
-    "home-regional-poverty": {"sources": [_SUBNATIONAL_POVERTY]},
+    "subnational-spending": {"sources": [_BOOST]},
+    "subnational-poverty": {"sources": [_SUBNATIONAL_POVERTY]},
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
@@ -337,8 +343,58 @@ def get_coverage_years(key, country, source_meta, expenditure_data=None):
             start = row.get("earliest_year")
             end = row.get("latest_year")
             # Convert to int, return None if missing
-            start = int(start) if start else None
+            start = max(int(start), START_YEAR) if start else None
             end = int(end) if end else None
             return start, end
 
     return None, None
+
+
+def build_modal_info(chart_id, country, source_meta, expenditure_data=None):
+    """
+    Build the complete info dict for the modal.
+
+    Fetches chart metadata, builds source sections with coverage years
+    and URLs, and returns the complete info structure.
+
+    Args:
+        chart_id: Chart key from CHART_METADATA
+        country: Selected country name
+        source_meta: Dict with "boost_source_urls", "indicator_availability",
+                     and "source_urls_by_country" from stored data
+        expenditure_data: Optional expenditure data for coverage lookup
+
+    Returns:
+        Dict with chart metadata, index, country, and source sections
+    """
+    chart_meta = CHART_METADATA.get(chart_id, {})
+
+    # Get pre-computed source URL map for this country
+    source_url_map = (source_meta or {}).get("source_urls_by_country", {}).get(country, {})
+
+    # Build per-source sections
+    source_sections = []
+    for src in chart_meta.get("sources", []):
+        key = src["key"]
+        section = {
+            "label": src.get("label", ""),
+            "source_name": src.get("source_name", ""),
+            "description": src.get("description"),
+        }
+
+        # Coverage years
+        start, end = get_coverage_years(key, country, source_meta, expenditure_data)
+        if start and end:
+            section["coverage"] = f"{start}–{end}"
+
+        # Source URL: pipeline first, then fall back to config
+        section["source_url"] = source_url_map.get(key) or src.get("source_url")
+
+        source_sections.append(section)
+
+    return {
+        **chart_meta,
+        "_index": chart_id,
+        "country_name": country,
+        "source_sections": source_sections,
+    }
