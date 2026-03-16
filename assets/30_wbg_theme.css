@@ -59,12 +59,12 @@ body.theme-wbg {
    SIDEBAR
    ============================================================================= */
 
-#app-container.theme-wbg > div[style*="position: fixed"][style*="left: 0"] {
+#app-container.theme-wbg #sidebar {
   background-color: rgba(0, 34, 68, 0.4);
   backdrop-filter: blur(10px);
 }
 
-#app-container.theme-wbg > div[style*="position: fixed"][style*="left: 0"] hr {
+#app-container.theme-wbg #sidebar hr {
   border-color: rgba(255, 255, 255, 0.3);
   opacity: 1;
 }
