@@ -372,10 +372,6 @@ zoom = {
 }
 
 
-def add_opacity(rgb, opacity):
-    first = rgb.split(")")[0]
-    rgba = (first + "," + str(opacity) + ")").replace("rgb", "rgba")
-    return rgba
 
 
 def get_prefixed_path(pathname):
@@ -387,10 +383,14 @@ def get_login_path():
     return get_prefixed_path("login")
 
 
+FILTERED_QUERY_PARAMS = ["theme", "country"]
+
+
 def require_login(layout_func):
     def wrapper(*args, **kwargs):
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k not in FILTERED_QUERY_PARAMS}
         if not AUTH_ENABLED or current_user.is_authenticated:
-            return layout_func(*args, **kwargs)
+            return layout_func(*args, **filtered_kwargs)
         else:
             return html.Div([
                 dcc.Location(pathname=get_login_path(), id="redirect-to-login")

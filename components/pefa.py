@@ -5,6 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import re
 import textwrap
+from viz_theme import SEQUENTIAL_SCALE
 
 SCORE_MAPPING = OrderedDict([
     (4, "A"),
@@ -133,7 +134,6 @@ def pefa_overall_figure(df, pov_df):
         barmode="stack",
         title={
             'text': wrapped_title,
-            'font': {'size': 16},
             'x': 0.5,
             'y': 0.92,
             'xanchor': 'center',
@@ -190,17 +190,17 @@ def pefa_pillar_heatmap(df):
                 "Pillar: %{y}<br>"
                 "Score: %{text}<extra></extra>"
             ),
-            colorscale='Viridis',
+            colorscale=SEQUENTIAL_SCALE,
             zmin=1,
             zmax=4,
             colorbar=dict(
                 title=dict(
                     text="PEFA Grades",
                     side='right',
-                    font=dict(size=12),
                 ),
                 tickvals=list(SCORE_MAPPING.keys()),
                 ticktext=list(SCORE_MAPPING.values()),
+                outlinewidth=0,
             ),
         )
     )
@@ -209,20 +209,17 @@ def pefa_pillar_heatmap(df):
         tickvals=heatmap_scores.columns,
         ticktext=heatmap_scores.columns,
         title_text="",
-        showgrid=False,
     )
 
     fig.update_yaxes(
         ticksuffix=" ",
         tickmode='linear',
         title_text="",
-        showgrid=False,
     )
 
     fig.update_layout(
         title={
             'text': fig_title,
-            'font': {'size': 16},
             'x': 0.5,
             'y': 0.9,
             'xanchor': 'center',

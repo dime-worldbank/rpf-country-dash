@@ -7,6 +7,10 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
+from viz_theme import (
+    DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
+    get_map_colorscale, darken_color, lighten_color, add_opacity,
+)
 from utils import (
     add_currency_column,
     add_disputed_overlay,
@@ -17,7 +21,6 @@ from utils import (
     generate_error_prompt,
     get_correlation_text,
     millify,
-    add_opacity,
 )
 
 
@@ -38,7 +41,11 @@ def update_year_slider(data, country, func):
 
 def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code):
     if not func_econ_data or not sub_func_data or not country:
-        return
+        return (
+            empty_plot("Loading..."),
+            empty_plot("Loading..."),
+            "Loading...",
+        )
 
     data_by_func_admin0 = _subset_data(
         func_econ_data['expenditure_by_country_func_year'], selected_year, country, func
@@ -84,7 +91,7 @@ def _central_vs_regional_fig(data, func, currency_code):
                 labels=central_vs_regional["geo0"],
                 values=central_vs_regional["real_expenditure"],
                 hole=0.5,
-                marker=dict(colors=["rgb(17, 141, 255)", "rgb(160, 209, 255)"]),
+                marker=dict(colors=[CENTRAL_COLOR, REGIONAL_COLOR]),
                 customdata=np.stack(central_vs_regional["real_expenditure_formatted"]),
                 hovertemplate="<b>Real expenditure</b>: %{customdata}<br>"
                 + "<extra></extra>",
@@ -98,10 +105,11 @@ def _central_vs_regional_fig(data, func, currency_code):
     )
     return fig
 
+
 def _sub_func_fig(data, func, currency_code):
     fig_title = f"How much did the gov spend on different levels of {func.lower()}?"
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
- 
+
     if education_values.empty:
         return empty_plot("No data available for this period", fig_title)
 
@@ -112,15 +120,21 @@ def _sub_func_fig(data, func, currency_code):
     labels = []
     values = []
     hover_texts = []
+    colors = []
     parent_totals = {}
-    for _, row in education_values.iterrows():
-        percent_of_total = (row["expenditure"] / total) * 100
-        parent_totals[row["func_sub"]] = row["expenditure"]
-        ids.append(row["func_sub"])
+    parent_colors = {}
+
+    for i, row in enumerate(education_values.itertuples()):
+        percent_of_total = (row.expenditure / total) * 100
+        parent_totals[row.func_sub] = row.expenditure
+        base_color = TREEMAP_PALETTE[i % len(TREEMAP_PALETTE)]
+        parent_colors[row.func_sub] = base_color
+        ids.append(row.func_sub)
         parents.append("")
-        labels.append(f"{row['func_sub']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_total:.0f}%)")
-        values.append(row["expenditure"])
-        hover_texts.append(f"Real expenditure: {format_currency(row['real_expenditure'], currency_code)}")
+        labels.append(f"{row.func_sub}<br>{format_currency(row.expenditure, currency_code)} ({percent_of_total:.0f}%)")
+        values.append(row.expenditure)
+        hover_texts.append(f"Real expenditure: {format_currency(row.real_expenditure, currency_code)}")
+        colors.append(base_color)
 
     data_grouped = (
         data.groupby(["func_sub", "geo0"], sort=False).sum(numeric_only=True).reset_index()
@@ -134,9 +148,13 @@ def _sub_func_fig(data, func, currency_code):
         ids.append(f"{row['func_sub']} - {row['geo0']}")
         parents.append(parent)
         values.append(row["expenditure"])
-
         labels.append(f"{row['geo0']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
         hover_texts.append(f"Real expenditure: {format_currency(row['real_expenditure'], currency_code)}")
+        base_color = parent_colors[parent]
+        if row["geo0"] == "Central":
+            colors.append(darken_color(base_color, 0.75))
+        else:
+            colors.append(lighten_color(base_color, 0.35))
 
     fig.add_trace(
         go.Treemap(
@@ -148,6 +166,7 @@ def _sub_func_fig(data, func, currency_code):
             textinfo="label",
             hovertemplate="<b>%{label}</b><br>%{customdata}<extra></extra>",
             customdata=hover_texts,
+            marker=dict(colors=colors),
         )
     )
 
@@ -204,6 +223,7 @@ def update_func_expenditure_map(
     expenditure_type,
     subnat_boundaries,
     func,
+    theme,
 ):
 
     if (
@@ -260,7 +280,8 @@ def update_func_expenditure_map(
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         mapbox_style="carto-positron",
-        hover_data={expenditure_type: False}  # Hide raw value
+        hover_data={expenditure_type: False},
+        color_continuous_scale=get_map_colorscale(theme),
     )
 
     # Add trace for regions without data
@@ -331,7 +352,7 @@ FUNC_OUTCOME_MAP = {
     ],
 }
 def update_hd_index_map(
-    subnational_data, country_data, country, year, subnat_boundaries, func,
+    subnational_data, country_data, country, year, subnat_boundaries, func, theme,
 ):
     if (
         not subnational_data
@@ -393,6 +414,7 @@ def update_hd_index_map(
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         mapbox_style="carto-positron",
+        color_continuous_scale=get_map_colorscale(theme),
     )
 
     formatted_outcome_index = df['outcome_index'].map(format_fn).values
@@ -461,7 +483,7 @@ def update_hd_index_map(
 
 def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code):
     if not subnational_data or not country:
-        return
+        return empty_plot("Loading..."), "Loading..."
 
     data = _subset_data(
         subnational_data["expenditure_and_outcome_by_country_geo1_func_year"], 
@@ -503,8 +525,8 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
 
     gradient_n = 1 if n < 6 else 2 if n < 11 else 3
 
-    color_highs = px.colors.sequential.Oranges[-1 * gradient_n :]
-    colors_lows = px.colors.sequential.Blues[-1 * gradient_n :]
+    color_highs = list(reversed(DIVERGING[:gradient_n]))
+    colors_lows = DIVERGING[-gradient_n:]
     node_colors = (
         color_highs[::-1] + ["rgb(169,169,169)"] * (n - 2 * gradient_n) + colors_lows
     )

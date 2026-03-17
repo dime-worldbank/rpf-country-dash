@@ -16,7 +16,9 @@ from dash import (
     page_container,
     page_registry,
     no_update,
+    callback_context,
 )
+from urllib.parse import parse_qs, urlparse
 
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
 from components.source_metadata_popover import (
@@ -30,6 +32,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 from server import server
 from utils import get_login_path, get_prefixed_path
+from viz_theme import DEFAULT_THEME, VALID_THEMES, init_plotly_theme
 
 app = Dash(
     __name__,
@@ -37,6 +40,8 @@ app = Dash(
     suppress_callback_exceptions=True,
     use_pages=True,
 )
+
+init_plotly_theme()
 
 HEADER_STYLE = {
     "display": "flex",
@@ -101,9 +106,7 @@ sidebar = html.Div(
         dbc.Nav(
             [
                 dbc.NavLink("Overview", href=get_relative_path("home"), active="exact"),
-                dbc.NavLink(
-                    "Education", href=get_relative_path("education"), active="exact"
-                ),
+                dbc.NavLink("Education", href=get_relative_path("education"), active="exact"),
                 dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
                 dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
             ],
@@ -111,6 +114,7 @@ sidebar = html.Div(
             pills=True,
         ),
     ],
+    id="sidebar",
     style=SIDEBAR_STYLE,
 )
 
@@ -122,6 +126,8 @@ dummy_div = html.Div(id="div-for-redirect")
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
+        dcc.Store(id="theme-store", data=DEFAULT_THEME),
+        dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
         sidebar,
         content,
@@ -140,7 +146,7 @@ def layout():
             ]
         )
 
-    return html.Div(html_contents)
+    return html.Div(html_contents, id="app-container", className=f"theme-{DEFAULT_THEME}")
 
 
 app.layout = layout
@@ -163,11 +169,11 @@ def display_page_or_redirect(pathname, logout_clicks):
             or pathname == os.getenv("DEFAULT_ROOT_PATH", "/")
         ):
             return get_prefixed_path("home"), page_container
-        return pathname, page_container
+        return no_update, page_container
     else:
         if pathname != login_path:
             return login_path, page_container
-        return pathname, page_container
+        return no_update, page_container
 
 
 @app.callback(Output("logout-button", "style"), Input("url", "pathname"))
@@ -241,7 +247,7 @@ def fetch_func_data_once(data):
     Input("stored-data", "data"),
 )
 def fetch_subnational_data_once(data, country_data):
-    if data is None:
+    if data is None and country_data:
         countries = country_data["countries"]
         df_disputed = db.get_disputed_boundaries(countries)
 
@@ -275,8 +281,14 @@ def fetch_subnational_data_once(data, country_data):
     Output("country-select", "options"),
     Output("country-select", "value"),
     Input("stored-data", "data"),
+    Input("url", "search"),
+    State("country-select", "value"),
 )
-def display_data(data):
+def display_data(data, search, current_country):
+    """
+    Populate country dropdown and optionally select country from URL.
+    Usage: ?country=Kenya or ?country=Kenya&theme=wbg
+    """
     def get_country_select_options(countries):
         options = list({"label": c, "value": c} for c in countries)
         options[0]["selected"] = True
@@ -284,7 +296,20 @@ def display_data(data):
 
     if data is not None:
         countries = data["countries"]
-        return get_country_select_options(countries), countries[0]
+        triggered_id = callback_context.triggered[0]["prop_id"] if callback_context.triggered else ""
+
+        # Only read from URL on initial load (stored-data trigger) or explicit URL change
+        if "stored-data" in triggered_id or not current_country:
+            selected_country = countries[0]
+            if search:
+                params = parse_qs(search.lstrip("?"))
+                url_country = params.get("country", [None])[0]
+                if url_country and url_country in countries:
+                    selected_country = url_country
+            return get_country_select_options(countries), selected_country
+
+        # URL changed but we already have a country selected - keep current
+        return get_country_select_options(countries), current_country
     return ["No data available"], ""
 
 
@@ -295,9 +320,9 @@ def display_data(data):
     Input("stored-basic-country-data", "data"),
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
-    if country_data is None:
-        countries = [x["label"] for x in countries]
-        country_df = db.get_basic_country_data(countries)
+    if country_data is None and countries and subnational_data:
+        country_labels = [x["label"] for x in countries]
+        country_df = db.get_basic_country_data(country_labels)
         country_info = country_df.set_index("country_name").T.to_dict()
 
         expenditure_df = pd.DataFrame(
@@ -350,6 +375,9 @@ def fetch_country_data_once(countries, subnational_data, country_data):
     Input("country-select", "value"),
 )
 def fetch_subnat_boundary_data_once(geo_data, country):
+    if not country:
+        return no_update
+
     if geo_data is None:
         data_to_store = {}
     else:
@@ -373,6 +401,78 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     data_to_store[country] = boundaries_geojson
     return data_to_store
 
+
+@app.callback(
+    Output("app-container", "className"),
+    Output("theme-store", "data"),
+    Input("url", "search"),
+    State("theme-store", "data"),
+)
+def update_theme_from_url(search, current_theme):
+    """
+    Parse theme from URL parameter and update app styling.
+    Usage: ?theme=wbg or ?theme=quartz
+    """
+    theme = current_theme or DEFAULT_THEME
+
+    if search:
+        params = parse_qs(search.lstrip("?"))
+        url_theme = params.get("theme", [None])[0]
+        if url_theme and url_theme.lower() in VALID_THEMES:
+            theme = url_theme.lower()
+
+    theme_class = f"theme-{theme}"
+
+    return theme_class, theme
+
+
+app.clientside_callback(
+    """
+    function(theme) {
+        document.body.className = 'theme-' + (theme || 'wbg');
+        document.documentElement.className = 'theme-' + (theme || 'wbg');
+        return '';
+    }
+    """,
+    Output("div-for-redirect", "className"),
+    Input("theme-store", "data"),
+)
+
+
+app.clientside_callback(
+    """
+    function(country, pathname, theme, defaultTheme) {
+        var params = new URLSearchParams();
+        if (country) params.set('country', country);
+        if (theme && theme !== defaultTheme) params.set('theme', theme);
+        var queryString = params.toString();
+        var suffix = queryString ? '?' + queryString : '';
+
+        // Update nav link hrefs
+        document.querySelectorAll('#sidebar .nav-link').forEach(function(link) {
+            var base = link.getAttribute('href').split('?')[0];
+            link.setAttribute('href', base + suffix);
+        });
+
+        // Update current URL
+        if (country) {
+            var url = new URL(window.location);
+            url.search = queryString;
+            window.history.replaceState({}, '', url);
+        }
+
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("sidebar", "id"),
+    [
+        Input("country-select", "value"),
+        Input("url", "pathname"),
+        Input("theme-store", "data"),
+    ],
+    State("default-theme-store", "data"),
+    prevent_initial_call=True,
+)
 
 @app.callback(
     Output("stored-source-metadata", "data"),

@@ -1,6 +1,7 @@
 from dash import html
 import pandas as pd
 import plotly.graph_objects as go
+from utils import empty_plot
 
 OP_WAGE_BILL = "Wage bill"
 CAPEX = "Capital expenditures"
@@ -192,6 +193,8 @@ def _generate_econ_figure(data, func):
 
 
 def render_econ_breakdown(data, country_name, page_func):
+    if not data:
+        return empty_plot("Loading..."), "Loading..."
     df = pd.DataFrame(data["econ_expenditure_prop_by_func_country_year"])
     filtered_df = df[
         (df["country_name"] == country_name) & (df["func"] == page_func)

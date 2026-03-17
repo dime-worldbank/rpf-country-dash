@@ -1,11 +1,12 @@
 import dash
-from dash import html, dcc, callback, Input, Output
+from dash import html, dcc, callback, Input, Output, State
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from constants import MAP_DISCLAIMER
+from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
     add_currency_column,
@@ -69,7 +70,7 @@ def layout():
     Input("stored-data-func-econ", "data"),
 )
 def fetch_health_total_data_once(health_data, shared_data):
-    if health_data is None:
+    if health_data is None and shared_data:
         # filter shared data down to health specific
         exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
         pub_exp = exp_by_func[exp_by_func.func == "Health"]
@@ -407,7 +408,7 @@ def total_health_figure(df, currency_code):
             customdata=df['central_expenditure_formatted'],
             x=df.year,
             y=df.central_expenditure,
-            marker_color="rgb(17, 141, 255)",
+            marker_color=CENTRAL_COLOR,
             hovertemplate="<b>Real Central Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
@@ -417,7 +418,7 @@ def total_health_figure(df, currency_code):
             customdata=df['decentralized_expenditure_formatted'],
             x=df.year,
             y=df.decentralized_expenditure,
-            marker_color="rgb(160, 209, 255)",
+            marker_color=REGIONAL_COLOR,
             hovertemplate="<b>Real Decentralized Expenditure</b>: %{customdata}<extra></extra>",
         ),
     )
@@ -520,8 +521,8 @@ def health_narrative(data, country):
     Input("stored-basic-country-data", "data"),
 )
 def render_overview_total_figure(data, country, country_data):
-    if data is None:
-        return None
+    if not data or not country_data:
+        return dash.no_update, dash.no_update
 
     all_countries = pd.DataFrame(data["health_public_expenditure"])
     df = filter_country_sort_year(all_countries, country)
@@ -571,7 +572,7 @@ def public_private_narrative(df, country):
 )
 def render_public_private_figure(private_data, public_data, country, country_data):
     if not private_data or not public_data:
-        return
+        return dash.no_update, dash.no_update
 
     fig_title = "What % was spent by the govt vs household?"
     currency_code = country_data['basic_country_info'][country]['currency_code']
@@ -692,7 +693,7 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
 )
 def render_health_outcome(outcome_data, total_data, country, country_data):
     if not total_data or not outcome_data:
-        return
+        return dash.no_update, dash.no_update, dash.no_update
 
     uhc = pd.DataFrame(outcome_data["uhc_index"])
     uhc = filter_country_sort_year(uhc, country)
@@ -823,13 +824,14 @@ def update_health_subnational_motivation_narrative(country_name, year):
     Input("year-slider-health", "value"),
     Input("health-expenditure-type", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_health_expenditure_map(
-    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries,
+    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, theme
 ):
     return update_func_expenditure_map(
         subnational_data, country_data, country, year,
-        expenditure_type, subnat_boundaries, 'Health'
+        expenditure_type, subnat_boundaries, 'Health', theme=theme
     )
 
 
@@ -840,12 +842,13 @@ def update_health_expenditure_map(
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    State("theme-store", "data"),
 )
 def update_health_index_map(
-    subnational_data, country_data, country, year, subnat_boundaries,
+    subnational_data, country_data, country, year, subnat_boundaries, theme
 ):
     return update_hd_index_map(
-        subnational_data, country_data, country, year, subnat_boundaries, 'Health'
+        subnational_data, country_data, country, year, subnat_boundaries, 'Health', theme=theme
     )
 
 

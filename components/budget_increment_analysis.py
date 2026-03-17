@@ -20,6 +20,8 @@ NUM_YEARS = 5
 
 
 def render_fig_and_narrative(data, country, exp_type):
+    if not data:
+        return empty_plot("Loading..."), "Loading..."
     country_budget_changes_df = pd.DataFrame(data["expenditure_by_country_func_year"])
     country_budget_changes_df = filter_country_sort_year(
         country_budget_changes_df, country
