@@ -147,4 +147,5 @@
 #page-content {
     margin: 3rem 2rem 1rem 14rem;
     padding: 1rem 1rem;
+    min-height: 70vh;
 }
