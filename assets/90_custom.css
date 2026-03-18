@@ -122,3 +122,29 @@
     border-bottom: none;
     padding-bottom: 0;
 }
+
+/* =============================================================================
+   LAYOUT
+   ============================================================================= */
+
+#header {
+    position: absolute;
+    top: 1rem;
+    right: 2rem;
+    font-size: 20px;
+    z-index: 1000;
+}
+
+#sidebar {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    bottom: 0;
+    width: 14rem;
+    padding: 2rem 1rem;
+}
+
+#page-content {
+    margin: 3rem 2rem 1rem 14rem;
+    padding: 1rem 1rem;
+}

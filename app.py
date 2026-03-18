@@ -63,30 +63,6 @@ app.index_string = f'''
 
 init_plotly_theme()
 
-HEADER_STYLE = {
-    "position": "fixed",
-    "top": "1rem",
-    "right": "2rem",
-    "fontSize": "20px",
-    "zIndex": 1000,
-}
-
-
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": 10,
-    "left": 0,
-    "bottom": 0,
-    "width": "14rem",
-    "padding": "2rem 1rem",
-}
-
-CONTENT_STYLE = {
-    "marginLeft": "14rem",
-    "marginRight": "2rem",
-    "padding": "2rem 1rem",
-}
-
 db = QueryService.get_instance()
 
 header = html.Div(
@@ -103,7 +79,7 @@ header = html.Div(
             ],
         )
     ],
-    style=HEADER_STYLE,
+    id="header",
 )
 
 
@@ -134,10 +110,9 @@ sidebar = html.Div(
         ),
     ],
     id="sidebar",
-    style=SIDEBAR_STYLE,
 )
 
-content = html.Div(page_container, id="page-content", style=CONTENT_STYLE)
+content = html.Div(page_container, id="page-content")
 
 dummy_div = html.Div(id="div-for-redirect")
 
