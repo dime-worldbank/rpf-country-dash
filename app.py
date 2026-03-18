@@ -118,29 +118,21 @@ dummy_div = html.Div(id="div-for-redirect")
 
 
 def layout():
-    html_contents = [
+    return html.Div([
         dcc.Location(id="url", refresh=False),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
         dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
+        dcc.Store(id="stored-data"),
+        dcc.Store(id="stored-basic-country-data"),
+        dcc.Store(id="stored-data-subnational"),
+        dcc.Store(id="stored-data-func-econ"),
+        dcc.Store(id="stored-data-subnat-boundaries"),
+        dcc.Store(id="stored-source-metadata"),
         header,
         sidebar,
         content,
         dummy_div,
-    ]
-
-    if not AUTH_ENABLED or (current_user and current_user.is_authenticated):
-        html_contents.extend(
-            [
-                dcc.Store(id="stored-data"),
-                dcc.Store(id="stored-basic-country-data"),
-                dcc.Store(id="stored-data-subnational"),
-                dcc.Store(id="stored-data-func-econ"),
-                dcc.Store(id="stored-data-subnat-boundaries"),
-                dcc.Store(id="stored-source-metadata"),
-            ]
-        )
-
-    return html.Div(html_contents, id="app-container")
+    ], id="app-container")
 
 
 app.layout = layout
