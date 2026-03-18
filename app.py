@@ -41,15 +41,34 @@ app = Dash(
     use_pages=True,
 )
 
+app.index_string = f'''
+<!DOCTYPE html>
+<html>
+    <head>
+        {{%metas%}}
+        <title>{{%title%}}</title>
+        {{%favicon%}}
+        {{%css%}}
+    </head>
+    <body class="theme-{DEFAULT_THEME}">
+        {{%app_entry%}}
+        <footer>
+            {{%config%}}
+            {{%scripts%}}
+            {{%renderer%}}
+        </footer>
+    </body>
+</html>
+'''
+
 init_plotly_theme()
 
 HEADER_STYLE = {
-    "display": "flex",
-    "flexDirection": "column",
-    "alignItems": "end",
-    "marginTop": "2rem",
-    "marginRight": "4rem",
+    "position": "fixed",
+    "top": "1rem",
+    "right": "2rem",
     "fontSize": "20px",
+    "zIndex": 1000,
 }
 
 
@@ -146,7 +165,7 @@ def layout():
             ]
         )
 
-    return html.Div(html_contents, id="app-container", className=f"theme-{DEFAULT_THEME}")
+    return html.Div(html_contents, id="app-container")
 
 
 app.layout = layout
@@ -403,14 +422,13 @@ def fetch_subnat_boundary_data_once(geo_data, country):
 
 
 @app.callback(
-    Output("app-container", "className"),
     Output("theme-store", "data"),
     Input("url", "search"),
     State("theme-store", "data"),
 )
 def update_theme_from_url(search, current_theme):
     """
-    Parse theme from URL parameter and update app styling.
+    Parse theme from URL parameter and update theme store.
     Usage: ?theme=wbg or ?theme=quartz
     """
     theme = current_theme or DEFAULT_THEME
@@ -421,16 +439,13 @@ def update_theme_from_url(search, current_theme):
         if url_theme and url_theme.lower() in VALID_THEMES:
             theme = url_theme.lower()
 
-    theme_class = f"theme-{theme}"
-
-    return theme_class, theme
+    return theme
 
 
 app.clientside_callback(
     """
     function(theme) {
         document.body.className = 'theme-' + (theme || 'wbg');
-        document.documentElement.className = 'theme-' + (theme || 'wbg');
         return '';
     }
     """,
