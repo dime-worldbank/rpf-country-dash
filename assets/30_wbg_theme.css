@@ -121,9 +121,9 @@ body.theme-wbg .text-muted {
 body.theme-wbg .form-select,
 body.theme-wbg select,
 body.theme-wbg .form-control {
-  border-color: rgba(255, 255, 255, 0.3);
   color: var(--wbg-body-text);
   background-color: var(--wbg-white);
+  border: 1px solid var(--wbg-solid-blue);
 }
 
 body.theme-wbg .form-select {
