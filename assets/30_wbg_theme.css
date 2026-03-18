@@ -30,28 +30,15 @@
 }
 
 /* =============================================================================
-   BASE THEME - Applied to html/body when theme is active
+   BASE THEME
    ============================================================================= */
-
-html.theme-wbg {
-  background-color: var(--wbg-solid-blue);
-}
 
 body.theme-wbg {
-  background: linear-gradient(135deg, var(--wbg-solid-blue) 0%, #001a33 100%);
-  background-attachment: fixed;
-  margin: 0;
-  min-height: 100vh;
-}
-
-/* =============================================================================
-   APP CONTAINER
-   ============================================================================= */
-
-#app-container.theme-wbg {
   font-family: var(--wbg-font-primary);
   color: var(--wbg-body-text);
-  background: transparent;
+  background-image: linear-gradient(135deg, var(--wbg-solid-blue) 0%, #001a33 100%);
+  background-color: var(--wbg-solid-blue);
+  margin: 0;
   min-height: 100vh;
 }
 
@@ -59,12 +46,12 @@ body.theme-wbg {
    SIDEBAR
    ============================================================================= */
 
-#app-container.theme-wbg #sidebar {
+body.theme-wbg #sidebar {
   background-color: rgba(0, 34, 68, 0.4);
   backdrop-filter: blur(10px);
 }
 
-#app-container.theme-wbg #sidebar hr {
+body.theme-wbg #sidebar hr {
   border-color: rgba(255, 255, 255, 0.3);
   opacity: 1;
 }
@@ -73,17 +60,17 @@ body.theme-wbg {
    NAVIGATION
    ============================================================================= */
 
-#app-container.theme-wbg .nav-pills .nav-link {
+body.theme-wbg .nav-pills .nav-link {
   color: var(--wbg-white);
 }
 
-#app-container.theme-wbg .nav-pills .nav-link:hover:not(.active) {
+body.theme-wbg .nav-pills .nav-link:hover:not(.active) {
   color: var(--wbg-white);
   background-color: rgba(0, 159, 218, 0.3);
 }
 
-#app-container.theme-wbg .nav-pills .nav-link.active,
-#app-container.theme-wbg .nav-pills .show > .nav-link {
+body.theme-wbg .nav-pills .nav-link.active,
+body.theme-wbg .nav-pills .show > .nav-link {
   background-color: var(--wbg-bright-blue);
   color: var(--wbg-white);
 }
@@ -92,12 +79,10 @@ body.theme-wbg {
    MAIN CONTENT PANEL
    ============================================================================= */
 
-#app-container.theme-wbg #page-content {
+body.theme-wbg #page-content {
   background-color: var(--wbg-white);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 1rem;
-  margin-bottom: 1rem;
   color: var(--wbg-body-text);
 }
 
@@ -105,27 +90,27 @@ body.theme-wbg {
    TYPOGRAPHY
    ============================================================================= */
 
-#app-container.theme-wbg #page-content h1,
-#app-container.theme-wbg #page-content h2,
-#app-container.theme-wbg #page-content h3,
-#app-container.theme-wbg #page-content h4,
-#app-container.theme-wbg #page-content h5,
-#app-container.theme-wbg #page-content h6 {
+body.theme-wbg #page-content h1,
+body.theme-wbg #page-content h2,
+body.theme-wbg #page-content h3,
+body.theme-wbg #page-content h4,
+body.theme-wbg #page-content h5,
+body.theme-wbg #page-content h6 {
   font-family: var(--wbg-font-primary);
   color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg #page-content p,
-#app-container.theme-wbg #page-content span,
-#app-container.theme-wbg #page-content div,
-#app-container.theme-wbg #page-content label,
-#app-container.theme-wbg #page-content li,
-#app-container.theme-wbg #page-content td,
-#app-container.theme-wbg #page-content th {
+body.theme-wbg #page-content p,
+body.theme-wbg #page-content span,
+body.theme-wbg #page-content div,
+body.theme-wbg #page-content label,
+body.theme-wbg #page-content li,
+body.theme-wbg #page-content td,
+body.theme-wbg #page-content th {
   color: var(--wbg-body-text);
 }
 
-#app-container.theme-wbg .text-muted {
+body.theme-wbg .text-muted {
   color: #6c757d;
 }
 
@@ -133,26 +118,26 @@ body.theme-wbg {
    FORMS & DROPDOWNS
    ============================================================================= */
 
-#app-container.theme-wbg .form-select,
-#app-container.theme-wbg select,
-#app-container.theme-wbg .form-control {
-  border-color: rgba(255, 255, 255, 0.3);
+body.theme-wbg .form-select,
+body.theme-wbg select,
+body.theme-wbg .form-control {
   color: var(--wbg-body-text);
   background-color: var(--wbg-white);
+  border: 1px solid var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .form-select {
+body.theme-wbg .form-select {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23333333' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
-#app-container.theme-wbg .form-select:focus,
-#app-container.theme-wbg .form-control:focus {
+body.theme-wbg .form-select:focus,
+body.theme-wbg .form-control:focus {
   border-color: var(--wbg-bright-blue);
   box-shadow: 0 0 0 0.25rem rgba(0, 159, 218, 0.25);
 }
 
-#app-container.theme-wbg .form-select option,
-#app-container.theme-wbg select option {
+body.theme-wbg .form-select option,
+body.theme-wbg select option {
   color: var(--wbg-body-text);
   background-color: var(--wbg-white);
 }
@@ -161,22 +146,22 @@ body.theme-wbg {
    RADIO BUTTONS & CHECKBOXES
    ============================================================================= */
 
-#app-container.theme-wbg .form-check-input {
+body.theme-wbg .form-check-input {
   border-color: var(--wbg-solid-blue);
   background-color: var(--wbg-white);
 }
 
-#app-container.theme-wbg .form-check-input:checked {
+body.theme-wbg .form-check-input:checked {
   background-color: var(--wbg-bright-blue);
   border-color: var(--wbg-bright-blue);
 }
 
-#app-container.theme-wbg .form-check-input:focus {
+body.theme-wbg .form-check-input:focus {
   border-color: var(--wbg-bright-blue);
   box-shadow: 0 0 0 0.25rem rgba(0, 159, 218, 0.25);
 }
 
-#app-container.theme-wbg .form-check-label {
+body.theme-wbg .form-check-label {
   color: var(--wbg-body-text);
 }
 
@@ -184,34 +169,34 @@ body.theme-wbg {
    BUTTONS
    ============================================================================= */
 
-#app-container.theme-wbg .btn-primary {
+body.theme-wbg .btn-primary {
   background-color: var(--wbg-solid-blue);
   border-color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .btn-primary:hover,
-#app-container.theme-wbg .btn-primary:focus {
+body.theme-wbg .btn-primary:hover,
+body.theme-wbg .btn-primary:focus {
   background-color: #001a33;
   border-color: #001a33;
 }
 
-#app-container.theme-wbg .btn-secondary {
+body.theme-wbg .btn-secondary {
   background-color: var(--wbg-bright-blue);
   border-color: var(--wbg-bright-blue);
 }
 
-#app-container.theme-wbg .btn-secondary:hover,
-#app-container.theme-wbg .btn-secondary:focus {
+body.theme-wbg .btn-secondary:hover,
+body.theme-wbg .btn-secondary:focus {
   background-color: #0087bd;
   border-color: #0087bd;
 }
 
-#app-container.theme-wbg .btn-outline-primary {
+body.theme-wbg .btn-outline-primary {
   color: var(--wbg-solid-blue);
   border-color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .btn-outline-primary:hover {
+body.theme-wbg .btn-outline-primary:hover {
   background-color: var(--wbg-solid-blue);
   color: var(--wbg-white);
 }
@@ -220,19 +205,19 @@ body.theme-wbg {
    LINKS
    ============================================================================= */
 
-#app-container.theme-wbg #page-content a {
+body.theme-wbg #page-content a {
   color: var(--wbg-bright-blue);
 }
 
-#app-container.theme-wbg #page-content a:hover {
+body.theme-wbg #page-content a:hover {
   color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg #logout-button {
+body.theme-wbg #logout-button {
   color: var(--wbg-white);
 }
 
-#app-container.theme-wbg #logout-button:hover {
+body.theme-wbg #logout-button:hover {
   color: var(--wbg-bright-blue);
 }
 
@@ -240,11 +225,11 @@ body.theme-wbg {
    CARDS
    ============================================================================= */
 
-#app-container.theme-wbg .card {
+body.theme-wbg .card {
   border-color: rgba(0, 34, 68, 0.125);
 }
 
-#app-container.theme-wbg .card-header {
+body.theme-wbg .card-header {
   background-color: var(--wbg-solid-blue);
   color: var(--wbg-white);
 }
@@ -253,12 +238,12 @@ body.theme-wbg {
    TABLES
    ============================================================================= */
 
-#app-container.theme-wbg .table > thead {
+body.theme-wbg .table > thead {
   background-color: var(--wbg-solid-blue);
   color: var(--wbg-white);
 }
 
-#app-container.theme-wbg .table-striped > tbody > tr:nth-of-type(odd) {
+body.theme-wbg .table-striped > tbody > tr:nth-of-type(odd) {
   background-color: rgba(0, 34, 68, 0.03);
 }
 
@@ -266,21 +251,21 @@ body.theme-wbg {
    ALERTS & BADGES
    ============================================================================= */
 
-#app-container.theme-wbg .badge.bg-primary {
+body.theme-wbg .badge.bg-primary {
   background-color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .badge.bg-secondary {
+body.theme-wbg .badge.bg-secondary {
   background-color: var(--wbg-bright-blue);
 }
 
-#app-container.theme-wbg .alert-primary {
+body.theme-wbg .alert-primary {
   background-color: rgba(0, 34, 68, 0.1);
   border-color: var(--wbg-solid-blue);
   color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .alert-info {
+body.theme-wbg .alert-info {
   background-color: rgba(0, 159, 218, 0.1);
   border-color: var(--wbg-bright-blue);
   color: var(--wbg-solid-blue);
@@ -290,11 +275,11 @@ body.theme-wbg {
    TABS (Over Time / Across Space toggle)
    ============================================================================= */
 
-#app-container.theme-wbg #page-content .nav-tabs {
+body.theme-wbg #page-content .nav-tabs {
   border-bottom: 2px solid var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg #page-content .nav-tabs .nav-link {
+body.theme-wbg #page-content .nav-tabs .nav-link {
   color: var(--wbg-solid-blue);
   background-color: var(--wbg-white);
   border: 1px solid transparent;
@@ -304,12 +289,12 @@ body.theme-wbg {
   font-weight: 500;
 }
 
-#app-container.theme-wbg #page-content .nav-tabs .nav-link:hover {
+body.theme-wbg #page-content .nav-tabs .nav-link:hover {
   color: var(--wbg-bright-blue);
   background-color: rgba(0, 159, 218, 0.1);
 }
 
-#app-container.theme-wbg #page-content .nav-tabs .nav-link.active {
+body.theme-wbg #page-content .nav-tabs .nav-link.active {
   border-color: var(--wbg-solid-blue);
   box-shadow: none;
   outline: none;
@@ -319,13 +304,13 @@ body.theme-wbg {
    SOURCE INFO BUTTON
    ============================================================================= */
 
-#app-container.theme-wbg .source-info-btn:focus,
-#app-container.theme-wbg .source-info-btn {
+body.theme-wbg .source-info-btn:focus,
+body.theme-wbg .source-info-btn {
   background-color: rgba(0, 34, 68, 0.1);
   color: var(--wbg-solid-blue);
 }
 
-#app-container.theme-wbg .source-info-btn:hover {
+body.theme-wbg .source-info-btn:hover {
   background-color: rgba(0, 34, 68, 0.2);
 }
 
@@ -344,12 +329,12 @@ body.theme-wbg {
   z-index: 9999;
 }
 
-#app-container.theme-wbg .theme-indicator {
+body.theme-wbg .theme-indicator {
   background-color: var(--wbg-bright-blue);
   color: var(--wbg-white);
 }
 
-#app-container.theme-quartz .theme-indicator {
+body.theme-quartz .theme-indicator {
   background-color: #6c757d;
   color: white;
 }
