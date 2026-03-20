@@ -213,10 +213,10 @@ def render_education_content(tab):
                         ),
                         dbc.Row(
                             [
-                                dbc.Col(id="econ-breakdown-func-narrative-edu", width=6),
+                                dbc.Col(id="econ-breakdown-func-narrative-edu", xs=12, lg=6),
                                 dbc.Col(
                                     chart_container("econ-breakdown-func-edu"),
-                                    width=6
+                                    xs=12, lg=6
                                 ),
                             ]
                         ),
@@ -265,11 +265,11 @@ def render_education_content(tab):
                     [
                         dbc.Col(
                             chart_container("education-central-vs-regional"),
-                            width=5
+                            xs=12, lg=5
                         ),
                         dbc.Col(
                             chart_container("education-sub-func"),
-                            width=7
+                            xs=12, lg=7
                         ),
                     ]
                 ),

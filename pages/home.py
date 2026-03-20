@@ -150,7 +150,7 @@ def render_overview_content(tab):
                 dbc.Row(style={"height": "40px"}),
                 dbc.Row(
                     [
-                        dbc.Col(width=4),
+                        dbc.Col(xs=0, lg=4),
                         dbc.Col(
                             [
                                 html.Div([
@@ -173,7 +173,7 @@ def render_overview_content(tab):
                                     )
                                 ], className='disclaimer-div'),
                             ],
-                            width=8,
+                            xs=12, lg=8,
                         ),
                     ]
                 ),
@@ -188,10 +188,10 @@ def render_overview_content(tab):
                                 id="func-growth-instruction",
                                 children=html.Small(html.Em("By default, only Overall Budget, Health, Education, and General Public Services are shown in the chart. Click on the legend to view the year-on-year budget growth rate for other functional categories.")),
                             )
-                        ], width=4),
+                        ], xs=12, lg=4),
                         dbc.Col(
                             chart_container("func-growth"),
-                            width=8,
+                            xs=12, lg=8,
                         ),
                     ]
                 ),
