@@ -149,3 +149,40 @@
     padding: 1rem 1rem;
     min-height: 70vh;
 }
+
+/* =============================================================================
+   FOOTER
+   ============================================================================= */
+
+#app-footer {
+    margin: 2rem 2rem 2rem 14rem;
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+#app-footer .footer-logo {
+    height: 55px;
+}
+
+#app-footer .footer-acknowledgment {
+    font-size: 13px;
+    font-weight: bold;
+    color: #002244;
+}
+
+@media (max-width: 768px) {
+    #app-footer {
+        margin: 1rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    #app-footer .footer-logo {
+        height: 45px;
+    }
+}
