@@ -144,6 +144,10 @@
     padding: 2rem 1rem;
 }
 
+#sidebar .nav {
+    flex-direction: column;
+}
+
 #page-content {
     margin: 3rem 2rem 1rem 14rem;
     padding: 1rem 1rem;
@@ -175,9 +179,50 @@
     color: #002244;
 }
 
+/* =============================================================================
+   MOBILE
+   ============================================================================= */
+
 @media (max-width: 768px) {
+    #sidebar {
+        position: relative;
+        width: 100%;
+        padding: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+    }
+
+    #sidebar hr {
+        display: none;
+    }
+
+    #sidebar img {
+        height: 50px;
+    }
+
+    #sidebar .form-select {
+        width: auto;
+    }
+
+    #sidebar .nav {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.25rem;
+    }
+
+    #sidebar .nav-link {
+        padding: 0.25rem 0.5rem;
+        white-space: nowrap;
+    }
+
+    #page-content,
     #app-footer {
         margin: 1rem;
+    }
+
+    #app-footer {
         flex-wrap: wrap;
         gap: 1rem;
     }

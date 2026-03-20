@@ -108,7 +108,6 @@ sidebar = html.Div(
                 dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
                 dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
             ],
-            vertical=True,
             pills=True,
         ),
     ],
