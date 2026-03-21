@@ -212,13 +212,11 @@
 
     #sidebar .nav {
         flex-direction: row;
-        flex-wrap: nowrap;
         gap: 0.25rem;
     }
 
     #sidebar .nav-link {
         padding: 0.25rem 0.5rem;
-        white-space: nowrap;
     }
 
     #page-content,
