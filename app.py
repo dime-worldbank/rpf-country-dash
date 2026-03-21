@@ -93,7 +93,7 @@ def get_relative_path(page_name):
 sidebar = html.Div(
     [
         dbc.Row(
-            [html.Img(src=app.get_asset_url("rpf_logo.png"), style={"height": "100"})]
+            [html.Img(src=app.get_asset_url("rpf_logo.png"), alt="Reimagining Public Finance", style={"height": "100"})]
         ),
         html.Hr(),
         dbc.Select(
@@ -118,10 +118,10 @@ content = html.Div(page_container, id="page-content")
 
 app_footer = html.Div(
     [
-        html.Img(src=app.get_asset_url("wbg_logo_color.svg"), className="footer-logo"),
+        html.Img(src=app.get_asset_url("wbg_logo_color.svg"), alt="World Bank Group", className="footer-logo"),
         html.Span(FOOTER_ACKNOWLEDGMENT_TEXT, className="footer-acknowledgment"),
-        html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), className="footer-logo"),
-        html.Img(src=app.get_asset_url("SDGfund_logo.png"), className="footer-logo"),
+        html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
+        html.Img(src=app.get_asset_url("SDGfund_logo.png"), alt="SDG Trust Fund", className="footer-logo"),
     ],
     id="app-footer",
     style={"display": "flex" if SHOW_FOOTER else "none"},
