@@ -118,10 +118,22 @@ content = html.Div(page_container, id="page-content")
 
 app_footer = html.Div(
     [
-        html.Img(src=app.get_asset_url("wbg_logo_color.svg"), alt="World Bank Group", className="footer-logo"),
+        html.A(
+            html.Img(src=app.get_asset_url("wbg_logo_color.svg"), alt="World Bank Group", className="footer-logo"),
+            href="https://www.worldbank.org/",
+            target="_blank",
+        ),
         html.Span(FOOTER_ACKNOWLEDGMENT_TEXT, className="footer-acknowledgment"),
-        html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
-        html.Img(src=app.get_asset_url("SDGfund_logo.png"), alt="SDG Trust Fund", className="footer-logo"),
+        html.A(
+            html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
+            href="https://www.worldbank.org/en/programs/financial-management-umbrella-program",
+            target="_blank",
+        ),
+        html.A(
+            html.Img(src=app.get_asset_url("SDGfund_logo.png"), alt="SDG Trust Fund", className="footer-logo"),
+            href="https://www.worldbank.org/en/programs/partnership-fund-for-the-sustainable-development-goals",
+            target="_blank",
+        ),
     ],
     id="app-footer",
     style={"display": "flex" if SHOW_FOOTER else "none"},
