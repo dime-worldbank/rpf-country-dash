@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from constants import FUNC_COLORS
+from translations import t
 from utils import (
     filter_country_sort_year,
     empty_plot,
@@ -19,9 +20,9 @@ DEFAULT_VISIBLE_CATEGORIES = [
 NUM_YEARS = 5
 
 
-def render_fig_and_narrative(data, country, exp_type):
+def render_fig_and_narrative(data, country, exp_type, lang="en"):
     if not data:
-        return empty_plot("Loading..."), "Loading..."
+        return empty_plot(t("loading", lang)), t("loading", lang)
     country_budget_changes_df = pd.DataFrame(data["expenditure_by_country_func_year"])
     country_budget_changes_df = filter_country_sort_year(
         country_budget_changes_df, country
@@ -40,7 +41,7 @@ def render_fig_and_narrative(data, country, exp_type):
             "real_domestic_funded_budget": lambda x: x.sum(min_count=1),
         }
     )
-    overall_budget_df["func"] = "Overall budget"
+    overall_budget_df["func"] = t("label.overall_budget", lang)
 
     # Now merge back into the dataframe
     country_budget_changes_df = pd.concat(
@@ -80,8 +81,10 @@ def render_fig_and_narrative(data, country, exp_type):
     country_budget_changes_df = country_budget_changes_df[
         country_budget_changes_df.year >= start_year
     ]
+
+    overall_label = t("label.overall_budget", lang)
     updated_start_year = country_budget_changes_df.loc[
-        (country_budget_changes_df["func"] == "Overall budget")
+        (country_budget_changes_df["func"] == overall_label)
         & country_budget_changes_df["domestic_funded_budget"].notna(),
         "year",
     ].min()
@@ -109,19 +112,20 @@ def render_fig_and_narrative(data, country, exp_type):
 
     if (not valid_cagr_dict) & (exp_type == "real_domestic_funded_budget"):
         return (
-            empty_plot("Inflation-adjusted budget data unavailable"),
+            empty_plot(t("error.inflation_adjusted_unavailable", lang)),
             generate_error_prompt(
                 "DATA_UNAVAILABLE_DATASET_NAME",
+                lang=lang,
                 dataset_name="Inflation adjusted domestic funded budget",
             ),
         )
-    fig = create_func_growth_figure(country_budget_changes_df, exp_type)
+    fig = create_func_growth_figure(country_budget_changes_df, exp_type, lang=lang)
 
     highest_func_cat = max(
-        (k for k in valid_cagr_dict if k != "Overall budget"), key=valid_cagr_dict.get
+        (k for k in valid_cagr_dict if k != overall_label), key=valid_cagr_dict.get
     )
     other_candidates = [
-        k for k in valid_cagr_dict if k != "Overall budget" and k != highest_func_cat
+        k for k in valid_cagr_dict if k != overall_label and k != highest_func_cat
     ]
 
     if other_candidates:
@@ -130,22 +134,23 @@ def render_fig_and_narrative(data, country, exp_type):
         lowest_func_cat = highest_func_cat
 
     cagr_data = {
-        "Overall budget": func_cagr_dict["Overall budget"],
+        "Overall budget": func_cagr_dict[overall_label],
         "highest": (highest_func_cat, func_cagr_dict[highest_func_cat]),
         "lowest": (lowest_func_cat, func_cagr_dict[lowest_func_cat]),
     }
     narrative = format_budget_increment_narrative(
-        cagr_data, foreign_funding_isnull, exp_type, num_years=updated_num_years
+        cagr_data, foreign_funding_isnull, exp_type, num_years=updated_num_years, lang=lang
     )
 
     return fig, narrative
 
 
-def create_func_growth_figure(df, exp_type):
+def create_func_growth_figure(df, exp_type, lang="en"):
     color_mapping = {
         func: FUNC_COLORS.get(func, "gray") for func in df["func"].unique()
     }
-    color_mapping["Overall budget"] = "rgba(150, 150, 150, 0.8)"
+    overall_label = t("label.overall_budget", lang)
+    color_mapping[overall_label] = "rgba(150, 150, 150, 0.8)"
 
     fig = go.Figure()
     for func, group in df.groupby("func"):
@@ -159,25 +164,25 @@ def create_func_growth_figure(df, exp_type):
                 line=dict(
                     color=color_mapping.get(func, "gray"),
                     width=2,
-                    dash="dot" if func == "Overall budget" else "solid",
+                    dash="dot" if func == overall_label else "solid",
                 ),
-                legendgroup='primary' if func != "Overall budget" else "secondary",
+                legendgroup='primary' if func != overall_label else "secondary",
                 marker=dict(size=4, opacity=0.8),
                 hovertemplate=(
-                    "<b>Functional Category:</b> %{fullData.name}<br>"
-                    "<b>Year:</b> %{x}<br>"
-                    "<b>Growth Rate:</b> %{y:.1f}%<extra></extra>"
+                    "<b>" + t("hover.func_category", lang) + ":</b> %{fullData.name}<br>"
+                    "<b>" + t("hover.year", lang) + ":</b> %{x}<br>"
+                    "<b>" + t("hover.growth_rate", lang) + ":</b> %{y:.1f}%<extra></extra>"
                 ),
                 connectgaps=False,
                 visible="legendonly"
-                if func not in DEFAULT_VISIBLE_CATEGORIES
+                if func not in DEFAULT_VISIBLE_CATEGORIES and func != overall_label
                 else True,
             )
         )
 
     fig.update_layout(
-        title="How do budgets for functional categories fluctuate over time?",
-        yaxis_title="Year-on-year growth rate (%)",
+        title=t("chart.budget_func_fluctuation", lang),
+        yaxis_title=t("axis.yoy_growth_rate", lang),
         legend_title_text="",
         hovermode="closest",
         template="plotly_white",
@@ -190,7 +195,7 @@ def create_func_growth_figure(df, exp_type):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text="Source: BOOST, World Bank",
+                text=t("source.boost_wb", lang),
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -206,65 +211,55 @@ def create_func_growth_figure(df, exp_type):
 
 
 def format_budget_increment_narrative(
-    data, foreign_funding_isnull, exp_type, num_years, threshold=0.75
+    data, foreign_funding_isnull, exp_type, num_years, lang="en", threshold=0.75
 ):
     budget_cagr = data["Overall budget"]
     highest_func_cat, highest_cagr = data["highest"]
     lowest_func_cat, lowest_cagr = data["lowest"]
 
     if budget_cagr < 0:
-        budget_growth_phrase = f"declined at an average rate of {abs(budget_cagr):.1f}% per year"
+        budget_growth_phrase = t("narrative.budget_declined", lang, rate=abs(budget_cagr))
     else:
-        budget_growth_phrase = f"grown at an average rate of {budget_cagr:.1f}% per year"
+        budget_growth_phrase = t("narrative.budget_grown", lang, rate=budget_cagr)
 
-    budget_growth_phrase += ', calculated using the compound annual growth rate (CAGR)'
+    budget_growth_phrase += t("narrative.budget_cagr", lang)
     if exp_type == "real_domestic_funded_budget":
-        budget_growth_phrase += ' after accounting for inflation. '
+        budget_growth_phrase += t("narrative.budget_after_inflation", lang)
     else:
-        budget_growth_phrase += '. '
+        budget_growth_phrase += t("narrative.budget_period_end", lang)
 
     if lowest_cagr < 0:
-        lowest_phrase = f"declined by {abs(lowest_cagr):.1f}%"
+        lowest_phrase = t("narrative.declined_by_rate", lang, rate=abs(lowest_cagr))
     else:
-        lowest_phrase = f"grew at a modest rate of {lowest_cagr:.1f}%"
+        lowest_phrase = t("narrative.grew_modest", lang, rate=lowest_cagr)
 
     if highest_cagr > 10:
-        highest_phrase = f"expanded significantly at {highest_cagr:.1f}%"
+        highest_phrase = t("narrative.expanded_significantly", lang, rate=highest_cagr)
     else:
-        highest_phrase = f"grew at a steady rate of {highest_cagr:.1f}%"
+        highest_phrase = t("narrative.grew_steady", lang, rate=highest_cagr)
 
     if abs(highest_cagr - lowest_cagr) < threshold:
-        func_comparison = (
-            f"Both the {highest_func_cat} and {lowest_func_cat} categories have grown at similar rates, "
-            f"with {highest_func_cat} growing at {highest_cagr:.1f}% and {lowest_func_cat} at {lowest_cagr:.1f}% per year."
-        )
+        func_comparison = t("narrative.both_similar_rates", lang,
+                            high=highest_func_cat, low=lowest_func_cat,
+                            high_rate=highest_cagr, low_rate=lowest_cagr)
     elif highest_cagr > lowest_cagr:
-        func_comparison = (
-            f"The {highest_func_cat} category {highest_phrase}, "
-            f"while the {lowest_func_cat} category {lowest_phrase}. "
-            f"This might suggest a policy shift towards prioritizing the {highest_func_cat} category, if resource deployment is in line with public policy priorities."
-        )
+        func_comparison = t("narrative.high_expanded", lang,
+                            high=highest_func_cat, low=lowest_func_cat,
+                            high_phrase=highest_phrase, low_phrase=lowest_phrase)
     else:
-        func_comparison = (
-            f"The {lowest_func_cat} category {lowest_phrase}, "
-            f"outpacing the {highest_func_cat} category, which {highest_phrase}. "
-            f"This suggests a greater focus on the {highest_func_cat} category, if resource deployment is in line with public policy priorities."
-        )
+        func_comparison = t("narrative.low_outpacing", lang,
+                            high=highest_func_cat, low=lowest_func_cat,
+                            high_phrase=highest_phrase, low_phrase=lowest_phrase)
 
     if foreign_funding_isnull:
-        external_financing_note = (
-            "This analysis currently includes external financing as the budget data used has limited granularity. "
-            "It would ideally exclude external financing due to its volatility."
-        )
+        external_financing_note = t("narrative.external_financing_included", lang)
     else:
-        external_financing_note = (
-            "This analysis excludes external financing as it tends to be volatile."
-        )
+        external_financing_note = t("narrative.external_financing_excluded", lang)
 
     return (
         (
-            f"Over the past {num_years} years, the national budget has {budget_growth_phrase}"
-            f"{func_comparison} "
-            f"{external_financing_note}"
+            t("narrative.budget_growth", lang, num_years=num_years, growth_phrase=budget_growth_phrase)
+            + f"{func_comparison} "
+            + f"{external_financing_note}"
         ),
     )

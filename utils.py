@@ -12,10 +12,10 @@ from colormath.color_conversions import convert_color
 from auth import AUTH_ENABLED
 from collections import OrderedDict
 from constants import (
-    NARRATIVE_ERROR_TEMPLATES,
     START_YEAR,
     TREND_THRESHOLDS,
 )
+from translations import t
 from dash import dcc, get_app, html
 from flask_login import current_user
 from math import isnan
@@ -207,13 +207,13 @@ def empty_plot(message, fig_title="", max_line_length=40):
     return fig
 
 
-def get_percentage_change_text(percent):
+def get_percentage_change_text(percent, lang="en"):
     if abs(percent) < 0.01:
-        return "mostly remained unchanged"
+        return t("narrative.mostly_unchanged", lang)
     elif percent > 0:
-        return f"increased by {percent:.0%}"
+        return t("narrative.increased_by", lang, pct=f"{percent:.0%}")
     else:
-        return f"decreased by {-1 * percent:.0%}"
+        return t("narrative.decreased_by", lang, pct=f"{-1 * percent:.0%}")
 
 
 THRESHOLD_INSUFFICIENT = 3  # Minimum for any analysis
@@ -268,7 +268,7 @@ def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
     }
 
 
-def get_correlation_text(df, x_col, y_col):
+def get_correlation_text(df, x_col, y_col, lang="en"):
     """
     Get the correlation text based on Spearman correlation with statistical rigor.
     Uses Spearman (rank-based, robust to outliers) and adjusts the narrative based
@@ -321,33 +321,42 @@ def get_correlation_text(df, x_col, y_col):
     return f"{intro} {relation}. {association_text} {caveat}".strip()
 
 
-def detect_trend(df, x_col):
+def detect_trend(df, x_col, lang="en"):
     """
     Detect the trend of the data based on the PCC value
     :param df: DataFrame
     :param x_col: str
+    :param lang: str
     :return: str
     """
     pcc = df.year.corr(df[x_col["col_name"]])
     abs_pcc = abs(pcc)
     if abs_pcc > TREND_THRESHOLDS:
         if pcc > 0:
-            return "an increasing trend"
+            return t("narrative.increasing_trend", lang)
         else:
-            return "a decreasing trend"
+            return t("narrative.decreasing_trend", lang)
 
     return ""
 
 
-def generate_error_prompt(template_key, **kwargs):
+_ERROR_KEY_MAP = {
+    "DATA_UNAVAILABLE": "error.data_unavailable",
+    "DATA_UNAVAILABLE_DATASET_NAME": "error.data_unavailable_named",
+    "GENERIC_ERROR": "error.generic",
+}
+
+
+def generate_error_prompt(template_key, lang="en", **kwargs):
     """
     Generate a prompt message based on the template and the keyword arguments
-    :param template: str
+    :param template_key: str
+    :param lang: str
     :param kwargs: dict
     :return: str
     """
-    template = NARRATIVE_ERROR_TEMPLATES[template_key]
-    return template.format(**kwargs)
+    translation_key = _ERROR_KEY_MAP.get(template_key, template_key)
+    return t(translation_key, lang, **kwargs)
 
 
 def remove_accents(input_str):

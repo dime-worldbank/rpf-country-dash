@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from plotly.subplots import make_subplots
+from translations import t
 from utils import empty_plot
 import numpy as np
 import plotly.graph_objects as go
@@ -12,6 +13,16 @@ SCORE_MAPPING = OrderedDict([
     (3, "B"), (3.5, "B+"),
     (2, "C"), (2.5, "C+"),
     (1, "D"), (1.5, "D+"),
+])
+
+PILLAR_KEYS = OrderedDict([
+    ('pillar1_budget_reliability', 'pefa.pillar1'),
+    ('pillar2_transparency', 'pefa.pillar2'),
+    ('pillar3_asset_liability', 'pefa.pillar3'),
+    ('pillar4_policy_based_budget', 'pefa.pillar4'),
+    ('pillar5_predictability_and_control', 'pefa.pillar5'),
+    ('pillar6_accounting_and_reporting', 'pefa.pillar6'),
+    ('pillar7_external_audit', 'pefa.pillar7'),
 ])
 
 PILLAR_MAPPING = OrderedDict([
@@ -77,11 +88,26 @@ PILLAR_NARRARIVE_MAPPING = OrderedDict([
 ])
 
 
-def pefa_overall_figure(df, pov_df):
-    title_text = "How did the overall quality of budget institutions change over time?"
+def _get_pillar_name(pillar, lang="en"):
+    """Get the translated pillar name."""
+    key = PILLAR_KEYS.get(pillar)
+    if key:
+        return t(key, lang)
+    return PILLAR_MAPPING.get(pillar, pillar)
+
+
+def _get_pillar_mapping(lang="en"):
+    """Get a mapping from column names to translated pillar names."""
+    return OrderedDict([
+        (col, _get_pillar_name(col, lang)) for col in PILLAR_KEYS
+    ])
+
+
+def pefa_overall_figure(df, pov_df, lang="en"):
+    title_text = t("chart.pefa_overall", lang)
     wrapped_title = "<br>".join(textwrap.wrap(title_text, width=45))
     if df.empty:
-        return empty_plot("PEFA data not available", wrapped_title)
+        return empty_plot(t("error.pefa_unavailable", lang), wrapped_title)
 
     pillar_columns = [col for col in df.columns if col.startswith('pillar')]
     overall_scores = df[pillar_columns].mean(axis=1)
@@ -90,10 +116,9 @@ def pefa_overall_figure(df, pov_df):
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
     fig.add_trace(
         go.Scatter(
-            name="Poverty Rate",
+            name=t("trace.poverty_rate", lang),
             x=pov_df.year,
             y=pov_df.poverty_rate,
             mode="lines+markers",
@@ -106,7 +131,7 @@ def pefa_overall_figure(df, pov_df):
 
     fig.add_trace(
         go.Scatter(
-            name="PEFA Score",
+            name=t("trace.pefa_score", lang),
             x=df.year,
             y=overall_scores,
             mode="lines+markers",
@@ -119,14 +144,14 @@ def pefa_overall_figure(df, pov_df):
 
     fig.update_xaxes(tickformat="d")
     fig.update_yaxes(
-        title_text="Quality of Budget Institutions",
+        title_text=t("axis.quality_budget_institutions", lang),
         secondary_y=False,
         tickvals=list(SCORE_MAPPING.keys()),
         ticktext=list(SCORE_MAPPING.values()),
         range=[0, 4.5],
     )
     fig.update_yaxes(
-        title_text="Poverty Rate (%)",
+        title_text=t("axis.poverty_rate", lang),
         secondary_y=True,
         range=[-10, 100],
     )
@@ -146,7 +171,7 @@ def pefa_overall_figure(df, pov_df):
                 yref="paper",
                 x=-0.14,
                 y=-0.2,
-                text="Source: PEFA & Poverty Rate: World Bank",
+                text=t("source.pefa_poverty", lang),
                 showarrow=False,
                 font=dict(size=12),
             )
@@ -155,10 +180,12 @@ def pefa_overall_figure(df, pov_df):
     return fig
 
 
-def pefa_pillar_heatmap(df):
-    fig_title = 'How did various pillars of the budget institutions change over time?'
+def pefa_pillar_heatmap(df, lang="en"):
+    fig_title = t("chart.pefa_by_pillar", lang)
     if df.empty:
-        return empty_plot("PEFA by pillar data not available", fig_title)
+        return empty_plot(t("error.pefa_pillar_unavailable", lang), fig_title)
+
+    pillar_mapping = _get_pillar_mapping(lang)
 
     heatmap_data = df.melt(
         id_vars=['year'],
@@ -168,7 +195,7 @@ def pefa_pillar_heatmap(df):
     )
 
     heatmap_data['grade'] = heatmap_data['score'].map(_score_to_grade)
-    heatmap_data['pillar'] = heatmap_data['pillar'].map(PILLAR_MAPPING)
+    heatmap_data['pillar'] = heatmap_data['pillar'].map(pillar_mapping)
 
     heatmap_scores = heatmap_data.pivot(index='pillar', columns='year', values='score')
     heatmap_grades = heatmap_data.pivot(index='pillar', columns='year', values='grade')
@@ -195,7 +222,7 @@ def pefa_pillar_heatmap(df):
             zmax=4,
             colorbar=dict(
                 title=dict(
-                    text="PEFA Grades",
+                    text=t("pefa.grades", lang),
                     side='right',
                 ),
                 tickvals=list(SCORE_MAPPING.keys()),
@@ -233,9 +260,9 @@ def _score_to_grade(score):
         return "N/A"
     return SCORE_MAPPING[min(SCORE_MAPPING.keys(), key=lambda x: abs(x - score))]
 
-def pefa_narrative(df):
+def pefa_narrative(df, lang="en"):
     if df.empty:
-        return 'The Public Expenditure and Financial Accountability (PEFA) program provides a framework for assessing and reporting on the strengths and weaknesses of public financial management (PFM) using quantitative indicators to measure performance. Unfortunately, there is no PEFA accessment for this country to help us understand its quality of budget institutions.'
+        return t("narrative.pefa_no_data", lang)
 
     country = df.country_name.iloc[0]
     earliest_year = df.year.min()
@@ -253,7 +280,18 @@ def pefa_narrative(df):
     lowest_score = pillar_scores.min()
     lowest_grade = _score_to_grade(lowest_score)
 
-    text = f'''According to the latest Public Expenditure and Financial Accountability (PEFA) assessment conducted for {latest_year}, the strongest pillar of {country}’s budget institutions is "{_pillar_text(highest_pillar)}", with an average score of {highest_score:.1f} (Grade {highest_grade}){_strength_narrative(highest_pillar, highest_score)}. On the other hand, the pillar with the most room for improvement is "{_pillar_text(lowest_pillar)}", which scored {lowest_score:.1f} (Grade {lowest_grade}), {_weakness_narrative(lowest_pillar)}. '''
+    strength_narrative = _strength_narrative(highest_pillar, highest_score, lang)
+    weakness_narrative = _weakness_narrative(lowest_pillar, lang)
+
+    highest_pillar_name = _pillar_text(highest_pillar, lang)
+    lowest_pillar_name = _pillar_text(lowest_pillar, lang)
+
+    text = t("narrative.pefa_latest", lang,
+             year=latest_year, country=country,
+             highest_pillar=highest_pillar_name, highest_score=highest_score,
+             highest_grade=highest_grade, strength_narrative=strength_narrative,
+             lowest_pillar=lowest_pillar_name, lowest_score=lowest_score,
+             lowest_grade=lowest_grade, weakness_narrative=weakness_narrative)
 
     if earliest_year != latest_year:
         improvement = (
@@ -272,24 +310,40 @@ def pefa_narrative(df):
         most_degraded_latest_score = latest[most_degraded_pillar].iloc[0]
         most_degraded_latest_grade = _score_to_grade(most_degraded_latest_score)
 
-        text += f'''Over time, the pillar that improved the most is "{_pillar_text(most_improved_pillar)}", which saw an increase from {most_imporved_earliest_score:.1f} (Grade {most_imporved_earliest_grade}) in {earliest_year} to {most_imporved_latest_score:.1f} (Grade {most_imporved_latest_grade}) in the latest assessment. Conversely, the pillar that degraded the most is "{_pillar_text(most_degraded_pillar)}" which fell from {most_degraded_earliest_score:.1f} (Grade {most_degraded_earliest_grade}) in {earliest_year} to {most_degraded_latest_score:.1f} (Grade {most_degraded_latest_grade}) in the latest scores. '''
+        improved_name = _pillar_text(most_improved_pillar, lang)
+        degraded_name = _pillar_text(most_degraded_pillar, lang)
 
-    text += "These insights underscore areas of strength to build upon and critical weaknesses requiring targeted reforms."
+        text += t("narrative.pefa_over_time", lang,
+                   improved_pillar=improved_name,
+                   improved_earliest_score=most_imporved_earliest_score,
+                   improved_earliest_grade=most_imporved_earliest_grade,
+                   earliest_year=earliest_year,
+                   improved_latest_score=most_imporved_latest_score,
+                   improved_latest_grade=most_imporved_latest_grade,
+                   degraded_pillar=degraded_name,
+                   degraded_earliest_score=most_degraded_earliest_score,
+                   degraded_earliest_grade=most_degraded_earliest_grade,
+                   degraded_latest_score=most_degraded_latest_score,
+                   degraded_latest_grade=most_degraded_latest_grade)
+
+    text += t("narrative.pefa_conclusion", lang)
 
     return text
 
-def _strength_narrative(pillar, score):
+def _strength_narrative(pillar, score, lang="en"):
     narratives = PILLAR_NARRARIVE_MAPPING[pillar]
     if score > 2.75:
-        text = ', reflecting '
+        text = t("narrative.pefa_strength_high", lang)
         text += narratives[0]
     else:
-        text = '; despite being the strongest pillar, its low rating signals challenges in '
+        text = t("narrative.pefa_strength_low", lang)
         text += narratives[1]
     return text
 
-def _weakness_narrative(pillar):
-    return f'indicating challenges in {PILLAR_NARRARIVE_MAPPING[pillar][1]}'
+def _weakness_narrative(pillar, lang="en"):
+    gerund = PILLAR_NARRARIVE_MAPPING[pillar][1]
+    return t("narrative.pefa_weakness", lang) + gerund
 
-def _pillar_text(pillar):
-    return re.sub(r'^\d+\.\s+', '', PILLAR_MAPPING[pillar])
+def _pillar_text(pillar, lang="en"):
+    pillar_name = _get_pillar_name(pillar, lang)
+    return re.sub(r'^\d+\.\s+', '', pillar_name)

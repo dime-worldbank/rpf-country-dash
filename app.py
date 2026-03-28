@@ -31,6 +31,7 @@ from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
 from server import server
+from translations import t, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
 from viz_theme import DEFAULT_THEME, VALID_THEMES, init_plotly_theme
 
@@ -98,13 +99,15 @@ sidebar = html.Div(
             size="sm",
         ),
         html.Hr(),
+        dbc.Select(
+            id="language-select",
+            options=[{"label": o["label"], "value": o["value"]} for o in LANGUAGE_OPTIONS],
+            value=DEFAULT_LANGUAGE,
+            size="sm",
+        ),
+        html.Hr(),
         dbc.Nav(
-            [
-                dbc.NavLink("Overview", href=get_relative_path("home"), active="exact"),
-                dbc.NavLink("Education", href=get_relative_path("education"), active="exact"),
-                dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
-                dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
-            ],
+            id="sidebar-nav",
             vertical=True,
             pills=True,
         ),
@@ -120,6 +123,7 @@ dummy_div = html.Div(id="div-for-redirect")
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
+        dcc.Store(id="stored-language", storage_type="local", data=DEFAULT_LANGUAGE),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
         dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
@@ -144,6 +148,27 @@ def layout():
 
 
 app.layout = layout
+
+
+@app.callback(
+    Output("stored-language", "data"),
+    Input("language-select", "value"),
+)
+def update_language(lang):
+    return lang or DEFAULT_LANGUAGE
+
+
+@app.callback(
+    Output("sidebar-nav", "children"),
+    Input("stored-language", "data"),
+)
+def update_nav_links(lang):
+    return [
+        dbc.NavLink(t("nav.overview", lang), href=get_relative_path("home"), active="exact"),
+        dbc.NavLink(t("nav.education", lang), href=get_relative_path("education"), active="exact"),
+        dbc.NavLink(t("nav.health", lang), href=get_relative_path("health"), active="exact"),
+        dbc.NavLink(t("nav.about", lang), href=get_relative_path("about"), active="exact"),
+    ]
 
 
 @app.callback(

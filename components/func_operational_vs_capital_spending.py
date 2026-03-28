@@ -1,6 +1,7 @@
 from dash import html
 import pandas as pd
 import plotly.graph_objects as go
+from translations import t
 from utils import empty_plot
 
 OP_WAGE_BILL = "Wage bill"
@@ -31,7 +32,7 @@ def prepare_prop_econ_by_func_df(func_econ_df, agg_dict):
     return prop_econ_by_func_df
 
 
-def _format_econ_narrative(data, country_name, func):
+def _format_econ_narrative(data, country_name, func, lang="en"):
     data = data.sort_values("year")
     start_year, latest_year = data["year"].iloc[0], data["year"].iloc[-1]
 
@@ -49,109 +50,91 @@ def _format_econ_narrative(data, country_name, func):
     changes = {cat: latest_data[cat] - start_data[cat] for cat in categories}
     trends = {
         cat: (
-            "remained stable"
+            t("word.remained_stable", lang)
             if abs(changes[cat]) < stable_threshold
-            else "increased"
+            else t("word.increased", lang)
             if changes[cat] > 0
-            else "decreased"
+            else t("word.decreased", lang)
         )
         for cat in categories
     }
-    operational_resources = {
-        "Education": "school materials",
-        "Health": "healthcare supplies",
-    }
-    capital_investment_targets = {
-        "Education": "new schools",
-        "Health": "new healthcare facilities",
-    }
-    essential_resources = {
-        "Education": "essential teaching materials and classroom resources",
-        "Health": "medical supplies and patient care resources",
-    }
-    support_materials = {
-        "Education": "learning materials",
-        "Health": "treatment support materials",
-    }
-    employee_compensation_narrative = (
-        f" This indicates that a significant portion of spending is directed towards salaries and benefits, leaving limited room for non-salary operational costs such as {operational_resources[func]} and facility maintenance."
-        if latest_data[OP_WAGE_BILL] > 70
-        else " This indicates a balanced allocation between salaries and other operational resources to support service delivery, potentially enabling enhanced investment in resources and services that directly impact service delivery."
-    )
 
-    capital_spending_narrative = (
-        f"Meanwhile, capital spending represented {cap_spending_pct:.0f}% of total {func} spending in {latest_year}, "
-        + (
-            "indicating potential under-investment in long-term infrastructure, which could affect future service delivery."
-            if cap_spending_pct < 10
-            else "which is within the expected range for social sectors but may require further prioritization based on infrastructure needs."
-            if 10 <= cap_spending_pct <= 25
-            else "suggesting a strong emphasis on infrastructure and capacity expansion."
-        )
-    )
+    resources = t(f"econ.operational_resources.{func}", lang)
+    targets = t(f"econ.capital_targets.{func}", lang)
+    essential = t(f"econ.essential_resources.{func}", lang)
+    materials = t(f"econ.support_materials.{func}", lang)
 
-    capital_spending_change_narrative = (
-        f"Capital spending has {trends[CAPEX]}"
-        + (
-            "."
-            if trends[CAPEX] == "remained stable"
-            else f" by {abs(changes[CAPEX]):.0f}%, "
-            + (
-                f"reflecting reduced investment in {capital_investment_targets[func]} and infrastructure."
-                if changes[CAPEX] < 0
-                else f"suggesting a stronger commitment to expanding and upgrading {func} facilities."
-            )
-        )
-    )
-    emp_comp_spending_change_narrative = (
-        f"Employee compensation has {trends[OP_WAGE_BILL]}"
-        + (
-            "."
-            if trends[OP_WAGE_BILL] == "remained stable"
-            else f" by {abs(changes[OP_WAGE_BILL]):.0f}%, "
-            + (
-                "possibly driven by wage increases and workforce expansion."
-                if changes[OP_WAGE_BILL] > stable_threshold
-                else "remaining stable relative to overall spending trends."
-            )
-        )
-    )
-    other_spending_change_narrative = (
-        f"Non-wage recurrent spending has {trends[OTHER]}"
-        + (
-            "."
-            if trends[OTHER] == "remained stable"
-            else f" by {abs(changes[OTHER]):.0f}%, "
-            + (
-                f"potentially affecting the availability of {essential_resources[func]}."
-                if changes[OTHER] < 0
-                else f"allowing for enhanced support for {support_materials[func]} and maintenance needs."
-            )
-        )
-    )
+    if latest_data[OP_WAGE_BILL] > 70:
+        emp_narrative = t("narrative.emp_comp_high", lang, resources=resources)
+    else:
+        emp_narrative = t("narrative.emp_comp_balanced", lang)
+
+    intro_text = t("narrative.econ_breakdown_intro", lang,
+                    country=country_name, emp_pct=emp_comp_pct,
+                    func=func.lower(), other_pct=other_pct,
+                    year=latest_year, emp_narrative=emp_narrative)
+
+    capital_base = t("narrative.capital_spending", lang, pct=cap_spending_pct, func=func, year=latest_year)
+    if cap_spending_pct < 10:
+        capital_text = capital_base + t("narrative.capital_under_investment", lang)
+    elif 10 <= cap_spending_pct <= 25:
+        capital_text = capital_base + t("narrative.capital_expected_range", lang)
+    else:
+        capital_text = capital_base + t("narrative.capital_strong_emphasis", lang)
+
+    patterns_intro = t("narrative.spending_patterns_intro", lang, start_year=start_year, end_year=latest_year)
+
+    # Capital spending change
+    cap_change = t("narrative.capital_spending_change", lang, trend=trends[CAPEX])
+    remained_stable = t("word.remained_stable", lang)
+    if trends[CAPEX] == remained_stable:
+        cap_change_text = cap_change + "."
+    else:
+        cap_change_text = cap_change + t("narrative.by_amount", lang, amount=abs(changes[CAPEX]))
+        if changes[CAPEX] < 0:
+            cap_change_text += t("narrative.capital_reduced_investment", lang, targets=targets)
+        else:
+            cap_change_text += t("narrative.capital_stronger_commitment", lang, func=func)
+
+    # Employee compensation change
+    emp_change = t("narrative.emp_comp_change", lang, trend=trends[OP_WAGE_BILL])
+    if trends[OP_WAGE_BILL] == remained_stable:
+        emp_change_text = emp_change + "."
+    else:
+        emp_change_text = emp_change + t("narrative.by_amount", lang, amount=abs(changes[OP_WAGE_BILL]))
+        if changes[OP_WAGE_BILL] > stable_threshold:
+            emp_change_text += t("narrative.emp_comp_driven_by", lang)
+        else:
+            emp_change_text += t("narrative.emp_comp_stable_relative", lang)
+
+    # Other spending change
+    other_change = t("narrative.other_spending_change", lang, trend=trends[OTHER])
+    if trends[OTHER] == remained_stable:
+        other_change_text = other_change + "."
+    else:
+        other_change_text = other_change + t("narrative.by_amount", lang, amount=abs(changes[OTHER]))
+        if changes[OTHER] < 0:
+            other_change_text += t("narrative.other_affecting_availability", lang, resources=essential)
+        else:
+            other_change_text += t("narrative.other_enhanced_support", lang, materials=materials)
 
     return html.Div(
         [
-            html.P(
-                f"In {country_name}, {emp_comp_pct:.0f}% of {func.lower()} spending was allocated to employee compensation and {other_pct:.0f}% to non-wage recurrent expenditures in {latest_year}."
-                f"{employee_compensation_narrative}"
-            ),
-            html.P(f"{capital_spending_narrative}"),
-            html.P(
-                f"Between {start_year} and {latest_year}, the earliest and latest year for which data is available, spending patterns are as follows:"
-            ),
+            html.P(intro_text),
+            html.P(capital_text),
+            html.P(patterns_intro),
             html.Ul(
                 [
-                    html.Li(f"{capital_spending_change_narrative}"),
-                    html.Li(f"{emp_comp_spending_change_narrative}"),
-                    html.Li(f"{other_spending_change_narrative}"),
+                    html.Li(cap_change_text),
+                    html.Li(emp_change_text),
+                    html.Li(other_change_text),
                 ]
             ),
         ]
     )
 
 
-def _generate_econ_figure(data, func):
+def _generate_econ_figure(data, func, lang="en"):
     fig = go.Figure()
     for econ_category in data.columns[1:]:
         fig.add_trace(
@@ -174,9 +157,9 @@ def _generate_econ_figure(data, func):
     fig.update_layout(
         barmode="stack",
         hovermode="x unified",
-        title=f"How have expenditure priorities changed?",
+        title=t("chart.expenditure_priorities", lang),
         plot_bgcolor="white",
-        yaxis_title=f"Percentage of total {func.lower()} expenditure",
+        yaxis_title=t("axis.pct_total_func_expenditure", lang, func=func.lower()),
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -192,9 +175,9 @@ def _generate_econ_figure(data, func):
     return fig
 
 
-def render_econ_breakdown(data, country_name, page_func):
+def render_econ_breakdown(data, country_name, page_func, lang="en"):
     if not data:
-        return empty_plot("Loading..."), "Loading..."
+        return empty_plot(t("loading", lang)), t("loading", lang)
     df = pd.DataFrame(data["econ_expenditure_prop_by_func_country_year"])
     filtered_df = df[
         (df["country_name"] == country_name) & (df["func"] == page_func)
@@ -203,7 +186,7 @@ def render_econ_breakdown(data, country_name, page_func):
         index="year", columns="econ", values="proportion", aggfunc="sum", fill_value=0
     ).reset_index()
 
-    fig = _generate_econ_figure(pivot_df, page_func)
-    narrative = _format_econ_narrative(pivot_df, country_name, page_func)
+    fig = _generate_econ_figure(pivot_df, page_func, lang=lang)
+    narrative = _format_econ_narrative(pivot_df, country_name, page_func, lang=lang)
 
     return fig, narrative
