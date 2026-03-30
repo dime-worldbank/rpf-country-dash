@@ -48,10 +48,6 @@ def layout():
                         dbc.Tabs(
                             id="education-tabs",
                             active_tab="edu-tab-time",
-                            children=[
-                                dbc.Tab(label="Over Time", tab_id="edu-tab-time"),
-                                dbc.Tab(label="Across Space", tab_id="edu-tab-space"),
-                            ],
                             style={"marginBottom": "2rem"},
                         ),
                         html.Div(id="education-content"),
@@ -63,6 +59,17 @@ def layout():
             dcc.Store(id="stored-data-education-private"),
         ]
     )
+
+
+@callback(
+    Output("education-tabs", "children"),
+    Input("stored-language", "data"),
+)
+def update_edu_tab_labels(lang):
+    return [
+        dbc.Tab(label=t("tab.over_time", lang), tab_id="edu-tab-time"),
+        dbc.Tab(label=t("tab.across_space", lang), tab_id="edu-tab-space"),
+    ]
 
 
 @callback(

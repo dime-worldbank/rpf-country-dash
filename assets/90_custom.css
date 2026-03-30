@@ -133,6 +133,32 @@
     right: 2rem;
     font-size: 20px;
     z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.language-links {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 14px;
+}
+
+.language-links .lang-link {
+    padding: 0.15rem 0.5rem;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
+}
+
+.language-links .lang-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.language-links .lang-link.active-lang {
+    font-weight: 700;
+    color: #fff;
 }
 
 #sidebar {

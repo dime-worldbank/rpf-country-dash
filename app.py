@@ -12,6 +12,7 @@ from dash import (
     Output,
     State,
     MATCH,
+    ALL,
     ctx,
     page_container,
     page_registry,
@@ -69,6 +70,20 @@ db = QueryService.get_instance()
 header = html.Div(
     [
         html.Div(
+            [
+                html.A(
+                    o["label"],
+                    id={"type": "lang-link", "index": o["value"]},
+                    n_clicks=0,
+                    className="lang-link",
+                    style={"cursor": "pointer"},
+                )
+                for o in LANGUAGE_OPTIONS
+            ],
+            id="language-links",
+            className="language-links",
+        ),
+        html.Div(
             id="user-status-header",
             children=[
                 html.A(
@@ -78,7 +93,7 @@ header = html.Div(
                     style={"display": "none"},
                 )
             ],
-        )
+        ),
     ],
     id="header",
 )
@@ -96,13 +111,6 @@ sidebar = html.Div(
         html.Hr(),
         dbc.Select(
             id="country-select",
-            size="sm",
-        ),
-        html.Hr(),
-        dbc.Select(
-            id="language-select",
-            options=[{"label": o["label"], "value": o["value"]} for o in LANGUAGE_OPTIONS],
-            value=DEFAULT_LANGUAGE,
             size="sm",
         ),
         html.Hr(),
@@ -152,10 +160,23 @@ app.layout = layout
 
 @app.callback(
     Output("stored-language", "data"),
-    Input("language-select", "value"),
+    Input({"type": "lang-link", "index": ALL}, "n_clicks"),
 )
-def update_language(lang):
-    return lang or DEFAULT_LANGUAGE
+def update_language(clicks):
+    if not ctx.triggered_id:
+        return DEFAULT_LANGUAGE
+    return ctx.triggered_id["index"]
+
+
+@app.callback(
+    Output({"type": "lang-link", "index": ALL}, "className"),
+    Input("stored-language", "data"),
+)
+def update_active_lang(lang):
+    return [
+        "lang-link active-lang" if o["value"] == lang else "lang-link"
+        for o in LANGUAGE_OPTIONS
+    ]
 
 
 @app.callback(

@@ -45,12 +45,6 @@ def layout():
                         dbc.Tabs(
                             id="overview-tabs",
                             active_tab="overview-tab-time",
-                            children=[
-                                dbc.Tab(label="Over Time", tab_id="overview-tab-time"),
-                                dbc.Tab(
-                                    label="Across Space", tab_id="overview-tab-space"
-                                ),
-                            ],
                             style={"marginBottom": "2rem"},
                         ),
                         html.Div(id="overview-content"),
@@ -60,6 +54,17 @@ def layout():
             dcc.Store(id="stored-data-pefa"),
         ]
     )
+
+
+@callback(
+    Output("overview-tabs", "children"),
+    Input("stored-language", "data"),
+)
+def update_overview_tab_labels(lang):
+    return [
+        dbc.Tab(label=t("tab.over_time", lang), tab_id="overview-tab-time"),
+        dbc.Tab(label=t("tab.across_space", lang), tab_id="overview-tab-space"),
+    ]
 
 
 @callback(

@@ -46,12 +46,6 @@ def layout():
                         dbc.Tabs(
                             id="health-tabs",
                             active_tab="health-tab-time",
-                            children=[
-                                dbc.Tab(label="Over Time", tab_id="health-tab-time"),
-                                dbc.Tab(
-                                    label="Across Space", tab_id="health-tab-space"
-                                ),
-                            ],
                             style={"marginBottom": "2rem"},
                         ),
                         html.Div(id="health-content"),
@@ -64,6 +58,17 @@ def layout():
             dcc.Store(id="stored-data-health-sub-func"),
         ]
     )
+
+@callback(
+    Output("health-tabs", "children"),
+    Input("stored-language", "data"),
+)
+def update_health_tab_labels(lang):
+    return [
+        dbc.Tab(label=t("tab.over_time", lang), tab_id="health-tab-time"),
+        dbc.Tab(label=t("tab.across_space", lang), tab_id="health-tab-space"),
+    ]
+
 
 @callback(
     Output("stored-data-health-total", "data"),
