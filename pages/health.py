@@ -217,10 +217,10 @@ def render_health_content(tab):
                         dbc.Col(dcc.Store(id="page-selector", data="Health"), width=0),
                         dbc.Row(
                             [
-                                dbc.Col(id="econ-breakdown-func-narrative-health", width=6),
+                                dbc.Col(id="econ-breakdown-func-narrative-health", xs=12, lg=6),
                                 dbc.Col(
                                     chart_container("econ-breakdown-func-health"),
-                                    width=6
+                                    xs=12, lg=6
                                 ),
                             ]
                         ),
@@ -269,11 +269,11 @@ def render_health_content(tab):
                     [
                         dbc.Col(
                             chart_container("health-central-vs-regional"),
-                            width=5
+                            xs=12, lg=5
                         ),
                         dbc.Col(
                             chart_container("health-sub-func"),
-                            width=7
+                            xs=12, lg=7
                         ),
                     ]
                 ),

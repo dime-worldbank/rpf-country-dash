@@ -150,35 +150,6 @@ def render_overview_content(tab):
                 dbc.Row(style={"height": "40px"}),
                 dbc.Row(
                     [
-                        dbc.Col(width=4),
-                        dbc.Col(
-                            [
-                                html.Div([
-                                    dbc.RadioItems(
-                                        id="budget-increment-radio",
-                                        options=[
-                                            {
-                                                "label": "Budget",
-                                                "value": "domestic_funded_budget",
-                                            },
-                                            {
-                                                "label": "Inflation-adjusted Budget",
-                                                "value": "real_domestic_funded_budget",
-                                            },
-                                        ],
-                                        value="domestic_funded_budget",
-                                        inline=True,
-                                        style={"padding": "10px"},
-                                        labelStyle={"margin-right": "20px"},
-                                    )
-                                ], className='disclaimer-div'),
-                            ],
-                            width=8,
-                        ),
-                    ]
-                ),
-                dbc.Row(
-                    [
                         dbc.Col([
                             html.P(
                                 id="func-growth-narrative",
@@ -188,11 +159,29 @@ def render_overview_content(tab):
                                 id="func-growth-instruction",
                                 children=html.Small(html.Em("By default, only Overall Budget, Health, Education, and General Public Services are shown in the chart. Click on the legend to view the year-on-year budget growth rate for other functional categories.")),
                             )
-                        ], width=4),
-                        dbc.Col(
+                        ], xs=12, lg=4),
+                        dbc.Col([
+                            html.Div([
+                                dbc.RadioItems(
+                                    id="budget-increment-radio",
+                                    options=[
+                                        {
+                                            "label": "Budget",
+                                            "value": "domestic_funded_budget",
+                                        },
+                                        {
+                                            "label": "Inflation-adjusted Budget",
+                                            "value": "real_domestic_funded_budget",
+                                        },
+                                    ],
+                                    value="domestic_funded_budget",
+                                    inline=True,
+                                    style={"padding": "10px"},
+                                    labelStyle={"margin-right": "20px"},
+                                )
+                            ], className='disclaimer-div'),
                             chart_container("func-growth"),
-                            width=8,
-                        ),
+                        ], xs=12, lg=8),
                     ]
                 ),
                 dbc.Row(style={"height": "20px"}),
