@@ -170,8 +170,96 @@
     padding: 2rem 1rem;
 }
 
+#sidebar .nav {
+    flex-direction: column;
+}
+
 #page-content {
     margin: 3rem 2rem 1rem 14rem;
     padding: 1rem 1rem;
     min-height: 70vh;
+}
+
+/* =============================================================================
+   FOOTER
+   ============================================================================= */
+
+#app-footer {
+    margin: 2rem 2rem 2rem 14rem;
+    padding: 1.5rem 2rem;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+#app-footer .footer-logo {
+    height: 55px;
+}
+
+#app-footer .footer-acknowledgment {
+    font-size: 13px;
+    font-weight: bold;
+    color: #002244;
+}
+
+.theme-quartz #app-footer {
+    margin: 0 3rem 2rem 15rem;
+}
+
+/* =============================================================================
+   MOBILE
+   ============================================================================= */
+
+@media (max-width: 768px) {
+    #sidebar {
+        position: relative;
+        width: 100%;
+        padding: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+    }
+
+    #sidebar hr {
+        display: none;
+    }
+
+    #sidebar img {
+        height: 50px;
+    }
+
+    #sidebar .form-select {
+        width: auto;
+    }
+
+    #sidebar .nav {
+        flex-direction: row;
+        gap: 0.25rem;
+    }
+
+    #sidebar .nav-link {
+        padding: 0.25rem 0.5rem;
+    }
+
+    #page-content,
+    #app-footer {
+        margin: 1rem;
+    }
+
+    #app-footer {
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .theme-quartz #app-footer {
+        margin: 0 2rem 2rem 2rem;
+    }
+
+    #app-footer .footer-logo {
+        height: 45px;
+    }
 }

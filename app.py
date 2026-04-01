@@ -34,7 +34,10 @@ from queries import QueryService
 from server import server
 from translations import t, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
-from viz_theme import DEFAULT_THEME, VALID_THEMES, init_plotly_theme
+from viz_theme import (
+    DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
+    SHOW_FOOTER, FOOTER_ACKNOWLEDGMENT_TEXT,
+)
 
 app = Dash(
     __name__,
@@ -106,7 +109,7 @@ def get_relative_path(page_name):
 sidebar = html.Div(
     [
         dbc.Row(
-            [html.Img(src=app.get_asset_url("rpf_logo.png"), style={"height": "100"})]
+            [html.Img(src=app.get_asset_url("rpf_logo.png"), alt="Reimagining Public Finance", style={"height": "100"})]
         ),
         html.Hr(),
         dbc.Select(
@@ -125,6 +128,29 @@ sidebar = html.Div(
 
 content = html.Div(page_container, id="page-content")
 
+app_footer = html.Div(
+    [
+        html.A(
+            html.Img(src=app.get_asset_url("wbg_logo_color.svg"), alt="World Bank Group", className="footer-logo"),
+            href="https://www.worldbank.org/",
+            target="_blank",
+        ),
+        html.Span(FOOTER_ACKNOWLEDGMENT_TEXT, className="footer-acknowledgment"),
+        html.A(
+            html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
+            href="https://www.worldbank.org/en/programs/financial-management-umbrella-program",
+            target="_blank",
+        ),
+        html.A(
+            html.Img(src=app.get_asset_url("SDGfund_logo.png"), alt="SDG Trust Fund", className="footer-logo"),
+            href="https://www.worldbank.org/en/programs/partnership-fund-for-the-sustainable-development-goals",
+            target="_blank",
+        ),
+    ],
+    id="app-footer",
+    style={"display": "flex" if SHOW_FOOTER else "none"},
+)
+
 dummy_div = html.Div(id="div-for-redirect")
 
 
@@ -137,6 +163,7 @@ def layout():
         header,
         sidebar,
         content,
+        app_footer,
         dummy_div,
     ]
 
