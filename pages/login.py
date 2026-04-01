@@ -12,26 +12,7 @@ def layout(**kwargs):
             dbc.Row([
                 dbc.Col([html.Div('')], width=3),
                 dbc.Col(
-                    dbc.Form([
-                            dbc.Label(t("login.username"), html_for="username", className="mb-1"),
-                            dbc.Input(
-                                type="text",
-                                id="username",
-                                placeholder=t("login.enter_username"),
-                                className="mb-3",
-                            ),
-                            dbc.Label(t("login.password"), html_for="password", className="mb-1"),
-                            dbc.Input(
-                                type="password",
-                                id="password",
-                                placeholder=t("login.enter_password"),
-                                className="mb-3",
-                            ),
-                            dbc.Button(
-                                t("login.button"), color="primary", id="login-button", n_clicks=0, className="w-100 mb-3"
-                            ),
-                            html.Div(id="login-alert"),
-                    ]),
+                    dbc.Form(id="login-form"),
                     width=6,
                 ),
                 dbc.Col([html.Div('')], width=3),
@@ -40,6 +21,35 @@ def layout(**kwargs):
         ],
         className="mt-5",
     )
+
+
+@callback(
+    Output("login-form", "children"),
+    Input("stored-language", "data"),
+)
+def render_login_form(lang):
+    lang = lang or "en"
+    return [
+        dbc.Label(t("login.username", lang), html_for="username", className="mb-1"),
+        dbc.Input(
+            type="text",
+            id="username",
+            placeholder=t("login.enter_username", lang),
+            className="mb-3",
+        ),
+        dbc.Label(t("login.password", lang), html_for="password", className="mb-1"),
+        dbc.Input(
+            type="password",
+            id="password",
+            placeholder=t("login.enter_password", lang),
+            className="mb-3",
+        ),
+        dbc.Button(
+            t("login.button", lang), color="primary", id="login-button", n_clicks=0, className="w-100 mb-3"
+        ),
+        html.Div(id="login-alert"),
+    ]
+
 
 @callback(
     Output("login-alert", "children"),

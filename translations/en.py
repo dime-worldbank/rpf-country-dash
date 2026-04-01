@@ -191,6 +191,26 @@ TRANSLATIONS = {
     "narrative.correlation_unknown": "the correlation between {x_name} and {y_name} is unknown due to limited data availability or variability.",
     "narrative.no_correlation": "there is no correlation between {y_name} and {x_name}.",
     "narrative.correlation": "the correlation between {y_name} and {x_name} is {pcc}, indicating a {intensity} {direction} relationship. Higher {y_name} is generally associated with {association} {x_name}.",
+    "narrative.corr_insufficient": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points.",
+    "narrative.corr_no_variability": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data.",
+    "narrative.corr_relation": "a {intensity} {direction} relationship",
+    "narrative.corr_association": "Higher {y_name} is generally associated with {association} {x_name}.",
+    "narrative.corr_association_tentative": "Higher {y_name} may be associated with {association} {x_name}.",
+    "narrative.corr_small_sample": "with only {n} data points, the rank-based correlation between {y_name} and {x_name} ({corr}) tentatively suggests",
+    "narrative.corr_caution": "However, this should be interpreted with caution.",
+    "narrative.corr_full": "the rank-based correlation between {y_name} and {x_name} is {corr}, {verb}",
+    "narrative.corr_caveat": "However, {caveat}.",
+
+    # --- Word translations ---
+    "word.positive": "positive",
+    "word.inverse": "inverse",
+    "word.higher": "higher",
+    "word.lower": "lower",
+
+    # --- Hover labels ---
+    "hover.grade": "Grade",
+    "hover.pillar": "Pillar",
+    "hover.score": "Score",
 
     # --- Narrative templates: Percentage change ---
     "narrative.mostly_unchanged": "mostly remained unchanged",
@@ -243,7 +263,7 @@ TRANSLATIONS = {
 
     # --- Functional narrative ---
     "narrative.func_cofog_intro": "For {country}, BOOST provides functional spending data on {count} categories, based on Classification of the Functions of Government (COFOG). ",
-    "narrative.func_missing_single": "The cartegory we do not have data on is {cats}. ",
+    "narrative.func_missing_single": "The category we do not have data on is {cats}. ",
     "narrative.func_missing_multi": "The cartegories we do not have data on include {cats}. ",
     "narrative.func_top_n": "On average, the top {n} spending functional categories are ",
     "narrative.func_bottom_n": "while the bottom {n} spenders are ",
@@ -253,7 +273,7 @@ TRANSLATIONS = {
 
     # --- Economic narrative ---
     "narrative.econ_intro": "For {country}, BOOST provides spending data on {count} economic categories, generally based on Economic Classification of Expense outlined in the Government Finance Statistics (GFS) framework. ",
-    "narrative.econ_missing_single": "The cartegory we do not have data on is {cats}. ",
+    "narrative.econ_missing_single": "The category we do not have data on is {cats}. ",
     "narrative.econ_missing_multi": "The cartegories we do not have data on include {cats}. ",
     "narrative.econ_top_n": "On average, the top {n} spending economic categories are ",
     "narrative.econ_bottom_n": "while the bottom {n} spenders are ",

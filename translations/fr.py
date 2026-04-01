@@ -191,6 +191,26 @@ TRANSLATIONS = {
     "narrative.correlation_unknown": "la corrélation entre {x_name} et {y_name} est inconnue en raison de la disponibilité ou de la variabilité limitée des données.",
     "narrative.no_correlation": "il n'y a pas de corrélation entre {y_name} et {x_name}.",
     "narrative.correlation": "la corrélation entre {y_name} et {x_name} est de {pcc}, indiquant une relation {direction} {intensity}. Un {y_name} plus élevé est généralement associé à un {x_name} plus {association}.",
+    "narrative.corr_insufficient": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'un nombre insuffisant de points de données.",
+    "narrative.corr_no_variability": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'une variabilité insuffisante des données.",
+    "narrative.corr_relation": "une relation {direction} {intensity}",
+    "narrative.corr_association": "Un {y_name} plus élevé est généralement associé à un {x_name} plus {association}.",
+    "narrative.corr_association_tentative": "Un {y_name} plus élevé pourrait être associé à un {x_name} plus {association}.",
+    "narrative.corr_small_sample": "avec seulement {n} points de données, la corrélation de rang entre {y_name} et {x_name} ({corr}) suggère provisoirement",
+    "narrative.corr_caution": "Cependant, cela doit être interprété avec prudence.",
+    "narrative.corr_full": "la corrélation de rang entre {y_name} et {x_name} est de {corr}, {verb}",
+    "narrative.corr_caveat": "Cependant, {caveat}.",
+
+    # --- Word translations ---
+    "word.positive": "positive",
+    "word.inverse": "inverse",
+    "word.higher": "élevé",
+    "word.lower": "faible",
+
+    # --- Hover labels ---
+    "hover.grade": "Note",
+    "hover.pillar": "Pilier",
+    "hover.score": "Score",
 
     # --- Narrative templates: Percentage change ---
     "narrative.mostly_unchanged": "est resté globalement inchangé",

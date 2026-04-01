@@ -282,16 +282,16 @@ def get_correlation_text(df, x_col, y_col, lang="en"):
     n = data.shape[0]
 
     if n < THRESHOLD_INSUFFICIENT:
-        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points."
+        return t("narrative.corr_insufficient", lang, x_name=x_name, y_name=y_name)
 
     # Use Spearman (rank-based) correlation - robust to outliers
     spearman_corr, p_value = stats.spearmanr(data[x], data[y])
     if isnan(spearman_corr):
-        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data."
+        return t("narrative.corr_no_variability", lang, x_name=x_name, y_name=y_name)
 
     # Determine direction and intensity
-    direction = "positive" if spearman_corr > 0 else "inverse"
-    association = "higher" if spearman_corr > 0 else "lower"
+    direction = t("word.positive", lang) if spearman_corr > 0 else t("word.inverse", lang)
+    association = t("word.higher", lang) if spearman_corr > 0 else t("word.lower", lang)
     intensity = next(
         (text for threshold, text in sorted(CORRELATION_THRESHOLDS.items())
          if abs(spearman_corr) <= threshold),
@@ -299,24 +299,24 @@ def get_correlation_text(df, x_col, y_col, lang="en"):
     )
 
     if intensity == "no":
-        return f"there is no apparent correlation between {y_name} and {x_name}."
+        return t("narrative.no_correlation", lang, y_name=y_name, x_name=x_name)
 
     # Build narrative components
     confidence = assess_statistical_confidence(n, p_value)
-    relation = f"a {intensity} {direction} relationship"
+    relation = t("narrative.corr_relation", lang, intensity=intensity, direction=direction)
 
     if confidence["is_significant"]:
-        association_text = f"Higher {y_name} is generally associated with {association} {x_name}."
+        association_text = t("narrative.corr_association", lang, y_name=y_name, association=association, x_name=x_name)
     else:
-        association_text = f"Higher {y_name} may be associated with {association} {x_name}."
+        association_text = t("narrative.corr_association_tentative", lang, y_name=y_name, association=association, x_name=x_name)
 
     # Assemble narrative based on confidence level
     if n < THRESHOLD_CORRELATION:
-        intro = f"with only {n} data points, the rank-based correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
-        caveat = "However, this should be interpreted with caution."
+        intro = t("narrative.corr_small_sample", lang, n=n, y_name=y_name, x_name=x_name, corr=f"{spearman_corr:.2f}")
+        caveat = t("narrative.corr_caution", lang)
     else:
-        intro = f"the rank-based correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
-        caveat = f"However, {confidence['caveat']}." if confidence["caveat"] else ""
+        intro = t("narrative.corr_full", lang, y_name=y_name, x_name=x_name, corr=f"{spearman_corr:.2f}", verb=confidence['verb'])
+        caveat = t("narrative.corr_caveat", lang, caveat=confidence['caveat']) if confidence["caveat"] else ""
 
     return f"{intro} {relation}. {association_text} {caveat}".strip()
 

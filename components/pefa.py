@@ -204,7 +204,7 @@ def pefa_pillar_heatmap(df, lang="en"):
     heatmap_grades.sort_index(ascending=False, inplace=True)
 
     hover_text = heatmap_scores.map(lambda x: f"{x:.1f}" if not np.isnan(x) else "N/A")
-    hover_text = hover_text + "<br>Grade: " + heatmap_grades.values
+    hover_text = hover_text + f"<br>{t('hover.grade', lang)}: " + heatmap_grades.values
 
     fig = go.Figure(
         data=go.Heatmap(
@@ -213,9 +213,9 @@ def pefa_pillar_heatmap(df, lang="en"):
             y=heatmap_scores.index,
             text=hover_text.values,
             hovertemplate=(
-                "Year: %{x}<br>"
-                "Pillar: %{y}<br>"
-                "Score: %{text}<extra></extra>"
+                f"{t('hover.year', lang)}: %{{x}}<br>"
+                f"{t('hover.pillar', lang)}: %{{y}}<br>"
+                f"{t('hover.score', lang)}: %{{text}}<extra></extra>"
             ),
             colorscale=SEQUENTIAL_SCALE,
             zmin=1,
@@ -331,18 +331,19 @@ def pefa_narrative(df, lang="en"):
     return text
 
 def _strength_narrative(pillar, score, lang="en"):
-    narratives = PILLAR_NARRARIVE_MAPPING[pillar]
+    # Map pillar keys to translation key prefixes
+    pillar_num = pillar.split("_")[0].replace("pillar", "")
     if score > 2.75:
         text = t("narrative.pefa_strength_high", lang)
-        text += narratives[0]
+        text += t(f"pefa.pillar{pillar_num}.desc", lang)
     else:
         text = t("narrative.pefa_strength_low", lang)
-        text += narratives[1]
+        text += t(f"pefa.pillar{pillar_num}.gerund", lang)
     return text
 
 def _weakness_narrative(pillar, lang="en"):
-    gerund = PILLAR_NARRARIVE_MAPPING[pillar][1]
-    return t("narrative.pefa_weakness", lang) + gerund
+    pillar_num = pillar.split("_")[0].replace("pillar", "")
+    return t("narrative.pefa_weakness", lang) + t(f"pefa.pillar{pillar_num}.gerund", lang)
 
 def _pillar_text(pillar, lang="en"):
     pillar_name = _get_pillar_name(pillar, lang)
