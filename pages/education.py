@@ -450,7 +450,7 @@ def education_narrative(data, country, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric="real expenditure")
+    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.real_expenditure", lang), lang=lang)
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
@@ -693,10 +693,11 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=att_df["year"].values,
         comparison_values=att_df["attendance_6to17yo"].values,
-        reference_name="per capita education spending",
-        comparison_name="school attendance (6-17 year-olds)",
+        reference_name=t("metric.per_capita_education_spending", lang),
+        comparison_name=t("metric.school_attendance", lang),
         reference_format=spending_fmt,
         comparison_format=".1f",
+        lang=lang,
     )
 
     poverty_result = get_relationship_narrative(
@@ -704,10 +705,11 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=pov_df_clean["year"].values,
         comparison_values=pov_df_clean["learning_poverty_rate"].values,
-        reference_name="per capita education spending",
-        comparison_name="learning poverty rate",
+        reference_name=t("metric.per_capita_education_spending", lang),
+        comparison_name=t("metric.learning_poverty_rate", lang),
         reference_format=spending_fmt,
         comparison_format=".1f",
+        lang=lang,
     )
 
     both_insufficient = (
@@ -715,11 +717,11 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         poverty_result["method"] == "insufficient_data"
     )
     if both_insufficient:
-        return "The relationship between education spending and outcomes cannot be determined due to limited data availability."
+        return t("narrative.both_insufficient", lang)
 
     poverty_narrative = poverty_result["narrative"]
     poverty_narrative = poverty_narrative[0].lower() + poverty_narrative[1:]
-    return f"{attendance_result['narrative']} Meanwhile, {poverty_narrative}"
+    return f"{attendance_result['narrative']}{t('narrative.outcome_meanwhile', lang, pcc=poverty_narrative)}"
 
 
 @callback(

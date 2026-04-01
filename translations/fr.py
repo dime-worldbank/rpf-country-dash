@@ -152,6 +152,15 @@ TRANSLATIONS = {
     "error.inflation_adjusted_unavailable": "Données budgétaires ajustées à l'inflation non disponibles",
     "error.no_overlapping_data": "Les données disponibles sur les dépenses publiques et privées en {sector} ne couvrent pas de période commune.",
 
+    # --- Metric names (used by trend-narrative library) ---
+    "metric.total_real_expenditure": "dépenses réelles totales",
+    "metric.real_expenditure": "dépenses réelles",
+    "metric.per_capita_health_spending": "dépenses de santé par habitant",
+    "metric.uhc_index": "indice de couverture sanitaire universelle",
+    "metric.per_capita_education_spending": "dépenses d'éducation par habitant",
+    "metric.school_attendance": "taux de scolarisation (6-17 ans)",
+    "metric.learning_poverty_rate": "taux de pauvreté des apprentissages",
+
     # --- Narrative templates: Overview ---
     "narrative.after_inflation": "Après prise en compte de l'inflation, {trend_narrative} ",
     "narrative.decentral_mean": "En moyenne, {mean:.1f} % des dépenses publiques totales sont exécutées par les gouvernements locaux/régionaux. ",
@@ -175,6 +184,8 @@ TRANSLATIONS = {
     "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",
     "narrative.outcome_meanwhile": " Par ailleurs, {pcc}",
+
+    "narrative.both_insufficient": "La relation entre les dépenses d'éducation et les résultats ne peut être déterminée en raison de données insuffisantes.",
 
     # --- Narrative templates: Correlation ---
     "narrative.correlation_unknown": "la corrélation entre {x_name} et {y_name} est inconnue en raison de la disponibilité ou de la variabilité limitée des données.",

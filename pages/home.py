@@ -486,7 +486,7 @@ def overview_narrative(df, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric="total real expenditure")
+    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.total_real_expenditure", lang), lang=lang)
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]

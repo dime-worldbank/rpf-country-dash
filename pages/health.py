@@ -455,7 +455,7 @@ def health_narrative(data, country, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric="real expenditure")
+    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.real_expenditure", lang), lang=lang)
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
@@ -689,10 +689,11 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=out_df["year"].values,
         comparison_values=out_df["universal_health_coverage_index"].values,
-        reference_name="per capita health spending",
-        comparison_name="universal health coverage index",
+        reference_name=t("metric.per_capita_health_spending", lang),
+        comparison_name=t("metric.uhc_index", lang),
         reference_format=lambda x: format_currency(x, currency_code),
         comparison_format=".1f",
+        lang=lang,
     )
     return result["narrative"]
 

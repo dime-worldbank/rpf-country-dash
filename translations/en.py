@@ -152,6 +152,15 @@ TRANSLATIONS = {
     "error.inflation_adjusted_unavailable": "Inflation-adjusted budget data unavailable",
     "error.no_overlapping_data": "Available public and private spending data on {sector} do not have an overlapping time period.",
 
+    # --- Metric names (used by trend-narrative library) ---
+    "metric.total_real_expenditure": "total real expenditure",
+    "metric.real_expenditure": "real expenditure",
+    "metric.per_capita_health_spending": "per capita health spending",
+    "metric.uhc_index": "universal health coverage index",
+    "metric.per_capita_education_spending": "per capita education spending",
+    "metric.school_attendance": "school attendance (6-17 year-olds)",
+    "metric.learning_poverty_rate": "learning poverty rate",
+
     # --- Narrative templates: Overview ---
     "narrative.after_inflation": "After accounting for inflation, {trend_narrative} ",
     "narrative.decentral_mean": "On average, {mean:.1f}% of total public spending is executed by local/regional government. ",
@@ -175,6 +184,8 @@ TRANSLATIONS = {
     "narrative.health_outcome_measure": "We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome.",
     "narrative.outcome_from_to": "From {start_year} to {end_year}, {pcc}",
     "narrative.outcome_meanwhile": " Meanwhile, {pcc}",
+
+    "narrative.both_insufficient": "The relationship between education spending and outcomes cannot be determined due to limited data availability.",
 
     # --- Narrative templates: Correlation ---
     "narrative.correlation_unknown": "the correlation between {x_name} and {y_name} is unknown due to limited data availability or variability.",
