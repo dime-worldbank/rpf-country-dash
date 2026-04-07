@@ -176,7 +176,7 @@ def pefa_pillar_heatmap(df):
     heatmap_scores.sort_index(ascending=False, inplace=True)
     heatmap_grades.sort_index(ascending=False, inplace=True)
 
-    hover_text = heatmap_scores.applymap(lambda x: f"{x:.1f}" if not np.isnan(x) else "N/A")
+    hover_text = heatmap_scores.map(lambda x: f"{x:.1f}" if not np.isnan(x) else "N/A")
     hover_text = hover_text + "<br>Grade: " + heatmap_grades.values
 
     fig = go.Figure(
