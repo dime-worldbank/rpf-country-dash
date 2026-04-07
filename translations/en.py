@@ -189,7 +189,7 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Correlation ---
     "narrative.correlation_unknown": "the correlation between {x_name} and {y_name} is unknown due to limited data availability or variability.",
-    "narrative.no_correlation": "there is no correlation between {y_name} and {x_name}.",
+    "narrative.no_correlation": "there is no apparent correlation between {y_name} and {x_name}.",
     "narrative.correlation": "the correlation between {y_name} and {x_name} is {pcc}, indicating a {intensity} {direction} relationship. Higher {y_name} is generally associated with {association} {x_name}.",
     "narrative.corr_insufficient": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points.",
     "narrative.corr_no_variability": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data.",
