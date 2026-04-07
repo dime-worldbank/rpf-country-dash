@@ -72,31 +72,12 @@ db = QueryService.get_instance()
 
 header = html.Div(
     [
-        html.Div(
-            [
-                html.A(
-                    o["label"],
-                    id={"type": "lang-link", "index": o["value"]},
-                    n_clicks=0,
-                    className="lang-link",
-                    style={"cursor": "pointer"},
-                )
-                for o in LANGUAGE_OPTIONS
-            ],
-            id="language-links",
-            className="language-links",
-        ),
-        html.Div(
-            id="user-status-header",
-            children=[
-                html.A(
-                    children="logout",
-                    n_clicks=0,
-                    id="logout-button",
-                    style={"display": "none"},
-                )
-            ],
-        ),
+        html.A(
+            children="logout",
+            n_clicks=0,
+            id="logout-button",
+            style={"display": "none"},
+        )
     ],
     id="header",
 )
@@ -121,6 +102,27 @@ sidebar = html.Div(
             id="sidebar-nav",
             vertical=True,
             pills=True,
+        ),
+        # Spacer + language toggle pinned to bottom of sidebar
+        html.Div(
+            [
+                html.Hr(),
+                html.Div(
+                    [
+                        html.A(
+                            o["label"],
+                            id={"type": "lang-link", "index": o["value"]},
+                            n_clicks=0,
+                            className="lang-link",
+                            style={"cursor": "pointer"},
+                        )
+                        for o in LANGUAGE_OPTIONS
+                    ],
+                    id="language-links",
+                    className="language-links",
+                ),
+            ],
+            id="sidebar-footer",
         ),
     ],
     id="sidebar",

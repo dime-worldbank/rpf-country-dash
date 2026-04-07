@@ -133,15 +133,32 @@
     right: 2rem;
     font-size: 20px;
     z-index: 1000;
+}
+
+#sidebar {
+    position: fixed;
+    top: 10px;
+    left: 0;
+    bottom: 0;
+    width: 14rem;
+    padding: 2rem 1rem;
     display: flex;
-    align-items: center;
-    gap: 1.5rem;
+    flex-direction: column;
+}
+
+/* Push the language toggle to the bottom of the sidebar */
+#sidebar-footer {
+    margin-top: auto;
+    font-size: 14px;
+}
+
+#sidebar-footer hr {
+    margin: 0.75rem 0;
 }
 
 .language-links {
     display: flex;
     gap: 0.25rem;
-    font-size: 14px;
 }
 
 .language-links .lang-link {
@@ -159,15 +176,6 @@
 .language-links .lang-link.active-lang {
     font-weight: 700;
     color: #fff;
-}
-
-#sidebar {
-    position: fixed;
-    top: 10px;
-    left: 0;
-    bottom: 0;
-    width: 14rem;
-    padding: 2rem 1rem;
 }
 
 #sidebar .nav {
@@ -243,6 +251,18 @@
 
     #sidebar .nav-link {
         padding: 0.25rem 0.5rem;
+    }
+
+    #sidebar-footer {
+        margin-top: 0;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    #sidebar-footer hr {
+        display: none;
     }
 
     #page-content,
