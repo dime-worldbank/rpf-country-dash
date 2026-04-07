@@ -152,6 +152,12 @@ TRANSLATIONS = {
     "error.inflation_adjusted_unavailable": "Inflation-adjusted budget data unavailable",
     "error.no_overlapping_data": "Available public and private spending data on {sector} do not have an overlapping time period.",
 
+    # --- Sector names (lowercase, for mid-sentence use in narratives) ---
+    "sector.health": "health",
+    "sector.education": "education",
+    "sector.health.facilities": "health facilities",
+    "sector.education.facilities": "education facilities",
+
     # --- Metric names (used by trend-narrative library) ---
     "metric.total_real_expenditure": "total real expenditure",
     "metric.real_expenditure": "real expenditure",
@@ -200,12 +206,6 @@ TRANSLATIONS = {
     "narrative.corr_caution": "However, this should be interpreted with caution.",
     "narrative.corr_full": "the rank-based correlation between {y_name} and {x_name} is {corr}, {verb}",
     "narrative.corr_caveat": "However, {caveat}.",
-
-    # --- Word translations ---
-    "word.positive": "positive",
-    "word.inverse": "inverse",
-    "word.higher": "higher",
-    "word.lower": "lower",
 
     # --- Hover labels ---
     "hover.grade": "Grade",
@@ -264,7 +264,7 @@ TRANSLATIONS = {
     # --- Functional narrative ---
     "narrative.func_cofog_intro": "For {country}, BOOST provides functional spending data on {count} categories, based on Classification of the Functions of Government (COFOG). ",
     "narrative.func_missing_single": "The category we do not have data on is {cats}. ",
-    "narrative.func_missing_multi": "The cartegories we do not have data on include {cats}. ",
+    "narrative.func_missing_multi": "The categories we do not have data on include {cats}. ",
     "narrative.func_top_n": "On average, the top {n} spending functional categories are ",
     "narrative.func_bottom_n": "while the bottom {n} spenders are ",
     "narrative.func_stable": "Relatively, public expenditure remain the most stable in ",
@@ -274,7 +274,7 @@ TRANSLATIONS = {
     # --- Economic narrative ---
     "narrative.econ_intro": "For {country}, BOOST provides spending data on {count} economic categories, generally based on Economic Classification of Expense outlined in the Government Finance Statistics (GFS) framework. ",
     "narrative.econ_missing_single": "The category we do not have data on is {cats}. ",
-    "narrative.econ_missing_multi": "The cartegories we do not have data on include {cats}. ",
+    "narrative.econ_missing_multi": "The categories we do not have data on include {cats}. ",
     "narrative.econ_top_n": "On average, the top {n} spending economic categories are ",
     "narrative.econ_bottom_n": "while the bottom {n} spenders are ",
     "narrative.econ_stable": "Relatively, public expenditure remain the most stable in ",
@@ -311,6 +311,7 @@ TRANSLATIONS = {
     "narrative.subnat_rank_year": "In {year}, {pcc}",
     "narrative.subnat_rank_roi": " Among the subnational regions, in terms of return on public spending on {func} measured by {outcome_name}, {best} had the highest return on investment (ROI) while {worst} had the lowest.",
     "label.per_capita_expenditure_on": "Per Capita Expenditure on {func}",
+    "label.per_capita_expenditure_lower_on": "per capita expenditure on {func}",
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Displaying data from {year}",
@@ -326,16 +327,15 @@ TRANSLATIONS = {
     "narrative.capital_expected_range": "which is within the expected range for social sectors but may require further prioritization based on infrastructure needs.",
     "narrative.capital_strong_emphasis": "suggesting a strong emphasis on infrastructure and capacity expansion.",
     "narrative.spending_patterns_intro": "Between {start_year} and {end_year}, the earliest and latest year for which data is available, spending patterns are as follows:",
-    "narrative.capital_spending_change": "Capital spending has {trend}",
-    "narrative.capital_reduced_investment": "reflecting reduced investment in {targets} and infrastructure.",
-    "narrative.capital_stronger_commitment": "suggesting a stronger commitment to expanding and upgrading {func} facilities.",
-    "narrative.emp_comp_change": "Employee compensation has {trend}",
-    "narrative.emp_comp_driven_by": "possibly driven by wage increases and workforce expansion.",
-    "narrative.emp_comp_stable_relative": "remaining stable relative to overall spending trends.",
-    "narrative.other_spending_change": "Non-wage recurrent spending has {trend}",
-    "narrative.other_affecting_availability": "potentially affecting the availability of {resources}.",
-    "narrative.other_enhanced_support": "allowing for enhanced support for {materials} and maintenance needs.",
-    "narrative.by_amount": " by {amount:.0f}%, ",
+    "narrative.capital_spending_change_up": "Capital spending has increased by {amount:.0f}%, suggesting a stronger commitment to expanding and upgrading {facilities}.",
+    "narrative.capital_spending_change_down": "Capital spending has decreased by {amount:.0f}%, reflecting reduced investment in {targets} and infrastructure.",
+    "narrative.capital_spending_change_stable": "Capital spending has remained stable.",
+    "narrative.emp_comp_change_up": "Employee compensation has increased by {amount:.0f}%, possibly driven by wage increases and workforce expansion.",
+    "narrative.emp_comp_change_down": "Employee compensation has decreased by {amount:.0f}%, remaining stable relative to overall spending trends.",
+    "narrative.emp_comp_change_stable": "Employee compensation has remained stable.",
+    "narrative.other_spending_change_up": "Non-wage recurrent spending has increased by {amount:.0f}%, allowing for enhanced support for {materials} and maintenance needs.",
+    "narrative.other_spending_change_down": "Non-wage recurrent spending has decreased by {amount:.0f}%, potentially affecting the availability of {resources}.",
+    "narrative.other_spending_change_stable": "Non-wage recurrent spending has remained stable.",
 
     # --- Econ breakdown sector-specific terms ---
     "econ.operational_resources.Education": "school materials",
@@ -348,7 +348,7 @@ TRANSLATIONS = {
     "econ.support_materials.Health": "treatment support materials",
 
     # --- PEFA narrative ---
-    "narrative.pefa_no_data": "The Public Expenditure and Financial Accountability (PEFA) program provides a framework for assessing and reporting on the strengths and weaknesses of public financial management (PFM) using quantitative indicators to measure performance. Unfortunately, there is no PEFA accessment for this country to help us understand its quality of budget institutions.",
+    "narrative.pefa_no_data": "The Public Expenditure and Financial Accountability (PEFA) program provides a framework for assessing and reporting on the strengths and weaknesses of public financial management (PFM) using quantitative indicators to measure performance. Unfortunately, there is no PEFA assessment for this country to help us understand its quality of budget institutions.",
     "narrative.pefa_latest": 'According to the latest Public Expenditure and Financial Accountability (PEFA) assessment conducted for {year}, the strongest pillar of {country}\'s budget institutions is "{highest_pillar}", with an average score of {highest_score:.1f} (Grade {highest_grade}){strength_narrative}. On the other hand, the pillar with the most room for improvement is "{lowest_pillar}", which scored {lowest_score:.1f} (Grade {lowest_grade}), {weakness_narrative}. ',
     "narrative.pefa_over_time": 'Over time, the pillar that improved the most is "{improved_pillar}", which saw an increase from {improved_earliest_score:.1f} (Grade {improved_earliest_grade}) in {earliest_year} to {improved_latest_score:.1f} (Grade {improved_latest_grade}) in the latest assessment. Conversely, the pillar that degraded the most is "{degraded_pillar}" which fell from {degraded_earliest_score:.1f} (Grade {degraded_earliest_grade}) in {earliest_year} to {degraded_latest_score:.1f} (Grade {degraded_latest_grade}) in the latest scores. ',
     "narrative.pefa_conclusion": "These insights underscore areas of strength to build upon and critical weaknesses requiring targeted reforms.",

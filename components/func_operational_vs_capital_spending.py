@@ -36,6 +36,9 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
     data = data.sort_values("year")
     start_year, latest_year = data["year"].iloc[0], data["year"].iloc[-1]
 
+    # Localized lowercase sector label for mid-sentence use
+    func_label = t(f"sector.{func.lower()}", lang)
+
     latest_data = data[data["year"] == latest_year].squeeze()
     start_data = data[data["year"] == start_year].squeeze()
     cap_spending_pct = latest_data[CAPEX]
@@ -48,21 +51,19 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
     ]
     stable_threshold = 5
     changes = {cat: latest_data[cat] - start_data[cat] for cat in categories}
-    trends = {
-        cat: (
-            t("word.remained_stable", lang)
-            if abs(changes[cat]) < stable_threshold
-            else t("word.increased", lang)
-            if changes[cat] > 0
-            else t("word.decreased", lang)
-        )
-        for cat in categories
-    }
+
+    def _direction(delta):
+        if abs(delta) < stable_threshold:
+            return "stable"
+        return "up" if delta > 0 else "down"
+
+    directions = {cat: _direction(changes[cat]) for cat in categories}
 
     resources = t(f"econ.operational_resources.{func}", lang)
     targets = t(f"econ.capital_targets.{func}", lang)
     essential = t(f"econ.essential_resources.{func}", lang)
     materials = t(f"econ.support_materials.{func}", lang)
+    facilities = t(f"sector.{func.lower()}.facilities", lang)
 
     if latest_data[OP_WAGE_BILL] > 70:
         emp_narrative = t("narrative.emp_comp_high", lang, resources=resources)
@@ -71,10 +72,10 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
 
     intro_text = t("narrative.econ_breakdown_intro", lang,
                     country=country_name, emp_pct=emp_comp_pct,
-                    func=func.lower(), other_pct=other_pct,
+                    func=func_label, other_pct=other_pct,
                     year=latest_year, emp_narrative=emp_narrative)
 
-    capital_base = t("narrative.capital_spending", lang, pct=cap_spending_pct, func=func, year=latest_year)
+    capital_base = t("narrative.capital_spending", lang, pct=cap_spending_pct, func=func_label, year=latest_year)
     if cap_spending_pct < 10:
         capital_text = capital_base + t("narrative.capital_under_investment", lang)
     elif 10 <= cap_spending_pct <= 25:
@@ -85,38 +86,25 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
     patterns_intro = t("narrative.spending_patterns_intro", lang, start_year=start_year, end_year=latest_year)
 
     # Capital spending change
-    cap_change = t("narrative.capital_spending_change", lang, trend=trends[CAPEX])
-    remained_stable = t("word.remained_stable", lang)
-    if trends[CAPEX] == remained_stable:
-        cap_change_text = cap_change + "."
+    if directions[CAPEX] == "stable":
+        cap_change_text = t("narrative.capital_spending_change_stable", lang)
     else:
-        cap_change_text = cap_change + t("narrative.by_amount", lang, amount=abs(changes[CAPEX]))
-        if changes[CAPEX] < 0:
-            cap_change_text += t("narrative.capital_reduced_investment", lang, targets=targets)
-        else:
-            cap_change_text += t("narrative.capital_stronger_commitment", lang, func=func)
+        key = "narrative.capital_spending_change_up" if directions[CAPEX] == "up" else "narrative.capital_spending_change_down"
+        cap_change_text = t(key, lang, amount=abs(changes[CAPEX]), facilities=facilities, targets=targets)
 
     # Employee compensation change
-    emp_change = t("narrative.emp_comp_change", lang, trend=trends[OP_WAGE_BILL])
-    if trends[OP_WAGE_BILL] == remained_stable:
-        emp_change_text = emp_change + "."
+    if directions[OP_WAGE_BILL] == "stable":
+        emp_change_text = t("narrative.emp_comp_change_stable", lang)
     else:
-        emp_change_text = emp_change + t("narrative.by_amount", lang, amount=abs(changes[OP_WAGE_BILL]))
-        if changes[OP_WAGE_BILL] > stable_threshold:
-            emp_change_text += t("narrative.emp_comp_driven_by", lang)
-        else:
-            emp_change_text += t("narrative.emp_comp_stable_relative", lang)
+        key = "narrative.emp_comp_change_up" if directions[OP_WAGE_BILL] == "up" else "narrative.emp_comp_change_down"
+        emp_change_text = t(key, lang, amount=abs(changes[OP_WAGE_BILL]))
 
     # Other spending change
-    other_change = t("narrative.other_spending_change", lang, trend=trends[OTHER])
-    if trends[OTHER] == remained_stable:
-        other_change_text = other_change + "."
+    if directions[OTHER] == "stable":
+        other_change_text = t("narrative.other_spending_change_stable", lang)
     else:
-        other_change_text = other_change + t("narrative.by_amount", lang, amount=abs(changes[OTHER]))
-        if changes[OTHER] < 0:
-            other_change_text += t("narrative.other_affecting_availability", lang, resources=essential)
-        else:
-            other_change_text += t("narrative.other_enhanced_support", lang, materials=materials)
+        key = "narrative.other_spending_change_up" if directions[OTHER] == "up" else "narrative.other_spending_change_down"
+        other_change_text = t(key, lang, amount=abs(changes[OTHER]), resources=essential, materials=materials)
 
     return html.Div(
         [
@@ -135,6 +123,7 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
 
 
 def _generate_econ_figure(data, func, lang="en"):
+    func_label = t(f"sector.{func.lower()}", lang)
     fig = go.Figure()
     for econ_category in data.columns[1:]:
         fig.add_trace(
@@ -159,7 +148,7 @@ def _generate_econ_figure(data, func, lang="en"):
         hovermode="x unified",
         title=t("chart.expenditure_priorities", lang),
         plot_bgcolor="white",
-        yaxis_title=t("axis.pct_total_func_expenditure", lang, func=func.lower()),
+        yaxis_title=t("axis.pct_total_func_expenditure", lang, func=func_label),
         legend=dict(
             orientation="h",
             yanchor="bottom",

@@ -78,7 +78,8 @@ def _subset_data(stored_data, year, country, func):
     return data.loc[(data.func == func) & (data.year == year)]
 
 def _central_vs_regional_fig(data, func, currency_code, lang="en"):
-    fig_title = t("chart.func_spending_directed", lang, func=func.lower())
+    func_lower = t(f"sector.{func.lower()}", lang)
+    fig_title = t("chart.func_spending_directed", lang, func=func_lower)
     central_vs_regional = (
         data.groupby("geo0").sum(numeric_only=True).reset_index()
     )
@@ -108,7 +109,8 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
 
 
 def _sub_func_fig(data, func, currency_code, lang="en"):
-    fig_title = t("chart.func_levels_spending", lang, func=func.lower())
+    func_lower = t(f"sector.{func.lower()}", lang)
+    fig_title = t("chart.func_levels_spending", lang, func=func_lower)
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
 
     if education_values.empty:
@@ -189,7 +191,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         geo_tagged = regional_spending / total_spending * 100
         decentralization = data_by_func_admin0.expenditure_decentralization.values[0] * 100
 
-        func_name = func.lower()
+        func_name = t(f"sector.{func.lower()}", lang)
 
         text = t("narrative.subnat_intro", lang, country=country, year=selected_year)
 
@@ -309,7 +311,7 @@ def update_func_expenditure_map(
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
-        title=t("chart.subnational_func_spending", lang, func=func),
+        title=t("chart.subnational_func_spending", lang, func=t(f"cofog.{func.lower()}", lang)),
         plot_bgcolor="white",
         coloraxis_colorbar=dict(
             title="",
@@ -576,7 +578,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
         )
     )
 
-    per_capita_label = t("label.per_capita_expenditure_on", lang, func=func)
+    per_capita_label = t("label.per_capita_expenditure_on", lang, func=t(f"cofog.{func.lower()}", lang))
     fig.add_annotation(
         x=0.1,
         y=1,
@@ -607,7 +609,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
 
 
 def _func_subnat_rank_narrative(year, func, data, lang="en"):
-    func_lower = func.lower()
+    func_lower = t(f"sector.{func.lower()}", lang)
 
     outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
     outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
@@ -621,7 +623,7 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
         },
         {
             "col_name": "per_capita_expenditure",
-            "display": f"per capita expenditure on {func_lower}",
+            "display": t("label.per_capita_expenditure_lower_on", lang, func=func_lower),
         },
         lang=lang,
     )

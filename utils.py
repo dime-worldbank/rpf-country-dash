@@ -23,12 +23,12 @@ from shapely.geometry import shape, MultiPolygon, Polygon
 
 
 CORRELATION_THRESHOLDS = {
-    0: "no",
-    0.1: "no",
-    0.3: "weak",
-    0.7: "moderate",
-    0.9: "strong",
-    1: "very strong",
+    0: "word.no",
+    0.1: "word.no",
+    0.3: "word.weak",
+    0.7: "word.moderate",
+    0.9: "word.strong",
+    1: "word.very_strong",
 }
 
 # Constant for which region to sample for disputed overlay color
@@ -292,14 +292,16 @@ def get_correlation_text(df, x_col, y_col, lang="en"):
     # Determine direction and intensity
     direction = t("word.positive", lang) if spearman_corr > 0 else t("word.inverse", lang)
     association = t("word.higher", lang) if spearman_corr > 0 else t("word.lower", lang)
-    intensity = next(
-        (text for threshold, text in sorted(CORRELATION_THRESHOLDS.items())
+    intensity_key = next(
+        (key for threshold, key in sorted(CORRELATION_THRESHOLDS.items())
          if abs(spearman_corr) <= threshold),
-        "very strong"
+        "word.very_strong"
     )
 
-    if intensity == "no":
+    if intensity_key == "word.no":
         return t("narrative.no_correlation", lang, y_name=y_name, x_name=x_name)
+
+    intensity = t(intensity_key, lang)
 
     # Build narrative components
     confidence = assess_statistical_confidence(n, p_value)

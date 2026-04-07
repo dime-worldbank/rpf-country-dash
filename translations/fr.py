@@ -152,6 +152,12 @@ TRANSLATIONS = {
     "error.inflation_adjusted_unavailable": "Données budgétaires ajustées à l'inflation non disponibles",
     "error.no_overlapping_data": "Les données disponibles sur les dépenses publiques et privées en {sector} ne couvrent pas de période commune.",
 
+    # --- Sector names (lowercase, for mid-sentence use in narratives) ---
+    "sector.health": "santé",
+    "sector.education": "éducation",
+    "sector.health.facilities": "infrastructures sanitaires",
+    "sector.education.facilities": "infrastructures éducatives",
+
     # --- Metric names (used by trend-narrative library) ---
     "metric.total_real_expenditure": "dépenses réelles totales",
     "metric.real_expenditure": "dépenses réelles",
@@ -200,12 +206,6 @@ TRANSLATIONS = {
     "narrative.corr_caution": "Cependant, cela doit être interprété avec prudence.",
     "narrative.corr_full": "la corrélation de rang entre {y_name} et {x_name} est de {corr}, {verb}",
     "narrative.corr_caveat": "Cependant, {caveat}.",
-
-    # --- Word translations ---
-    "word.positive": "positive",
-    "word.inverse": "inverse",
-    "word.higher": "élevé",
-    "word.lower": "faible",
 
     # --- Hover labels ---
     "hover.grade": "Note",
@@ -311,6 +311,7 @@ TRANSLATIONS = {
     "narrative.subnat_rank_year": "En {year}, {pcc}",
     "narrative.subnat_rank_roi": " Parmi les régions infranationales, en termes de retour sur les dépenses publiques en {func} mesuré par {outcome_name}, {best} a eu le meilleur retour sur investissement (ROI) tandis que {worst} a eu le plus faible.",
     "label.per_capita_expenditure_on": "Dépenses par habitant en {func}",
+    "label.per_capita_expenditure_lower_on": "dépenses par habitant en {func}",
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Affichage des données de {year}",
@@ -326,26 +327,25 @@ TRANSLATIONS = {
     "narrative.capital_expected_range": "ce qui se situe dans la fourchette attendue pour les secteurs sociaux mais pourrait nécessiter une priorisation supplémentaire en fonction des besoins en infrastructure.",
     "narrative.capital_strong_emphasis": "suggérant un accent fort sur l'infrastructure et l'expansion des capacités.",
     "narrative.spending_patterns_intro": "Entre {start_year} et {end_year}, la première et la dernière année pour lesquelles des données sont disponibles, les tendances de dépenses sont les suivantes :",
-    "narrative.capital_spending_change": "Les dépenses d'investissement ont {trend}",
-    "narrative.capital_reduced_investment": "reflétant une réduction des investissements dans {targets} et les infrastructures.",
-    "narrative.capital_stronger_commitment": "suggérant un engagement plus fort pour l'expansion et la modernisation des installations de {func}.",
-    "narrative.emp_comp_change": "La rémunération des employés a {trend}",
-    "narrative.emp_comp_driven_by": "possiblement en raison d'augmentations salariales et de l'expansion des effectifs.",
-    "narrative.emp_comp_stable_relative": "restant stable par rapport aux tendances globales de dépenses.",
-    "narrative.other_spending_change": "Les dépenses récurrentes hors salaires ont {trend}",
-    "narrative.other_affecting_availability": "affectant potentiellement la disponibilité de {resources}.",
-    "narrative.other_enhanced_support": "permettant un soutien accru pour {materials} et les besoins de maintenance.",
-    "narrative.by_amount": " de {amount:.0f} %, ",
+    "narrative.capital_spending_change_up": "Les dépenses d'investissement ont augmenté de {amount:.0f} %, suggérant un engagement plus fort pour l'expansion et la modernisation des {facilities}.",
+    "narrative.capital_spending_change_down": "Les dépenses d'investissement ont diminué de {amount:.0f} %, reflétant une réduction des investissements dans {targets} et les infrastructures.",
+    "narrative.capital_spending_change_stable": "Les dépenses d'investissement sont restées stables.",
+    "narrative.emp_comp_change_up": "La rémunération des employés a augmenté de {amount:.0f} %, possiblement en raison d'augmentations salariales et de l'expansion des effectifs.",
+    "narrative.emp_comp_change_down": "La rémunération des employés a diminué de {amount:.0f} %, restant stable par rapport aux tendances globales de dépenses.",
+    "narrative.emp_comp_change_stable": "La rémunération des employés est restée stable.",
+    "narrative.other_spending_change_up": "Les dépenses récurrentes hors salaires ont augmenté de {amount:.0f} %, permettant un soutien accru pour {materials} et les besoins de maintenance.",
+    "narrative.other_spending_change_down": "Les dépenses récurrentes hors salaires ont diminué de {amount:.0f} %, affectant potentiellement la disponibilité {resources}.",
+    "narrative.other_spending_change_stable": "Les dépenses récurrentes hors salaires sont restées stables.",
 
     # --- Econ breakdown sector-specific terms ---
-    "econ.operational_resources.Education": "fournitures scolaires",
-    "econ.operational_resources.Health": "fournitures médicales",
-    "econ.capital_targets.Education": "nouvelles écoles",
-    "econ.capital_targets.Health": "nouveaux établissements de santé",
-    "econ.essential_resources.Education": "matériel pédagogique essentiel et ressources pour les classes",
-    "econ.essential_resources.Health": "fournitures médicales et ressources de soins aux patients",
-    "econ.support_materials.Education": "matériel d'apprentissage",
-    "econ.support_materials.Health": "matériel de soutien aux traitements",
+    "econ.operational_resources.Education": "les fournitures scolaires",
+    "econ.operational_resources.Health": "les fournitures médicales",
+    "econ.capital_targets.Education": "de nouvelles écoles",
+    "econ.capital_targets.Health": "de nouveaux établissements de santé",
+    "econ.essential_resources.Education": "du matériel pédagogique essentiel et des ressources pour les classes",
+    "econ.essential_resources.Health": "des fournitures médicales et des ressources de soins aux patients",
+    "econ.support_materials.Education": "le matériel d'apprentissage",
+    "econ.support_materials.Health": "le matériel de soutien aux traitements",
 
     # --- PEFA narrative ---
     "narrative.pefa_no_data": "Le programme de dépenses publiques et de responsabilité financière (PEFA) fournit un cadre pour évaluer et rendre compte des forces et faiblesses de la gestion des finances publiques (GFP) à l'aide d'indicateurs quantitatifs pour mesurer la performance. Malheureusement, il n'existe pas d'évaluation PEFA pour ce pays permettant de comprendre la qualité de ses institutions budgétaires.",

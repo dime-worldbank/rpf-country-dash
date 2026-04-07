@@ -319,11 +319,11 @@ def render_health_content(tab, lang):
                                     id="health-expenditure-type",
                                     options=[
                                         {
-                                            "label": t("radio.per_capita_expenditure", lang, sector="health"),
+                                            "label": t("radio.per_capita_expenditure", lang, sector=t("sector.health", lang)),
                                             "value": "per_capita_expenditure",
                                         },
                                         {
-                                            "label": t("radio.total_expenditure", lang, sector="health"),
+                                            "label": t("radio.total_expenditure", lang, sector=t("sector.health", lang)),
                                             "value": "expenditure",
                                         },
                                     ],
@@ -511,9 +511,9 @@ def health_narrative(data, country, lang="en"):
         spending.year == end_year
     ].expenditure_decentralization.values[0]
     if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = t("narrative.decentralization_unknown", lang, sector="health")
+        spending_decentralization = t("narrative.decentralization_unknown", lang, sector=t("sector.health", lang))
     else:
-        spending_decentralization = t("narrative.decentralization_by_year", lang, year=end_year, pct=f"{decentralization:.1%}", sector="health")
+        spending_decentralization = t("narrative.decentralization_by_year", lang, year=end_year, pct=f"{decentralization:.1%}", sector=t("sector.health", lang))
     text += spending_decentralization
 
     return text
@@ -560,12 +560,12 @@ def public_private_narrative(df, country, lang="en"):
         )
         if earliest_year != latest_year:
             text += t("narrative.govt_share_trend", lang,
-                       country=country, sector="health", trend=trend,
+                       country=country, sector=t("sector.health", lang), trend=trend,
                        earliest_pct=f"{earliest_gov_share:.0%}",
                        latest_pct=f"{latest_gov_share:.0%}",
                        earliest_year=earliest_year, latest_year=latest_year)
 
-        text += t("narrative.household_ratio", lang, sector="health",
+        text += t("narrative.household_ratio", lang, sector=t("sector.health", lang),
                    ratio=f"{household_ratio:.1f}", year=latest_year)
 
     except IndexError:
@@ -619,7 +619,7 @@ def render_public_private_figure(private_data, public_data, country, country_dat
                 "DATA_UNAVAILABLE_DATASET_NAME", lang=lang, dataset_name="health private spending"
             )
         else:
-            prompt = t("error.no_overlapping_data", lang, sector="health")
+            prompt = t("error.no_overlapping_data", lang, sector=t("sector.health", lang))
         return (empty_plot(prompt, fig_title=fig_title), prompt)
 
     merged["private_percentage"] = merged["real_expenditure_private"] / (
