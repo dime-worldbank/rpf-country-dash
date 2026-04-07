@@ -237,6 +237,17 @@ TRANSLATIONS = {
     "word.and": "and",
     "word.while": "while",
 
+    # --- Statistical confidence verbs (used by get_correlation_text) ---
+    "word.cannot_be_determined": "cannot be determined",
+    "word.tentatively_suggests": "tentatively suggests",
+    "word.suggests": "suggests",
+    "word.indicates": "indicates",
+
+    # --- Statistical confidence caveats ---
+    "caveat.insufficient_data_points": "due to insufficient data points",
+    "caveat.few_data_points": "with only {n} data points, this should be interpreted with caution",
+    "caveat.not_significant": "this is not statistically significant (p={p_value:.2f}, n={n})",
+
     # --- Functional / COFOG categories ---
     "cofog.social_protection": "Social protection",
     "cofog.recreation": "Recreation, culture and religion",

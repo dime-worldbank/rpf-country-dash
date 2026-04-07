@@ -174,8 +174,8 @@ TRANSLATIONS = {
     "narrative.no_regional_data": "BOOST ne dispose pas de données sur les dépenses locales/régionales pour {country}. ",
 
     # --- Narrative templates: Spending ---
-    "narrative.central_spending_change": "Au cours de cette période, les dépenses ajustées à l'inflation du gouvernement central ont {change_text} ",
-    "narrative.subnational_spending_change": "tandis que les dépenses ajustées à l'inflation du gouvernement infranational ont {change_text}. ",
+    "narrative.central_spending_change": "Au cours de cette période, les dépenses ajustées à l'inflation du gouvernement central {change_text} ",
+    "narrative.subnational_spending_change": "tandis que les dépenses ajustées à l'inflation du gouvernement infranational {change_text}. ",
     "narrative.subnational_unavailable": ". Les données du gouvernement infranational ne sont pas disponibles pour cette période. ",
     "narrative.decentralization_by_year": "En {year}, {pct} des dépenses de {sector} ont été décentralisées.",
     "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses de {sector} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
@@ -200,8 +200,8 @@ TRANSLATIONS = {
     "narrative.corr_insufficient": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'un nombre insuffisant de points de données.",
     "narrative.corr_no_variability": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'une variabilité insuffisante des données.",
     "narrative.corr_relation": "une relation {direction} {intensity}",
-    "narrative.corr_association": "Un {y_name} plus élevé est généralement associé à un {x_name} plus {association}.",
-    "narrative.corr_association_tentative": "Un {y_name} plus élevé pourrait être associé à un {x_name} plus {association}.",
+    "narrative.corr_association": "Des valeurs plus élevées pour {y_name} sont généralement associées à des valeurs plus {association} pour {x_name}.",
+    "narrative.corr_association_tentative": "Des valeurs plus élevées pour {y_name} pourraient être associées à des valeurs plus {association} pour {x_name}.",
     "narrative.corr_small_sample": "avec seulement {n} points de données, la corrélation de rang entre {y_name} et {x_name} ({corr}) suggère provisoirement",
     "narrative.corr_caution": "Cependant, cela doit être interprété avec prudence.",
     "narrative.corr_full": "la corrélation de rang entre {y_name} et {x_name} est de {corr}, {verb}",
@@ -213,9 +213,11 @@ TRANSLATIONS = {
     "hover.score": "Score",
 
     # --- Narrative templates: Percentage change ---
-    "narrative.mostly_unchanged": "est resté globalement inchangé",
-    "narrative.increased_by": "a augmenté de {pct}",
-    "narrative.decreased_by": "a diminué de {pct}",
+    # Conjugated for plural feminine subject (e.g. "les dépenses"), used in
+    # narrative.central_spending_change / narrative.subnational_spending_change
+    "narrative.mostly_unchanged": "sont restées globalement inchangées",
+    "narrative.increased_by": "ont augmenté de {pct}",
+    "narrative.decreased_by": "ont diminué de {pct}",
 
     # --- Narrative templates: Trend ---
     "narrative.increasing_trend": "une tendance à la hausse",
@@ -224,8 +226,9 @@ TRANSLATIONS = {
     # --- Words for correlation ---
     "word.positive": "positive",
     "word.inverse": "inverse",
-    "word.higher": "élevé",
-    "word.lower": "faible",
+    # plural feminine form, used as {association} in narrative.corr_association
+    "word.higher": "élevées",
+    "word.lower": "faibles",
     "word.no": "aucune",
     "word.weak": "faible",
     "word.moderate": "modérée",
@@ -236,6 +239,17 @@ TRANSLATIONS = {
     "word.remained_stable": "est resté stable",
     "word.and": "et",
     "word.while": "tandis que",
+
+    # --- Statistical confidence verbs (used by get_correlation_text) ---
+    "word.cannot_be_determined": "ne peut être déterminée",
+    "word.tentatively_suggests": "suggère provisoirement",
+    "word.suggests": "suggère",
+    "word.indicates": "indique",
+
+    # --- Statistical confidence caveats ---
+    "caveat.insufficient_data_points": "en raison d'un nombre insuffisant de points de données",
+    "caveat.few_data_points": "avec seulement {n} points de données, cela doit être interprété avec prudence",
+    "caveat.not_significant": "cela n'est pas statistiquement significatif (p={p_value:.2f}, n={n})",
 
     # --- Functional / COFOG categories ---
     "cofog.social_protection": "Protection sociale",

@@ -221,7 +221,7 @@ THRESHOLD_CORRELATION = 5   # Minimum for correlation analysis
 P_THRESHOLD = 0.10          # Threshold for statistical significance
 
 
-def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
+def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD, lang="en"):
     """
     Assess statistical confidence based on sample size and p-value.
 
@@ -232,37 +232,37 @@ def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
 
     Returns dict with:
     - confidence: "insufficient", "low", "high"
-    - verb: "cannot be determined", "tentatively suggests", "suggests", "indicates"
-    - caveat: optional caveat string or None
+    - verb: localized verb string
+    - caveat: localized caveat string or None
     - is_significant: whether result is statistically significant
     """
     if n < THRESHOLD_INSUFFICIENT:
         return {
             "confidence": "insufficient",
-            "verb": "cannot be determined",
-            "caveat": "due to insufficient data points",
+            "verb": t("word.cannot_be_determined", lang),
+            "caveat": t("caveat.insufficient_data_points", lang),
             "is_significant": False,
         }
 
     if n < THRESHOLD_CORRELATION:
         return {
             "confidence": "low",
-            "verb": "tentatively suggests",
-            "caveat": f"with only {n} data points, this should be interpreted with caution",
+            "verb": t("word.tentatively_suggests", lang),
+            "caveat": t("caveat.few_data_points", lang, n=n),
             "is_significant": False,
         }
 
     if p_value > p_threshold:
         return {
             "confidence": "low",
-            "verb": "suggests",
-            "caveat": f"this is not statistically significant (p={p_value:.2f}, n={n})",
+            "verb": t("word.suggests", lang),
+            "caveat": t("caveat.not_significant", lang, p_value=p_value, n=n),
             "is_significant": False,
         }
 
     return {
         "confidence": "high",
-        "verb": "indicates",
+        "verb": t("word.indicates", lang),
         "caveat": None,
         "is_significant": True,
     }
@@ -304,7 +304,7 @@ def get_correlation_text(df, x_col, y_col, lang="en"):
     intensity = t(intensity_key, lang)
 
     # Build narrative components
-    confidence = assess_statistical_confidence(n, p_value)
+    confidence = assess_statistical_confidence(n, p_value, lang=lang)
     relation = t("narrative.corr_relation", lang, intensity=intensity, direction=direction)
 
     if confidence["is_significant"]:
