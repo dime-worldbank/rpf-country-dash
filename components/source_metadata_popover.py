@@ -3,91 +3,89 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 from constants import START_YEAR
+from translations import t
 
 
 # ---------------------------------------------------------------------------
 # Shared source definitions – define once, reuse across charts.
-# Override fields per chart with {**_SOURCE, "label": "Custom Label"}.
+#
+# Each source has three i18n reference fields:
+#   - label_key        : per-source label (e.g. "source.boost_edu.label")
+#   - source_name_key  : shared across sources (e.g. "source_name.world_bank_boost")
+#   - description_key  : per-source methodology text (optional)
+#
+# The "key" field is the coverage/data-lookup key used to fetch coverage years
+# and source URLs from the pipeline.
 # ---------------------------------------------------------------------------
-
-_POVERTY_DESCRIPTION = (
-    "Poverty thresholds vary by country income classification: "
-    "$3.00 for Low Income, $4.20 for Lower Middle Income, "
-    "and $8.30 for Upper Middle and High Income countries."
-)
-
-_SUBNATIONAL_POVERTY_DESCRIPTION = (
-    _POVERTY_DESCRIPTION + " Subnational poverty rates come from both Global Subnational Atlas of Poverty (GSAP) and Subnational Poverty and Inequality Database (SPID)"
-)
 
 _BOOST = {
     "key": "boost",
-    "label": "BOOST Expenditure Data",
-    "source_name": "World Bank BOOST",
+    "label_key": "source.boost.label",
+    "source_name_key": "source_name.world_bank_boost",
     "source_url": "https://www.worldbank.org/en/programs/boost-portal/country-data",
 }
-_BOOST_EDU = {**_BOOST, "label": "Public Education Expenditure"}
-_BOOST_HEALTH = {**_BOOST, "label": "Public Health Expenditure"}
+_BOOST_EDU = {**_BOOST, "label_key": "source.boost_edu.label"}
+_BOOST_HEALTH = {**_BOOST, "label_key": "source.boost_health.label"}
 
 _POVERTY_RATE = {
     "key": "poverty_rate",
-    "label": "Poverty Rate",
-    "source_name": "World Bank Poverty and Inequality Platform",
-    "description": _POVERTY_DESCRIPTION,
+    "label_key": "source.poverty_rate.label",
+    "source_name_key": "source_name.world_bank_pip",
+    "description_key": "source.poverty_rate.description",
 }
 
 _SUBNATIONAL_POVERTY = {
     "key": "subnational_poverty_rate",
-    "label": "Subnational Poverty Rate",
-    "source_name": "World Bank",
-    "description": _SUBNATIONAL_POVERTY_DESCRIPTION,
+    "label_key": "source.subnational_poverty.label",
+    "source_name_key": "source_name.world_bank",
+    "description_key": "source.subnational_poverty.description",
 }
 
-_LEARNING_POVERTY = {"key": "learning_poverty_rate", "label": "Learning Poverty Rate", "source_name": "World Bank"}
+_LEARNING_POVERTY = {
+    "key": "learning_poverty_rate",
+    "label_key": "source.learning_poverty.label",
+    "source_name_key": "source_name.world_bank",
+}
 
-_HD_INDEX = {"key": "global_data_lab_hd_index", "label": "Subnational Human Development Index", "source_name": "Global Data Lab"}
+_HD_INDEX = {
+    "key": "global_data_lab_hd_index",
+    "label_key": "source.hd_index.label",
+    "source_name_key": "source_name.global_data_lab",
+}
 
-_ATTENDANCE = {"key": "global_data_lab_attendance", "label": "School Attendance Rate", "source_name": "Global Data Lab"}
+_ATTENDANCE = {
+    "key": "global_data_lab_attendance",
+    "label_key": "source.attendance.label",
+    "source_name_key": "source_name.global_data_lab",
+}
 
-_UHC = {"key": "universal_health_coverage_index_gho", "label": "Universal Health Coverage Index", "source_name": "WHO (GHO)"}
+_UHC = {
+    "key": "universal_health_coverage_index_gho",
+    "label_key": "source.uhc.label",
+    "source_name_key": "source_name.who_gho",
+}
 
 _PEFA = {
     "key": "pefa_by_pillar",
-    "label": "PEFA Assessment",
-    "source_name": "PEFA Secretariat",
-    "description": (
-        "PEFA assessments use letter grades (A to D, with + "
-        "modifiers). For this dashboard, grades are converted to "
-        "numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, "
-        "D=1). Pillar scores are the arithmetic mean of their "
-        "constituent indicators. "
-        "Data covers both the 2011 framework (28 indicators, 6 "
-        "pillars) and the 2016 framework (31 indicators, 7 pillars)."
-    ),
+    "label_key": "source.pefa.label",
+    "source_name_key": "source_name.pefa_secretariat",
+    "description_key": "source.pefa.description",
 }
 
 _EDU_PRIVATE = {
     "key": "edu_private_expenditure",
-    "label": "Private Education Expenditure",
-    "source_name": "World Bank ICP",
+    "label_key": "source.edu_private.label",
+    "source_name_key": "source_name.world_bank_icp",
+    "description_key": "source.edu_private.description",
     "source_url": "https://www.worldbank.org/en/programs/icp/data",
-    "description": (
-        "Derived as total education spending from the International "
-        "Comparison Program (ICP) minus BOOST public education "
-        "expenditure."
-    ),
 }
 
 _HEALTH_PRIVATE = {
     "key": "health_private_expenditure",
-    "label": "Out-of-Pocket Health Expenditure",
-    "source_name": "WHO Global Health Expenditure Database",
+    "label_key": "source.health_private.label",
+    "source_name_key": "source_name.who_health_db",
+    "description_key": "source.health_private.description",
     "source_url": "https://apps.who.int/nha/database/",
-    "description": (
-        "Out-of-pocket spending per person, calculated from "
-        "total health expenditure and the share paid out of "
-        "pocket, adjusted for inflation."
-    ),
 }
 
 
@@ -193,7 +191,7 @@ def _make_detail_row(label, value):
     )
 
 
-def _build_source_section(section, country_name=None):
+def _build_source_section(section, country_name=None, lang="en"):
     """Build the Dash components for a single source section.
 
     ``section`` is a dict with keys: label, source_name, and optionally
@@ -212,7 +210,7 @@ def _build_source_section(section, country_name=None):
     # Per-source description (right under the heading)
     desc = section.get("description")
     if desc:
-        children.append(_make_detail_row("Methodology", html.Span(desc)))
+        children.append(_make_detail_row(t("detail.methodology", lang), html.Span(desc)))
 
     # Source URL from pipeline (before source name)
     source_url = section.get("source_url")
@@ -224,23 +222,27 @@ def _build_source_section(section, country_name=None):
             rel="noopener noreferrer",
             className="source-info-link",
         )
-        children.append(_make_detail_row("More info", link))
+        children.append(_make_detail_row(t("detail.more_info", lang), link))
 
     # Source name
     source_name = section.get("source_name")
     if source_name:
-        children.append(_make_detail_row("Source", html.Span(source_name)))
+        children.append(_make_detail_row(t("detail.source", lang), html.Span(source_name)))
 
     # Coverage years
     coverage = section.get("coverage")
     if coverage:
-        label = f"Coverage for {country_name}" if country_name else "Coverage"
+        label = (
+            t("detail.coverage_for", lang, country=country_name)
+            if country_name
+            else t("detail.coverage", lang)
+        )
         children.append(_make_detail_row(label, html.Span(coverage)))
 
     return html.Div(children, className="rpf-source-section")
 
 
-def build_modal_children(info):
+def build_modal_children(info, lang="en"):
     """
     Build the ModalBody contents for a chart info modal.
 
@@ -266,7 +268,7 @@ def build_modal_children(info):
 
     # Per-source sections
     for section in source_sections:
-        body.append(_build_source_section(section, country_name=info.get("country_name")))
+        body.append(_build_source_section(section, country_name=info.get("country_name"), lang=lang))
 
     return [dbc.ModalBody(body, className="rpf-modal-body")]
 
@@ -319,7 +321,7 @@ def get_coverage_years(key, country, source_meta):
     return None, None
 
 
-def build_modal_info(chart_id, country, source_meta):
+def build_modal_info(chart_id, country, source_meta, lang="en"):
     """
     Build the complete info dict for the modal.
 
@@ -331,6 +333,7 @@ def build_modal_info(chart_id, country, source_meta):
         country: Selected country name
         source_meta: Dict with "boost_source_urls", "indicator_availability",
                      and "source_urls_by_country" from stored data
+        lang: Language code ("en", "fr") for translated labels/descriptions
 
     Returns:
         Dict with chart metadata, index, country, and source sections
@@ -344,10 +347,11 @@ def build_modal_info(chart_id, country, source_meta):
     source_sections = []
     for src in chart_meta.get("sources", []):
         key = src["key"]
+        description_key = src.get("description_key")
         section = {
-            "label": src.get("label", ""),
-            "source_name": src.get("source_name", ""),
-            "description": src.get("description"),
+            "label": t(src["label_key"], lang),
+            "source_name": t(src["source_name_key"], lang),
+            "description": t(description_key, lang) if description_key else None,
         }
 
         # Coverage years

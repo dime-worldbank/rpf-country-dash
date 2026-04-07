@@ -429,4 +429,42 @@ TRANSLATIONS = {
 
     # --- Overall budget ---
     "label.overall_budget": "Budget global",
+
+    # --- Source metadata modal (detail row labels) ---
+    "detail.methodology": "Méthodologie",
+    "detail.source": "Source",
+    "detail.more_info": "Plus d'informations",
+    "detail.coverage": "Couverture",
+    "detail.coverage_for": "Couverture pour {country}",
+
+    # --- Source metadata modal (source labels) ---
+    "source.boost.label": "Données de dépenses BOOST",
+    "source.boost_edu.label": "Dépenses publiques d'éducation",
+    "source.boost_health.label": "Dépenses publiques de santé",
+    "source.poverty_rate.label": "Taux de pauvreté",
+    "source.subnational_poverty.label": "Taux de pauvreté infranational",
+    "source.learning_poverty.label": "Taux de pauvreté des apprentissages",
+    "source.hd_index.label": "Indice de développement humain infranational",
+    "source.attendance.label": "Taux de scolarisation",
+    "source.uhc.label": "Indice de couverture sanitaire universelle",
+    "source.pefa.label": "Évaluation PEFA",
+    "source.edu_private.label": "Dépenses privées d'éducation",
+    "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
+
+    # --- Source metadata modal (source names) — shared across sources ---
+    "source_name.world_bank_boost": "BOOST de la Banque mondiale",
+    "source_name.world_bank_pip": "Plateforme de la Banque mondiale sur la pauvreté et les inégalités",
+    "source_name.world_bank": "Banque mondiale",
+    "source_name.world_bank_icp": "ICP de la Banque mondiale",
+    "source_name.global_data_lab": "Global Data Lab",
+    "source_name.who_gho": "OMS (GHO)",
+    "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
+    "source_name.pefa_secretariat": "Secrétariat PEFA",
+
+    # --- Source metadata modal (descriptions) ---
+    "source.poverty_rate.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé.",
+    "source.subnational_poverty.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé. Les taux de pauvreté infranationaux proviennent à la fois du Global Subnational Atlas of Poverty (GSAP) et de la Subnational Poverty and Inequality Database (SPID)",
+    "source.pefa.description": "Les évaluations PEFA utilisent des notes alphabétiques (de A à D, avec des modificateurs +). Pour ce tableau de bord, les notes sont converties en scores numériques (A=4, B+=3,5, B=3, C+=2,5, C=2, D+=1,5, D=1). Les scores des piliers sont la moyenne arithmétique de leurs indicateurs constitutifs. Les données couvrent à la fois le cadre de 2011 (28 indicateurs, 6 piliers) et le cadre de 2016 (31 indicateurs, 7 piliers).",
+    "source.edu_private.description": "Dérivées du total des dépenses d'éducation du Programme de comparaison internationale (ICP) moins les dépenses publiques d'éducation BOOST.",
+    "source.health_private.description": "Dépenses payées de la poche des ménages par personne, calculées à partir des dépenses totales de santé et de la part payée de la poche, ajustées pour l'inflation.",
 }

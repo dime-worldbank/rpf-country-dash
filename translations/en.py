@@ -426,4 +426,42 @@ TRANSLATIONS = {
 
     # --- Overall budget ---
     "label.overall_budget": "Overall budget",
+
+    # --- Source metadata modal (detail row labels) ---
+    "detail.methodology": "Methodology",
+    "detail.source": "Source",
+    "detail.more_info": "More info",
+    "detail.coverage": "Coverage",
+    "detail.coverage_for": "Coverage for {country}",
+
+    # --- Source metadata modal (source labels) ---
+    "source.boost.label": "BOOST Expenditure Data",
+    "source.boost_edu.label": "Public Education Expenditure",
+    "source.boost_health.label": "Public Health Expenditure",
+    "source.poverty_rate.label": "Poverty Rate",
+    "source.subnational_poverty.label": "Subnational Poverty Rate",
+    "source.learning_poverty.label": "Learning Poverty Rate",
+    "source.hd_index.label": "Subnational Human Development Index",
+    "source.attendance.label": "School Attendance Rate",
+    "source.uhc.label": "Universal Health Coverage Index",
+    "source.pefa.label": "PEFA Assessment",
+    "source.edu_private.label": "Private Education Expenditure",
+    "source.health_private.label": "Out-of-Pocket Health Expenditure",
+
+    # --- Source metadata modal (source names) — shared across sources ---
+    "source_name.world_bank_boost": "World Bank BOOST",
+    "source_name.world_bank_pip": "World Bank Poverty and Inequality Platform",
+    "source_name.world_bank": "World Bank",
+    "source_name.world_bank_icp": "World Bank ICP",
+    "source_name.global_data_lab": "Global Data Lab",
+    "source_name.who_gho": "WHO (GHO)",
+    "source_name.who_health_db": "WHO Global Health Expenditure Database",
+    "source_name.pefa_secretariat": "PEFA Secretariat",
+
+    # --- Source metadata modal (descriptions) ---
+    "source.poverty_rate.description": "Poverty thresholds vary by country income classification: $3.00 for Low Income, $4.20 for Lower Middle Income, and $8.30 for Upper Middle and High Income countries.",
+    "source.subnational_poverty.description": "Poverty thresholds vary by country income classification: $3.00 for Low Income, $4.20 for Lower Middle Income, and $8.30 for Upper Middle and High Income countries. Subnational poverty rates come from both Global Subnational Atlas of Poverty (GSAP) and Subnational Poverty and Inequality Database (SPID)",
+    "source.pefa.description": "PEFA assessments use letter grades (A to D, with + modifiers). For this dashboard, grades are converted to numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, D=1). Pillar scores are the arithmetic mean of their constituent indicators. Data covers both the 2011 framework (28 indicators, 6 pillars) and the 2016 framework (31 indicators, 7 pillars).",
+    "source.edu_private.description": "Derived as total education spending from the International Comparison Program (ICP) minus BOOST public education expenditure.",
+    "source.health_private.description": "Out-of-pocket spending per person, calculated from total health expenditure and the share paid out of pocket, adjusted for inflation.",
 }
