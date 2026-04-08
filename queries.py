@@ -1,11 +1,12 @@
 import os
 import time
 import logging
-import threading
 import pandas as pd
 from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
+
+from query_cache import PersistentQueryCache
 
 
 logging.basicConfig(
@@ -16,8 +17,10 @@ logging.basicConfig(
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
-# Cache tuning (env overrides optional)
-QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
+# Cache tuning (env overrides optional). TTL is a safety ceiling; primary
+# invalidation is via the external refresh endpoint in server.py.
+QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
+QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "86400"))  # 24h
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
@@ -40,11 +43,11 @@ class QueryService:
         return QueryService._instance
 
     def __init__(self):
-        # Simple TTL cache: {query: (expires_at_epoch, dataframe)}
-        self._cache = {}
-        self._cache_lock = threading.Lock()
-        self._cache_ttl = QUERY_CACHE_TTL_SECONDS
-        self._cache_max_entries = QUERY_CACHE_MAX_ENTRIES
+        self._cache = PersistentQueryCache(
+            cache_dir=QUERY_CACHE_DIR,
+            ttl_seconds=QUERY_CACHE_TTL_SECONDS,
+            max_entries=QUERY_CACHE_MAX_ENTRIES,
+        )
 
         self.country_whitelist = None
         if PUBLIC_ONLY:
@@ -56,49 +59,29 @@ class QueryService:
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
 
     # ---- Cache helpers -------------------------------------------------------
-    def _cache_get(self, key):
-        now = time.time()
-        with self._cache_lock:
-            hit = self._cache.get(key)
-            if not hit:
-                return None
-            expires_at, df = hit
-            if now >= expires_at:
-                # expired; remove and miss
-                del self._cache[key]
-                return None
-            return df
-
-    def _cache_set(self, key, df):
-        expires_at = time.time() + self._cache_ttl
-        with self._cache_lock:
-            # Evict oldest one if we exceed max size (simple FIFO)
-            if len(self._cache) >= self._cache_max_entries:
-                oldest_key = next(iter(self._cache))
-                del self._cache[oldest_key]
-            self._cache[key] = (expires_at, df)
-
     def clear_cache(self):
-        with self._cache_lock:
-            self._cache.clear()
-        logging.info("Query cache cleared")
+        self._cache.clear()
 
     def invalidate_query(self, query: str):
-        with self._cache_lock:
-            removed = self._cache.pop(query, None) is not None
-        if removed:
+        if self._cache.invalidate(query):
             logging.info("Invalidated cache for query: %s", query)
 
+    def cache_status(self) -> list[dict]:
+        return self._cache.status()
+
     # ---- Cached databricks query ---------------------------------------------
-    def execute_query(self, query):
+    def execute_query(self, query, persistent: bool = True):
         """
         Executes a query and returns the result as a pandas DataFrame.
+
+        When `persistent` is False the result is neither read from nor
+        written to the persistent cache — used for sensitive queries such
+        as user credentials.
         """
-        # Try cache first
-        cached = self._cache_get(query)
-        if cached is not None:
-            logging.info("CACHE HIT for query (TTL=%ss): %s", self._cache_ttl, query)
-            return cached.copy(deep=True)
+        if persistent:
+            cached = self._cache.get(query)
+            if cached is not None:
+                return cached
 
         start = time.time()
         with sql.connect(
@@ -112,7 +95,8 @@ class QueryService:
 
         logging.info(f"DB MISS (queried) took {time.time() - start:.2f} sec. query: {query}")
 
-        self._cache_set(query, df)
+        if persistent:
+            self._cache.set(query, df)
         return df.copy(deep=True)
 
     def fetch_data(self, query):
@@ -245,7 +229,7 @@ class QueryService:
             SELECT username, salted_password
             FROM prd_mega.sboost4.dashboard_user_credentials
         """
-        df = self.execute_query(query)
+        df = self.execute_query(query, persistent=False)
         return dict(zip(df["username"], df["salted_password"]))
 
 
@@ -266,3 +250,56 @@ class QueryService:
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)
+
+    # ---- Pre-warm registry ---------------------------------------------------
+    # Parameterless "global" queries that back the initial dashboard load.
+    # The external pipeline hits /api/cache/refresh after loading new data;
+    # that endpoint clears the cache and re-runs every query listed here so
+    # the first user after a refresh gets instant page loads. Per-country
+    # queries stay lazy — warming them would explode combinatorially.
+    PREWARM_QUERY_NAMES = [
+        "get_expenditure_w_poverty_by_country_year",
+        "get_expenditure_by_country_func_econ_year",
+        "get_expenditure_by_country_sub_func_year",
+        "get_expenditure_by_country_geo1_year",
+        "expenditure_and_outcome_by_country_geo1_func_year",
+        "get_learning_poverty_rate",
+        "get_universal_health_coverage_index",
+        "get_health_private_expenditure",
+        "get_edu_private_expenditure",
+        "get_indicator_data_availability",
+        "get_boost_source_urls",
+    ]
+
+    def refresh_cache(self) -> list[dict]:
+        """
+        Clear the persistent cache and re-run every pre-warm query.
+        Returns a per-query status list suitable for a JSON response.
+        Intended to be called from the external pipeline refresh endpoint.
+        """
+        logging.info("Refreshing query cache (%d queries)", len(self.PREWARM_QUERY_NAMES))
+        self._cache.clear()
+
+        results = []
+        for name in self.PREWARM_QUERY_NAMES:
+            entry = {"name": name}
+            fn = getattr(self, name, None)
+            if fn is None:
+                entry["status"] = "error"
+                entry["error"] = "method not found"
+                results.append(entry)
+                continue
+            start = time.time()
+            try:
+                df = fn()
+                entry["status"] = "ok"
+                entry["rows"] = int(len(df))
+            except Exception as e:
+                logging.exception("Prewarm failed for %s", name)
+                entry["status"] = "error"
+                entry["error"] = str(e)
+            entry["duration_s"] = round(time.time() - start, 3)
+            results.append(entry)
+
+        logging.info("Query cache refresh complete")
+        return results
