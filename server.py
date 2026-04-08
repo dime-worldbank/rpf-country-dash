@@ -17,6 +17,35 @@ login_manager.init_app(server)
 
 logger = logging.getLogger(__name__)
 
+# Posit Connect serves content under a prefix like "/content/<guid>/" and
+# passes the full path to the app rather than stripping the prefix. Dash knows
+# about this via DASH_URL_BASE_PATHNAME and registers its own routes at the
+# prefixed paths, but plain @server.route() registrations don't — so we have
+# to register each API route at BOTH the bare path (for local dev) and the
+# prefixed path (for Connect). The helper below does that once per route.
+URL_PREFIX = os.getenv("DASH_URL_BASE_PATHNAME", "").rstrip("/")
+
+
+def _register_api_route(rule, **options):
+    """Register a Flask view at both the bare rule and the Connect-prefixed
+    rule. When URL_PREFIX is empty (local dev) only the bare rule registers."""
+    def decorator(view_func):
+        server.add_url_rule(
+            rule,
+            endpoint=view_func.__name__,
+            view_func=view_func,
+            **options,
+        )
+        if URL_PREFIX:
+            server.add_url_rule(
+                f"{URL_PREFIX}{rule}",
+                endpoint=f"{view_func.__name__}__prefixed",
+                view_func=view_func,
+                **options,
+            )
+        return view_func
+    return decorator
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -28,9 +57,14 @@ def load_user(user_id):
 # deploy has actually landed on Posit Connect. Hit /api/version in a browser;
 # if you see the JSON below, the new code is running. If you see the dashboard
 # HTML, the deploy didn't take effect.
-@server.route("/api/version", methods=["GET"])
+@_register_api_route("/api/version", methods=["GET"])
 def version_endpoint():
-    return jsonify({"marker": "cache-refresh-deploy-check-2026-04-08", "status": "ok"})
+    return jsonify({
+        "marker": "cache-refresh-deploy-check-2026-04-08",
+        "status": "ok",
+        "url_prefix": URL_PREFIX or "(none)",
+        "request_path": request.path,
+    })
 
 
 # ---- External cache refresh endpoints ----------------------------------------
@@ -51,7 +85,7 @@ def _check_refresh_token() -> tuple[bool, tuple]:
     return True, (None, None)
 
 
-@server.route("/api/cache/refresh", methods=["GET", "POST"])
+@_register_api_route("/api/cache/refresh", methods=["GET", "POST"])
 def refresh_cache_endpoint():
     ok, err = _check_refresh_token()
     if not ok:
@@ -80,7 +114,7 @@ def refresh_cache_endpoint():
     )
 
 
-@server.route("/api/cache/status", methods=["GET"])
+@_register_api_route("/api/cache/status", methods=["GET"])
 def cache_status_endpoint():
     ok, err = _check_refresh_token()
     if not ok:
