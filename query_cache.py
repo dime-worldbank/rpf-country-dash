@@ -40,7 +40,16 @@ class PersistentQueryCache:
         self._max_entries = max_entries
         self._mem: dict[str, tuple[float, pd.DataFrame]] = {}
         self._lock = threading.Lock()
-        os.makedirs(self._cache_dir, exist_ok=True)
+        try:
+            os.makedirs(self._cache_dir, exist_ok=True)
+            abs_dir = os.path.abspath(self._cache_dir)
+            logging.info(
+                "PersistentQueryCache initialized: dir=%s pid=%d", abs_dir, os.getpid()
+            )
+        except Exception as e:
+            logging.warning(
+                "PersistentQueryCache could not create dir %s: %s", self._cache_dir, e
+            )
         self._index_path = os.path.join(self._cache_dir, "index.json")
         self._index = self._load_index()
 
@@ -177,3 +186,61 @@ class PersistentQueryCache:
                     }
                 )
             return out
+
+    def diagnostics(self) -> dict:
+        """Return raw filesystem / cache state for debugging.
+
+        Exposes whether the cache dir exists and is writable, how many parquet
+        files are actually on disk, how many entries the in-memory index has,
+        and how many are in the process-local memory dict. Lets us diagnose
+        the common Posit Connect failure modes (non-writable cache dir,
+        per-worker filesystem isolation, stale index) from a single HTTP hit.
+        """
+        with self._lock:
+            abs_dir = os.path.abspath(self._cache_dir)
+            dir_exists = os.path.isdir(abs_dir)
+            files_on_disk = []
+            if dir_exists:
+                try:
+                    files_on_disk = sorted(
+                        f for f in os.listdir(abs_dir) if f.endswith(".parquet")
+                    )
+                except OSError:
+                    pass
+
+            # Write probe: try to create and delete a tiny file to verify the
+            # directory is actually writable by this worker.
+            writable = False
+            write_error = None
+            try:
+                if not dir_exists:
+                    os.makedirs(abs_dir, exist_ok=True)
+                probe_path = os.path.join(abs_dir, ".write_probe")
+                with open(probe_path, "w") as f:
+                    f.write("ok")
+                os.remove(probe_path)
+                writable = True
+            except Exception as e:
+                write_error = f"{type(e).__name__}: {e}"
+
+            total_size = 0
+            for fname in files_on_disk:
+                try:
+                    total_size += os.path.getsize(os.path.join(abs_dir, fname))
+                except OSError:
+                    pass
+
+            return {
+                "cache_dir": abs_dir,
+                "cache_dir_exists": dir_exists,
+                "cache_dir_writable": writable,
+                "write_error": write_error,
+                "files_on_disk_count": len(files_on_disk),
+                "files_on_disk_total_bytes": total_size,
+                "index_entries": len(self._index),
+                "memory_entries": len(self._mem),
+                "index_path": self._index_path,
+                "index_path_exists": os.path.exists(self._index_path),
+                "pid": os.getpid(),
+                "cwd": os.getcwd(),
+            }

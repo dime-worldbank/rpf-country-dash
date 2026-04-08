@@ -24,7 +24,10 @@ BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Cache tuning (env overrides optional). TTL is a safety ceiling; primary
 # invalidation is via the external refresh endpoint in server.py.
-QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
+# Default to /tmp rather than a relative path: on Posit Connect the working
+# directory can behave unpredictably across worker restarts, whereas /tmp is
+# always writable and shared across gunicorn workers of the same deployment.
+QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "/tmp/rpf-country-dash-cache")
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "86400"))  # 24h
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
@@ -73,6 +76,9 @@ class QueryService:
 
     def cache_status(self) -> list[dict]:
         return self._cache.status()
+
+    def cache_diagnostics(self) -> dict:
+        return self._cache.diagnostics()
 
     # ---- Cached databricks query ---------------------------------------------
     def execute_query(self, query, persistent: bool = True):

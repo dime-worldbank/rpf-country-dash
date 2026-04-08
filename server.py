@@ -129,4 +129,9 @@ def cache_status_endpoint():
     from queries import QueryService
 
     db = QueryService.get_instance()
-    return jsonify({"entries": db.cache_status()})
+    return jsonify(
+        {
+            "diagnostics": db.cache_diagnostics(),
+            "entries": db.cache_status(),
+        }
+    )
