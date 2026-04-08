@@ -23,7 +23,13 @@ logger = logging.getLogger(__name__)
 # have to be registered at BOTH the bare path (for local dev) and the
 # prefixed path (for Connect). Reuses the same DEFAULT_ROOT_PATH env var that
 # app.py already relies on for root-path handling.
-URL_PREFIX = os.getenv("DEFAULT_ROOT_PATH", "/").rstrip("/")
+#
+# Normalize so the final prefix always starts with "/" and has no trailing
+# "/", regardless of whether the env var was set to "content/guid",
+# "/content/guid", "/content/guid/", or left unset. An empty/"/"-only value
+# means no prefix (local dev).
+_raw_prefix = os.getenv("DEFAULT_ROOT_PATH", "").strip().strip("/")
+URL_PREFIX = f"/{_raw_prefix}" if _raw_prefix else ""
 
 
 def _register_api_route(rule, **options):
