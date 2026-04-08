@@ -22,7 +22,11 @@ from typing import Optional
 import pandas as pd
 
 
-logger = logging.getLogger(__name__)
+# Use the root logger (configured by queries.py via basicConfig) rather than
+# a module logger, so INFO-level cache hit/miss lines surface on Posit Connect
+# regardless of how gunicorn has configured handlers.
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def _hash_query(query_text: str) -> str:

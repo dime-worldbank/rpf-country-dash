@@ -13,6 +13,11 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
+# basicConfig is a no-op if root already has handlers (which is the case on
+# Posit Connect, where gunicorn has configured logging before this module is
+# imported). Force the level explicitly so INFO-level query/cache lines show
+# up in Connect's log viewer.
+logging.getLogger().setLevel(logging.INFO)
 
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
