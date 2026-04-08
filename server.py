@@ -41,7 +41,7 @@ def _check_refresh_token() -> tuple[bool, tuple]:
     return True, (None, None)
 
 
-@server.route("/api/cache/refresh", methods=["POST"])
+@server.route("/api/cache/refresh", methods=["GET", "POST"])
 def refresh_cache_endpoint():
     ok, err = _check_refresh_token()
     if not ok:
