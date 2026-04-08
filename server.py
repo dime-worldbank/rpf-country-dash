@@ -23,6 +23,16 @@ def load_user(user_id):
     return User(user_id)
 
 
+# ---- Deploy marker endpoint --------------------------------------------------
+# Trivial unauthenticated endpoint used to verify whether a new rsconnect
+# deploy has actually landed on Posit Connect. Hit /api/version in a browser;
+# if you see the JSON below, the new code is running. If you see the dashboard
+# HTML, the deploy didn't take effect.
+@server.route("/api/version", methods=["GET"])
+def version_endpoint():
+    return jsonify({"marker": "cache-refresh-deploy-check-2026-04-08", "status": "ok"})
+
+
 # ---- External cache refresh endpoints ----------------------------------------
 # The upstream data pipeline hits POST /api/cache/refresh after loading new
 # data. The endpoint clears the persistent query cache and pre-warms every
