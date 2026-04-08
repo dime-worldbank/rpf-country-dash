@@ -18,12 +18,12 @@ login_manager.init_app(server)
 logger = logging.getLogger(__name__)
 
 # Posit Connect serves content under a prefix like "/content/<guid>/" and
-# passes the full path to the app rather than stripping the prefix. Dash knows
-# about this via DASH_URL_BASE_PATHNAME and registers its own routes at the
-# prefixed paths, but plain @server.route() registrations don't — so we have
-# to register each API route at BOTH the bare path (for local dev) and the
-# prefixed path (for Connect). The helper below does that once per route.
-URL_PREFIX = os.getenv("DASH_URL_BASE_PATHNAME", "").rstrip("/")
+# passes the full path to the app rather than stripping the prefix. Plain
+# @server.route() registrations don't know about the prefix, so API routes
+# have to be registered at BOTH the bare path (for local dev) and the
+# prefixed path (for Connect). Reuses the same DEFAULT_ROOT_PATH env var that
+# app.py already relies on for root-path handling.
+URL_PREFIX = os.getenv("DEFAULT_ROOT_PATH", "/").rstrip("/")
 
 
 def _register_api_route(rule, **options):
