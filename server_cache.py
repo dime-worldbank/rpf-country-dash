@@ -1,8 +1,9 @@
+import logging
 import threading
-from dash.exceptions import PreventUpdate
 
 _store = {}
 _lock = threading.Lock()
+logger = logging.getLogger(__name__)
 
 
 def set(key, value):
@@ -10,11 +11,12 @@ def set(key, value):
         _store[key] = value
 
 
-def get(key):
+def get(key, default=None):
     with _lock:
         value = _store.get(key)
     if value is None:
-        raise PreventUpdate
+        logger.warning("server_cache miss for key: %s", key)
+        return default
     return value
 
 

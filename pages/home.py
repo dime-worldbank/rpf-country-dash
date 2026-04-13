@@ -1076,6 +1076,8 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
         return empty_plot("Data not available")
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
+    if not geojson:
+        return empty_plot("Loading boundary data...")
     disputed_geojson = filter_geojson_by_country(server_cache.get("disputed_boundaries"), country)
     lat, lon = [
         server_cache.get("basic_country_info")[country].get(k)
@@ -1146,6 +1148,8 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         return empty_plot("Data not available")
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
+    if not geojson:
+        return empty_plot("Loading boundary data...")
     disputed_geojson = filter_geojson_by_country(
         server_cache.get("disputed_boundaries"), country
     )

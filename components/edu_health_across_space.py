@@ -252,13 +252,16 @@ def update_func_expenditure_map(
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
     disputed_geojson = server_cache.get("disputed_boundaries")
+    basic_info = server_cache.get("basic_country_info")
+    if not geojson or not disputed_geojson or not basic_info:
+        return empty_plot("Loading data...")
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
     lat, lon = [
-        server_cache.get("basic_country_info")[country].get(k)
+        basic_info[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = server_cache.get("basic_country_info")[country]["zoom"]
+    zoom = basic_info[country]["zoom"]
 
     # Drop NaN values and format
     df = df.dropna(subset=[expenditure_type])
@@ -384,15 +387,17 @@ def update_hd_index_map(
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
+    disputed_geojson = server_cache.get("disputed_boundaries")
+    basic_info = server_cache.get("basic_country_info")
+    if not geojson or not disputed_geojson or not basic_info:
+        return empty_plot("Loading data...")
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
-    disputed_geojson = server_cache.get("disputed_boundaries")
-
     lat, lon = [
-        server_cache.get("basic_country_info")[country].get(k)
+        basic_info[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = server_cache.get("basic_country_info")[country]["zoom"]
+    zoom = basic_info[country]["zoom"]
 
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
