@@ -308,6 +308,7 @@ def update_func_expenditure_map(
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
+        uirevision=f"{lat},{lon}",
         title=f"Subnational {func} Spending",
         plot_bgcolor="white",
         coloraxis_colorbar=dict(
@@ -441,6 +442,7 @@ def update_hd_index_map(
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(
+        uirevision=f"{lat},{lon}",
         title=f"Subnational {outcome_name}",
         plot_bgcolor="white",
         coloraxis_colorbar=dict(

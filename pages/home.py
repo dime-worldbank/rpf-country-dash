@@ -691,6 +691,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         fig.add_trace(no_data_trace)
 
     fig.update_layout(
+        uirevision=f"{lat},{lon}",
         title="How much was spent in each region?",
         plot_bgcolor="white",
         margin=dict(l=40, r=40, t=60, b=80),
@@ -748,6 +749,7 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
         fig.add_trace(no_data_trace)
 
     fig.update_layout(
+        uirevision=f"{lat},{lon}",
         title="How much was spent per person in each region?",
         plot_bgcolor="white",
         margin=dict(l=40, r=40, t=60, b=80),
@@ -823,6 +825,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
 
     fig.update_layout(
+        uirevision=f"{lat},{lon}",
         title="What percent of the population is living in poverty?",
         plot_bgcolor="white",
         margin=dict(l=40, r=40, t=60, b=80),
