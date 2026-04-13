@@ -393,7 +393,7 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     else:
         data_to_store = geo_data
 
-    if data_to_store.get(country):
+    if data_to_store.get(country) and server_cache.has(f"subnat_boundaries:{country}"):
         return data_to_store
 
     db = QueryService.get_instance()
