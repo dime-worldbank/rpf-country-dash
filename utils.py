@@ -19,7 +19,21 @@ from constants import (
 from dash import dcc, get_app, html
 from flask_login import current_user
 from math import isnan
-from shapely.geometry import shape, MultiPolygon, Polygon
+from shapely.geometry import shape, mapping, MultiPolygon, Polygon
+
+
+def _round_coords(coords, precision=5):
+    if isinstance(coords[0], (list, tuple)):
+        return [_round_coords(c, precision) for c in coords]
+    return [round(x, precision) for x in coords]
+
+
+def simplify_geometry(geojson_geometry, tolerance=0.005, precision=5):
+    geom = shape(geojson_geometry)
+    simplified = geom.simplify(tolerance, preserve_topology=True)
+    result = mapping(simplified)
+    result["coordinates"] = _round_coords(result["coordinates"], precision)
+    return result
 
 
 CORRELATION_THRESHOLDS = {

@@ -32,7 +32,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 import server_cache
 from server import server
-from utils import get_login_path, get_prefixed_path
+from utils import get_login_path, get_prefixed_path, simplify_geometry
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
     SHOW_FOOTER, FOOTER_ACKNOWLEDGMENT_TEXT,
@@ -272,7 +272,7 @@ def fetch_subnational_data_once(data, country_data):
             "features": [
                 {
                     "properties": {"country": x[0], "region": x[2]},
-                    "geometry": json.loads(x[1]),
+                    "geometry": simplify_geometry(json.loads(x[1])),
                 }
                 for x in zip(df_disputed.country_name, df_disputed.boundary, df_disputed.region_name)
             ],
@@ -403,7 +403,7 @@ def fetch_subnat_boundary_data_once(geo_data, country):
         "features": [
             {
                 "properties": {"country": x[0], "region": x[1]},
-                "geometry": json.loads(x[2]),
+                "geometry": simplify_geometry(json.loads(x[2])),
             }
             for x in zip(df.country_name, df.admin1_region, df.boundary)
         ],
