@@ -30,6 +30,7 @@ from components.source_metadata_popover import (
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
+import server_cache
 from server import server
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
@@ -209,10 +210,8 @@ def fetch_data_once(data):
     if data is None:
         df = db.get_expenditure_w_poverty_by_country_year()
         countries = sorted(df["country_name"].unique())
-        return {
-            "countries": countries,
-            "expenditure_w_poverty_by_country_year": df.to_dict("records"),
-        }
+        server_cache.set("expenditure_w_poverty", df)
+        return {"ready": True, "countries": countries}
     return no_update
 
 @app.callback(
@@ -250,14 +249,11 @@ def fetch_func_data_once(data):
         )
         prop_econ_by_func_df = prepare_prop_econ_by_func_df(func_econ_df, agg_dict)
 
-        return {
-            "expenditure_by_country_func_econ_year": func_econ_df.to_dict("records"),
-            "expenditure_by_country_func_year": func_df.to_dict("records"),
-            "expenditure_by_country_econ_year": econ_df.to_dict("records"),
-            "econ_expenditure_prop_by_func_country_year": prop_econ_by_func_df.to_dict(
-                "records"
-            ),
-        }
+        server_cache.set("func_econ_raw", func_econ_df)
+        server_cache.set("func_by_country_year", func_df)
+        server_cache.set("econ_by_country_year", econ_df)
+        server_cache.set("prop_econ_by_func", prop_econ_by_func_df)
+        return {"ready": True}
     return no_update
 
 
@@ -287,13 +283,12 @@ def fetch_subnational_data_once(data, country_data):
         geo1_func_df = db.expenditure_and_outcome_by_country_geo1_func_year()
         geo0_sub_func_df = db.get_expenditure_by_country_sub_func_year()
 
-        return {
-            "subnational_poverty_rate": poverty_df.to_dict("records"),
-            "disputed_boundaries": disputed_geojson,
-            "expenditure_by_country_geo1_year": geo1_df.to_dict("records"),
-            "expenditure_and_outcome_by_country_geo1_func_year": geo1_func_df.to_dict("records"),
-            "expenditure_by_country_sub_func_year": geo0_sub_func_df.to_dict("records"),
-        }
+        server_cache.set("subnational_poverty_rate", poverty_df)
+        server_cache.set("disputed_boundaries", disputed_geojson)
+        server_cache.set("geo1_expenditure", geo1_df)
+        server_cache.set("geo1_func_expenditure", geo1_func_df)
+        server_cache.set("sub_func_expenditure", geo0_sub_func_df)
+        return {"ready": True}
     return no_update
 
 
@@ -345,14 +340,8 @@ def fetch_country_data_once(countries, subnational_data, country_data):
         country_df = db.get_basic_country_data(country_labels)
         country_info = country_df.set_index("country_name").T.to_dict()
 
-        expenditure_df = pd.DataFrame(
-            subnational_data["expenditure_by_country_geo1_year"],
-            columns=["country_name", "year"],
-        )
-        poverty_df = pd.DataFrame(
-            subnational_data["subnational_poverty_rate"],
-            columns=["country_name", "year", "poverty_rate"],
-        )
+        expenditure_df = server_cache.get("geo1_expenditure")[["country_name", "year"]]
+        poverty_df = server_cache.get("subnational_poverty_rate")[["country_name", "year", "poverty_rate"]]
 
         expenditure_years = (
             expenditure_df.groupby("country_name")["year"]
@@ -385,7 +374,8 @@ def fetch_country_data_once(countries, subnational_data, country_data):
             country_income_level = info["income_level"]
             info["poverty_bounds"] = poverty_level_stats[country_income_level]
 
-        return {"basic_country_info": country_info}
+        server_cache.set("basic_country_info", country_info)
+        return {"ready": True}
     return no_update
 
 
@@ -418,7 +408,8 @@ def fetch_subnat_boundary_data_once(geo_data, country):
             for x in zip(df.country_name, df.admin1_region, df.boundary)
         ],
     }
-    data_to_store[country] = boundaries_geojson
+    server_cache.set(f"subnat_boundaries:{country}", boundaries_geojson)
+    data_to_store[country] = True
     return data_to_store
 
 

@@ -8,6 +8,7 @@ import numpy as np
 from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
+import server_cache
 from utils import (
     add_currency_column,
     empty_plot,
@@ -71,13 +72,10 @@ def layout():
 )
 def fetch_health_total_data_once(health_data, shared_data):
     if health_data is None and shared_data:
-        # filter shared data down to health specific
-        exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
+        exp_by_func = server_cache.get("func_by_country_year")
         pub_exp = exp_by_func[exp_by_func.func == "Health"]
-
-        return {
-            "health_public_expenditure": pub_exp.to_dict("records"),
-        }
+        server_cache.set("health_public_expenditure", pub_exp)
+        return {"ready": True}
     return dash.no_update
 
 
@@ -88,10 +86,8 @@ def fetch_health_total_data_once(health_data, shared_data):
 def fetch_health_outcome_data_once(health_data):
     if health_data is None:
         uhc_index = db.get_universal_health_coverage_index()
-
-        return {
-            "uhc_index": uhc_index.to_dict("records"),
-        }
+        server_cache.set("uhc_index", uhc_index)
+        return {"ready": True}
     return dash.no_update
 
 
@@ -102,9 +98,8 @@ def fetch_health_outcome_data_once(health_data):
 def fetch_health_private_data_once(health_data):
     if health_data is None:
         priv_exp = db.get_health_private_expenditure()
-        return {
-            "health_private_expenditure": priv_exp.to_dict("records"),
-        }
+        server_cache.set("health_private_expenditure", priv_exp)
+        return {"ready": True}
     return dash.no_update
 
 
@@ -115,9 +110,8 @@ def fetch_health_private_data_once(health_data):
 def fetch_health_sub_func_data_once(health_data):
     if health_data is None:
         exp_by_sub_func = db.get_expenditure_by_country_sub_func_year()
-        return {
-            "expenditure_by_country_sub_func_year": exp_by_sub_func.to_dict("records"),
-        }
+        server_cache.set("health_sub_func_expenditure", exp_by_sub_func)
+        return {"ready": True}
     return dash.no_update
 
 
@@ -436,8 +430,8 @@ def total_health_figure(df, currency_code):
     return fig
 
 
-def health_narrative(data, country):
-    spending = pd.DataFrame(data["health_public_expenditure"])
+def health_narrative(country):
+    spending = server_cache.get("health_public_expenditure")
     spending = filter_country_sort_year(spending, country)
 
     plot_df = (
@@ -524,7 +518,7 @@ def render_overview_total_figure(data, country, country_data):
     if not data or not country_data:
         return dash.no_update, dash.no_update
 
-    all_countries = pd.DataFrame(data["health_public_expenditure"])
+    all_countries = server_cache.get("health_public_expenditure")
     df = filter_country_sort_year(all_countries, country)
 
     if df.empty:
@@ -532,10 +526,10 @@ def render_overview_total_figure(data, country, country_data):
             empty_plot("No data available for this period"),
             generate_error_prompt("DATA_UNAVAILABLE"),
         )
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
 
     fig = total_health_figure(df, currency_code)
-    return fig, health_narrative(data, country)
+    return fig, health_narrative(country)
 
 
 def public_private_narrative(df, country):
@@ -575,13 +569,13 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         return dash.no_update, dash.no_update
 
     fig_title = "What % was spent by the govt vs household?"
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
 
-    private = pd.DataFrame(private_data["health_private_expenditure"])
+    private = server_cache.get("health_private_expenditure")
     private = filter_country_sort_year(private, country)
 
-    public_data = pd.DataFrame(public_data["health_public_expenditure"])
-    public = filter_country_sort_year(public_data, country)
+    public_df = server_cache.get("health_public_expenditure")
+    public = filter_country_sort_year(public_df, country)
 
     merged = pd.merge(
         private,
@@ -695,12 +689,12 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     if not total_data or not outcome_data:
         return dash.no_update, dash.no_update, dash.no_update
 
-    uhc = pd.DataFrame(outcome_data["uhc_index"])
+    uhc = server_cache.get("uhc_index")
     uhc = filter_country_sort_year(uhc, country)
 
-    pub_exp = pd.DataFrame(total_data["health_public_expenditure"])
+    pub_exp = server_cache.get("health_public_expenditure")
     pub_exp = filter_country_sort_year(pub_exp, country)
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
     add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -801,7 +795,7 @@ def update_health_year_range(data, country):
     Input("stored-basic-country-data", "data"),
 )
 def render_health_subnat_overview(func_data, sub_func_data, country, selected_year, country_data):
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_overview(
         func_data, sub_func_data, country, selected_year, 'Health', currency_code
     )
@@ -861,5 +855,5 @@ def update_health_index_map(
     Input("stored-basic-country-data", "data"),
 )
 def render_health_subnat_rank(subnational_data, country, base_year, country_data):
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_rank(subnational_data, country, base_year, 'Health', currency_code)
