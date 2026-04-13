@@ -484,38 +484,43 @@ def add_disputed_overlay(fig, disputed_geojson, zoom):
     trace.showlegend = False
     fig.add_trace(trace)
 
-    # Simulate dashed border overlay
-    def add_dashed_line(lons, lats, dash_length=1, gap_length=1):
-        # dash_length and gap_length are in number of points, not meters
-        n = len(lons)
-        i = 0
-        while i < n - 1:
-            # Draw dash
-            dash_end = min(i + dash_length, n - 1)
-            fig.add_trace(go.Scattermapbox(
-                lon=list(lons[i:dash_end+1]),
-                lat=list(lats[i:dash_end+1]),
-                mode="lines",
-                line=dict(color="black", width=2),
-                fill=None,
-                showlegend=False,
-                hoverinfo="skip",
-            ))
-            i = dash_end + gap_length
+    # Simulate dashed border overlay using a single trace with None separators
+    all_lons = []
+    all_lats = []
 
     for feature in disputed_geojson["features"]:
         geometry = feature["geometry"]
         polygons = geometry["coordinates"]
 
         for poly in polygons:
-            # poly is a list of linear rings, first is exterior
             if not poly or not poly[0]:
                 continue
             exterior = poly[0]
             if len(exterior) < 2:
                 continue
             lons, lats = zip(*exterior)
-            add_dashed_line(lons, lats)
+            n = len(lons)
+            i = 0
+            dash_length = 1
+            gap_length = 1
+            while i < n - 1:
+                dash_end = min(i + dash_length, n - 1)
+                all_lons.extend(lons[i:dash_end+1])
+                all_lats.extend(lats[i:dash_end+1])
+                all_lons.append(None)
+                all_lats.append(None)
+                i = dash_end + gap_length
+
+    if all_lons:
+        fig.add_trace(go.Scattermapbox(
+            lon=all_lons,
+            lat=all_lats,
+            mode="lines",
+            line=dict(color="black", width=2),
+            fill=None,
+            showlegend=False,
+            hoverinfo="skip",
+        ))
     return fig
 
 
