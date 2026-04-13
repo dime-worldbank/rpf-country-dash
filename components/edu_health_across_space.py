@@ -281,7 +281,7 @@ def update_func_expenditure_map(
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
         zoom=zoom,
-        mapbox_style="carto-positron",
+        mapbox_style="open-street-map",
         hover_data={expenditure_type: False},
         color_continuous_scale=get_map_colorscale(theme),
     )
@@ -414,7 +414,7 @@ def update_hd_index_map(
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
         zoom=zoom,
-        mapbox_style="carto-positron",
+        mapbox_style="open-street-map",
         color_continuous_scale=get_map_colorscale(theme),
     )
 
