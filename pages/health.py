@@ -811,7 +811,7 @@ def update_health_subnational_motivation_narrative(country_name, year):
 
 
 @callback(
-    Output("health-expenditure-map", "figure"),
+    Output("health-expenditure-map-container", "children"),
     Input("stored-data-subnational", "data"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
@@ -823,14 +823,15 @@ def update_health_subnational_motivation_narrative(country_name, year):
 def update_health_expenditure_map(
     subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, theme
 ):
-    return update_func_expenditure_map(
+    fig = update_func_expenditure_map(
         subnational_data, country_data, country, year,
         expenditure_type, subnat_boundaries, 'Health', theme=theme
     )
+    return dcc.Graph(figure=fig, config={"displayModeBar": False})
 
 
 @callback(
-    Output("health-outcome-map", "figure"),
+    Output("health-outcome-map-container", "children"),
     Input("stored-data-subnational", "data"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
@@ -841,9 +842,10 @@ def update_health_expenditure_map(
 def update_health_index_map(
     subnational_data, country_data, country, year, subnat_boundaries, theme
 ):
-    return update_hd_index_map(
+    fig = update_hd_index_map(
         subnational_data, country_data, country, year, subnat_boundaries, 'Health', theme=theme
     )
+    return dcc.Graph(figure=fig, config={"displayModeBar": False})
 
 
 @callback(

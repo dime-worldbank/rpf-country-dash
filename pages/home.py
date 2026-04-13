@@ -1063,7 +1063,7 @@ def update_year_range(data, country):
 
 
 @callback(
-    Output("subnational-spending", "figure"),
+    Output("subnational-spending-container", "children"),
     Input("stored-data-subnational", "data"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
@@ -1073,14 +1073,17 @@ def update_year_range(data, country):
     State("theme-store", "data"),
 )
 def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries, theme):
+    def _graph(fig):
+        return dcc.Graph(figure=fig, config={"displayModeBar": False})
+
     if year is None or not data or not country_data or not country:
-        return empty_plot("Data not available")
+        return _graph(empty_plot("Data not available"))
     if not subnat_boundaries or not subnat_boundaries.get(country):
-        return empty_plot("Data not available")
+        return _graph(empty_plot("Data not available"))
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
     if not geojson:
-        return empty_plot("Loading boundary data...")
+        return _graph(empty_plot("Loading boundary data..."))
     disputed_geojson = filter_geojson_by_country(server_cache.get("disputed_boundaries"), country)
     lat, lon = [
         server_cache.get("basic_country_info")[country].get(k)
@@ -1097,7 +1100,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     add_currency_column(df, 'per_capita_expenditure', currency_code)
 
     if df.empty or year not in df.year.unique():
-        return empty_plot("No expenditure data available for the selected year")
+        return _graph(empty_plot("No expenditure data available for the selected year"))
 
     df_for_year = df[df.year == year]
     legend_percapita_min, legend_percapita_max = (
@@ -1110,7 +1113,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     )
 
     if plot_type == "percapita":
-        return regional_percapita_spending_choropleth(
+        return _graph(regional_percapita_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1120,9 +1123,9 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lon,
             zoom,
             theme=theme,
-        )
+        ))
     else:
-        return regional_spending_choropleth(
+        return _graph(regional_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1132,11 +1135,11 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lon,
             zoom,
             theme=theme,
-        )
+        ))
 
 
 @callback(
-    Output("subnational-poverty", "figure"),
+    Output("subnational-poverty-container", "children"),
     Input("stored-data-subnational", "data"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
@@ -1145,14 +1148,17 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     State("theme-store", "data"),
 )
 def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries, theme):
+    def _graph(fig):
+        return dcc.Graph(figure=fig, config={"displayModeBar": False})
+
     if year is None or not subnational_data or not country_data or not country:
-        return empty_plot("Data not available")
+        return _graph(empty_plot("Data not available"))
     if not subnat_boundaries or not subnat_boundaries.get(country):
-        return empty_plot("Data not available")
+        return _graph(empty_plot("Data not available"))
 
     geojson = server_cache.get(f"subnat_boundaries:{country}")
     if not geojson:
-        return empty_plot("Loading boundary data...")
+        return _graph(empty_plot("Loading boundary data..."))
     disputed_geojson = filter_geojson_by_country(
         server_cache.get("disputed_boundaries"), country
     )
@@ -1175,10 +1181,10 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     relevant_years = [x for x in available_years if x <= year]
 
     if not relevant_years or df.empty:
-        return empty_plot("Poverty data not available for this time period")
+        return _graph(empty_plot("Poverty data not available for this time period"))
 
     income_level = server_cache.get("basic_country_info")[country].get("income_level")
-    return subnational_poverty_choropleth(
+    return _graph(subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
         df[df.year == relevant_years[-1]],
@@ -1189,7 +1195,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         zoom,
         income_level,
         theme=theme,
-    )
+    ))
 
 
 @callback(

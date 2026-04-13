@@ -158,6 +158,16 @@ def source_info_button(index):
     )
 
 
+MAP_CHART_IDS = {
+    "subnational-spending",
+    "subnational-poverty",
+    "education-expenditure-map",
+    "education-outcome-map",
+    "health-expenditure-map",
+    "health-outcome-map",
+}
+
+
 def chart_container(chart_id):
     """Wrap a chart with the Details button overlaid in top-right.
 
@@ -166,15 +176,23 @@ def chart_container(chart_id):
     """
     from dash import dcc
 
-    graph = dcc.Graph(id=chart_id, config={"displayModeBar": False})
+    if chart_id in MAP_CHART_IDS:
+        # Map charts: use a wrapper div so callbacks can replace children
+        # with a fresh dcc.Graph on each update, avoiding Mapbox in-place
+        # update errors.
+        graph_wrapper = html.Div(
+            dcc.Graph(id=chart_id, config={"displayModeBar": False}),
+            id=f"{chart_id}-container",
+        )
+    else:
+        graph_wrapper = dcc.Graph(id=chart_id, config={"displayModeBar": False})
 
     return html.Div(
         [
             source_info_button(chart_id),
-            graph,
+            graph_wrapper,
             empty_modal(chart_id),
         ],
-        id=chart_id,
         className="source-info-chart-container",
     )
 
