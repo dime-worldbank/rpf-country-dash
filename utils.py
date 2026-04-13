@@ -163,6 +163,16 @@ def millify(n):
     return "{:.2f}{}".format(n / 10 ** (3 * millidx), millnames[millidx])
 
 
+def subset_geojson_by_regions(geojson, region_names):
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            f for f in geojson["features"]
+            if f["properties"].get("region") in region_names
+        ],
+    }
+
+
 def filter_geojson_by_country(geojson, country):
     """Filter geojson object by country
     Params:

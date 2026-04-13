@@ -71,7 +71,7 @@ def layout():
     Input("stored-data-func-econ", "data"),
 )
 def fetch_health_total_data_once(health_data, shared_data):
-    if health_data is None and shared_data:
+    if (health_data is None or not server_cache.has("health_public_expenditure")) and shared_data:
         exp_by_func = server_cache.get("func_by_country_year")
         pub_exp = exp_by_func[exp_by_func.func == "Health"]
         server_cache.set("health_public_expenditure", pub_exp)
@@ -84,7 +84,7 @@ def fetch_health_total_data_once(health_data, shared_data):
     Input("stored-data-health-outcome", "data"),
 )
 def fetch_health_outcome_data_once(health_data):
-    if health_data is None:
+    if health_data is None or not server_cache.has("uhc_index"):
         uhc_index = db.get_universal_health_coverage_index()
         server_cache.set("uhc_index", uhc_index)
         return {"ready": True}
@@ -96,7 +96,7 @@ def fetch_health_outcome_data_once(health_data):
     Input("stored-data-health-private", "data"),
 )
 def fetch_health_private_data_once(health_data):
-    if health_data is None:
+    if health_data is None or not server_cache.has("health_private_expenditure"):
         priv_exp = db.get_health_private_expenditure()
         server_cache.set("health_private_expenditure", priv_exp)
         return {"ready": True}
@@ -108,7 +108,7 @@ def fetch_health_private_data_once(health_data):
     Input("stored-data-health-sub-func", "data"),
 )
 def fetch_health_sub_func_data_once(health_data):
-    if health_data is None:
+    if health_data is None or not server_cache.has("health_sub_func_expenditure"):
         exp_by_sub_func = db.get_expenditure_by_country_sub_func_year()
         server_cache.set("health_sub_func_expenditure", exp_by_sub_func)
         return {"ready": True}

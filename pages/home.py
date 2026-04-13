@@ -11,6 +11,7 @@ from utils import (
     add_currency_column,
     filter_country_sort_year,
     filter_geojson_by_country,
+    subset_geojson_by_regions,
     empty_plot,
     get_correlation_text,
     remove_accents,
@@ -68,7 +69,7 @@ def layout():
     Input("stored-data", "data"),
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
-    if pefa_data is None and shared_data:
+    if (pefa_data is None or not server_cache.has("pefa")) and shared_data:
         pefa = db.get_pefa(shared_data["countries"])
         server_cache.set("pefa", pefa)
         return {"ready": True}
@@ -657,11 +658,8 @@ def subnational_spending_narrative(
 def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
-    df_no_data = pd.DataFrame({"region_name": regions_without_data})
-    df_no_data["adm1_name"] = None
     if df.empty:
         return empty_plot("Sub-national expenditure data not available")
-    country_name = df.country_name.iloc[0]
     fig = px.choropleth_mapbox(
         df,
         custom_data=["expenditure_formatted"],
@@ -676,19 +674,22 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         color_continuous_scale=get_map_colorscale(theme),
     )
 
-    no_data_trace = px.choropleth_mapbox(
-        df_no_data,
-        geojson=geojson,
-        color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
-        locations="region_name",
-        featureidkey="properties.region",
-        zoom=zoom,
-    ).data[0]
-    no_data_trace.showscale = False
-    no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> Data not available<extra></extra>"
-    fig.add_trace(no_data_trace)
-    
+    if regions_without_data:
+        df_no_data = pd.DataFrame({"region_name": regions_without_data})
+        no_data_geojson = subset_geojson_by_regions(geojson, set(regions_without_data))
+        no_data_trace = px.choropleth_mapbox(
+            df_no_data,
+            geojson=no_data_geojson,
+            color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
+            locations="region_name",
+            featureidkey="properties.region",
+            zoom=zoom,
+        ).data[0]
+        no_data_trace.showscale = False
+        no_data_trace.showlegend = False
+        no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> Data not available<extra></extra>"
+        fig.add_trace(no_data_trace)
+
     fig.update_layout(
         title="How much was spent in each region?",
         plot_bgcolor="white",
@@ -700,24 +701,21 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         ),
         legend=dict(orientation="h", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
-    fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{z}<extra></extra>"
+    fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{customdata[0]}<extra></extra>"
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
     return fig
 
 
 def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
-    regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
-    df_no_data = pd.DataFrame({"region_name": regions_without_data})
-    df_no_data["adm1_name"] = None
     if df.empty:
         return empty_plot("Sub-national population data not available ")
-    country_name = df.country_name.iloc[0]
     df = df[df.adm1_name != "Central Scope"]
 
-    # Dynamically calculate zmin and zmax based on the data range
     zmin = df["per_capita_expenditure"].min() if not df.empty else 0
     zmax = df["per_capita_expenditure"].max() if not df.empty else 1
+
+    regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
 
     fig = px.choropleth_mapbox(
         df,
@@ -733,18 +731,21 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
         color_continuous_scale=get_map_colorscale(theme),
     )
 
-    no_data_trace = px.choropleth_mapbox(
-        df_no_data,
-        geojson=geojson,
-        color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
-        locations="region_name",
-        featureidkey="properties.region",
-        zoom=zoom,
-    ).data[0]
-    no_data_trace.showscale = False
-    no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Per capita expenditure:</b> Data not available<extra></extra>"
-    fig.add_trace(no_data_trace)
+    if regions_without_data:
+        df_no_data = pd.DataFrame({"region_name": regions_without_data})
+        no_data_geojson = subset_geojson_by_regions(geojson, set(regions_without_data))
+        no_data_trace = px.choropleth_mapbox(
+            df_no_data,
+            geojson=no_data_geojson,
+            color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
+            locations="region_name",
+            featureidkey="properties.region",
+            zoom=zoom,
+        ).data[0]
+        no_data_trace.showscale = False
+        no_data_trace.showlegend = False
+        no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Per capita expenditure:</b> Data not available<extra></extra>"
+        fig.add_trace(no_data_trace)
 
     fig.update_layout(
         title="How much was spent per person in each region?",
@@ -786,8 +787,6 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     year = df.year.iloc[0]
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.region_name.values]
-    df_no_data = pd.DataFrame({"region_name": regions_without_data})
-    df_no_data[poverty_col] = None
     fig = px.choropleth_mapbox(
         df,
         geojson=geojson,
@@ -801,21 +800,27 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         hover_data={"region_name": True, poverty_col: ":.2f"},
         color_continuous_scale=get_map_colorscale(theme),
     )
-    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
 
-    no_data_trace = px.choropleth_mapbox(
-        df_no_data,
-        geojson=geojson,
-        color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
-        locations="region_name",
-        featureidkey="properties.region",
-        zoom=zoom,
-        hover_data={"region_name": True},
-    ).data[0]
-    no_data_trace.showscale = False
-    no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Poverty rate:</b> Data not available<extra></extra>"
-    fig.add_trace(no_data_trace)
+    if regions_without_data:
+        df_no_data = pd.DataFrame({"region_name": regions_without_data})
+        no_data_geojson = subset_geojson_by_regions(geojson, set(regions_without_data))
+        no_data_trace = px.choropleth_mapbox(
+            df_no_data,
+            geojson=no_data_geojson,
+            color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
+            locations="region_name",
+            featureidkey="properties.region",
+            zoom=zoom,
+        ).data[0]
+        no_data_trace.showscale = False
+        no_data_trace.showlegend = False
+        no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Poverty rate:</b> Data not available<extra></extra>"
+        fig.add_trace(no_data_trace)
+
+    fig.data[0].hovertemplate = (
+        "<b>Region:</b> %{location}<br>"
+        + "<b>Poverty rate:</b> %{z:.2f}%<extra></extra>"
+    )
 
     fig.update_layout(
         title="What percent of the population is living in poverty?",
@@ -838,10 +843,6 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 font=dict(size=10),
             ),
         ],
-    )
-    fig.data[0].hovertemplate = (
-        "<b>Region:</b> %{location}<br>"
-        + "<b>Poverty rate:</b> %{z:.2f}%<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom)
 

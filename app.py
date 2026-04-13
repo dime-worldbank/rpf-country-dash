@@ -207,7 +207,7 @@ def update_logout_button_visibility(pathname):
 
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
 def fetch_data_once(data):
-    if data is None:
+    if data is None or not server_cache.has("expenditure_w_poverty"):
         df = db.get_expenditure_w_poverty_by_country_year()
         countries = sorted(df["country_name"].unique())
         server_cache.set("expenditure_w_poverty", df)
@@ -218,7 +218,7 @@ def fetch_data_once(data):
     Output("stored-data-func-econ", "data"), Input("stored-data-func-econ", "data")
 )
 def fetch_func_data_once(data):
-    if data is None:
+    if data is None or not server_cache.has("func_by_country_year"):
         func_econ_df = db.get_expenditure_by_country_func_econ_year()
 
         agg_dict = {
@@ -263,7 +263,7 @@ def fetch_func_data_once(data):
     Input("stored-data", "data"),
 )
 def fetch_subnational_data_once(data, country_data):
-    if data is None and country_data:
+    if (data is None or not server_cache.has("disputed_boundaries")) and country_data:
         countries = country_data["countries"]
         df_disputed = db.get_disputed_boundaries(countries)
 
@@ -335,7 +335,7 @@ def display_data(data, search, current_country):
     Input("stored-basic-country-data", "data"),
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
-    if country_data is None and countries and subnational_data:
+    if (country_data is None or not server_cache.has("basic_country_info")) and countries and subnational_data:
         country_labels = [x["label"] for x in countries]
         country_df = db.get_basic_country_data(country_labels)
         country_info = country_df.set_index("country_name").T.to_dict()

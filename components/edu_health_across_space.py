@@ -18,6 +18,7 @@ from utils import (
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
+    subset_geojson_by_regions,
     format_currency,
     generate_error_prompt,
     get_correlation_text,
@@ -263,14 +264,10 @@ def update_func_expenditure_map(
     df = df.dropna(subset=[expenditure_type])
     add_currency_column(df, expenditure_type, currency_code)
 
-    # Identify regions without data
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
     ]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
-    df_no_data = pd.DataFrame({"region_name": regions_without_data})
-    df_no_data["adm1_name"] = None
-    
 
     fig = px.choropleth_mapbox(
         df,
@@ -286,20 +283,20 @@ def update_func_expenditure_map(
         color_continuous_scale=get_map_colorscale(theme),
     )
 
-    # Add trace for regions without data
-    no_data_trace = px.choropleth_mapbox(
-        df_no_data,
-        geojson=filtered_geojson,
-        color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
-        locations="region_name",
-        featureidkey="properties.region",
-        zoom=zoom,
-    ).data[0]
-    
-    no_data_trace.legendgroup = "no-data"
-    no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{expenditure_type.replace('_', ' ').title()}:</b> Data not available<extra></extra>"
-    fig.add_trace(no_data_trace)
+    if regions_without_data:
+        df_no_data = pd.DataFrame({"region_name": regions_without_data})
+        no_data_geojson = subset_geojson_by_regions(filtered_geojson, set(regions_without_data))
+        no_data_trace = px.choropleth_mapbox(
+            df_no_data,
+            geojson=no_data_geojson,
+            color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
+            locations="region_name",
+            featureidkey="properties.region",
+            zoom=zoom,
+        ).data[0]
+        no_data_trace.showlegend = False
+        no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{expenditure_type.replace('_', ' ').title()}:</b> Data not available<extra></extra>"
+        fig.add_trace(no_data_trace)
 
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
@@ -397,16 +394,12 @@ def update_hd_index_map(
     ]
     zoom = server_cache.get("basic_country_info")[country]["zoom"]
 
-    # Identify regions without data
     all_regions = [
         feature["properties"]["region"] for feature in filtered_geojson["features"]
     ]
     df = df.dropna(subset=["outcome_index"])
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
-    df_no_data = pd.DataFrame({"region_name": regions_without_data})
-    df_no_data["adm1_name"] = None
 
-    # Create the choropleth for outcome index
     fig = px.choropleth_mapbox(
         df,
         geojson=filtered_geojson,
@@ -420,32 +413,26 @@ def update_hd_index_map(
     )
 
     formatted_outcome_index = df['outcome_index'].map(format_fn).values
-    fig.update_traces(
-        customdata=formatted_outcome_index,
-        hovertemplate="<b>Region:</b> %{location}<br>"
-            + f"<b>{outcome_name}:</b> " + "%{customdata}<br>"
-            + "<extra></extra>",
-    )
-
-    no_data_trace = px.choropleth_mapbox(
-        df_no_data,
-        geojson=filtered_geojson,
-        color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
-        locations="region_name",
-        featureidkey="properties.region",
-        zoom=zoom,
-    ).data[0]
-    no_data_trace.legendgroup = "no-data"
-    no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{outcome_name}:</b> Data not available<extra></extra>"
-    fig.add_trace(no_data_trace)
-
-    formatted_outcome_index = df['outcome_index'].map(format_fn).values
     fig.data[0].customdata = formatted_outcome_index
     fig.data[0].hovertemplate = (
         "<b>Region:</b> %{location}<br>"
         + f"<b>{outcome_name}:</b> " + "%{customdata}<extra></extra>"
     )
+
+    if regions_without_data:
+        df_no_data = pd.DataFrame({"region_name": regions_without_data})
+        no_data_geojson = subset_geojson_by_regions(filtered_geojson, set(regions_without_data))
+        no_data_trace = px.choropleth_mapbox(
+            df_no_data,
+            geojson=no_data_geojson,
+            color_discrete_sequence=["rgba(211, 211, 211, 0.3)"],
+            locations="region_name",
+            featureidkey="properties.region",
+            zoom=zoom,
+        ).data[0]
+        no_data_trace.showlegend = False
+        no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{outcome_name}:</b> Data not available<extra></extra>"
+        fig.add_trace(no_data_trace)
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
     fig.update_layout(

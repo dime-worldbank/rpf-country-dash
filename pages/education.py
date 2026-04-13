@@ -71,7 +71,7 @@ def layout():
     Input("stored-data-func-econ", "data"),
 )
 def fetch_edu_total_data_once(edu_data, shared_data):
-    if edu_data is None and shared_data:
+    if (edu_data is None or not server_cache.has("edu_public_expenditure")) and shared_data:
         exp_by_func = server_cache.get("func_by_country_year")
         pub_exp = exp_by_func[exp_by_func.func == "Education"]
         server_cache.set("edu_public_expenditure", pub_exp)
@@ -85,7 +85,7 @@ def fetch_edu_total_data_once(edu_data, shared_data):
     Input("stored-data", "data"),
 )
 def fetch_edu_outcome_data_once(edu_data, shared_data):
-    if edu_data is None and shared_data:
+    if (edu_data is None or not server_cache.has("hd_index")) and shared_data:
         learning_poverty = db.get_learning_poverty_rate()
         hd_index = db.get_hd_index(shared_data["countries"])
         server_cache.set("learning_poverty", learning_poverty)
@@ -99,7 +99,7 @@ def fetch_edu_outcome_data_once(edu_data, shared_data):
     Input("stored-data-education-private", "data"),
 )
 def fetch_edu_private_data_once(edu_data):
-    if edu_data is None:
+    if edu_data is None or not server_cache.has("edu_private_expenditure"):
         priv_exp = db.get_edu_private_expenditure()
         server_cache.set("edu_private_expenditure", priv_exp)
         return {"ready": True}
