@@ -194,7 +194,7 @@ def _generate_econ_figure(data, func):
 
 
 def render_econ_breakdown(data, country_name, page_func):
-    if not data:
+    if not data or not country_name:
         return empty_plot("Loading..."), "Loading..."
     df = server_cache.get("prop_econ_by_func")
     filtered_df = df[

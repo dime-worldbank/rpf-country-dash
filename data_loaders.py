@@ -61,11 +61,6 @@ def load_uhc_index():
 def load_health_private_expenditure():
     return _db().get_health_private_expenditure()
 
-
-def load_health_sub_func_expenditure():
-    return _db().get_expenditure_by_country_sub_func_year()
-
-
 def load_learning_poverty():
     return _db().get_learning_poverty_rate()
 
@@ -256,7 +251,6 @@ def register_all():
     server_cache.register("pefa", load_pefa)
     server_cache.register("uhc_index", load_uhc_index)
     server_cache.register("health_private_expenditure", load_health_private_expenditure)
-    server_cache.register("health_sub_func_expenditure", load_health_sub_func_expenditure)
     server_cache.register("learning_poverty", load_learning_poverty)
     server_cache.register("hd_index", load_hd_index)
     server_cache.register("edu_private_expenditure", load_edu_private_expenditure)

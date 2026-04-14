@@ -504,7 +504,7 @@ def education_narrative(country):
     Input("country-select", "value"),
 )
 def render_overview_total_figure(data, basic_country_data, country):
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
 
     all_countries = server_cache.get("edu_public_expenditure")
@@ -541,7 +541,7 @@ def public_private_narrative(df, country):
 
     except IndexError:
         return generate_error_prompt("DATA_UNAVAILABLE")
-    except:
+    except (KeyError, TypeError, ValueError):
         return generate_error_prompt("GENERIC_ERROR")
     return text
 
@@ -555,7 +555,7 @@ def public_private_narrative(df, country):
     Input('stored-basic-country-data', 'data')
 )
 def render_public_private_figure(private_data, public_data, country,basic_country_data):
-    if not private_data or not public_data or not basic_country_data:
+    if not private_data or not public_data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
     
     currency_code = server_cache.get("basic_country_info")[country]['currency_code']
@@ -703,7 +703,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
     Input('stored-basic-country-data', 'data')
 )
 def render_education_outcome(outcome_data, total_data, country, basic_country_data):
-    if not total_data or not outcome_data or not basic_country_data:
+    if not total_data or not outcome_data or not basic_country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
     indicator = server_cache.get("hd_index")

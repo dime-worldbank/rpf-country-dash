@@ -62,7 +62,6 @@ def layout():
             dcc.Store(id="stored-data-health-total"),
             dcc.Store(id="stored-data-health-outcome"),
             dcc.Store(id="stored-data-health-private"),
-            dcc.Store(id="stored-data-health-sub-func"),
         ]
     )
 
@@ -96,17 +95,6 @@ def fetch_health_outcome_data_once(health_data):
 def fetch_health_private_data_once(health_data):
     if health_data is None:
         server_cache.set("health_private_expenditure", data_loaders.load_health_private_expenditure())
-        return {"ready": True}
-    return dash.no_update
-
-
-@callback(
-    Output("stored-data-health-sub-func", "data"),
-    Input("stored-data-health-sub-func", "data"),
-)
-def fetch_health_sub_func_data_once(health_data):
-    if health_data is None:
-        server_cache.set("health_sub_func_expenditure", data_loaders.load_health_sub_func_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -511,7 +499,7 @@ def health_narrative(country):
     Input("stored-basic-country-data", "data"),
 )
 def render_overview_total_figure(data, country, country_data):
-    if not data or not country_data:
+    if not data or not country_data or not country:
         return dash.no_update, dash.no_update
 
     all_countries = server_cache.get("health_public_expenditure")
@@ -547,7 +535,7 @@ def public_private_narrative(df, country):
 
     except IndexError:
         return generate_error_prompt("DATA_UNAVAILABLE")
-    except:
+    except (KeyError, TypeError, ValueError):
         return generate_error_prompt("GENERIC_ERROR")
     return text
 
@@ -561,7 +549,7 @@ def public_private_narrative(df, country):
     Input("stored-basic-country-data", "data"),
 )
 def render_public_private_figure(private_data, public_data, country, country_data):
-    if not private_data or not public_data or not country_data:
+    if not private_data or not public_data or not country_data or not country:
         return dash.no_update, dash.no_update
 
     fig_title = "What % was spent by the govt vs household?"
@@ -682,7 +670,7 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
     Input("stored-basic-country-data", "data"),
 )
 def render_health_outcome(outcome_data, total_data, country, country_data):
-    if not total_data or not outcome_data or not country_data:
+    if not total_data or not outcome_data or not country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
     uhc = server_cache.get("uhc_index")

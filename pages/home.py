@@ -874,7 +874,7 @@ def update_heading(country):
     Input("country-select", "value"),
 )
 def render_overview_total_figure(data, basic_country_data, country):
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
     all_countries = server_cache.get("expenditure_w_poverty")
     df = filter_country_sort_year(all_countries, country)
@@ -894,7 +894,7 @@ def render_overview_total_figure(data, basic_country_data, country):
     Input('stored-basic-country-data', 'data')
 )
 def render_overview_func_figure(data, country, basic_country_data):
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
     all_countries = server_cache.get("func_by_country_year")
     func_df = filter_country_sort_year(all_countries, country)
@@ -919,7 +919,7 @@ def render_overview_func_figure(data, country, basic_country_data):
     Input('stored-basic-country-data', 'data')
 )
 def render_overview_econ_figure(data, country, basic_country_data):
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
     all_countries = server_cache.get("econ_by_country_year")
     econ_df = filter_country_sort_year(all_countries, country)
@@ -1232,7 +1232,7 @@ def render_subnational_spending_narrative(
     Input("country-select", "value"),
 )
 def render_pefa_overall(data, pefa_data, country):
-    if not pefa_data or not data:
+    if not pefa_data or not data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
     pefa_df = server_cache.get("pefa")

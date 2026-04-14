@@ -210,7 +210,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
             text += subnat_exp_not_available_text + geo_exp_available_text
         else:
             text += f"we do not have {func_name} spending at subnational level."
-    except:
+    except (KeyError, TypeError, ValueError, IndexError):
         traceback.print_exc()
         return generate_error_prompt("GENERIC_ERROR")
 

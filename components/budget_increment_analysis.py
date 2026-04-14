@@ -21,7 +21,7 @@ NUM_YEARS = 5
 
 
 def render_fig_and_narrative(data, country, exp_type):
-    if not data:
+    if not data or not country:
         return empty_plot("Loading..."), "Loading..."
     country_budget_changes_df = server_cache.get("func_by_country_year")
     country_budget_changes_df = filter_country_sort_year(
