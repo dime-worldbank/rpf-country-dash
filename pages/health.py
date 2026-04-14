@@ -9,6 +9,7 @@ from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_cache
+import data_loaders
 from utils import (
     add_currency_column,
     empty_plot,
@@ -72,9 +73,7 @@ def layout():
 )
 def fetch_health_total_data_once(health_data, shared_data):
     if health_data is None and shared_data:
-        exp_by_func = server_cache.get("func_by_country_year")
-        pub_exp = exp_by_func[exp_by_func.func == "Health"]
-        server_cache.set("health_public_expenditure", pub_exp)
+        server_cache.set("health_public_expenditure", data_loaders.load_health_public_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -85,8 +84,7 @@ def fetch_health_total_data_once(health_data, shared_data):
 )
 def fetch_health_outcome_data_once(health_data):
     if health_data is None:
-        uhc_index = db.get_universal_health_coverage_index()
-        server_cache.set("uhc_index", uhc_index)
+        server_cache.set("uhc_index", data_loaders.load_uhc_index())
         return {"ready": True}
     return dash.no_update
 
@@ -97,8 +95,7 @@ def fetch_health_outcome_data_once(health_data):
 )
 def fetch_health_private_data_once(health_data):
     if health_data is None:
-        priv_exp = db.get_health_private_expenditure()
-        server_cache.set("health_private_expenditure", priv_exp)
+        server_cache.set("health_private_expenditure", data_loaders.load_health_private_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -109,8 +106,7 @@ def fetch_health_private_data_once(health_data):
 )
 def fetch_health_sub_func_data_once(health_data):
     if health_data is None:
-        exp_by_sub_func = db.get_expenditure_by_country_sub_func_year()
-        server_cache.set("health_sub_func_expenditure", exp_by_sub_func)
+        server_cache.set("health_sub_func_expenditure", data_loaders.load_health_sub_func_expenditure())
         return {"ready": True}
     return dash.no_update
 

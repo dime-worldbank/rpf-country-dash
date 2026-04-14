@@ -9,6 +9,7 @@ from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_cache
+import data_loaders
 from utils import (
     add_currency_column,
     empty_plot,
@@ -72,9 +73,7 @@ def layout():
 )
 def fetch_edu_total_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        exp_by_func = server_cache.get("func_by_country_year")
-        pub_exp = exp_by_func[exp_by_func.func == "Education"]
-        server_cache.set("edu_public_expenditure", pub_exp)
+        server_cache.set("edu_public_expenditure", data_loaders.load_edu_public_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -86,10 +85,8 @@ def fetch_edu_total_data_once(edu_data, shared_data):
 )
 def fetch_edu_outcome_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        learning_poverty = db.get_learning_poverty_rate()
-        hd_index = db.get_hd_index(shared_data["countries"])
-        server_cache.set("learning_poverty", learning_poverty)
-        server_cache.set("hd_index", hd_index)
+        server_cache.set("learning_poverty", data_loaders.load_learning_poverty())
+        server_cache.set("hd_index", data_loaders.load_hd_index())
         return {"ready": True}
     return dash.no_update
 
@@ -100,8 +97,7 @@ def fetch_edu_outcome_data_once(edu_data, shared_data):
 )
 def fetch_edu_private_data_once(edu_data):
     if edu_data is None:
-        priv_exp = db.get_edu_private_expenditure()
-        server_cache.set("edu_private_expenditure", priv_exp)
+        server_cache.set("edu_private_expenditure", data_loaders.load_edu_private_expenditure())
         return {"ready": True}
     return dash.no_update
 

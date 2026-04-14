@@ -28,6 +28,7 @@ from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_cache
+import data_loaders
 
 
 db = QueryService.get_instance()
@@ -69,8 +70,7 @@ def layout():
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
-        pefa = db.get_pefa(shared_data["countries"])
-        server_cache.set("pefa", pefa)
+        server_cache.set("pefa", data_loaders.load_pefa())
         return {"ready": True}
     return dash.no_update
 
