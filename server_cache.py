@@ -4,6 +4,8 @@ from dash.exceptions import PreventUpdate
 
 logger = logging.getLogger(__name__)
 
+_MISSING = object()  # sentinel to distinguish "not cached" from cached None
+
 _store = {}
 _factories = {}
 _lock = threading.Lock()
@@ -20,22 +22,22 @@ def set(key, value):
         _store[key] = value
 
 
-def get(key):
+def lookup(key):
+    """Return the cached value or raise KeyError. Dash-agnostic."""
     # Fast path: already cached
     with _lock:
-        value = _store.get(key)
-    if value is not None:
+        value = _store.get(key, _MISSING)
+    if value is not _MISSING:
         return value
 
     factory = _factories.get(key)
     if not factory:
-        raise PreventUpdate
+        raise KeyError(key)
 
     # Determine if we should load, or wait for another thread's load
     with _lock:
-        # Re-check under lock (may have been populated while we waited)
-        value = _store.get(key)
-        if value is not None:
+        value = _store.get(key, _MISSING)
+        if value is not _MISSING:
             return value
 
         event = _loading.get(key)
@@ -50,26 +52,35 @@ def get(key):
         try:
             logger.info("server_cache: auto-populating '%s' via factory", key)
             value = factory()
-            if value is not None:
-                set(key, value)
-        except PreventUpdate:
+            set(key, value)
+        except KeyError:
             raise
         except Exception:
             logger.exception("server_cache: factory for '%s' failed", key)
-            value = None
+            raise KeyError(key)
         finally:
             with _lock:
                 _loading.pop(key, None)
             event.set()
     else:
-        # Wait for the loading thread to finish (up to 30s)
         event.wait(timeout=30)
         with _lock:
-            value = _store.get(key)
+            value = _store.get(key, _MISSING)
+        if value is _MISSING:
+            raise KeyError(key)
 
-    if value is None:
-        raise PreventUpdate
     return value
+
+
+def get(key):
+    """Return the cached value, or raise PreventUpdate on miss.
+
+    Convenience wrapper for Dash callbacks. For non-Dash code, use lookup().
+    """
+    try:
+        return lookup(key)
+    except KeyError:
+        raise PreventUpdate
 
 
 def has(key):
