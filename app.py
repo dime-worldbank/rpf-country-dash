@@ -306,9 +306,8 @@ def fetch_subnat_boundary_data_once(geo_data, country):
     if data_to_store.get(country):
         return data_to_store
 
-    boundaries_geojson = data_loaders.load_subnat_boundaries(country)
-    server_cache.set(f"subnat_boundaries:{country}", boundaries_geojson)
-    data_loaders.register_subnat_boundaries(country)
+    # Ensure subnat_boundaries is loaded (factory auto-populates on miss)
+    server_cache.get("subnat_boundaries")
     data_to_store[country] = True
     return data_to_store
 

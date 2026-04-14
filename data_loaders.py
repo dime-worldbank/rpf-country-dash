@@ -215,9 +215,10 @@ def load_basic_country_info():
     return country_info
 
 
-def load_subnat_boundaries(country):
-    """Returns a factory function for a specific country's boundaries."""
-    df = _db().get_adm_boundaries([country])
+def load_subnat_boundaries():
+    """Load all subnational boundaries for all countries in one DB call."""
+    countries = _countries()
+    df = _db().get_adm_boundaries(countries)
     return {
         "type": "FeatureCollection",
         "features": [
@@ -266,17 +267,7 @@ def register_all():
     server_cache.register("econ_by_country_year", load_econ_by_country_year)
     server_cache.register("prop_econ_by_func", load_prop_econ_by_func)
     server_cache.register("disputed_boundaries", load_disputed_boundaries)
+    server_cache.register("subnat_boundaries", load_subnat_boundaries)
     server_cache.register("basic_country_info", load_basic_country_info)
     server_cache.register("health_public_expenditure", load_health_public_expenditure)
     server_cache.register("edu_public_expenditure", load_edu_public_expenditure)
-
-    # Note: subnat_boundaries:{country} uses dynamic keys.
-    # These are registered on-demand via register_subnat_boundaries().
-
-
-def register_subnat_boundaries(country):
-    """Register a factory for a specific country's subnational boundaries."""
-    server_cache.register(
-        f"subnat_boundaries:{country}",
-        lambda c=country: load_subnat_boundaries(c),
-    )
