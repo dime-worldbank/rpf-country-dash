@@ -388,7 +388,7 @@ def update_hd_index_map(
     outcome_name, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
 
-    geojson = server_cache.get(f"subnat_boundaries:{country}")
+    geojson = server_cache.get("subnat_boundaries")
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
     disputed_geojson = server_cache.get("disputed_boundaries")
