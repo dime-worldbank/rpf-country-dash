@@ -559,7 +559,7 @@ def public_private_narrative(df, country):
     Input('stored-basic-country-data', 'data')
 )
 def render_public_private_figure(private_data, public_data, country,basic_country_data):
-    if not private_data or not public_data:
+    if not private_data or not public_data or not basic_country_data:
         return dash.no_update, dash.no_update
     
     currency_code = server_cache.get("basic_country_info")[country]['currency_code']
@@ -707,7 +707,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
     Input('stored-basic-country-data', 'data')
 )
 def render_education_outcome(outcome_data, total_data, country, basic_country_data):
-    if not total_data or not outcome_data:
+    if not total_data or not outcome_data or not basic_country_data:
         return dash.no_update, dash.no_update, dash.no_update
 
     indicator = server_cache.get("hd_index")
@@ -833,6 +833,8 @@ def update_education_year_range(data, country):
     Input('stored-basic-country-data', 'data')
 )
 def render_education_subnat_overview(func_econ_data, sub_func_data, country, selected_year, country_data):
+    if not country_data or not country:
+        return empty_plot("Loading..."), empty_plot("Loading..."), "Loading..."
     currency_code = server_cache.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_overview(
         func_econ_data, sub_func_data, country, selected_year, 'Education', currency_code
@@ -894,5 +896,7 @@ def update_education_index_map(
     Input('stored-basic-country-data', 'data'),
 )
 def render_education_subnat_rank(subnational_data, country, base_year, country_data):
+    if not country_data or not country:
+        return empty_plot("Loading..."), "Loading..."
     currency_code = server_cache.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_rank(subnational_data, country, base_year, 'Education', currency_code)

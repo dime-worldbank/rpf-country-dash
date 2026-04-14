@@ -26,6 +26,8 @@ from utils import (
 
 
 def update_year_slider(data, country, func):
+    if not data or not country:
+        return {"display": "block"}, {}, 0, 0, 0, {}
     data = server_cache.get("geo1_func_expenditure")
     data = data.loc[(data.func == func)]
 

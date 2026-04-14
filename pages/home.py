@@ -1047,6 +1047,8 @@ def format_econ_cat(row):
     Input("country-select", "value"),
 )
 def update_year_range(data, country):
+    if not data or not country:
+        return {"display": "block"}, {}, 0, 0, 0, {}
     try:
         country_info = server_cache.get("basic_country_info")
         expenditure_years = country_info[country].get("expenditure_years", [])
@@ -1054,7 +1056,7 @@ def update_year_range(data, country):
 
         slider_configs = get_slider_config(expenditure_years, poverty_years)
         return slider_configs
-    except Exception as e:
+    except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
 
 
