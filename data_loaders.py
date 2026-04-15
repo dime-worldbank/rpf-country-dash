@@ -21,7 +21,7 @@ def _db():
 
 def _countries():
     """Derive the countries list from expenditure_w_poverty (parameter-free)."""
-    df = server_store.get("expenditure_w_poverty")
+    df = server_store.lookup("expenditure_w_poverty")
     return sorted(df["country_name"].unique())
 
 
@@ -129,22 +129,22 @@ def _load_func_econ_group():
 
 def load_func_econ_raw():
     _load_func_econ_group()
-    return server_store.get("func_econ_raw")
+    return server_store.lookup("func_econ_raw")
 
 
 def load_func_by_country_year():
     _load_func_econ_group()
-    return server_store.get("func_by_country_year")
+    return server_store.lookup("func_by_country_year")
 
 
 def load_econ_by_country_year():
     _load_func_econ_group()
-    return server_store.get("econ_by_country_year")
+    return server_store.lookup("econ_by_country_year")
 
 
 def load_prop_econ_by_func():
     _load_func_econ_group()
-    return server_store.get("prop_econ_by_func")
+    return server_store.lookup("prop_econ_by_func")
 
 
 def load_disputed_boundaries():
@@ -171,8 +171,8 @@ def load_basic_country_info():
     country_df = _db().get_basic_country_data(countries)
     country_info = country_df.set_index("country_name").T.to_dict()
 
-    expenditure_df = server_store.get("geo1_expenditure")[["country_name", "year"]]
-    poverty_df = server_store.get("subnational_poverty_rate")[
+    expenditure_df = server_store.lookup("geo1_expenditure")[["country_name", "year"]]
+    poverty_df = server_store.lookup("subnational_poverty_rate")[
         ["country_name", "year", "poverty_rate"]
     ]
 
@@ -227,12 +227,12 @@ def load_subnat_boundaries():
 
 
 def load_health_public_expenditure():
-    exp_by_func = server_store.get("func_by_country_year")
+    exp_by_func = server_store.lookup("func_by_country_year")
     return exp_by_func[exp_by_func.func == "Health"]
 
 
 def load_edu_public_expenditure():
-    exp_by_func = server_store.get("func_by_country_year")
+    exp_by_func = server_store.lookup("func_by_country_year")
     return exp_by_func[exp_by_func.func == "Education"]
 
 

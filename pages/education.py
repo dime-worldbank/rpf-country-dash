@@ -9,7 +9,6 @@ from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
-import data_loaders
 from utils import (
     add_currency_column,
     empty_plot,
@@ -73,7 +72,7 @@ def layout():
 )
 def fetch_edu_total_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        server_store.set("edu_public_expenditure", data_loaders.load_edu_public_expenditure())
+        server_store.get("edu_public_expenditure")
         return {"ready": True}
     return dash.no_update
 
@@ -85,8 +84,8 @@ def fetch_edu_total_data_once(edu_data, shared_data):
 )
 def fetch_edu_outcome_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        server_store.set("learning_poverty", data_loaders.load_learning_poverty())
-        server_store.set("hd_index", data_loaders.load_hd_index())
+        server_store.get("learning_poverty")
+        server_store.get("hd_index")
         return {"ready": True}
     return dash.no_update
 
@@ -97,7 +96,7 @@ def fetch_edu_outcome_data_once(edu_data, shared_data):
 )
 def fetch_edu_private_data_once(edu_data):
     if edu_data is None:
-        server_store.set("edu_private_expenditure", data_loaders.load_edu_private_expenditure())
+        server_store.get("edu_private_expenditure")
         return {"ready": True}
     return dash.no_update
 

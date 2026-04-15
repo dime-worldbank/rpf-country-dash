@@ -207,9 +207,8 @@ def update_logout_button_visibility(pathname):
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
 def fetch_data_once(data):
     if data is None:
-        df = data_loaders.load_expenditure_w_poverty()
+        df = server_store.get("expenditure_w_poverty")
         countries = sorted(df["country_name"].unique())
-        server_store.set("expenditure_w_poverty", df)
         return {"ready": True, "countries": countries}
     return no_update
 
@@ -218,7 +217,7 @@ def fetch_data_once(data):
 )
 def fetch_func_data_once(data):
     if data is None:
-        data_loaders.load_func_econ_raw()
+        server_store.get("func_econ_raw")
         return {"ready": True}
     return no_update
 
@@ -230,11 +229,11 @@ def fetch_func_data_once(data):
 )
 def fetch_subnational_data_once(data, country_data):
     if data is None and country_data:
-        server_store.set("subnational_poverty_rate", data_loaders.load_subnational_poverty_rate())
-        server_store.set("disputed_boundaries", data_loaders.load_disputed_boundaries())
-        server_store.set("geo1_expenditure", data_loaders.load_geo1_expenditure())
-        server_store.set("geo1_func_expenditure", data_loaders.load_geo1_func_expenditure())
-        server_store.set("sub_func_expenditure", data_loaders.load_sub_func_expenditure())
+        server_store.get("subnational_poverty_rate")
+        server_store.get("disputed_boundaries")
+        server_store.get("geo1_expenditure")
+        server_store.get("geo1_func_expenditure")
+        server_store.get("sub_func_expenditure")
         return {"ready": True}
     return no_update
 
@@ -283,8 +282,7 @@ def display_data(data, search, current_country):
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
     if country_data is None and countries and subnational_data:
-        country_info = data_loaders.load_basic_country_info()
-        server_store.set("basic_country_info", country_info)
+        server_store.get("basic_country_info")
         return {"ready": True}
     return no_update
 

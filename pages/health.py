@@ -9,7 +9,6 @@ from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
-import data_loaders
 from utils import (
     add_currency_column,
     empty_plot,
@@ -72,7 +71,7 @@ def layout():
 )
 def fetch_health_total_data_once(health_data, shared_data):
     if health_data is None and shared_data:
-        server_store.set("health_public_expenditure", data_loaders.load_health_public_expenditure())
+        server_store.get("health_public_expenditure")
         return {"ready": True}
     return dash.no_update
 
@@ -83,7 +82,7 @@ def fetch_health_total_data_once(health_data, shared_data):
 )
 def fetch_health_outcome_data_once(health_data):
     if health_data is None:
-        server_store.set("uhc_index", data_loaders.load_uhc_index())
+        server_store.get("uhc_index")
         return {"ready": True}
     return dash.no_update
 
@@ -94,7 +93,7 @@ def fetch_health_outcome_data_once(health_data):
 )
 def fetch_health_private_data_once(health_data):
     if health_data is None:
-        server_store.set("health_private_expenditure", data_loaders.load_health_private_expenditure())
+        server_store.get("health_private_expenditure")
         return {"ready": True}
     return dash.no_update
 

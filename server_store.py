@@ -11,7 +11,6 @@ _MISSING = object()  # sentinel to distinguish "not cached" from cached None
 _store = {}
 _factories = {}
 _lock = threading.Lock()
-_loading = {}  # key -> threading.Event
 
 
 def _safe_copy(value):
@@ -38,7 +37,6 @@ def _lookup_raw(key):
 
     If a factory is registered, auto-populates on miss.
     """
-    # Fast path: already cached
     with _lock:
         value = _store.get(key, _MISSING)
     if value is not _MISSING:
@@ -48,37 +46,20 @@ def _lookup_raw(key):
     if not factory:
         return _MISSING
 
-    # Determine if we should load, or wait for another thread's load
+    try:
+        logger.info("server_store: auto-populating '%s' via factory", key)
+        value = factory()
+    except Exception:
+        logger.exception("server_store: factory for '%s' failed", key)
+        return _MISSING
+
     with _lock:
-        value = _store.get(key, _MISSING)
-        if value is not _MISSING:
-            return value
-
-        event = _loading.get(key)
-        if event is not None:
-            is_loader = False
-        else:
-            is_loader = True
-            event = threading.Event()
-            _loading[key] = event
-
-    if is_loader:
-        try:
-            logger.info("server_store: auto-populating '%s' via factory", key)
-            value = factory()
-            set(key, value)
-            return value
-        except Exception:
-            logger.exception("server_store: factory for '%s' failed", key)
-            return _MISSING
-        finally:
-            with _lock:
-                _loading.pop(key, None)
-            event.set()
-    else:
-        event.wait(timeout=30)
-        with _lock:
-            return _store.get(key, _MISSING)
+        # Another thread may have beaten us — use theirs
+        existing = _store.get(key, _MISSING)
+        if existing is not _MISSING:
+            return existing
+        _store[key] = value
+    return value
 
 
 def lookup(key, default=None):

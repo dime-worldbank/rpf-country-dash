@@ -5,14 +5,13 @@ from dash.exceptions import PreventUpdate
 import server_store
 
 
-class TestServerCache(unittest.TestCase):
-    """Tests for server_cache module."""
+class TestServerStore(unittest.TestCase):
+    """Tests for server_store module."""
 
     def setUp(self):
-        """Reset cache state between tests."""
+        """Reset store state between tests."""
         server_store._store.clear()
         server_store._factories.clear()
-        server_store._loading.clear()
 
     # ------------------------------------------------------------------
     # Basic get/set/has
