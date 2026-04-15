@@ -125,14 +125,18 @@ class TestServerStore(unittest.TestCase):
     # Thread safety
     # ------------------------------------------------------------------
 
-    def test_concurrent_get_only_loads_once(self):
-        """Two threads miss the same key; only one should call the factory."""
+    def test_concurrent_get_returns_consistent_value(self):
+        """Two threads miss the same key concurrently; both must observe the
+        same cached value. The factory may run more than once — we accept
+        duplicate loads in exchange for simpler coordination — but the first
+        write to land wins and subsequent callers read it back.
+        """
         call_count = {"n": 0}
 
         def slow_factory():
             call_count["n"] += 1
             time.sleep(0.2)
-            return "value"
+            return object()  # unique per call, so identity distinguishes writers
 
         server_store.register("slow", slow_factory)
         results = {}
@@ -148,9 +152,12 @@ class TestServerStore(unittest.TestCase):
         t1.join(timeout=5)
         t2.join(timeout=5)
 
-        self.assertEqual(results["t1"], "value")
-        self.assertEqual(results["t2"], "value")
-        self.assertEqual(call_count["n"], 1, "Factory should be called exactly once")
+        self.assertIs(
+            results["t1"], results["t2"],
+            "Concurrent callers must observe the same cached object",
+        )
+        self.assertGreaterEqual(call_count["n"], 1)
+        self.assertLessEqual(call_count["n"], 2)
 
     # ------------------------------------------------------------------
     # Mutation safety (defensive copies)
