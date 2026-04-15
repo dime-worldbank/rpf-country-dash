@@ -64,12 +64,12 @@ def _lookup_raw(key):
 
     if is_loader:
         try:
-            logger.info("server_cache: auto-populating '%s' via factory", key)
+            logger.info("server_store: auto-populating '%s' via factory", key)
             value = factory()
             set(key, value)
             return value
         except Exception:
-            logger.exception("server_cache: factory for '%s' failed", key)
+            logger.exception("server_store: factory for '%s' failed", key)
             return _MISSING
         finally:
             with _lock:

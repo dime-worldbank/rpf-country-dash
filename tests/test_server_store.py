@@ -2,7 +2,7 @@ import unittest
 import threading
 import time
 from dash.exceptions import PreventUpdate
-import server_cache
+import server_store
 
 
 class TestServerCache(unittest.TestCase):
@@ -10,29 +10,29 @@ class TestServerCache(unittest.TestCase):
 
     def setUp(self):
         """Reset cache state between tests."""
-        server_cache._store.clear()
-        server_cache._factories.clear()
-        server_cache._loading.clear()
+        server_store._store.clear()
+        server_store._factories.clear()
+        server_store._loading.clear()
 
     # ------------------------------------------------------------------
     # Basic get/set/has
     # ------------------------------------------------------------------
 
     def test_set_and_get(self):
-        server_cache.set("k", "v")
-        self.assertEqual(server_cache.get("k"), "v")
+        server_store.set("k", "v")
+        self.assertEqual(server_store.get("k"), "v")
 
     def test_has_returns_true_for_existing_key(self):
-        server_cache.set("k", 42)
-        self.assertTrue(server_cache.has("k"))
+        server_store.set("k", 42)
+        self.assertTrue(server_store.has("k"))
 
     def test_has_returns_false_for_missing_key(self):
-        self.assertFalse(server_cache.has("nope"))
+        self.assertFalse(server_store.has("nope"))
 
     def test_set_overwrites_existing(self):
-        server_cache.set("k", 1)
-        server_cache.set("k", 2)
-        self.assertEqual(server_cache.get("k"), 2)
+        server_store.set("k", 1)
+        server_store.set("k", 2)
+        self.assertEqual(server_store.get("k"), 2)
 
     # ------------------------------------------------------------------
     # Missing key behavior
@@ -40,54 +40,54 @@ class TestServerCache(unittest.TestCase):
 
     def test_get_missing_raises_prevent_update(self):
         with self.assertRaises(PreventUpdate):
-            server_cache.get("missing")
+            server_store.get("missing")
 
     def test_lookup_missing_returns_default(self):
-        self.assertIsNone(server_cache.lookup("missing"))
+        self.assertIsNone(server_store.lookup("missing"))
 
     def test_lookup_missing_returns_custom_default(self):
         sentinel = object()
-        self.assertIs(server_cache.lookup("missing", default=sentinel), sentinel)
+        self.assertIs(server_store.lookup("missing", default=sentinel), sentinel)
 
     # ------------------------------------------------------------------
     # Sentinel: distinguish missing vs stored None
     # ------------------------------------------------------------------
 
     def test_cache_none_value(self):
-        server_cache.set("nullable", None)
-        self.assertTrue(server_cache.has("nullable"))
-        self.assertIsNone(server_cache.get("nullable"))
+        server_store.set("nullable", None)
+        self.assertTrue(server_store.has("nullable"))
+        self.assertIsNone(server_store.get("nullable"))
 
     def test_cache_none_via_lookup(self):
-        server_cache.set("nullable", None)
-        self.assertIsNone(server_cache.lookup("nullable"))
+        server_store.set("nullable", None)
+        self.assertIsNone(server_store.lookup("nullable"))
 
     def test_cache_false_value(self):
-        server_cache.set("falsy", False)
-        self.assertIs(server_cache.get("falsy"), False)
+        server_store.set("falsy", False)
+        self.assertIs(server_store.get("falsy"), False)
 
     def test_cache_zero_value(self):
-        server_cache.set("zero", 0)
-        self.assertEqual(server_cache.get("zero"), 0)
+        server_store.set("zero", 0)
+        self.assertEqual(server_store.get("zero"), 0)
 
     def test_cache_empty_string(self):
-        server_cache.set("empty", "")
-        self.assertEqual(server_cache.get("empty"), "")
+        server_store.set("empty", "")
+        self.assertEqual(server_store.get("empty"), "")
 
     # ------------------------------------------------------------------
     # Factory / auto-populate
     # ------------------------------------------------------------------
 
     def test_factory_populates_on_miss(self):
-        server_cache.register("auto", lambda: "loaded")
-        self.assertEqual(server_cache.get("auto"), "loaded")
+        server_store.register("auto", lambda: "loaded")
+        self.assertEqual(server_store.get("auto"), "loaded")
         # Should be cached now
-        self.assertTrue(server_cache.has("auto"))
+        self.assertTrue(server_store.has("auto"))
 
     def test_factory_returning_none_is_cached(self):
-        server_cache.register("none_factory", lambda: None)
-        self.assertIsNone(server_cache.get("none_factory"))
-        self.assertTrue(server_cache.has("none_factory"))
+        server_store.register("none_factory", lambda: None)
+        self.assertIsNone(server_store.get("none_factory"))
+        self.assertTrue(server_store.has("none_factory"))
 
     def test_factory_not_called_if_value_present(self):
         call_count = {"n": 0}
@@ -96,31 +96,31 @@ class TestServerCache(unittest.TestCase):
             call_count["n"] += 1
             return "fresh"
 
-        server_cache.register("k", factory)
-        server_cache.set("k", "existing")
-        self.assertEqual(server_cache.get("k"), "existing")
+        server_store.register("k", factory)
+        server_store.set("k", "existing")
+        self.assertEqual(server_store.get("k"), "existing")
         self.assertEqual(call_count["n"], 0)
 
     def test_factory_failure_raises_prevent_update(self):
-        server_cache.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+        server_store.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
         with self.assertRaises(PreventUpdate):
-            server_cache.get("fail")
+            server_store.get("fail")
 
     def test_factory_failure_returns_default_via_lookup(self):
-        server_cache.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
-        self.assertIsNone(server_cache.lookup("fail"))
+        server_store.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+        self.assertIsNone(server_store.lookup("fail"))
 
     def test_factory_sets_multiple_keys(self):
         """Factory that populates sibling keys (like _load_func_econ_group)."""
         def group_loader():
-            server_cache.set("a", 10)
-            server_cache.set("b", 20)
+            server_store.set("a", 10)
+            server_store.set("b", 20)
             return 10
 
-        server_cache.register("a", group_loader)
-        self.assertEqual(server_cache.get("a"), 10)
-        self.assertTrue(server_cache.has("b"))
-        self.assertEqual(server_cache.get("b"), 20)
+        server_store.register("a", group_loader)
+        self.assertEqual(server_store.get("a"), 10)
+        self.assertTrue(server_store.has("b"))
+        self.assertEqual(server_store.get("b"), 20)
 
     # ------------------------------------------------------------------
     # Thread safety
@@ -135,11 +135,11 @@ class TestServerCache(unittest.TestCase):
             time.sleep(0.2)
             return "value"
 
-        server_cache.register("slow", slow_factory)
+        server_store.register("slow", slow_factory)
         results = {}
 
         def getter(name):
-            results[name] = server_cache.get("slow")
+            results[name] = server_store.get("slow")
 
         t1 = threading.Thread(target=getter, args=("t1",))
         t2 = threading.Thread(target=getter, args=("t2",))
@@ -160,27 +160,27 @@ class TestServerCache(unittest.TestCase):
     def test_dict_returned_is_copy(self):
         """Mutating a returned dict must not affect the cache."""
         original = {"data": [1, 2, 3]}
-        server_cache.set("ref", original)
-        retrieved = server_cache.get("ref")
+        server_store.set("ref", original)
+        retrieved = server_store.get("ref")
         self.assertIsNot(retrieved, original)
 
         retrieved["data"].append(4)
-        self.assertEqual(server_cache.get("ref")["data"], [1, 2, 3])
+        self.assertEqual(server_store.get("ref")["data"], [1, 2, 3])
 
     def test_dataframe_returned_is_copy(self):
         """Mutating a returned DataFrame must not affect the cache."""
         import pandas as pd
         original = pd.DataFrame({"a": [1, 2, 3]})
-        server_cache.set("df", original)
-        retrieved = server_cache.get("df")
+        server_store.set("df", original)
+        retrieved = server_store.get("df")
 
         retrieved["b"] = [4, 5, 6]
-        self.assertNotIn("b", server_cache.get("df").columns)
+        self.assertNotIn("b", server_store.get("df").columns)
 
     def test_immutable_returned_as_is(self):
         """Strings, numbers, etc. don't need copying."""
-        server_cache.set("s", "hello")
-        self.assertEqual(server_cache.get("s"), "hello")
+        server_store.set("s", "hello")
+        self.assertEqual(server_store.get("s"), "hello")
 
 
 if __name__ == "__main__":

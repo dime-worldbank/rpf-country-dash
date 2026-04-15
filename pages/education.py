@@ -8,7 +8,7 @@ from plotly.subplots import make_subplots
 from constants import MAP_DISCLAIMER
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
-import server_cache
+import server_store
 import data_loaders
 from utils import (
     add_currency_column,
@@ -73,7 +73,7 @@ def layout():
 )
 def fetch_edu_total_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        server_cache.set("edu_public_expenditure", data_loaders.load_edu_public_expenditure())
+        server_store.set("edu_public_expenditure", data_loaders.load_edu_public_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -85,8 +85,8 @@ def fetch_edu_total_data_once(edu_data, shared_data):
 )
 def fetch_edu_outcome_data_once(edu_data, shared_data):
     if edu_data is None and shared_data:
-        server_cache.set("learning_poverty", data_loaders.load_learning_poverty())
-        server_cache.set("hd_index", data_loaders.load_hd_index())
+        server_store.set("learning_poverty", data_loaders.load_learning_poverty())
+        server_store.set("hd_index", data_loaders.load_hd_index())
         return {"ready": True}
     return dash.no_update
 
@@ -97,7 +97,7 @@ def fetch_edu_outcome_data_once(edu_data, shared_data):
 )
 def fetch_edu_private_data_once(edu_data):
     if edu_data is None:
-        server_cache.set("edu_private_expenditure", data_loaders.load_edu_private_expenditure())
+        server_store.set("edu_private_expenditure", data_loaders.load_edu_private_expenditure())
         return {"ready": True}
     return dash.no_update
 
@@ -420,7 +420,7 @@ def total_edu_figure(df, currency_code):
 
 
 def education_narrative(country):
-    spending = server_cache.get("edu_public_expenditure")
+    spending = server_store.get("edu_public_expenditure")
     spending = filter_country_sort_year(spending, country)
 
     plot_df = (
@@ -507,9 +507,9 @@ def render_overview_total_figure(data, basic_country_data, country):
     if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
 
-    all_countries = server_cache.get("edu_public_expenditure")
+    all_countries = server_store.get("edu_public_expenditure")
     df = filter_country_sort_year(all_countries, country)
-    basic_info = server_cache.get("basic_country_info")[country]
+    basic_info = server_store.get("basic_country_info")[country]
     currency_code = basic_info['currency_code']
 
     if df.empty:
@@ -558,13 +558,13 @@ def render_public_private_figure(private_data, public_data, country,basic_countr
     if not private_data or not public_data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
     
-    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     fig_title = "What % was spent by the govt vs household?"
 
-    private = server_cache.get("edu_private_expenditure")
+    private = server_store.get("edu_private_expenditure")
     private = filter_country_sort_year(private, country)
 
-    public_df = server_cache.get("edu_public_expenditure")
+    public_df = server_store.get("edu_public_expenditure")
     public = filter_country_sort_year(public_df, country)
 
     merged = pd.merge(
@@ -706,17 +706,17 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
     if not total_data or not outcome_data or not basic_country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
-    indicator = server_cache.get("hd_index")
+    indicator = server_store.get("hd_index")
     indicator = filter_country_sort_year(indicator, country)
     indicator = indicator[indicator.adm1_name == "Total"]
 
-    learning_poverty = server_cache.get("learning_poverty")
+    learning_poverty = server_store.get("learning_poverty")
     learning_poverty = filter_country_sort_year(learning_poverty, country)
 
-    pub_exp = server_cache.get("edu_public_expenditure")
+    pub_exp = server_store.get("edu_public_expenditure")
     pub_exp = filter_country_sort_year(pub_exp, country)
 
-    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
     add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -831,7 +831,7 @@ def update_education_year_range(data, country):
 def render_education_subnat_overview(func_econ_data, sub_func_data, country, selected_year, country_data):
     if not country_data or not country:
         return empty_plot("Loading..."), empty_plot("Loading..."), "Loading..."
-    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_overview(
         func_econ_data, sub_func_data, country, selected_year, 'Education', currency_code
     )
@@ -894,5 +894,5 @@ def update_education_index_map(
 def render_education_subnat_rank(subnational_data, country, base_year, country_data):
     if not country_data or not country:
         return empty_plot("Loading..."), "Loading..."
-    currency_code = server_cache.get("basic_country_info")[country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_rank(subnational_data, country, base_year, 'Education', currency_code)

@@ -27,7 +27,7 @@ from components.source_metadata_popover import (
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
-import server_cache
+import server_store
 import data_loaders
 from server import server
 from utils import get_login_path, get_prefixed_path
@@ -209,7 +209,7 @@ def fetch_data_once(data):
     if data is None:
         df = data_loaders.load_expenditure_w_poverty()
         countries = sorted(df["country_name"].unique())
-        server_cache.set("expenditure_w_poverty", df)
+        server_store.set("expenditure_w_poverty", df)
         return {"ready": True, "countries": countries}
     return no_update
 
@@ -230,11 +230,11 @@ def fetch_func_data_once(data):
 )
 def fetch_subnational_data_once(data, country_data):
     if data is None and country_data:
-        server_cache.set("subnational_poverty_rate", data_loaders.load_subnational_poverty_rate())
-        server_cache.set("disputed_boundaries", data_loaders.load_disputed_boundaries())
-        server_cache.set("geo1_expenditure", data_loaders.load_geo1_expenditure())
-        server_cache.set("geo1_func_expenditure", data_loaders.load_geo1_func_expenditure())
-        server_cache.set("sub_func_expenditure", data_loaders.load_sub_func_expenditure())
+        server_store.set("subnational_poverty_rate", data_loaders.load_subnational_poverty_rate())
+        server_store.set("disputed_boundaries", data_loaders.load_disputed_boundaries())
+        server_store.set("geo1_expenditure", data_loaders.load_geo1_expenditure())
+        server_store.set("geo1_func_expenditure", data_loaders.load_geo1_func_expenditure())
+        server_store.set("sub_func_expenditure", data_loaders.load_sub_func_expenditure())
         return {"ready": True}
     return no_update
 
@@ -284,7 +284,7 @@ def display_data(data, search, current_country):
 def fetch_country_data_once(countries, subnational_data, country_data):
     if country_data is None and countries and subnational_data:
         country_info = data_loaders.load_basic_country_info()
-        server_cache.set("basic_country_info", country_info)
+        server_store.set("basic_country_info", country_info)
         return {"ready": True}
     return no_update
 
@@ -307,7 +307,7 @@ def fetch_subnat_boundary_data_once(geo_data, country):
         return data_to_store
 
     # Ensure subnat_boundaries is loaded (factory auto-populates on miss)
-    server_cache.get("subnat_boundaries")
+    server_store.get("subnat_boundaries")
     data_to_store[country] = True
     return data_to_store
 

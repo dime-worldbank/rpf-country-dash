@@ -1,7 +1,7 @@
 """
-Extracted data-loading functions for server_cache auto-population.
+Extracted data-loading functions for server_store auto-population.
 
-Each loader is registered with server_cache so that a cache miss on a
+Each loader is registered with server_store so that a cache miss on a
 recycled process can self-heal without waiting for the fetch-once
 Dash callbacks to re-fire.
 
@@ -12,7 +12,7 @@ import json
 import pandas as pd
 from queries import QueryService
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
-import server_cache
+import server_store
 
 
 def _db():
@@ -21,7 +21,7 @@ def _db():
 
 def _countries():
     """Derive the countries list from expenditure_w_poverty (parameter-free)."""
-    df = server_cache.get("expenditure_w_poverty")
+    df = server_store.get("expenditure_w_poverty")
     return sorted(df["country_name"].unique())
 
 
@@ -96,7 +96,7 @@ def _load_func_econ_group():
     loader populates the others too, avoiding redundant DB calls.
     """
     # If another key already triggered this, all 4 are populated
-    if server_cache.has("func_by_country_year"):
+    if server_store.has("func_by_country_year"):
         return
 
     func_econ_df = _db().get_expenditure_by_country_func_econ_year()
@@ -121,30 +121,30 @@ def _load_func_econ_group():
     prop_econ_by_func_df = prepare_prop_econ_by_func_df(func_econ_df, _AGG_DICT)
 
     # Set all 4 keys at once
-    server_cache.set("func_econ_raw", func_econ_df)
-    server_cache.set("func_by_country_year", func_df)
-    server_cache.set("econ_by_country_year", econ_df)
-    server_cache.set("prop_econ_by_func", prop_econ_by_func_df)
+    server_store.set("func_econ_raw", func_econ_df)
+    server_store.set("func_by_country_year", func_df)
+    server_store.set("econ_by_country_year", econ_df)
+    server_store.set("prop_econ_by_func", prop_econ_by_func_df)
 
 
 def load_func_econ_raw():
     _load_func_econ_group()
-    return server_cache.get("func_econ_raw")
+    return server_store.get("func_econ_raw")
 
 
 def load_func_by_country_year():
     _load_func_econ_group()
-    return server_cache.get("func_by_country_year")
+    return server_store.get("func_by_country_year")
 
 
 def load_econ_by_country_year():
     _load_func_econ_group()
-    return server_cache.get("econ_by_country_year")
+    return server_store.get("econ_by_country_year")
 
 
 def load_prop_econ_by_func():
     _load_func_econ_group()
-    return server_cache.get("prop_econ_by_func")
+    return server_store.get("prop_econ_by_func")
 
 
 def load_disputed_boundaries():
@@ -171,8 +171,8 @@ def load_basic_country_info():
     country_df = _db().get_basic_country_data(countries)
     country_info = country_df.set_index("country_name").T.to_dict()
 
-    expenditure_df = server_cache.get("geo1_expenditure")[["country_name", "year"]]
-    poverty_df = server_cache.get("subnational_poverty_rate")[
+    expenditure_df = server_store.get("geo1_expenditure")[["country_name", "year"]]
+    poverty_df = server_store.get("subnational_poverty_rate")[
         ["country_name", "year", "poverty_rate"]
     ]
 
@@ -227,12 +227,12 @@ def load_subnat_boundaries():
 
 
 def load_health_public_expenditure():
-    exp_by_func = server_cache.get("func_by_country_year")
+    exp_by_func = server_store.get("func_by_country_year")
     return exp_by_func[exp_by_func.func == "Health"]
 
 
 def load_edu_public_expenditure():
-    exp_by_func = server_cache.get("func_by_country_year")
+    exp_by_func = server_store.get("func_by_country_year")
     return exp_by_func[exp_by_func.func == "Education"]
 
 
@@ -241,27 +241,27 @@ def load_edu_public_expenditure():
 # ---------------------------------------------------------------------------
 
 def register_all():
-    """Register all loaders with server_cache. Call once at module level."""
+    """Register all loaders with server_store. Call once at module level."""
     # Simple pass-throughs
-    server_cache.register("expenditure_w_poverty", load_expenditure_w_poverty)
-    server_cache.register("subnational_poverty_rate", load_subnational_poverty_rate)
-    server_cache.register("geo1_expenditure", load_geo1_expenditure)
-    server_cache.register("geo1_func_expenditure", load_geo1_func_expenditure)
-    server_cache.register("sub_func_expenditure", load_sub_func_expenditure)
-    server_cache.register("pefa", load_pefa)
-    server_cache.register("uhc_index", load_uhc_index)
-    server_cache.register("health_private_expenditure", load_health_private_expenditure)
-    server_cache.register("learning_poverty", load_learning_poverty)
-    server_cache.register("hd_index", load_hd_index)
-    server_cache.register("edu_private_expenditure", load_edu_private_expenditure)
+    server_store.register("expenditure_w_poverty", load_expenditure_w_poverty)
+    server_store.register("subnational_poverty_rate", load_subnational_poverty_rate)
+    server_store.register("geo1_expenditure", load_geo1_expenditure)
+    server_store.register("geo1_func_expenditure", load_geo1_func_expenditure)
+    server_store.register("sub_func_expenditure", load_sub_func_expenditure)
+    server_store.register("pefa", load_pefa)
+    server_store.register("uhc_index", load_uhc_index)
+    server_store.register("health_private_expenditure", load_health_private_expenditure)
+    server_store.register("learning_poverty", load_learning_poverty)
+    server_store.register("hd_index", load_hd_index)
+    server_store.register("edu_private_expenditure", load_edu_private_expenditure)
 
     # Transformation loaders
-    server_cache.register("func_econ_raw", load_func_econ_raw)
-    server_cache.register("func_by_country_year", load_func_by_country_year)
-    server_cache.register("econ_by_country_year", load_econ_by_country_year)
-    server_cache.register("prop_econ_by_func", load_prop_econ_by_func)
-    server_cache.register("disputed_boundaries", load_disputed_boundaries)
-    server_cache.register("subnat_boundaries", load_subnat_boundaries)
-    server_cache.register("basic_country_info", load_basic_country_info)
-    server_cache.register("health_public_expenditure", load_health_public_expenditure)
-    server_cache.register("edu_public_expenditure", load_edu_public_expenditure)
+    server_store.register("func_econ_raw", load_func_econ_raw)
+    server_store.register("func_by_country_year", load_func_by_country_year)
+    server_store.register("econ_by_country_year", load_econ_by_country_year)
+    server_store.register("prop_econ_by_func", load_prop_econ_by_func)
+    server_store.register("disputed_boundaries", load_disputed_boundaries)
+    server_store.register("subnat_boundaries", load_subnat_boundaries)
+    server_store.register("basic_country_info", load_basic_country_info)
+    server_store.register("health_public_expenditure", load_health_public_expenditure)
+    server_store.register("edu_public_expenditure", load_edu_public_expenditure)
