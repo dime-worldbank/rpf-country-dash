@@ -1072,7 +1072,7 @@ def update_year_range(data, country):
 def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries, theme):
     if year is None or not data or not country_data or not country:
         return empty_plot("Data not available")
-    if not subnat_boundaries or not subnat_boundaries.get(country):
+    if not subnat_boundaries:
         return empty_plot("Data not available")
 
     geojson = server_store.get("subnat_boundaries")
@@ -1142,7 +1142,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
 def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries, theme):
     if year is None or not subnational_data or not country_data or not country:
         return empty_plot("Data not available")
-    if not subnat_boundaries or not subnat_boundaries.get(country):
+    if not subnat_boundaries:
         return empty_plot("Data not available")
 
     geojson = server_store.get("subnat_boundaries")

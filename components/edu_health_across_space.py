@@ -234,7 +234,6 @@ def update_func_expenditure_map(
         or not country
         or year is None
         or not subnat_boundaries
-        or not subnat_boundaries.get(country)
     ):
         return empty_plot("Data not available")
 
@@ -364,7 +363,6 @@ def update_hd_index_map(
         or not country
         or year is None
         or not subnat_boundaries
-        or not subnat_boundaries.get(country)
     ):
         return empty_plot("Data not available")
 

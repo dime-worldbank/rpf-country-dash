@@ -293,21 +293,13 @@ def fetch_country_data_once(countries, subnational_data, country_data):
     Input("country-select", "value"),
 )
 def fetch_subnat_boundary_data_once(geo_data, country):
-    if not country:
+    if not country or geo_data:
         return no_update
 
-    if geo_data is None:
-        data_to_store = {}
-    else:
-        data_to_store = geo_data
-
-    if data_to_store.get(country):
-        return data_to_store
-
-    # Ensure subnat_boundaries is loaded (factory auto-populates on miss)
+    # Factory loads all countries' boundaries in one DB call; once populated,
+    # the store's "ready" flag gates every downstream map-rendering callback.
     server_store.get("subnat_boundaries")
-    data_to_store[country] = True
-    return data_to_store
+    return {"ready": True}
 
 
 @app.callback(
