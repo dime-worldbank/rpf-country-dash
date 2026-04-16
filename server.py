@@ -20,9 +20,7 @@ def load_user(user_id):
     return User(user_id)
 
 
-# Cache clear endpoint: the data pipeline calls this after a load to drop
-# stale parquet + server_store entries. Gated on CACHE_REFRESH_TOKEN shared
-# secret; 503 when unset so we never expose an open cache-bust button.
+
 
 def _check_refresh_token():
     expected = os.getenv("CACHE_REFRESH_TOKEN")
@@ -34,7 +32,6 @@ def _check_refresh_token():
     return None
 
 
-@server.route("/api/cache/clear", methods=["GET", "POST"])
 def clear_cache_endpoint():
     err = _check_refresh_token()
     if err is not None:
@@ -47,3 +44,20 @@ def clear_cache_endpoint():
     server_store.clear()
     QueryService.get_instance().clear_cache()
     return jsonify({"status": "ok", "cleared_at": time.time()})
+
+
+# Registered at both the unprefixed path (local/dev) and under DEFAULT_ROOT_PATH
+# (deployed behind the rsconnect content prefix).
+URL_PREFIX = os.getenv("DEFAULT_ROOT_PATH", "/").rstrip("/")
+
+_routes = [("/api/cache/clear", "")]
+if URL_PREFIX:
+    _routes.append((f"/{URL_PREFIX}/api/cache/clear", "__prefixed"))
+
+for path, suffix in _routes:
+    server.add_url_rule(
+        path,
+        endpoint=f"{clear_cache_endpoint.__name__}{suffix}",
+        view_func=clear_cache_endpoint,
+        methods=["GET", "POST"],
+    )
