@@ -69,11 +69,10 @@ files. The cache survives worker/process restarts, so users rarely wait on a
 cold query. Credential queries bypass the disk cache (`persistent=False`).
 
 Invalidation is driven by an external refresh endpoint. The upstream data
-pipeline calls it after loading new data; the endpoint clears the parquet
-cache, pre-warms every parameterless "global" query in
-`QueryService.PREWARM_QUERY_NAMES`, and also clears the in-memory
-`server_store` so the dashboard picks up fresh data on the next request
-without waiting for a worker restart.
+pipeline calls it after loading new data; the endpoint clears both the parquet
+cache and the in-memory `server_store` so the next dashboard visitor sees
+fresh data. Repopulation is lazy — the first visitor after a refresh pays the
+DB cost; everyone after them hits the cache.
 
 ### Env vars
 
@@ -94,9 +93,8 @@ curl -X POST \
   https://<host>/api/cache/refresh
 ```
 
-Response JSON has per-query status and timing. HTTP `200` = all queries
-refreshed, `207` = partial failure (inspect `queries[].status`), `401` = bad
-token, `503` = endpoint disabled (token env var unset).
+Response is `{"status": "ok", "refreshed_at": <epoch>}`. HTTP `200` = cleared,
+`401` = bad token, `503` = endpoint disabled (token env var unset).
 
 A companion `GET /api/cache/status` (same `X-Refresh-Token` header) lists
 cached entries with row counts and file sizes — handy for pipeline verification.

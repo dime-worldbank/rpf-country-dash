@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import time
 import unittest
 from unittest.mock import patch
 
@@ -22,58 +21,39 @@ class TestPersistentQueryCache(unittest.TestCase):
     def _make(self, ttl=3600, max_entries=256):
         return PersistentQueryCache(self.cache_dir, ttl, max_entries)
 
-    # ---- hashing -----------------------------------------------------------
     def test_hash_is_stable(self):
         self.assertEqual(_hash_query("SELECT 1"), _hash_query("SELECT 1"))
 
     def test_hash_is_whitespace_sensitive(self):
-        # Whitespace differences produce distinct cache entries. This is by
-        # design — callers pass the exact SQL they executed.
         self.assertNotEqual(_hash_query("SELECT 1"), _hash_query("SELECT  1"))
 
-    # ---- basic get/set -----------------------------------------------------
     def test_miss_returns_none(self):
         self.assertIsNone(self._make().get("SELECT 1"))
 
     def test_set_then_get_hits_memory_tier(self):
         cache = self._make()
         cache.set("SELECT 1", self.df)
-        retrieved = cache.get("SELECT 1")
-        pd.testing.assert_frame_equal(retrieved, self.df)
+        pd.testing.assert_frame_equal(cache.get("SELECT 1"), self.df)
 
     def test_get_returns_defensive_copy(self):
         cache = self._make()
         cache.set("SELECT 1", self.df)
         retrieved = cache.get("SELECT 1")
         retrieved["a"] = [99, 99, 99]
-        # Second fetch should be untouched
         pd.testing.assert_frame_equal(cache.get("SELECT 1"), self.df)
 
-    # ---- disk tier (survive restart) ---------------------------------------
     def test_disk_tier_survives_new_instance(self):
-        """A new instance on the same cache_dir should see the parquet."""
-        cache1 = self._make()
-        cache1.set("SELECT 1", self.df)
-
-        cache2 = self._make()
-        retrieved = cache2.get("SELECT 1")
-        pd.testing.assert_frame_equal(retrieved, self.df)
+        """A fresh instance on the same cache_dir sees previously-written parquet."""
+        self._make().set("SELECT 1", self.df)
+        pd.testing.assert_frame_equal(self._make().get("SELECT 1"), self.df)
 
     def test_disk_tier_cleans_up_stale_index_entry(self):
-        """If the parquet was deleted out from under us, the index entry is
-        dropped rather than returning stale data."""
+        """If the parquet was deleted externally, the index entry is dropped."""
         cache = self._make()
         cache.set("SELECT 1", self.df)
+        os.remove(os.path.join(self.cache_dir, f"{_hash_query('SELECT 1')}.parquet"))
+        self.assertIsNone(self._make().get("SELECT 1"))
 
-        # Simulate external deletion of the parquet file.
-        key_hash = _hash_query("SELECT 1")
-        parquet_path = os.path.join(self.cache_dir, f"{key_hash}.parquet")
-        os.remove(parquet_path)
-
-        cache2 = self._make()
-        self.assertIsNone(cache2.get("SELECT 1"))
-
-    # ---- TTL ---------------------------------------------------------------
     def test_ttl_expires_entry(self):
         cache = self._make(ttl=100)
         with patch("query_cache.time.time", return_value=1000.0):
@@ -88,7 +68,6 @@ class TestPersistentQueryCache(unittest.TestCase):
         with patch("query_cache.time.time", return_value=1050.0):
             self.assertIsNotNone(cache.get("SELECT 1"))
 
-    # ---- invalidate / clear ------------------------------------------------
     def test_invalidate_removes_entry(self):
         cache = self._make()
         cache.set("SELECT 1", self.df)
@@ -106,30 +85,43 @@ class TestPersistentQueryCache(unittest.TestCase):
 
         self.assertIsNone(cache.get("SELECT 1"))
         self.assertEqual([], cache.status())
-        # No parquet files should remain
         leftover = [f for f in os.listdir(self.cache_dir) if f.endswith(".parquet")]
         self.assertEqual([], leftover)
 
-    # ---- LRU ---------------------------------------------------------------
     def test_memory_eviction_respects_max_entries(self):
         cache = self._make(max_entries=2)
         cache.set("a", self.df)
         cache.set("b", self.df)
-        cache.set("c", self.df)  # triggers eviction of oldest ("a")
+        cache.set("c", self.df)  # evicts oldest
         self.assertLessEqual(len(cache._mem), 2)
 
-    # ---- status ------------------------------------------------------------
     def test_status_reports_entries(self):
         cache = self._make()
         cache.set("SELECT 1", self.df)
-        entries = cache.status()
-        self.assertEqual(1, len(entries))
-        entry = entries[0]
+        [entry] = cache.status()
         self.assertEqual("SELECT 1", entry["query"])
         self.assertEqual(3, entry["rows"])
         self.assertGreater(entry["size_bytes"], 0)
 
-    # ---- concurrency smoke -------------------------------------------------
+    def test_invalidate_during_disk_read_does_not_populate_mem_with_stale(self):
+        """Regression: an invalidate() between disk read and mem populate must
+        not leave orphaned data in _mem that would outlive the invalidation."""
+        cache = self._make()
+        cache.set("SELECT 1", self.df)
+        cache._mem.clear()  # force the disk path
+
+        original_read = pd.read_parquet
+
+        def racing_read(path, *a, **kw):
+            result = original_read(path, *a, **kw)
+            cache.invalidate("SELECT 1")
+            return result
+
+        with patch("query_cache.pd.read_parquet", side_effect=racing_read):
+            cache.get("SELECT 1")
+
+        self.assertEqual({}, cache._mem)
+
     def test_concurrent_set_does_not_corrupt_index(self):
         cache = self._make()
         errors = []

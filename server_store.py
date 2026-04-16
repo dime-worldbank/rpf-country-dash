@@ -90,9 +90,7 @@ def has(key):
 
 
 def clear():
-    """Drop every cached value. Factories stay registered and will repopulate
-    on the next lookup. Called by the cache refresh endpoint so the UI picks
-    up fresh data without waiting for a worker restart."""
+    """Drop all cached values; factories stay registered and repopulate lazily."""
     with _lock:
         _store.clear()
     logger.info("server_store cleared")

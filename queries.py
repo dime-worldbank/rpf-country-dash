@@ -58,7 +58,6 @@ class QueryService:
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
 
-    # ---- Cache helpers -------------------------------------------------------
     def clear_cache(self):
         self._cache.clear()
 
@@ -69,15 +68,9 @@ class QueryService:
     def cache_status(self) -> list[dict]:
         return self._cache.status()
 
-    # ---- Cached databricks query ---------------------------------------------
     def execute_query(self, query, persistent: bool = True):
-        """
-        Executes a query and returns the result as a pandas DataFrame.
-
-        When `persistent` is False the result is neither read from nor
-        written to the persistent cache — used for sensitive queries such
-        as user credentials.
-        """
+        """Run `query` and return a DataFrame. `persistent=False` bypasses
+        the disk cache (used for credentials)."""
         if persistent:
             cached = self._cache.get(query)
             if cached is not None:
@@ -250,54 +243,3 @@ class QueryService:
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)
-
-    # ---- Prewarm registry ----------------------------------------------------
-    # Parameterless queries that back the initial dashboard load. The refresh
-    # endpoint clears the cache and re-runs every method listed here so the
-    # first user after a data refresh gets instant page loads. Per-country
-    # queries stay lazy — warming them would explode combinatorially.
-    PREWARM_QUERY_NAMES = [
-        "get_expenditure_w_poverty_by_country_year",
-        "get_expenditure_by_country_func_econ_year",
-        "get_expenditure_by_country_sub_func_year",
-        "get_expenditure_by_country_geo1_year",
-        "expenditure_and_outcome_by_country_geo1_func_year",
-        "get_learning_poverty_rate",
-        "get_universal_health_coverage_index",
-        "get_health_private_expenditure",
-        "get_edu_private_expenditure",
-        "get_indicator_data_availability",
-        "get_boost_source_urls",
-    ]
-
-    def refresh_cache(self) -> list[dict]:
-        """Clear the persistent cache and re-run every prewarm query.
-
-        Returns a per-query status list suitable for a JSON response.
-        """
-        logging.info("Refreshing query cache (%d queries)", len(self.PREWARM_QUERY_NAMES))
-        self._cache.clear()
-
-        results = []
-        for name in self.PREWARM_QUERY_NAMES:
-            entry = {"name": name}
-            fn = getattr(self, name, None)
-            if fn is None:
-                entry["status"] = "error"
-                entry["error"] = "method not found"
-                results.append(entry)
-                continue
-            start = time.time()
-            try:
-                df = fn()
-                entry["status"] = "ok"
-                entry["rows"] = int(len(df))
-            except Exception as e:
-                logging.exception("Prewarm failed for %s", name)
-                entry["status"] = "error"
-                entry["error"] = str(e)
-            entry["duration_s"] = round(time.time() - start, 3)
-            results.append(entry)
-
-        logging.info("Query cache refresh complete")
-        return results

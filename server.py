@@ -20,14 +20,9 @@ def load_user(user_id):
     return User(user_id)
 
 
-# ---- External cache refresh endpoints ---------------------------------------
-# The upstream data pipeline hits POST /api/cache/refresh after loading new
-# data. The endpoint clears the persistent query cache, pre-warms every
-# parameterless query, and clears the in-memory server_store so the dashboard
-# picks up fresh data on the next request without waiting for a worker restart.
-#
-# Auth is a shared secret in CACHE_REFRESH_TOKEN. If unset, both endpoints
-# return 503 so the app never exposes an open cache-bust button.
+# Cache refresh endpoint: the data pipeline calls this after a load to drop
+# stale parquet + server_store entries. Gated on CACHE_REFRESH_TOKEN shared
+# secret; 503 when unset so we never expose an open cache-bust button.
 
 def _check_refresh_token():
     expected = os.getenv("CACHE_REFRESH_TOKEN")
@@ -45,28 +40,13 @@ def refresh_cache_endpoint():
     if err is not None:
         return err
 
-    # Local imports avoid a circular dependency at module load time.
+    # Lazy imports: avoids circular import with queries/server_store at load.
     from queries import QueryService
     import server_store
 
-    start = time.time()
-    results = QueryService.get_instance().refresh_cache()
     server_store.clear()
-    total_s = round(time.time() - start, 3)
-
-    failed = [r for r in results if r.get("status") != "ok"]
-    status_code = 200 if not failed else 207  # 207 = partial failure
-    return (
-        jsonify(
-            {
-                "refreshed_at": time.time(),
-                "duration_s": total_s,
-                "queries": results,
-                "failed_count": len(failed),
-            }
-        ),
-        status_code,
-    )
+    QueryService.get_instance().clear_cache()
+    return jsonify({"status": "ok", "refreshed_at": time.time()})
 
 
 @server.route("/api/cache/status", methods=["GET"])
@@ -76,5 +56,4 @@ def cache_status_endpoint():
         return err
 
     from queries import QueryService
-
     return jsonify({"entries": QueryService.get_instance().cache_status()})
