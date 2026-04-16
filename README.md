@@ -61,3 +61,42 @@ SECRET_KEY=yoursecretkey
 ```
 
 The app will read usernames and salted passwords from the database, so be sure to configure them there: see `QueryService.get_user_credentials`. You may use [scripts/hash_password.py](scripts/hash_password.py) to hash passwords.
+
+## Persistent query cache
+
+Databricks queries are slow, so results are cached on local disk as parquet
+files. The cache survives worker/process restarts, so users rarely wait on a
+cold query. Credential queries bypass the disk cache (`persistent=False`).
+
+Invalidation is driven by an external refresh endpoint. The upstream data
+pipeline calls it after loading new data; the endpoint clears the parquet
+cache, pre-warms every parameterless "global" query in
+`QueryService.PREWARM_QUERY_NAMES`, and also clears the in-memory
+`server_store` so the dashboard picks up fresh data on the next request
+without waiting for a worker restart.
+
+### Env vars
+
+| Name | Default | Purpose |
+|---|---|---|
+| `QUERY_CACHE_DIR` | `./cache/queries` | Directory where parquet files live. |
+| `QUERY_CACHE_TTL_SECONDS` | `604800` (7 days) | Safety ceiling. Refresh endpoint is the primary invalidator. |
+| `QUERY_CACHE_MAX_ENTRIES` | `256` | In-memory LRU ceiling. The on-disk cache is unbounded within the dir. |
+| `CACHE_REFRESH_TOKEN` | *(unset)* | Shared secret for the refresh endpoint. If unset, the endpoint returns `503`. |
+
+### Endpoints
+
+Set `CACHE_REFRESH_TOKEN` to a strong random value and have the pipeline call:
+
+```bash
+curl -X POST \
+  -H "X-Refresh-Token: $CACHE_REFRESH_TOKEN" \
+  https://<host>/api/cache/refresh
+```
+
+Response JSON has per-query status and timing. HTTP `200` = all queries
+refreshed, `207` = partial failure (inspect `queries[].status`), `401` = bad
+token, `503` = endpoint disabled (token env var unset).
+
+A companion `GET /api/cache/status` (same `X-Refresh-Token` header) lists
+cached entries with row counts and file sizes — handy for pipeline verification.

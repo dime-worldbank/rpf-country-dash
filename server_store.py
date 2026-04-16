@@ -87,3 +87,12 @@ def get(key):
 def has(key):
     with _lock:
         return key in _store
+
+
+def clear():
+    """Drop every cached value. Factories stay registered and will repopulate
+    on the next lookup. Called by the cache refresh endpoint so the UI picks
+    up fresh data without waiting for a worker restart."""
+    with _lock:
+        _store.clear()
+    logger.info("server_store cleared")
