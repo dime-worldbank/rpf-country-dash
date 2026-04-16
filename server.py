@@ -20,7 +20,7 @@ def load_user(user_id):
     return User(user_id)
 
 
-# Cache refresh endpoint: the data pipeline calls this after a load to drop
+# Cache clear endpoint: the data pipeline calls this after a load to drop
 # stale parquet + server_store entries. Gated on CACHE_REFRESH_TOKEN shared
 # secret; 503 when unset so we never expose an open cache-bust button.
 
@@ -34,8 +34,8 @@ def _check_refresh_token():
     return None
 
 
-@server.route("/api/cache/refresh", methods=["GET", "POST"])
-def refresh_cache_endpoint():
+@server.route("/api/cache/clear", methods=["GET", "POST"])
+def clear_cache_endpoint():
     err = _check_refresh_token()
     if err is not None:
         return err
@@ -46,14 +46,4 @@ def refresh_cache_endpoint():
 
     server_store.clear()
     QueryService.get_instance().clear_cache()
-    return jsonify({"status": "ok", "refreshed_at": time.time()})
-
-
-@server.route("/api/cache/status", methods=["GET"])
-def cache_status_endpoint():
-    err = _check_refresh_token()
-    if err is not None:
-        return err
-
-    from queries import QueryService
-    return jsonify({"entries": QueryService.get_instance().cache_status()})
+    return jsonify({"status": "ok", "cleared_at": time.time()})

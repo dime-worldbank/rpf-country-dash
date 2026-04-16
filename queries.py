@@ -65,9 +65,6 @@ class QueryService:
         if self._cache.invalidate(query):
             logging.info("Invalidated cache for query: %s", query)
 
-    def cache_status(self) -> list[dict]:
-        return self._cache.status()
-
     def execute_query(self, query, persistent: bool = True):
         """Run `query` and return a DataFrame. `persistent=False` bypasses
         the disk cache (used for credentials)."""

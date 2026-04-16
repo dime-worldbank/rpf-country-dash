@@ -1,7 +1,7 @@
 """Parquet-backed query cache with an in-memory fast path.
 
 Lookup order: memory → disk → miss. TTL is a safety ceiling; primary
-invalidation is the /api/cache/refresh endpoint in server.py.
+invalidation is the /api/cache/clear endpoint in server.py.
 """
 
 import hashlib
