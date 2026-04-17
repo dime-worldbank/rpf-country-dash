@@ -48,7 +48,7 @@ def clear_cache_endpoint():
 
 # Registered at both the unprefixed path (local/dev) and under DEFAULT_ROOT_PATH
 # (deployed behind the rsconnect content prefix).
-URL_PREFIX = os.getenv("DEFAULT_ROOT_PATH", "/").rstrip("/")
+URL_PREFIX = os.getenv("DEFAULT_ROOT_PATH", "/").strip("/")
 
 _routes = [("/api/cache/clear", "")]
 if URL_PREFIX:

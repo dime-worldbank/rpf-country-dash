@@ -17,10 +17,9 @@ logging.basicConfig(
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
-# Cache tuning (env overrides optional). TTL is a safety ceiling; primary
-# invalidation is via the external refresh endpoint in server.py.
+# Cache tuning (env overrides optional). Invalidation is via the
+# external refresh endpoint in server.py.
 QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
-QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "604800"))  # 7 days
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
@@ -45,7 +44,6 @@ class QueryService:
     def __init__(self):
         self._cache = PersistentQueryCache(
             cache_dir=QUERY_CACHE_DIR,
-            ttl_seconds=QUERY_CACHE_TTL_SECONDS,
             max_entries=QUERY_CACHE_MAX_ENTRIES,
         )
 
@@ -60,10 +58,6 @@ class QueryService:
 
     def clear_cache(self):
         self._cache.clear()
-
-    def invalidate_query(self, query: str):
-        if self._cache.invalidate(query):
-            logging.info("Invalidated cache for query: %s", query)
 
     def execute_query(self, query, persistent: bool = True):
         """Run `query` and return a DataFrame. `persistent=False` bypasses

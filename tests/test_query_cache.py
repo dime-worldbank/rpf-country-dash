@@ -2,7 +2,6 @@ import os
 import tempfile
 import threading
 import unittest
-from unittest.mock import patch
 
 import pandas as pd
 
@@ -18,8 +17,8 @@ class TestPersistentQueryCache(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def _make(self, ttl=3600, max_entries=256):
-        return PersistentQueryCache(self.cache_dir, ttl, max_entries)
+    def _make(self, max_entries=256):
+        return PersistentQueryCache(self.cache_dir, max_entries)
 
     def test_hash_is_stable(self):
         self.assertEqual(_hash_query("SELECT 1"), _hash_query("SELECT 1"))
@@ -47,44 +46,21 @@ class TestPersistentQueryCache(unittest.TestCase):
         self._make().set("SELECT 1", self.df)
         pd.testing.assert_frame_equal(self._make().get("SELECT 1"), self.df)
 
-    def test_disk_tier_cleans_up_stale_index_entry(self):
-        """If the parquet was deleted externally, the index entry is dropped."""
+    def test_disk_tier_miss_after_parquet_removed(self):
+        """If the parquet was deleted externally, get() returns None."""
         cache = self._make()
         cache.set("SELECT 1", self.df)
         os.remove(os.path.join(self.cache_dir, f"{_hash_query('SELECT 1')}.parquet"))
         self.assertIsNone(self._make().get("SELECT 1"))
 
-    def test_ttl_expires_entry(self):
-        cache = self._make(ttl=100)
-        with patch("query_cache.time.time", return_value=1000.0):
-            cache.set("SELECT 1", self.df)
-        with patch("query_cache.time.time", return_value=1101.0):
-            self.assertIsNone(cache.get("SELECT 1"))
-
-    def test_ttl_does_not_expire_fresh_entry(self):
-        cache = self._make(ttl=100)
-        with patch("query_cache.time.time", return_value=1000.0):
-            cache.set("SELECT 1", self.df)
-        with patch("query_cache.time.time", return_value=1050.0):
-            self.assertIsNotNone(cache.get("SELECT 1"))
-
-    def test_invalidate_removes_entry(self):
-        cache = self._make()
-        cache.set("SELECT 1", self.df)
-        self.assertTrue(cache.invalidate("SELECT 1"))
-        self.assertIsNone(cache.get("SELECT 1"))
-
-    def test_invalidate_missing_returns_false(self):
-        self.assertFalse(self._make().invalidate("SELECT never"))
-
-    def test_clear_empties_memory_disk_and_index(self):
+    def test_clear_empties_memory_and_disk(self):
         cache = self._make()
         cache.set("SELECT 1", self.df)
         cache.set("SELECT 2", self.df)
         cache.clear()
 
         self.assertIsNone(cache.get("SELECT 1"))
-        self.assertEqual([], cache.status())
+        self.assertEqual({}, cache._mem)
         leftover = [f for f in os.listdir(self.cache_dir) if f.endswith(".parquet")]
         self.assertEqual([], leftover)
 
@@ -95,34 +71,7 @@ class TestPersistentQueryCache(unittest.TestCase):
         cache.set("c", self.df)  # evicts oldest
         self.assertLessEqual(len(cache._mem), 2)
 
-    def test_status_reports_entries(self):
-        cache = self._make()
-        cache.set("SELECT 1", self.df)
-        [entry] = cache.status()
-        self.assertEqual("SELECT 1", entry["query"])
-        self.assertEqual(3, entry["rows"])
-        self.assertGreater(entry["size_bytes"], 0)
-
-    def test_invalidate_during_disk_read_does_not_populate_mem_with_stale(self):
-        """Regression: an invalidate() between disk read and mem populate must
-        not leave orphaned data in _mem that would outlive the invalidation."""
-        cache = self._make()
-        cache.set("SELECT 1", self.df)
-        cache._mem.clear()  # force the disk path
-
-        original_read = pd.read_parquet
-
-        def racing_read(path, *a, **kw):
-            result = original_read(path, *a, **kw)
-            cache.invalidate("SELECT 1")
-            return result
-
-        with patch("query_cache.pd.read_parquet", side_effect=racing_read):
-            cache.get("SELECT 1")
-
-        self.assertEqual({}, cache._mem)
-
-    def test_concurrent_set_does_not_corrupt_index(self):
+    def test_concurrent_set_is_safe(self):
         cache = self._make()
         errors = []
 
@@ -139,7 +88,8 @@ class TestPersistentQueryCache(unittest.TestCase):
             t.join(timeout=5)
 
         self.assertEqual([], errors)
-        self.assertEqual(20, len(cache.status()))
+        parquets = [f for f in os.listdir(self.cache_dir) if f.endswith(".parquet")]
+        self.assertEqual(20, len(parquets))
 
 
 if __name__ == "__main__":
