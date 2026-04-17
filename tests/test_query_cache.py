@@ -17,8 +17,8 @@ class TestPersistentQueryCache(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def _make(self, max_entries=256):
-        return PersistentQueryCache(self.cache_dir, max_entries)
+    def _make(self):
+        return PersistentQueryCache(self.cache_dir)
 
     def test_hash_is_stable(self):
         self.assertEqual(_hash_query("SELECT 1"), _hash_query("SELECT 1"))
@@ -63,13 +63,6 @@ class TestPersistentQueryCache(unittest.TestCase):
         self.assertEqual({}, cache._mem)
         leftover = [f for f in os.listdir(self.cache_dir) if f.endswith(".parquet")]
         self.assertEqual([], leftover)
-
-    def test_memory_eviction_respects_max_entries(self):
-        cache = self._make(max_entries=2)
-        cache.set("a", self.df)
-        cache.set("b", self.df)
-        cache.set("c", self.df)  # evicts oldest
-        self.assertLessEqual(len(cache._mem), 2)
 
     def test_concurrent_set_is_safe(self):
         cache = self._make()

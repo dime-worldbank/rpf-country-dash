@@ -22,9 +22,8 @@ def _hash_query(query_text: str) -> str:
 
 
 class PersistentQueryCache:
-    def __init__(self, cache_dir: str, max_entries: int):
+    def __init__(self, cache_dir: str):
         self._cache_dir = cache_dir
-        self._max_entries = max_entries
         self._mem: dict[str, pd.DataFrame] = {}
         self._lock = threading.Lock()
         os.makedirs(self._cache_dir, exist_ok=True)
@@ -68,8 +67,6 @@ class PersistentQueryCache:
             return
 
         with self._lock:
-            if len(self._mem) >= self._max_entries:
-                del self._mem[next(iter(self._mem))]  # FIFO eviction
             self._mem[key_hash] = df
 
     def clear(self) -> None:

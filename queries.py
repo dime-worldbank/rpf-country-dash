@@ -17,10 +17,8 @@ logging.basicConfig(
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
-# Cache tuning (env overrides optional). Invalidation is via the
-# external refresh endpoint in server.py.
+# Invalidation is via the external refresh endpoint in server.py.
 QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
-QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
 def credentials_provider():
@@ -42,10 +40,7 @@ class QueryService:
         return QueryService._instance
 
     def __init__(self):
-        self._cache = PersistentQueryCache(
-            cache_dir=QUERY_CACHE_DIR,
-            max_entries=QUERY_CACHE_MAX_ENTRIES,
-        )
+        self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR)
 
         self.country_whitelist = None
         if PUBLIC_ONLY:

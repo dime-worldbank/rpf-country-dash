@@ -79,7 +79,6 @@ DB cost; everyone after them hits the cache.
 | Name | Default | Purpose |
 |---|---|---|
 | `QUERY_CACHE_DIR` | `./cache/queries` | Directory where parquet files live. |
-| `QUERY_CACHE_MAX_ENTRIES` | `256` | In-memory LRU ceiling. The on-disk cache is unbounded within the dir. |
 | `CACHE_REFRESH_TOKEN` | *(unset)* | Shared secret for the clear endpoint. If unset, the endpoint returns `503`. |
 
 ### Endpoint
