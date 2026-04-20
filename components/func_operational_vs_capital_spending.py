@@ -2,6 +2,7 @@ from dash import html
 import pandas as pd
 import plotly.graph_objects as go
 from translations import t, genitive, locative
+from constants import translate_econ
 from utils import empty_plot
 
 OP_WAGE_BILL = "Wage bill"
@@ -139,7 +140,9 @@ def _generate_econ_figure(data, func, lang="en"):
                 mode="lines",
                 line=dict(width=0.5),
                 stackgroup="one",
-                name=econ_category,
+                # Legend name needs translation: the pivoted DataFrame
+                # columns are raw English econ values like "Wage bill".
+                name=translate_econ(econ_category, lang),
             )
         )
     fig.update_xaxes(tickformat="d")
@@ -154,7 +157,10 @@ def _generate_econ_figure(data, func, lang="en"):
         hovermode="x unified",
         title=t("chart.expenditure_priorities", lang),
         plot_bgcolor="white",
-        yaxis_title=t("axis.pct_total_func_expenditure", lang, func=func_label),
+        yaxis_title=t(
+            "axis.pct_total_func_expenditure", lang,
+            func=func_label, func_gen=genitive(lang, func_label),
+        ),
         legend=dict(
             orientation="h",
             yanchor="bottom",

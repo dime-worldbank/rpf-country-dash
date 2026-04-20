@@ -24,7 +24,15 @@ from components import slider, get_slider_config, pefa, budget_increment_analysi
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
-from constants import COFOG_CATS, COFOG_KEY_MAP, FUNC_COLORS, get_map_disclaimer
+from constants import (
+    COFOG_CATS,
+    COFOG_KEY_MAP,
+    ECON_KEY_MAP,
+    FUNC_COLORS,
+    get_map_disclaimer,
+    translate_econ,
+    translate_func,
+)
 from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
@@ -508,7 +516,7 @@ def functional_figure(df, lang="en"):
         cat_df = df[df.func == cat]
         fig.add_trace(
             go.Bar(
-                name=cat,
+                name=translate_func(cat, lang),
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=FUNC_COLORS[cat],
@@ -537,14 +545,9 @@ def functional_narrative(df, lang="en"):
     categories = df.func.unique().tolist()
     text = t("narrative.func_cofog_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
 
-    def _translate_cofog(name):
-        """Translate a raw English COFOG name to the target language."""
-        key = COFOG_KEY_MAP.get(name)
-        return t(key, lang) if key else name
-
     if len(categories) < len(COFOG_CATS):
         missing_cats = set(COFOG_CATS) - set(categories)
-        translated_missing = [_translate_cofog(c) for c in missing_cats]
+        translated_missing = [translate_func(c, lang) for c in missing_cats]
         if len(missing_cats) == 1:
             text += t("narrative.func_missing_single", lang, cats=translated_missing[0])
         else:
@@ -610,11 +613,10 @@ def format_std(num):
 def format_func_cat(row, lang="en"):
     """Return the category label in the target language.
 
-    Falls back to the raw English name if the category isn't in
-    COFOG_KEY_MAP (e.g. an unexpected dataset value).
+    Thin wrapper around translate_func() for the row-shaped input used by
+    the narrative helpers.
     """
-    key = COFOG_KEY_MAP.get(row["func"])
-    return t(key, lang) if key else row["func"]
+    return translate_func(row["func"], lang)
 
 
 def subnational_spending_narrative(
@@ -1001,18 +1003,8 @@ ECON_CAT_MAP = {
     "Other expenses": "Other expenses",
 }
 
-# Maps raw English econ data values (the `econ` column in the dataset) to
-# the translation key used in en.py/fr.py. Mirrors COFOG_KEY_MAP in spirit.
-ECON_KEY_MAP = {
-    "Capital expenditures":         "econ.capital_expenditures",
-    "Goods and services":           "econ.goods_services",
-    "Social benefits":              "econ.social_benefits",
-    "Subsidies":                    "econ.subsidies",
-    "Wage bill":                    "econ.employees_compensation",
-    "Interest on debt":             "econ.interest_debt",
-    "Other grants and transfers":   "econ.grants_transfers",
-    "Other expenses":               "econ.other_expenses",
-}
+# ECON_KEY_MAP moved to constants.py so chart helpers in components/
+# can import it without a circular dependency on pages/home.py.
 ECON_PALETTE = QUALITATIVE_ALT
 ECON_COLORS = {
     cat: ECON_PALETTE[i % len(ECON_PALETTE)]
@@ -1033,7 +1025,7 @@ def economic_figure(df, currency_code, lang="en"):
         )
         fig.add_trace(
             go.Bar(
-                name=ECON_CAT_MAP[cat],
+                name=translate_econ(cat, lang),
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=ECON_COLORS[cat],
@@ -1062,14 +1054,9 @@ def economic_narrative(df, lang="en"):
     categories = df.econ.unique().tolist()
     text = t("narrative.econ_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
 
-    def _translate_econ(raw):
-        """Translate a raw dataset econ value to the target language."""
-        key = ECON_KEY_MAP.get(raw)
-        return t(key, lang) if key else ECON_CAT_MAP.get(raw, raw)
-
     if len(categories) < len(ECON_CAT_MAP):
         missing_cats = set(ECON_CAT_MAP.keys()) - set(categories)
-        translated_missing = [_translate_econ(c) for c in missing_cats]
+        translated_missing = [translate_econ(c, lang) for c in missing_cats]
         if len(translated_missing) == 1:
             text += t("narrative.econ_missing_single", lang, cats=translated_missing[0])
         else:
@@ -1109,13 +1096,9 @@ def format_econ_cats_with_numbers(df, format_number_func, lang="en"):
 def format_econ_cat(row, lang="en"):
     """Return the economic category label in the target language.
 
-    Falls back to the ECON_CAT_MAP display label if the category isn't in
-    ECON_KEY_MAP.
+    Thin wrapper around translate_econ() for the row-shaped input.
     """
-    key = ECON_KEY_MAP.get(row["econ"])
-    if key:
-        return t(key, lang)
-    return ECON_CAT_MAP.get(row["econ"], row["econ"])
+    return translate_econ(row["econ"], lang)
 
 
 @callback(

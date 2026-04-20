@@ -436,6 +436,10 @@ TRANSLATIONS = {
     # --- Outcome names ---
     "outcome.school_attendance": "School Attendance for Age 6-17",
     "outcome.uhc_index": "UHC Index",
+    # English doesn't need a separate articled form; parity with fr.py
+    # so callers can always use the .narrative key without a lang check.
+    "outcome.school_attendance.narrative": "school attendance for age 6-17",
+    "outcome.uhc_index.narrative": "the UHC Index",
 
     # --- Sankey rank labels ---
     "rank.1st": "1st",

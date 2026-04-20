@@ -346,21 +346,47 @@ def fetch_subnational_data_once(data, country_data):
     return no_update
 
 
+def _dropdown_label(country_code, lang):
+    """Return a UI-friendly label for a country dropdown option.
+
+    Looks up the localized name (e.g. "le Kenya" in French) and strips
+    any leading article so the dropdown shows just "Kenya" / "Albanie" /
+    "République démocratique du Congo" — matching standard French UI
+    convention for dropdowns while keeping the full articled form
+    available for mid-sentence narratives via `country.<code>`.
+    """
+    localized = t(f"country.{country_code}", lang)
+    for prefix in ("les ", "le ", "la ", "l'"):
+        if localized.startswith(prefix):
+            return localized[len(prefix):]
+    return localized
+
+
 @app.callback(
     Output("country-select", "options"),
     Output("country-select", "value"),
     Input("stored-data", "data"),
     Input("url", "search"),
+    Input("stored-language", "data"),
     State("country-select", "value"),
 )
-def display_data(data, search, current_country):
+def display_data(data, search, lang, current_country):
     """
     Populate country dropdown and optionally select country from URL.
     Usage: ?country=Kenya or ?country=Kenya&theme=wbg
+
+    The dropdown value remains the raw English country name (used as a
+    data key throughout the app). Only the visible label is localized.
     """
+    lang = lang or "en"
+
     def get_country_select_options(countries):
-        options = list({"label": c, "value": c} for c in countries)
-        options[0]["selected"] = True
+        options = [
+            {"label": _dropdown_label(c, lang), "value": c}
+            for c in countries
+        ]
+        if options:
+            options[0]["selected"] = True
         return options
 
     if data is not None:
@@ -377,7 +403,7 @@ def display_data(data, search, current_country):
                     selected_country = url_country
             return get_country_select_options(countries), selected_country
 
-        # URL changed but we already have a country selected - keep current
+        # URL changed or language changed but we already have a country — keep it
         return get_country_select_options(countries), current_country
     return ["No data available"], ""
 

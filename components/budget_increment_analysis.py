@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from constants import FUNC_COLORS
+from constants import FUNC_COLORS, translate_func
 from translations import t
 from utils import (
     filter_country_sort_year,
@@ -155,12 +155,15 @@ def create_func_growth_figure(df, exp_type, lang="en"):
     fig = go.Figure()
     for func, group in df.groupby("func"):
         group = group.sort_values("year")
+        # The "overall_label" trace is already translated via t(); other
+        # traces receive raw COFOG names that need translation for display.
+        display_name = func if func == overall_label else translate_func(func, lang)
         fig.add_trace(
             go.Scatter(
                 x=group["year"],
                 y=group[f"yoy_{exp_type}"],
                 mode="lines+markers",
-                name=func,
+                name=display_name,
                 line=dict(
                     color=color_mapping.get(func, "gray"),
                     width=2,

@@ -41,6 +41,47 @@ COFOG_KEY_MAP = {
     "Defence":                         "cofog.defence",
 }
 
+# Maps raw English econ data values (the `econ` column in the dataset) to
+# the translation key used in en.py/fr.py. Includes both the raw dataset
+# values and the synthetic bucket names created by
+# func_operational_vs_capital_spending.prepare_prop_econ_by_func_df()
+# (which remaps "everything except Wage bill and Capital expenditures"
+# into a single "Non-wage recurrent" bucket).
+ECON_KEY_MAP = {
+    "Capital expenditures":         "econ.capital_expenditures",
+    "Goods and services":           "econ.goods_services",
+    "Social benefits":              "econ.social_benefits",
+    "Subsidies":                    "econ.subsidies",
+    "Wage bill":                    "econ.wage_bill",
+    "Interest on debt":             "econ.interest_debt",
+    "Other grants and transfers":   "econ.grants_transfers",
+    "Other expenses":               "econ.other_expenses",
+    "Non-wage recurrent":           "econ.non_wage_recurrent",
+}
+
+
+def translate_func(name, lang="en"):
+    """Translate a raw COFOG func name (e.g. "Health") to *lang*.
+
+    Falls back to the raw name if it's not in COFOG_KEY_MAP — safer than
+    raising, since a future dataset value would silently pass through.
+    Used by chart code (legend names, hover text) and narrative helpers.
+    """
+    key = COFOG_KEY_MAP.get(name)
+    return t(key, lang) if key else name
+
+
+def translate_econ(name, lang="en"):
+    """Translate a raw econ category name (e.g. "Wage bill") to *lang*.
+
+    Translation keys in en.py/fr.py already capture the display-label
+    transformation (e.g. "Wage bill" → "Employees compensation" →
+    "Rémunération des employés"), so this is a single lookup. Falls back
+    to the raw name if unregistered.
+    """
+    key = ECON_KEY_MAP.get(name)
+    return t(key, lang) if key else name
+
 FUNC_PALETTE = QUALITATIVE
 FUNC_COLORS = create_category_color_map(COFOG_CATS, palette="qualitative")
 

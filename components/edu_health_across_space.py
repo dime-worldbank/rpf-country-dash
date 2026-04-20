@@ -630,11 +630,18 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
     outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
     outcome_name_lower = re.sub(r'\buhc\b', 'UHC', outcome_name.lower(), flags=re.IGNORECASE)
 
+    # For the correlation narrative, pass articled display names so the
+    # generated French reads "entre les dépenses... et l'indice UHC..."
+    # rather than the ungrammatical bare-noun concatenation.
+    outcome_display = (
+        t(f"{outcome_name_key}.narrative", lang)
+        if outcome_name_key else outcome_name_lower
+    )
     PCC = get_correlation_text(
         data,
         {
             "col_name": "outcome_index",
-            "display": outcome_name_lower,
+            "display": outcome_display,
         },
         {
             "col_name": "per_capita_expenditure",
@@ -648,5 +655,16 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
     best_ROI = data[data["ROI"] == data.ROI.max()].adm1_name.values[0]
     worst_ROI = data[data["ROI"] == data.ROI.min()].adm1_name.values[0]
 
-    narrative += t("narrative.subnat_rank_roi", lang, func=func_lower, outcome_name=outcome_name_lower, best=best_ROI, worst=worst_ROI)
+    # Use the .narrative form (with definite article in French) for
+    # mid-sentence interpolation — "mesuré par l'indice UHC" not
+    # "mesuré par indice UHC".
+    outcome_narrative = (
+        t(f"{outcome_name_key}.narrative", lang)
+        if outcome_name_key else outcome_name_lower
+    )
+    narrative += t(
+        "narrative.subnat_rank_roi", lang,
+        func=func_lower, outcome_name=outcome_narrative,
+        best=best_ROI, worst=worst_ROI,
+    )
     return narrative

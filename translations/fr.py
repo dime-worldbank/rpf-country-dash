@@ -57,7 +57,10 @@ TRANSLATIONS = {
     "chart.func_spending_directed": "Où les dépenses {func_gen} ont-elles été dirigées ?",
     "chart.func_levels_spending": "Combien l'État a-t-il dépensé aux différents niveaux {func_gen} ?",
     "chart.subnational_func_spending": "Dépenses infranationales {func_gen}",
-    "chart.subnational_outcome": "{outcome_name} infranational",
+    # Use a prepositional phrase so the template works for both masculine
+    # outcomes ("Indice UHC") and feminine ones ("Fréquentation scolaire")
+    # without requiring gendered adjective agreement ("infranational(e)").
+    "chart.subnational_outcome": "{outcome_name} au niveau infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
 
     # --- Trace / legend names ---
@@ -100,7 +103,7 @@ TRANSLATIONS = {
     "axis.per_capita_expenditure": "Dépenses par habitant ({currency_name})",
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
-    "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales de {func}",
+    "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
 
     # --- Radio button labels ---
@@ -386,7 +389,11 @@ TRANSLATIONS = {
     "narrative.subnat_rank_year": "En {year}, {pcc}",
     "narrative.subnat_rank_roi": " Parmi les régions infranationales, en termes de retour sur les dépenses publiques en {func} mesuré par {outcome_name}, {best} a eu le meilleur retour sur investissement (ROI) tandis que {worst} a eu le plus faible.",
     "label.per_capita_expenditure_on": "Dépenses par habitant en {func}",
-    "label.per_capita_expenditure_lower_on": "dépenses par habitant en {func}",
+    # Lowercase form: includes the article "les" since its only consumer
+    # is mid-sentence correlation narratives ("entre les dépenses par
+    # habitant en santé et l'indice UHC"), where the bare form would
+    # produce ungrammatical French.
+    "label.per_capita_expenditure_lower_on": "les dépenses par habitant en {func}",
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Affichage des données de {year}",
@@ -478,8 +485,16 @@ TRANSLATIONS = {
     "instruction.budget_legend": "Par défaut, seuls le budget global, la santé, l'éducation et les services publics généraux sont affichés dans le graphique. Cliquez sur la légende pour voir le taux de croissance budgétaire annuel des autres catégories fonctionnelles.",
 
     # --- Outcome names ---
+    # Bare form — for chart titles, hover labels. Stays without article so
+    # French titles like "Indice UHC infranational" read as clean labels.
     "outcome.school_attendance": "Fréquentation scolaire des 6-17 ans",
     "outcome.uhc_index": "Indice UHC",
+    # Narrative form — used mid-sentence after prepositions like "par" or
+    # "selon" that need a definite article in French ("mesuré par l'indice
+    # UHC", "selon la fréquentation scolaire"). Falls back to the bare form
+    # in English since articles aren't needed.
+    "outcome.school_attendance.narrative": "la fréquentation scolaire des 6-17 ans",
+    "outcome.uhc_index.narrative": "l'indice UHC",
 
     # --- Sankey rank labels ---
     "rank.1st": "1er",
