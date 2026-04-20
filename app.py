@@ -1,6 +1,4 @@
 import dash_bootstrap_components as dbc
-import pandas as pd
-import json
 import os
 
 
@@ -20,7 +18,6 @@ from dash import (
 )
 from urllib.parse import parse_qs, urlparse
 
-from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
 from components.source_metadata_popover import (
     CHART_METADATA,
     build_modal_children,
@@ -30,6 +27,7 @@ from components.source_metadata_popover import (
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
+import server_store
 from server import server
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
@@ -207,12 +205,9 @@ def update_logout_button_visibility(pathname):
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
 def fetch_data_once(data):
     if data is None:
-        df = db.get_expenditure_w_poverty_by_country_year()
+        df = server_store.get("expenditure_w_poverty")
         countries = sorted(df["country_name"].unique())
-        return {
-            "countries": countries,
-            "expenditure_w_poverty_by_country_year": df.to_dict("records"),
-        }
+        return {"ready": True, "countries": countries}
     return no_update
 
 @app.callback(
@@ -220,44 +215,8 @@ def fetch_data_once(data):
 )
 def fetch_func_data_once(data):
     if data is None:
-        func_econ_df = db.get_expenditure_by_country_func_econ_year()
-
-        agg_dict = {
-            "expenditure": "sum",
-            "budget": "sum",
-            "real_expenditure": "sum",
-            "domestic_funded_budget": "sum",
-            "decentralized_expenditure": "sum",
-            "central_expenditure": "sum",
-            "per_capita_expenditure": "sum",
-            "per_capita_real_expenditure": "sum",
-        }
-
-        func_df = func_econ_df.groupby(
-            ["country_name", "year", "func"], as_index=False
-        ).agg(agg_dict)
-        func_df["expenditure_decentralization"] = (
-            func_df["decentralized_expenditure"] / func_df["expenditure"]
-        )
-        func_df["real_domestic_funded_budget"] = (
-            func_df["real_expenditure"] / func_df["expenditure"]
-        ) * func_df["domestic_funded_budget"]
-        econ_df = func_econ_df.groupby(
-            ["country_name", "year", "econ"], as_index=False
-        ).agg(agg_dict)
-        econ_df["expenditure_decentralization"] = (
-            econ_df["decentralized_expenditure"] / econ_df["expenditure"]
-        )
-        prop_econ_by_func_df = prepare_prop_econ_by_func_df(func_econ_df, agg_dict)
-
-        return {
-            "expenditure_by_country_func_econ_year": func_econ_df.to_dict("records"),
-            "expenditure_by_country_func_year": func_df.to_dict("records"),
-            "expenditure_by_country_econ_year": econ_df.to_dict("records"),
-            "econ_expenditure_prop_by_func_country_year": prop_econ_by_func_df.to_dict(
-                "records"
-            ),
-        }
+        server_store.get("func_econ_raw")
+        return {"ready": True}
     return no_update
 
 
@@ -268,32 +227,12 @@ def fetch_func_data_once(data):
 )
 def fetch_subnational_data_once(data, country_data):
     if data is None and country_data:
-        countries = country_data["countries"]
-        df_disputed = db.get_disputed_boundaries(countries)
-
-        disputed_geojson = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "properties": {"country": x[0], "region": x[2]},
-                    "geometry": json.loads(x[1]),
-                }
-                for x in zip(df_disputed.country_name, df_disputed.boundary, df_disputed.region_name)
-            ],
-        }
-
-        poverty_df = db.get_subnational_poverty_rate(countries)
-        geo1_df = db.get_expenditure_by_country_geo1_year()
-        geo1_func_df = db.expenditure_and_outcome_by_country_geo1_func_year()
-        geo0_sub_func_df = db.get_expenditure_by_country_sub_func_year()
-
-        return {
-            "subnational_poverty_rate": poverty_df.to_dict("records"),
-            "disputed_boundaries": disputed_geojson,
-            "expenditure_by_country_geo1_year": geo1_df.to_dict("records"),
-            "expenditure_and_outcome_by_country_geo1_func_year": geo1_func_df.to_dict("records"),
-            "expenditure_by_country_sub_func_year": geo0_sub_func_df.to_dict("records"),
-        }
+        server_store.get("subnational_poverty_rate")
+        server_store.get("disputed_boundaries")
+        server_store.get("geo1_expenditure")
+        server_store.get("geo1_func_expenditure")
+        server_store.get("sub_func_expenditure")
+        return {"ready": True}
     return no_update
 
 
@@ -341,51 +280,8 @@ def display_data(data, search, current_country):
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
     if country_data is None and countries and subnational_data:
-        country_labels = [x["label"] for x in countries]
-        country_df = db.get_basic_country_data(country_labels)
-        country_info = country_df.set_index("country_name").T.to_dict()
-
-        expenditure_df = pd.DataFrame(
-            subnational_data["expenditure_by_country_geo1_year"],
-            columns=["country_name", "year"],
-        )
-        poverty_df = pd.DataFrame(
-            subnational_data["subnational_poverty_rate"],
-            columns=["country_name", "year", "poverty_rate"],
-        )
-
-        expenditure_years = (
-            expenditure_df.groupby("country_name")["year"]
-            .apply(lambda x: sorted(x.unique()))
-            .to_dict()
-        )
-        poverty_years = (
-            poverty_df.groupby("country_name")["year"]
-            .apply(lambda x: sorted(x.unique()))
-            .to_dict()
-        )
-
-        poverty_level_stats = (
-            pd.merge(country_df, poverty_df, on="country_name")
-            .groupby("income_level")["poverty_rate"]
-            .agg(["min", "max"])
-            .reset_index()
-        )
-        poverty_level_stats = (
-            poverty_level_stats.set_index("income_level").apply(tuple, axis=1).to_dict()
-        )
-
-        for country, years in expenditure_years.items():
-            country_info[country]["expenditure_years"] = years
-
-        for country, years in poverty_years.items():
-            country_info[country]["poverty_years"] = years
-
-        for country, info in country_info.items():
-            country_income_level = info["income_level"]
-            info["poverty_bounds"] = poverty_level_stats[country_income_level]
-
-        return {"basic_country_info": country_info}
+        server_store.get("basic_country_info")
+        return {"ready": True}
     return no_update
 
 
@@ -395,31 +291,13 @@ def fetch_country_data_once(countries, subnational_data, country_data):
     Input("country-select", "value"),
 )
 def fetch_subnat_boundary_data_once(geo_data, country):
-    if not country:
+    if not country or geo_data:
         return no_update
 
-    if geo_data is None:
-        data_to_store = {}
-    else:
-        data_to_store = geo_data
-
-    if data_to_store.get(country):
-        return data_to_store
-
-    db = QueryService.get_instance()
-    df = db.get_adm_boundaries([country])
-    boundaries_geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "properties": {"country": x[0], "region": x[1]},
-                "geometry": json.loads(x[2]),
-            }
-            for x in zip(df.country_name, df.admin1_region, df.boundary)
-        ],
-    }
-    data_to_store[country] = boundaries_geojson
-    return data_to_store
+    # Factory loads all countries' boundaries in one DB call; once populated,
+    # the store's "ready" flag gates every downstream map-rendering callback.
+    server_store.get("subnat_boundaries")
+    return {"ready": True}
 
 
 @app.callback(

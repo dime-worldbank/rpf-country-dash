@@ -11,6 +11,7 @@ from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
     get_map_colorscale, darken_color, lighten_color, add_opacity,
 )
+import server_store
 from utils import (
     add_currency_column,
     add_disputed_overlay,
@@ -25,7 +26,9 @@ from utils import (
 
 
 def update_year_slider(data, country, func):
-    data = pd.DataFrame(data["expenditure_and_outcome_by_country_geo1_func_year"])
+    if not data or not country:
+        return {"display": "block"}, {}, 0, 0, 0, {}
+    data = server_store.get("geo1_func_expenditure")
     data = data.loc[(data.func == func)]
 
     data = filter_country_sort_year(data, country)
@@ -48,11 +51,11 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
         )
 
     data_by_func_admin0 = _subset_data(
-        func_econ_data['expenditure_by_country_func_year'], selected_year, country, func
+        server_store.get("func_by_country_year"), selected_year, country, func
     )
 
     data_by_func_sub_geo0 = _subset_data(
-        sub_func_data["expenditure_by_country_sub_func_year"], 
+        server_store.get("sub_func_expenditure"),
         selected_year, country, func
     ).sort_values(by='func_sub')
 
@@ -71,9 +74,8 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
     )
     return fig1, fig2, narrative
 
-def _subset_data(stored_data, year, country, func):
-    data = pd.DataFrame(stored_data)
-    data = filter_country_sort_year(data, country)
+def _subset_data(df, year, country, func):
+    data = filter_country_sort_year(df, country)
     return data.loc[(data.func == func) & (data.year == year)]
 
 def _central_vs_regional_fig(data, func, currency_code):
@@ -208,7 +210,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
             text += subnat_exp_not_available_text + geo_exp_available_text
         else:
             text += f"we do not have {func_name} spending at subnational level."
-    except:
+    except (KeyError, TypeError, ValueError, IndexError):
         traceback.print_exc()
         return generate_error_prompt("GENERIC_ERROR")
 
@@ -231,12 +233,13 @@ def update_func_expenditure_map(
         or not country_data
         or not country
         or year is None
+        or not subnat_boundaries
     ):
         return empty_plot("Data not available")
 
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     df = _subset_data(
-        subnational_data['expenditure_and_outcome_by_country_geo1_func_year'],
+        server_store.get("geo1_func_expenditure"),
         year, country, func
     )
     df = df[df.adm1_name != 'Central Scope']
@@ -247,15 +250,15 @@ def update_func_expenditure_map(
     if expenditure_type not in df.columns:
         return empty_plot(f"{expenditure_type} data not available")
 
-    geojson = subnat_boundaries[country]
-    disputed_geojson = subnational_data['disputed_boundaries']
+    geojson = server_store.get("subnat_boundaries")
+    disputed_geojson = server_store.get("disputed_boundaries")
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
     # Drop NaN values and format
     df = df.dropna(subset=[expenditure_type])
@@ -279,7 +282,7 @@ def update_func_expenditure_map(
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
         zoom=zoom,
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         hover_data={expenditure_type: False},
         color_continuous_scale=get_map_colorscale(theme),
     )
@@ -359,12 +362,11 @@ def update_hd_index_map(
         or not country_data
         or not country
         or year is None
+        or not subnat_boundaries
     ):
         return empty_plot("Data not available")
 
-    all_data = pd.DataFrame(
-        subnational_data["expenditure_and_outcome_by_country_geo1_func_year"]
-    )
+    all_data = server_store.get("geo1_func_expenditure")
     all_data = filter_country_sort_year(all_data, country)
     all_data = all_data[(all_data.func == func) & (all_data.adm1_name != 'Central Scope')]
 
@@ -384,16 +386,16 @@ def update_hd_index_map(
     outcome_name, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
 
-    geojson = subnat_boundaries[country]
+    geojson = server_store.get("subnat_boundaries")
     filtered_geojson = filter_geojson_by_country(geojson, country)
 
-    disputed_geojson = subnational_data['disputed_boundaries']
+    disputed_geojson = server_store.get("disputed_boundaries")
 
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
     # Identify regions without data
     all_regions = [
@@ -413,7 +415,7 @@ def update_hd_index_map(
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
         zoom=zoom,
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         color_continuous_scale=get_map_colorscale(theme),
     )
 
@@ -486,7 +488,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
         return empty_plot("Loading..."), "Loading..."
 
     data = _subset_data(
-        subnational_data["expenditure_and_outcome_by_country_geo1_func_year"], 
+        server_store.get("geo1_func_expenditure"),
         base_year, country, func
     )
     data = data[data["outcome_index"].notna() & data["per_capita_expenditure"].notna()]
