@@ -27,7 +27,7 @@ TRANSLATIONS = {
     "heading.spending_by_econ": "Dépenses par catégories économiques",
     "heading.quality_budget": "Qualité des institutions budgétaires",
     "heading.regional_expenditure": "Dépenses régionales",
-    "heading.country_regional_expenditure": "Dépenses régionales de {country}",
+    "heading.country_regional_expenditure": "Dépenses régionales {country_gen}",
     "heading.who_pays_education": "Qui finance l'éducation ?",
     "heading.who_pays_health": "Qui finance la santé ?",
     "heading.public_spending_education_outcome": "Dépenses publiques et résultats éducatifs",
@@ -54,9 +54,9 @@ TRANSLATIONS = {
     "chart.regional_spending": "Combien a été dépensé dans chaque région ?",
     "chart.regional_per_capita": "Combien a été dépensé par habitant dans chaque région ?",
     "chart.poverty_map": "Quel pourcentage de la population vit dans la pauvreté ?",
-    "chart.func_spending_directed": "Où les dépenses de {func} ont-elles été dirigées ?",
-    "chart.func_levels_spending": "Combien l'État a-t-il dépensé aux différents niveaux de {func} ?",
-    "chart.subnational_func_spending": "Dépenses infranationales de {func}",
+    "chart.func_spending_directed": "Où les dépenses {func_gen} ont-elles été dirigées ?",
+    "chart.func_levels_spending": "Combien l'État a-t-il dépensé aux différents niveaux {func_gen} ?",
+    "chart.subnational_func_spending": "Dépenses infranationales {func_gen}",
     "chart.subnational_outcome": "{outcome_name} infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
 
@@ -158,6 +158,30 @@ TRANSLATIONS = {
     "sector.health.facilities": "infrastructures sanitaires",
     "sector.education.facilities": "infrastructures éducatives",
 
+    # --- Country names (French, with article for correct preposition
+    # contraction via genitive()). The article is REQUIRED here — French
+    # country names almost always take "le/la/les/l'" and the genitive()
+    # helper relies on it to produce "du Kenya", "de la France",
+    # "des États-Unis", "de l'Ouganda", etc.
+    "country.Albania": "l'Albanie",
+    "country.Bangladesh": "le Bangladesh",
+    "country.Bhutan": "le Bhoutan",
+    "country.Burkina Faso": "le Burkina Faso",
+    "country.Chile": "le Chili",
+    "country.Colombia": "la Colombie",
+    "country.Congo, Dem. Rep.": "la République démocratique du Congo",
+    "country.Ghana": "le Ghana",
+    "country.Kenya": "le Kenya",
+    "country.Liberia": "le Libéria",
+    "country.Mozambique": "le Mozambique",
+    "country.Nigeria": "le Nigéria",
+    "country.Pakistan": "le Pakistan",
+    "country.Paraguay": "le Paraguay",
+    "country.South Africa": "l'Afrique du Sud",
+    "country.Togo": "le Togo",
+    "country.Tunisia": "la Tunisie",
+    "country.Uruguay": "l'Uruguay",
+
     # --- Metric names (used by trend-narrative library) ---
     # Each entry is a dict bundling the display name with grammatical
     # properties (plural / feminine) that trend-narrative uses to pick the
@@ -210,8 +234,8 @@ TRANSLATIONS = {
     "narrative.central_spending_change": "Au cours de cette période, les dépenses ajustées à l'inflation du gouvernement central {change_text} ",
     "narrative.subnational_spending_change": "tandis que les dépenses ajustées à l'inflation du gouvernement infranational {change_text}. ",
     "narrative.subnational_unavailable": ". Les données du gouvernement infranational ne sont pas disponibles pour cette période. ",
-    "narrative.decentralization_by_year": "En {year}, {pct} des dépenses de {sector} ont été décentralisées.",
-    "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses de {sector} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
+    "narrative.decentralization_by_year": "En {year}, {pct} des dépenses {sector_gen} ont été décentralisées.",
+    "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses {sector_gen} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
 
     # --- Narrative templates: Public vs Private ---
     "narrative.govt_share_trend": "En {country}, la part des dépenses publiques en {sector} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
@@ -269,7 +293,11 @@ TRANSLATIONS = {
     "word.very_strong": "très forte",
     "word.increased": "a augmenté",
     "word.decreased": "a diminué",
-    "word.remained_stable": "est resté stable",
+    # Currently unused in code. If used via `narrative.govt_share_trend`
+    # (subject "la part" is feminine singular) the feminine past
+    # participle "restée" is required. For other contexts, add a parallel
+    # variant rather than changing this one.
+    "word.remained_stable": "est restée stable",
     "word.and": "et",
     "word.while": "tandis que",
 
@@ -340,11 +368,11 @@ TRANSLATIONS = {
 
     # --- Subnational across space narrative ---
     "narrative.subnat_intro": "En {country}, en {year}, ",
-    "narrative.subnat_decentralized": "{pct:.1f} % des dépenses de {func} sont exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
-    "narrative.subnat_no_data": "nous ne disposons pas de données sur les dépenses de {func} exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
-    "narrative.subnat_geo_available": ", tandis que {pct:.1f} % des dépenses de {func} sont géographiquement allouées, ce qui signifie qu'elles peuvent être financées de manière centrale ou régionale mais sont dirigées vers des régions spécifiques. Pour explorer les disparités dans les dépenses et les résultats de {func} entre les régions infranationales, nous nous concentrerons sur les dépenses géographiquement allouées, car elles fournissent une image plus complète des ressources bénéficiant à chaque région.",
+    "narrative.subnat_decentralized": "{pct:.1f} % des dépenses {func_gen} sont exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
+    "narrative.subnat_no_data": "nous ne disposons pas de données sur les dépenses {func_gen} exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
+    "narrative.subnat_geo_available": ", tandis que {pct:.1f} % des dépenses {func_gen} sont géographiquement allouées, ce qui signifie qu'elles peuvent être financées de manière centrale ou régionale mais sont dirigées vers des régions spécifiques. Pour explorer les disparités dans les dépenses et les résultats {func_gen} entre les régions infranationales, nous nous concentrerons sur les dépenses géographiquement allouées, car elles fournissent une image plus complète des ressources bénéficiant à chaque région.",
     "narrative.subnat_geo_unavailable": ". Cependant, les données sur les dépenses géographiquement allouées — qui captureraient à la fois les dépenses centrales et régionales bénéficiant à des localités spécifiques — ne sont pas disponibles. Idéalement, nous utiliserions les dépenses géographiquement allouées pour analyser les disparités infranationales, mais en raison des limites des données, nous utiliserons les dépenses décentralisées comme approximation.",
-    "narrative.subnat_no_level_data": "nous ne disposons pas de données sur les dépenses de {func} au niveau infranational.",
+    "narrative.subnat_no_level_data": "nous ne disposons pas de données sur les dépenses {func_gen} au niveau infranational.",
 
     # --- Education across space ---
     "narrative.edu_subnational_context": "Étant donné que l'enseignement primaire et secondaire est plus directement lié à la fréquentation scolaire des enfants de 6 à 17 ans, les disparités dans leur financement au niveau régional peuvent avoir un impact plus fort sur l'accès à l'éducation. Comprendre comment ces ressources se traduisent en accès à l'éducation est essentiel pour évaluer si les dépenses publiques soutiennent efficacement l'égalité des chances pour les enfants. Si le financement est inégalement réparti, cela peut contribuer à des disparités dans la fréquentation scolaire entre les régions.",
@@ -366,10 +394,10 @@ TRANSLATIONS = {
     "annotation.poverty_threshold_default": "Taux de pauvreté (seuil de 3,00 $).",
 
     # --- Operational vs Capital narrative ---
-    "narrative.econ_breakdown_intro": "En {country}, {emp_pct:.0f} % des dépenses de {func} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",
+    "narrative.econ_breakdown_intro": "En {country}, {emp_pct:.0f} % des dépenses {func_gen} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",
     "narrative.emp_comp_high": " Cela indique qu'une part significative des dépenses est consacrée aux salaires et avantages, laissant peu de marge pour les coûts opérationnels hors salaires tels que {resources} et la maintenance des installations.",
     "narrative.emp_comp_balanced": " Cela indique une allocation équilibrée entre les salaires et les autres ressources opérationnelles pour soutenir la prestation de services, permettant potentiellement un investissement accru dans les ressources et services qui ont un impact direct sur la prestation de services.",
-    "narrative.capital_spending": "Parallèlement, les dépenses d'investissement représentaient {pct:.0f} % des dépenses totales de {func} en {year}, ",
+    "narrative.capital_spending": "Parallèlement, les dépenses d'investissement représentaient {pct:.0f} % des dépenses totales {func_gen} en {year}, ",
     "narrative.capital_under_investment": "indiquant un potentiel sous-investissement dans les infrastructures à long terme, ce qui pourrait affecter la prestation de services future.",
     "narrative.capital_expected_range": "ce qui se situe dans la fourchette attendue pour les secteurs sociaux mais pourrait nécessiter une priorisation supplémentaire en fonction des besoins en infrastructure.",
     "narrative.capital_strong_emphasis": "suggérant un accent fort sur l'infrastructure et l'expansion des capacités.",
@@ -396,7 +424,7 @@ TRANSLATIONS = {
 
     # --- PEFA narrative ---
     "narrative.pefa_no_data": "Le programme de dépenses publiques et de responsabilité financière (PEFA) fournit un cadre pour évaluer et rendre compte des forces et faiblesses de la gestion des finances publiques (GFP) à l'aide d'indicateurs quantitatifs pour mesurer la performance. Malheureusement, il n'existe pas d'évaluation PEFA pour ce pays permettant de comprendre la qualité de ses institutions budgétaires.",
-    "narrative.pefa_latest": 'Selon la dernière évaluation PEFA réalisée pour {year}, le pilier le plus solide des institutions budgétaires de {country} est « {highest_pillar} », avec un score moyen de {highest_score:.1f} (note {highest_grade}){strength_narrative}. En revanche, le pilier présentant le plus de marge d\'amélioration est « {lowest_pillar} », avec un score de {lowest_score:.1f} (note {lowest_grade}), {weakness_narrative}. ',
+    "narrative.pefa_latest": 'Selon la dernière évaluation PEFA réalisée pour {year}, le pilier le plus solide des institutions budgétaires {country_gen} est « {highest_pillar} », avec un score moyen de {highest_score:.1f} (note {highest_grade}){strength_narrative}. En revanche, le pilier présentant le plus de marge d\'amélioration est « {lowest_pillar} », avec un score de {lowest_score:.1f} (note {lowest_grade}), {weakness_narrative}. ',
     "narrative.pefa_over_time": 'Au fil du temps, le pilier qui s\'est le plus amélioré est « {improved_pillar} », passant de {improved_earliest_score:.1f} (note {improved_earliest_grade}) en {earliest_year} à {improved_latest_score:.1f} (note {improved_latest_grade}) lors de la dernière évaluation. À l\'inverse, le pilier qui s\'est le plus dégradé est « {degraded_pillar} », passant de {degraded_earliest_score:.1f} (note {degraded_earliest_grade}) en {earliest_year} à {degraded_latest_score:.1f} (note {degraded_latest_grade}) dans les derniers scores. ',
     "narrative.pefa_conclusion": "Ces observations soulignent les domaines de force sur lesquels s'appuyer et les faiblesses critiques nécessitant des réformes ciblées.",
     "narrative.pefa_strength_high": ", reflétant ",

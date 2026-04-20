@@ -158,6 +158,26 @@ TRANSLATIONS = {
     "sector.health.facilities": "health facilities",
     "sector.education.facilities": "education facilities",
 
+    # --- Country names (English — no article).
+    "country.Albania": "Albania",
+    "country.Bangladesh": "Bangladesh",
+    "country.Bhutan": "Bhutan",
+    "country.Burkina Faso": "Burkina Faso",
+    "country.Chile": "Chile",
+    "country.Colombia": "Colombia",
+    "country.Congo, Dem. Rep.": "Congo, Dem. Rep.",
+    "country.Ghana": "Ghana",
+    "country.Kenya": "Kenya",
+    "country.Liberia": "Liberia",
+    "country.Mozambique": "Mozambique",
+    "country.Nigeria": "Nigeria",
+    "country.Pakistan": "Pakistan",
+    "country.Paraguay": "Paraguay",
+    "country.South Africa": "South Africa",
+    "country.Togo": "Togo",
+    "country.Tunisia": "Tunisia",
+    "country.Uruguay": "Uruguay",
+
     # --- Metric names (used by trend-narrative library) ---
     "metric.total_real_expenditure": "total real expenditure",
     "metric.real_expenditure": "real expenditure",

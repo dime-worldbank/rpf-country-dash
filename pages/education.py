@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from constants import get_map_disclaimer
-from translations import t
+from translations import t, genitive
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
@@ -505,10 +505,19 @@ def education_narrative(data, country, lang="en"):
     decentralization = spending[
         spending.year == end_year
     ].expenditure_decentralization.values[0]
+    sector_name = t("sector.education", lang)
+    sector_gen = genitive(lang, sector_name)
     if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = t("narrative.decentralization_unknown", lang, sector=t("sector.education", lang))
+        spending_decentralization = t(
+            "narrative.decentralization_unknown", lang,
+            sector=sector_name, sector_gen=sector_gen,
+        )
     else:
-        spending_decentralization = t("narrative.decentralization_by_year", lang, year=end_year, pct=f"{decentralization:.1%}", sector=t("sector.education", lang))
+        spending_decentralization = t(
+            "narrative.decentralization_by_year", lang,
+            year=end_year, pct=f"{decentralization:.1%}",
+            sector=sector_name, sector_gen=sector_gen,
+        )
     text += spending_decentralization
 
     return text
@@ -556,7 +565,7 @@ def public_private_narrative(df, country, lang="en"):
         )
         if earliest_year != latest_year:
             text += t("narrative.govt_share_trend", lang,
-                       country=country, sector=t("sector.education", lang), trend=trend,
+                       country=t(f"country.{country}", lang), sector=t("sector.education", lang), trend=trend,
                        earliest_pct=f"{earliest_gov_share:.0%}",
                        latest_pct=f"{latest_gov_share:.0%}",
                        earliest_year=earliest_year, latest_year=latest_year)
@@ -678,7 +687,7 @@ def render_public_private_figure(private_data, public_data, country, basic_count
 
 
 def outcome_measure(country, lang="en"):
-    return t("narrative.education_outcome_measure", lang, country=country)
+    return t("narrative.education_outcome_measure", lang, country=t(f"country.{country}", lang))
 
 
 def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code, lang="en"):
@@ -880,7 +889,8 @@ def render_education_subnat_overview(func_econ_data, sub_func_data, country, sel
 )
 def update_education_subnational_motivation_narrative(country_name, year, lang):
     lang = lang or "en"
-    return t("narrative.edu_subnational_motivation", lang, country=country_name, year=year)
+    return t("narrative.edu_subnational_motivation", lang,
+             country=t(f"country.{country_name}", lang), year=year)
 
 
 @callback(

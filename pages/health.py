@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from constants import get_map_disclaimer
-from translations import t
+from translations import t, genitive
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
@@ -510,10 +510,19 @@ def health_narrative(data, country, lang="en"):
     decentralization = spending[
         spending.year == end_year
     ].expenditure_decentralization.values[0]
+    sector_name = t("sector.health", lang)
+    sector_gen = genitive(lang, sector_name)
     if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = t("narrative.decentralization_unknown", lang, sector=t("sector.health", lang))
+        spending_decentralization = t(
+            "narrative.decentralization_unknown", lang,
+            sector=sector_name, sector_gen=sector_gen,
+        )
     else:
-        spending_decentralization = t("narrative.decentralization_by_year", lang, year=end_year, pct=f"{decentralization:.1%}", sector=t("sector.health", lang))
+        spending_decentralization = t(
+            "narrative.decentralization_by_year", lang,
+            year=end_year, pct=f"{decentralization:.1%}",
+            sector=sector_name, sector_gen=sector_gen,
+        )
     text += spending_decentralization
 
     return text
@@ -560,7 +569,7 @@ def public_private_narrative(df, country, lang="en"):
         )
         if earliest_year != latest_year:
             text += t("narrative.govt_share_trend", lang,
-                       country=country, sector=t("sector.health", lang), trend=trend,
+                       country=t(f"country.{country}", lang), sector=t("sector.health", lang), trend=trend,
                        earliest_pct=f"{earliest_gov_share:.0%}",
                        latest_pct=f"{latest_gov_share:.0%}",
                        earliest_year=earliest_year, latest_year=latest_year)
@@ -836,7 +845,8 @@ def render_health_subnat_overview(func_data, sub_func_data, country, selected_ye
 )
 def update_health_subnational_motivation_narrative(country_name, year, lang):
     lang = lang or "en"
-    return t("narrative.health_subnational_motivation", lang, country=country_name, year=year)
+    return t("narrative.health_subnational_motivation", lang,
+             country=t(f"country.{country_name}", lang), year=year)
 
 
 @callback(

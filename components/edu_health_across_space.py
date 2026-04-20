@@ -7,7 +7,7 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t
+from translations import t, genitive
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
     get_map_colorscale, darken_color, lighten_color, add_opacity,
@@ -79,7 +79,10 @@ def _subset_data(stored_data, year, country, func):
 
 def _central_vs_regional_fig(data, func, currency_code, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
-    fig_title = t("chart.func_spending_directed", lang, func=func_lower)
+    fig_title = t(
+        "chart.func_spending_directed", lang,
+        func=func_lower, func_gen=genitive(lang, func_lower),
+    )
     central_vs_regional = (
         data.groupby("geo0").sum(numeric_only=True).reset_index()
     )
@@ -110,7 +113,10 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
 
 def _sub_func_fig(data, func, currency_code, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
-    fig_title = t("chart.func_levels_spending", lang, func=func_lower)
+    fig_title = t(
+        "chart.func_levels_spending", lang,
+        func=func_lower, func_gen=genitive(lang, func_lower),
+    )
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
 
     if education_values.empty:
@@ -192,22 +198,24 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         decentralization = data_by_func_admin0.expenditure_decentralization.values[0] * 100
 
         func_name = t(f"sector.{func.lower()}", lang)
+        func_gen = genitive(lang, func_name)
 
-        text = t("narrative.subnat_intro", lang, country=country, year=selected_year)
+        text = t("narrative.subnat_intro", lang,
+                 country=t(f"country.{country}", lang), year=selected_year)
 
         subnat_exp_available = not math.isnan(decentralization) and not math.isclose(decentralization, 0)
         geo_exp_available = not math.isnan(geo_tagged) and not math.isclose(geo_tagged, decentralization)
         if subnat_exp_available and geo_exp_available:
-            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name)
-            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name)
+            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name, func_gen=func_gen)
+            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name, func_gen=func_gen)
         elif subnat_exp_available and not geo_exp_available:
-            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name)
+            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name, func_gen=func_gen)
             text += t("narrative.subnat_geo_unavailable", lang)
         elif not subnat_exp_available and geo_exp_available:
-            text += t("narrative.subnat_no_data", lang, func=func_name)
-            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name)
+            text += t("narrative.subnat_no_data", lang, func=func_name, func_gen=func_gen)
+            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name, func_gen=func_gen)
         else:
-            text += t("narrative.subnat_no_level_data", lang, func=func_name)
+            text += t("narrative.subnat_no_level_data", lang, func=func_name, func_gen=func_gen)
     except:
         traceback.print_exc()
         return generate_error_prompt("GENERIC_ERROR", lang=lang)
@@ -310,8 +318,12 @@ def update_func_expenditure_map(
     )
     add_disputed_overlay(fig, disputed_geojson, zoom)
 
+    cofog_name = t(f"cofog.{func.lower()}", lang)
     fig.update_layout(
-        title=t("chart.subnational_func_spending", lang, func=t(f"cofog.{func.lower()}", lang)),
+        title=t(
+            "chart.subnational_func_spending", lang,
+            func=cofog_name, func_gen=genitive(lang, cofog_name),
+        ),
         plot_bgcolor="white",
         coloraxis_colorbar=dict(
             title="",

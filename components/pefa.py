@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from plotly.subplots import make_subplots
-from translations import t
+from translations import t, genitive
 from utils import empty_plot
 import numpy as np
 import plotly.graph_objects as go
@@ -286,8 +286,10 @@ def pefa_narrative(df, lang="en"):
     highest_pillar_name = _pillar_text(highest_pillar, lang)
     lowest_pillar_name = _pillar_text(lowest_pillar, lang)
 
+    country_display = t(f"country.{country}", lang)
     text = t("narrative.pefa_latest", lang,
-             year=latest_year, country=country,
+             year=latest_year, country=country_display,
+             country_gen=genitive(lang, country_display),
              highest_pillar=highest_pillar_name, highest_score=highest_score,
              highest_grade=highest_grade, strength_narrative=strength_narrative,
              lowest_pillar=lowest_pillar_name, lowest_score=lowest_score,

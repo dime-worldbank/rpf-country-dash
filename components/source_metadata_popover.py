@@ -233,7 +233,7 @@ def _build_source_section(section, country_name=None, lang="en"):
     coverage = section.get("coverage")
     if coverage:
         label = (
-            t("detail.coverage_for", lang, country=country_name)
+            t("detail.coverage_for", lang, country=t(f"country.{country_name}", lang))
             if country_name
             else t("detail.coverage", lang)
         )
