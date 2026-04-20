@@ -159,13 +159,46 @@ TRANSLATIONS = {
     "sector.education.facilities": "infrastructures éducatives",
 
     # --- Metric names (used by trend-narrative library) ---
-    "metric.total_real_expenditure": "dépenses réelles totales",
-    "metric.real_expenditure": "dépenses réelles",
-    "metric.per_capita_health_spending": "dépenses de santé par habitant",
-    "metric.uhc_index": "indice de couverture sanitaire universelle",
-    "metric.per_capita_education_spending": "dépenses d'éducation par habitant",
-    "metric.school_attendance": "taux de scolarisation (6-17 ans)",
-    "metric.learning_poverty_rate": "taux de pauvreté des apprentissages",
+    # Each entry is a dict bundling the display name with grammatical
+    # properties (plural / feminine) that trend-narrative uses to pick the
+    # correct verb and participle forms in French narratives. Templates
+    # in trend-narrative use bare {metric}, so the article ("les", "le",
+    # "la", "l'") must be included in the name.
+    "metric.total_real_expenditure": {
+        "name": "les dépenses réelles totales",
+        "plural": True,
+        "feminine": True,
+    },
+    "metric.real_expenditure": {
+        "name": "les dépenses réelles",
+        "plural": True,
+        "feminine": True,
+    },
+    "metric.per_capita_health_spending": {
+        "name": "les dépenses de santé par habitant",
+        "plural": True,
+        "feminine": True,
+    },
+    "metric.uhc_index": {
+        "name": "l'indice de couverture sanitaire universelle",
+        "plural": False,
+        "feminine": False,
+    },
+    "metric.per_capita_education_spending": {
+        "name": "les dépenses d'éducation par habitant",
+        "plural": True,
+        "feminine": True,
+    },
+    "metric.school_attendance": {
+        "name": "le taux de scolarisation (6-17 ans)",
+        "plural": False,
+        "feminine": False,
+    },
+    "metric.learning_poverty_rate": {
+        "name": "le taux de pauvreté des apprentissages",
+        "plural": False,
+        "feminine": False,
+    },
 
     # --- Narrative templates: Overview ---
     "narrative.after_inflation": "Après prise en compte de l'inflation, {trend_narrative} ",
