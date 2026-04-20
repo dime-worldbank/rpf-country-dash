@@ -1,12 +1,12 @@
 """
-Extracted data-loading functions for server_store auto-population.
+Mapping of server_store cache keys to the functions that produce the data.
 
-Each loader is registered with server_store so that a cache miss on a
+server_store reads `function_data_mapping` on a cache miss so that a
 recycled process can self-heal without waiting for the fetch-once
-Dash callbacks to re-fire.
+Dash callbacks to re-fire. Nothing here runs at import time.
 
-Loaders that need a `countries` list obtain it by first loading the
-expenditure_w_poverty key (which has no parameters).
+Functions that need a `countries` list obtain it by first looking up
+the expenditure_w_poverty key (which has no parameters).
 """
 import json
 import pandas as pd
@@ -23,54 +23,6 @@ def _countries():
     """Derive the countries list from expenditure_w_poverty (parameter-free)."""
     df = server_store.lookup("expenditure_w_poverty")
     return sorted(df["country_name"].unique())
-
-
-# ---------------------------------------------------------------------------
-# Simple pass-through loaders (no transformation)
-# ---------------------------------------------------------------------------
-
-def load_expenditure_w_poverty():
-    df = _db().get_expenditure_w_poverty_by_country_year()
-    return df
-
-
-def load_subnational_poverty_rate():
-    return _db().get_subnational_poverty_rate(_countries())
-
-
-def load_geo1_expenditure():
-    return _db().get_expenditure_by_country_geo1_year()
-
-
-def load_geo1_func_expenditure():
-    return _db().expenditure_and_outcome_by_country_geo1_func_year()
-
-
-def load_sub_func_expenditure():
-    return _db().get_expenditure_by_country_sub_func_year()
-
-
-def load_pefa():
-    return _db().get_pefa(_countries())
-
-
-def load_uhc_index():
-    return _db().get_universal_health_coverage_index()
-
-
-def load_health_private_expenditure():
-    return _db().get_health_private_expenditure()
-
-def load_learning_poverty():
-    return _db().get_learning_poverty_rate()
-
-
-def load_hd_index():
-    return _db().get_hd_index(_countries())
-
-
-def load_edu_private_expenditure():
-    return _db().get_edu_private_expenditure()
 
 
 # ---------------------------------------------------------------------------
@@ -237,31 +189,31 @@ def load_edu_public_expenditure():
 
 
 # ---------------------------------------------------------------------------
-# Registration
+# Mapping of cache keys to the function that produces the data.
+# server_store uses this to auto-populate a key on cache miss.
 # ---------------------------------------------------------------------------
 
-def register_all():
-    """Register all loaders with server_store. Call once at module level."""
+function_data_mapping = {
     # Simple pass-throughs
-    server_store.register("expenditure_w_poverty", load_expenditure_w_poverty)
-    server_store.register("subnational_poverty_rate", load_subnational_poverty_rate)
-    server_store.register("geo1_expenditure", load_geo1_expenditure)
-    server_store.register("geo1_func_expenditure", load_geo1_func_expenditure)
-    server_store.register("sub_func_expenditure", load_sub_func_expenditure)
-    server_store.register("pefa", load_pefa)
-    server_store.register("uhc_index", load_uhc_index)
-    server_store.register("health_private_expenditure", load_health_private_expenditure)
-    server_store.register("learning_poverty", load_learning_poverty)
-    server_store.register("hd_index", load_hd_index)
-    server_store.register("edu_private_expenditure", load_edu_private_expenditure)
-
+    "expenditure_w_poverty": lambda: _db().get_expenditure_w_poverty_by_country_year(),
+    "subnational_poverty_rate": lambda: _db().get_subnational_poverty_rate(_countries()),
+    "geo1_expenditure": lambda: _db().get_expenditure_by_country_geo1_year(),
+    "geo1_func_expenditure": lambda: _db().expenditure_and_outcome_by_country_geo1_func_year(),
+    "sub_func_expenditure": lambda: _db().get_expenditure_by_country_sub_func_year(),
+    "pefa": lambda: _db().get_pefa(_countries()),
+    "uhc_index": lambda: _db().get_universal_health_coverage_index(),
+    "health_private_expenditure": lambda: _db().get_health_private_expenditure(),
+    "learning_poverty": lambda: _db().get_learning_poverty_rate(),
+    "hd_index": lambda: _db().get_hd_index(_countries()),
+    "edu_private_expenditure": lambda: _db().get_edu_private_expenditure(),
     # Transformation loaders
-    server_store.register("func_econ_raw", load_func_econ_raw)
-    server_store.register("func_by_country_year", load_func_by_country_year)
-    server_store.register("econ_by_country_year", load_econ_by_country_year)
-    server_store.register("prop_econ_by_func", load_prop_econ_by_func)
-    server_store.register("disputed_boundaries", load_disputed_boundaries)
-    server_store.register("subnat_boundaries", load_subnat_boundaries)
-    server_store.register("basic_country_info", load_basic_country_info)
-    server_store.register("health_public_expenditure", load_health_public_expenditure)
-    server_store.register("edu_public_expenditure", load_edu_public_expenditure)
+    "func_econ_raw": load_func_econ_raw,
+    "func_by_country_year": load_func_by_country_year,
+    "econ_by_country_year": load_econ_by_country_year,
+    "prop_econ_by_func": load_prop_econ_by_func,
+    "disputed_boundaries": load_disputed_boundaries,
+    "subnat_boundaries": load_subnat_boundaries,
+    "basic_country_info": load_basic_country_info,
+    "health_public_expenditure": load_health_public_expenditure,
+    "edu_public_expenditure": load_edu_public_expenditure,
+}

@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 _MISSING = object()  # sentinel to distinguish "not cached" from cached None
 
 _store = {}
-_factories = {}
 _lock = threading.Lock()
 
 
@@ -22,11 +21,6 @@ def _safe_copy(value):
     return value
 
 
-def register(key, factory):
-    """Register a loader function that auto-populates the key on cache miss."""
-    _factories[key] = factory
-
-
 def set(key, value):
     with _lock:
         _store[key] = value
@@ -35,22 +29,24 @@ def set(key, value):
 def _lookup_raw(key):
     """Return the raw cached value (no copy), or _MISSING if not found.
 
-    If a factory is registered, auto-populates on miss.
+    On miss, auto-populates via data_mapping.function_data_mapping.
     """
     with _lock:
         value = _store.get(key, _MISSING)
     if value is not _MISSING:
         return value
 
-    factory = _factories.get(key)
-    if not factory:
+    # Lazy import to avoid circular dependency (data_mapping imports server_store).
+    from data_mapping import function_data_mapping
+    loader = function_data_mapping.get(key)
+    if not loader:
         return _MISSING
 
     try:
-        logger.info("server_store: auto-populating '%s' via factory", key)
-        value = factory()
+        logger.info("server_store: auto-populating '%s'", key)
+        value = loader()
     except Exception:
-        logger.exception("server_store: factory for '%s' failed", key)
+        logger.exception("server_store: loader for '%s' failed", key)
         return _MISSING
 
     with _lock:

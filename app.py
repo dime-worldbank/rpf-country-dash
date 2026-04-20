@@ -28,7 +28,6 @@ from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
 import server_store
-import data_loaders
 from server import server
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
@@ -66,7 +65,6 @@ app.index_string = f'''
 init_plotly_theme()
 
 db = QueryService.get_instance()
-data_loaders.register_all()
 
 header = html.Div(
     [
