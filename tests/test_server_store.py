@@ -3,6 +3,7 @@ import threading
 import time
 from dash.exceptions import PreventUpdate
 import server_store
+import data_mapping
 
 
 class TestServerStore(unittest.TestCase):
@@ -11,7 +12,12 @@ class TestServerStore(unittest.TestCase):
     def setUp(self):
         """Reset store state between tests."""
         server_store._store.clear()
-        server_store._factories.clear()
+        self._saved_mapping = data_mapping.function_data_mapping.copy()
+        data_mapping.function_data_mapping.clear()
+
+    def tearDown(self):
+        data_mapping.function_data_mapping.clear()
+        data_mapping.function_data_mapping.update(self._saved_mapping)
 
     # ------------------------------------------------------------------
     # Basic get/set/has
@@ -74,49 +80,49 @@ class TestServerStore(unittest.TestCase):
         self.assertEqual(server_store.get("empty"), "")
 
     # ------------------------------------------------------------------
-    # Factory / auto-populate
+    # Loader / auto-populate
     # ------------------------------------------------------------------
 
-    def test_factory_populates_on_miss(self):
-        server_store.register("auto", lambda: "loaded")
+    def test_loader_populates_on_miss(self):
+        data_mapping.function_data_mapping["auto"] = lambda: "loaded"
         self.assertEqual(server_store.get("auto"), "loaded")
         # Should be cached now
         self.assertTrue(server_store.has("auto"))
 
-    def test_factory_returning_none_is_cached(self):
-        server_store.register("none_factory", lambda: None)
-        self.assertIsNone(server_store.get("none_factory"))
-        self.assertTrue(server_store.has("none_factory"))
+    def test_loader_returning_none_is_cached(self):
+        data_mapping.function_data_mapping["none_loader"] = lambda: None
+        self.assertIsNone(server_store.get("none_loader"))
+        self.assertTrue(server_store.has("none_loader"))
 
-    def test_factory_not_called_if_value_present(self):
+    def test_loader_not_called_if_value_present(self):
         call_count = {"n": 0}
 
-        def factory():
+        def loader():
             call_count["n"] += 1
             return "fresh"
 
-        server_store.register("k", factory)
+        data_mapping.function_data_mapping["k"] = loader
         server_store.set("k", "existing")
         self.assertEqual(server_store.get("k"), "existing")
         self.assertEqual(call_count["n"], 0)
 
-    def test_factory_failure_raises_prevent_update(self):
-        server_store.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    def test_loader_failure_raises_prevent_update(self):
+        data_mapping.function_data_mapping["fail"] = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
         with self.assertRaises(PreventUpdate):
             server_store.get("fail")
 
-    def test_factory_failure_returns_default_via_lookup(self):
-        server_store.register("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    def test_loader_failure_returns_default_via_lookup(self):
+        data_mapping.function_data_mapping["fail"] = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
         self.assertIsNone(server_store.lookup("fail"))
 
-    def test_factory_sets_multiple_keys(self):
-        """Factory that populates sibling keys (like _load_func_econ_group)."""
+    def test_loader_sets_multiple_keys(self):
+        """Loader that populates sibling keys (like _load_func_econ_group)."""
         def group_loader():
             server_store.set("a", 10)
             server_store.set("b", 20)
             return 10
 
-        server_store.register("a", group_loader)
+        data_mapping.function_data_mapping["a"] = group_loader
         self.assertEqual(server_store.get("a"), 10)
         self.assertTrue(server_store.has("b"))
         self.assertEqual(server_store.get("b"), 20)
@@ -133,12 +139,12 @@ class TestServerStore(unittest.TestCase):
         """
         call_count = {"n": 0}
 
-        def slow_factory():
+        def slow_loader():
             call_count["n"] += 1
             time.sleep(0.2)
             return object()  # unique per call, so identity distinguishes writers
 
-        server_store.register("slow", slow_factory)
+        data_mapping.function_data_mapping["slow"] = slow_loader
         results = {}
 
         def getter(name):
