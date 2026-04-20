@@ -238,7 +238,7 @@ TRANSLATIONS = {
     "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses {sector_gen} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
 
     # --- Narrative templates: Public vs Private ---
-    "narrative.govt_share_trend": "En {country}, la part des dépenses publiques en {sector} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
+    "narrative.govt_share_trend": "{country_loc}, la part des dépenses publiques en {sector} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
     "narrative.household_ratio": "Pour chaque unité de dépense en {sector} par l'État, les ménages ont dépensé {ratio} unités en {year}. ",
 
     # --- Narrative templates: Outcomes ---
@@ -367,7 +367,7 @@ TRANSLATIONS = {
     "narrative.correlation_weak_inverse": "La corrélation entre les dépenses par habitant et les taux de pauvreté est de {corr}, indiquant une faible relation inverse. Il n'y a pas de schéma cohérent entre des dépenses par habitant plus élevées et les taux de pauvreté.",
 
     # --- Subnational across space narrative ---
-    "narrative.subnat_intro": "En {country}, en {year}, ",
+    "narrative.subnat_intro": "{country_loc}, en {year}, ",
     "narrative.subnat_decentralized": "{pct:.1f} % des dépenses {func_gen} sont exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
     "narrative.subnat_no_data": "nous ne disposons pas de données sur les dépenses {func_gen} exécutées par les gouvernements régionaux ou locaux (dépenses décentralisées)",
     "narrative.subnat_geo_available": ", tandis que {pct:.1f} % des dépenses {func_gen} sont géographiquement allouées, ce qui signifie qu'elles peuvent être financées de manière centrale ou régionale mais sont dirigées vers des régions spécifiques. Pour explorer les disparités dans les dépenses et les résultats {func_gen} entre les régions infranationales, nous nous concentrerons sur les dépenses géographiquement allouées, car elles fournissent une image plus complète des ressources bénéficiant à chaque région.",
@@ -394,7 +394,7 @@ TRANSLATIONS = {
     "annotation.poverty_threshold_default": "Taux de pauvreté (seuil de 3,00 $).",
 
     # --- Operational vs Capital narrative ---
-    "narrative.econ_breakdown_intro": "En {country}, {emp_pct:.0f} % des dépenses {func_gen} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",
+    "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f} % des dépenses {func_gen} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",
     "narrative.emp_comp_high": " Cela indique qu'une part significative des dépenses est consacrée aux salaires et avantages, laissant peu de marge pour les coûts opérationnels hors salaires tels que {resources} et la maintenance des installations.",
     "narrative.emp_comp_balanced": " Cela indique une allocation équilibrée entre les salaires et les autres ressources opérationnelles pour soutenir la prestation de services, permettant potentiellement un investissement accru dans les ressources et services qui ont un impact direct sur la prestation de services.",
     "narrative.capital_spending": "Parallèlement, les dépenses d'investissement représentaient {pct:.0f} % des dépenses totales {func_gen} en {year}, ",

@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from constants import get_map_disclaimer
-from translations import t, genitive
+from translations import t, genitive, locative
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 from utils import (
@@ -568,8 +568,11 @@ def public_private_narrative(df, country, lang="en"):
             / df.real_expenditure_public.values[0]
         )
         if earliest_year != latest_year:
+            country_display = t(f"country.{country}", lang)
             text += t("narrative.govt_share_trend", lang,
-                       country=t(f"country.{country}", lang), sector=t("sector.health", lang), trend=trend,
+                       country=country_display,
+                       country_loc=locative(lang, country_display),
+                       sector=t("sector.health", lang), trend=trend,
                        earliest_pct=f"{earliest_gov_share:.0%}",
                        latest_pct=f"{latest_gov_share:.0%}",
                        earliest_year=earliest_year, latest_year=latest_year)

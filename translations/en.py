@@ -201,7 +201,7 @@ TRANSLATIONS = {
     "narrative.decentralization_unknown": "The extent of {sector} spending decentralization is unknown due to a lack of subnational public expenditure data.",
 
     # --- Narrative templates: Public vs Private ---
-    "narrative.govt_share_trend": "In {country}, the government's share of spending on {sector} {trend} from {earliest_pct} to {latest_pct} between {earliest_year} and {latest_year}. ",
+    "narrative.govt_share_trend": "{country_loc}, the government's share of spending on {sector} {trend} from {earliest_pct} to {latest_pct} between {earliest_year} and {latest_year}. ",
     "narrative.household_ratio": "For every unit of spending on {sector} by the government, households spent {ratio} units in {year}. ",
 
     # --- Narrative templates: Outcomes ---
@@ -323,7 +323,7 @@ TRANSLATIONS = {
     "narrative.correlation_weak_inverse": "The correlation between per capita spending and poverty rates is {corr}, indicating a weak inverse relationship. There is little consistent pattern between higher per capita spending and poverty rates.",
 
     # --- Subnational across space narrative ---
-    "narrative.subnat_intro": "In {country}, as of {year}, ",
+    "narrative.subnat_intro": "{country_loc}, as of {year}, ",
     "narrative.subnat_decentralized": "{pct:.1f}% of {func} spending is executed by regional or local governments (decentralized spending)",
     "narrative.subnat_no_data": "we do not have data on {func} spending executed by regional or local governments (decentralized spending)",
     "narrative.subnat_geo_available": ", while {pct:.1f}% of {func} spending is geographically allocated, meaning it may be funded either centrally or regionally but is directed toward specific regions. To explore disparities in spending and {func} outcomes across subnational regions, we will focus on geographically allocated spending, as it provides a more complete picture of resources benefiting each region.",
@@ -350,7 +350,7 @@ TRANSLATIONS = {
     "annotation.poverty_threshold_default": "Poverty rate ($3.00 threshold).",
 
     # --- Operational vs Capital narrative ---
-    "narrative.econ_breakdown_intro": "In {country}, {emp_pct:.0f}% of {func} spending was allocated to employee compensation and {other_pct:.0f}% to non-wage recurrent expenditures in {year}.{emp_narrative}",
+    "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f}% of {func} spending was allocated to employee compensation and {other_pct:.0f}% to non-wage recurrent expenditures in {year}.{emp_narrative}",
     "narrative.emp_comp_high": " This indicates that a significant portion of spending is directed towards salaries and benefits, leaving limited room for non-salary operational costs such as {resources} and facility maintenance.",
     "narrative.emp_comp_balanced": " This indicates a balanced allocation between salaries and other operational resources to support service delivery, potentially enabling enhanced investment in resources and services that directly impact service delivery.",
     "narrative.capital_spending": "Meanwhile, capital spending represented {pct:.0f}% of total {func} spending in {year}, ",

@@ -7,7 +7,7 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t, genitive
+from translations import t, genitive, locative
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
     get_map_colorscale, darken_color, lighten_color, add_opacity,
@@ -200,8 +200,11 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         func_name = t(f"sector.{func.lower()}", lang)
         func_gen = genitive(lang, func_name)
 
+        country_display = t(f"country.{country}", lang)
         text = t("narrative.subnat_intro", lang,
-                 country=t(f"country.{country}", lang), year=selected_year)
+                 country=country_display,
+                 country_loc=locative(lang, country_display),
+                 year=selected_year)
 
         subnat_exp_available = not math.isnan(decentralization) and not math.isclose(decentralization, 0)
         geo_exp_available = not math.isnan(geo_tagged) and not math.isclose(geo_tagged, decentralization)

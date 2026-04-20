@@ -76,6 +76,67 @@ def _genitive_fr(name):
     return "de " + name
 
 
+def _locative_fr(name):
+    """French locative: transform a country name into its "in X" form.
+
+    Unlike English "in", French uses different prepositions depending on
+    the country's gender, number, and whether it takes an article:
+
+    * ``le Kenya``       → ``au Kenya``      (à + le → au)
+    * ``les États-Unis`` → ``aux États-Unis`` (à + les → aux)
+    * ``la France``      → ``en France``      (feminine drops article)
+    * ``l'Albanie``      → ``en Albanie``     (vowel drops article)
+    * ``Cuba``           → ``à Cuba``          (no article → à)
+
+    The returned form is capitalized since most consumers use it at the
+    start of a sentence ("Au Kenya, …", "En Albanie, …").
+    """
+    if not name:
+        return name
+    if name.startswith("les "):
+        result = "aux " + name[4:]
+    elif name.startswith("le "):
+        result = "au " + name[3:]
+    elif name.startswith("la "):
+        result = "en " + name[3:]
+    elif name.startswith("l'"):
+        result = "en " + name[2:]
+    else:
+        # No article (e.g. "Cuba", "Haïti") — prepend "à"
+        result = "à " + name
+    # Capitalize first letter (E/A) for sentence-start usage
+    return result[0].upper() + result[1:]
+
+
+def locative(lang, name):
+    """Return the locative ("in X") form of *name* in the given language.
+
+    The locative role expresses location ("in X"). English uses "in X"
+    uniformly, but French distinguishes between au/aux/en/à depending on
+    gender and number — see :func:`_locative_fr`.
+
+    The result is capitalized so callers can drop it directly at the
+    start of a sentence ("Au Kenya, …", "In Kenya, …").
+
+    Parameters
+    ----------
+    lang : str
+        Language code ("en", "fr", …).
+    name : str
+        The country or place name. For French, should include the article
+        ("le Kenya", "la France", "l'Albanie", "les États-Unis") so this
+        helper can pick the right preposition. For other languages, a
+        plain name works.
+    """
+    if not name:
+        return name
+    if lang == "fr":
+        return _locative_fr(name)
+    if lang == "en":
+        return "In " + name
+    return name
+
+
 def genitive(lang, name):
     """Return the genitive ("of X") form of *name* in the given language.
 

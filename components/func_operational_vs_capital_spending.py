@@ -1,7 +1,7 @@
 from dash import html
 import pandas as pd
 import plotly.graph_objects as go
-from translations import t, genitive
+from translations import t, genitive, locative
 from utils import empty_plot
 
 OP_WAGE_BILL = "Wage bill"
@@ -71,8 +71,11 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
         emp_narrative = t("narrative.emp_comp_balanced", lang)
 
     func_gen = genitive(lang, func_label)
+    country_display = t(f"country.{country_name}", lang)
     intro_text = t("narrative.econ_breakdown_intro", lang,
-                    country=t(f"country.{country_name}", lang), emp_pct=emp_comp_pct,
+                    country=country_display,
+                    country_loc=locative(lang, country_display),
+                    emp_pct=emp_comp_pct,
                     func=func_label, func_gen=func_gen, other_pct=other_pct,
                     year=latest_year, emp_narrative=emp_narrative)
 
