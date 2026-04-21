@@ -20,9 +20,10 @@ INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 QUERY_CACHE_TTL_SECONDS = int(os.getenv("QUERY_CACHE_TTL_SECONDS", "300"))  # 5 min
 QUERY_CACHE_MAX_ENTRIES = int(os.getenv("QUERY_CACHE_MAX_ENTRIES", "256"))
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+DATABRICKS_ACCESS_TOKEN = os.getenv("DATABRICKS_ACCESS_TOKEN")
 
 def credentials_provider():
-    print("Initializing credential provider...")
+    logging.info("Initializing credential provider...")
     config = Config(
         host = f"https://{SERVER_HOSTNAME}",
         client_id     = os.getenv("DATABRICKS_CLIENT_ID"),
@@ -46,6 +47,10 @@ class QueryService:
         self._cache_ttl = QUERY_CACHE_TTL_SECONDS
         self._cache_max_entries = QUERY_CACHE_MAX_ENTRIES
 
+        # Connection management
+        self._conn = None
+        self._conn_lock = threading.Lock()
+
         self.country_whitelist = None
         if PUBLIC_ONLY:
             query = f"""
@@ -54,6 +59,45 @@ class QueryService:
                 WHERE boost_public = 'Yes'
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
+
+    # ---- Connection management ------------------------------------------------
+    def _create_connection(self):
+        http_path = os.getenv("DATABRICKS_HTTP_PATH")
+        try:
+            conn = sql.connect(
+                server_hostname=SERVER_HOSTNAME,
+                http_path=http_path,
+                credentials_provider=credentials_provider,
+            )
+            logging.info("Connected using service principal OAuth")
+            return conn
+        except Exception as e:
+            if DATABRICKS_ACCESS_TOKEN:
+                logging.warning("Service principal auth failed: %s. Falling back to access token.", e)
+                conn = sql.connect(
+                    server_hostname=SERVER_HOSTNAME,
+                    http_path=http_path,
+                    access_token=DATABRICKS_ACCESS_TOKEN,
+                )
+                logging.info("Connected using access token")
+                return conn
+            else:
+                raise
+
+    def _get_connection(self):
+        with self._conn_lock:
+            if self._conn is None:
+                self._conn = self._create_connection()
+            return self._conn
+
+    def _close_connection(self):
+        with self._conn_lock:
+            if self._conn is not None:
+                try:
+                    self._conn.close()
+                except Exception:
+                    pass
+                self._conn = None
 
     # ---- Cache helpers -------------------------------------------------------
     def _cache_get(self, key):
@@ -94,26 +138,29 @@ class QueryService:
         """
         Executes a query and returns the result as a pandas DataFrame.
         """
-        # Try cache first
         cached = self._cache_get(query)
         if cached is not None:
             logging.info("CACHE HIT for query (TTL=%ss): %s", self._cache_ttl, query)
             return cached.copy(deep=True)
 
         start = time.time()
-        with sql.connect(
-            server_hostname = SERVER_HOSTNAME,
-            http_path = os.getenv("DATABRICKS_HTTP_PATH"),
-            credentials_provider=credentials_provider,
-        ) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            df = cursor.fetchall_arrow().to_pandas()
+        try:
+            df = self._execute_with_connection(query)
+        except Exception as e:
+            logging.warning("Query failed, reconnecting: %s", e)
+            self._close_connection()
+            df = self._execute_with_connection(query)
 
         logging.info(f"DB MISS (queried) took {time.time() - start:.2f} sec. query: {query}")
 
         self._cache_set(query, df)
         return df.copy(deep=True)
+
+    def _execute_with_connection(self, query):
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute(query)
+        return cursor.fetchall_arrow().to_pandas()
 
     def fetch_data(self, query):
         df = self.execute_query(query)
