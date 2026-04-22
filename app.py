@@ -72,12 +72,37 @@ db = QueryService.get_instance()
 
 header = html.Div(
     [
+        html.Div(
+            [
+                html.A(
+                    o["label"],
+                    id={"type": "lang-link", "index": o["value"]},
+                    n_clicks=0,
+                    className="lang-link",
+                    style={"cursor": "pointer"},
+                )
+                for o in LANGUAGE_OPTIONS
+            ],
+            id="language-links",
+            className="language-links",
+        ),
         html.A(
-            children="logout",
+            # A masked Span colors via `background-color` so the icon can
+            # follow the theme (white in wbg, black in quartz) — plain <img>
+            # can't inherit a fill color. See #logout-button rules in
+            # assets/90_custom.css.
+            children=html.Span(className="logout-icon", role="img",
+                               **{"aria-label": t("nav.logout", DEFAULT_LANGUAGE)}),
             n_clicks=0,
             id="logout-button",
             style={"display": "none"},
-        )
+        ),
+        dbc.Tooltip(
+            t("nav.logout", DEFAULT_LANGUAGE),
+            id="logout-tooltip",
+            target="logout-button",
+            placement="bottom-start",
+        ),
     ],
     id="header",
 )
@@ -102,27 +127,6 @@ sidebar = html.Div(
             id="sidebar-nav",
             vertical=True,
             pills=True,
-        ),
-        # Spacer + language toggle pinned to bottom of sidebar
-        html.Div(
-            [
-                html.Hr(),
-                html.Div(
-                    [
-                        html.A(
-                            o["label"],
-                            id={"type": "lang-link", "index": o["value"]},
-                            n_clicks=0,
-                            className="lang-link",
-                            style={"cursor": "pointer"},
-                        )
-                        for o in LANGUAGE_OPTIONS
-                    ],
-                    id="language-links",
-                    className="language-links",
-                ),
-            ],
-            id="sidebar-footer",
         ),
     ],
     id="sidebar",
@@ -248,9 +252,17 @@ def display_page_or_redirect(pathname, logout_clicks):
 @app.callback(Output("logout-button", "style"), Input("url", "pathname"))
 def update_logout_button_visibility(pathname):
     if AUTH_ENABLED and current_user.is_authenticated:
-        return {"display": "block", "text-decoration": "underline", "cursor": "pointer"}
+        return {"display": "block", "cursor": "pointer"}
     else:
         return {"display": "none"}
+
+
+@app.callback(
+    Output("logout-tooltip", "children"),
+    Input("stored-language", "data"),
+)
+def update_logout_tooltip(lang):
+    return t("nav.logout", lang or DEFAULT_LANGUAGE)
 
 
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))

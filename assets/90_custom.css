@@ -133,6 +133,29 @@
     right: 2rem;
     font-size: 20px;
     z-index: 1000;
+    /* Language toggle + logout icon are inline siblings. */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: black;
+}
+
+/* wbg theme uses a dark header background, so flip header text + icon
+   to white. Quartz (and any other theme) keeps the default black. */
+body.theme-wbg #header {
+    color: white;
+}
+
+/* Logout icon — uses the SVG as a mask so its fill follows the
+   currentColor of #header (see above). */
+#logout-button .logout-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    background-color: currentColor;
+    -webkit-mask: url("logout.svg") no-repeat center / contain;
+    mask: url("logout.svg") no-repeat center / contain;
 }
 
 #sidebar {
@@ -146,36 +169,32 @@
     flex-direction: column;
 }
 
-/* Push the language toggle to the bottom of the sidebar */
-#sidebar-footer {
-    margin-top: auto;
-    font-size: 14px;
-}
-
-#sidebar-footer hr {
-    margin: 0.75rem 0;
-}
-
+/* Language toggle — sits next to the logout icon in #header.
+   Inherits color from #header so it follows the theme (black in quartz,
+   white in wbg). Size is smaller than the icon (14px) so the two don't
+   compete visually. */
 .language-links {
     display: flex;
     gap: 0.25rem;
+    font-size: 14px;
 }
 
 .language-links .lang-link {
     padding: 0.15rem 0.5rem;
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: currentColor;
+    opacity: 0.7;
     border-radius: 3px;
 }
 
 .language-links .lang-link:hover {
-    color: #fff;
-    background-color: rgba(255, 255, 255, 0.15);
+    opacity: 1;
+    background-color: rgba(128, 128, 128, 0.15);
 }
 
 .language-links .lang-link.active-lang {
     font-weight: 700;
-    color: #fff;
+    opacity: 1;
 }
 
 #sidebar .nav {
@@ -251,18 +270,6 @@
 
     #sidebar .nav-link {
         padding: 0.25rem 0.5rem;
-    }
-
-    #sidebar-footer {
-        margin-top: 0;
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    #sidebar-footer hr {
-        display: none;
     }
 
     #page-content,
