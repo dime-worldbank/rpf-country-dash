@@ -278,11 +278,11 @@ TRANSLATIONS = {
     "narrative.household_ratio": "Pour chaque unité de dépense en {sector} par l'État, les ménages ont dépensé {ratio} unités en {year}. ",
 
     # --- Narrative templates: Outcomes ---
-    "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement liés à la disponibilité des finances publiques, les résultats liés à la qualité présentent une chaîne de causalité plus complexe.",
+    "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",
     "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",
-    "narrative.outcome_meanwhile": " Par ailleurs, {pcc}",
+    "narrative.outcome_meanwhile": " Parallèlement, {pcc}",
 
     "narrative.both_insufficient": "La relation entre les dépenses d'éducation et les résultats ne peut être déterminée en raison de données insuffisantes.",
 
@@ -410,7 +410,7 @@ TRANSLATIONS = {
 
     "narrative.func_cofog_intro": "Pour {country}, BOOST fournit des données sur les dépenses fonctionnelles pour {count} catégories, basées sur la Classification des fonctions des administrations publiques (COFOG). ",
     "narrative.func_top_n": "En moyenne, les {n} premières catégories fonctionnelles de dépenses sont ",
-    "narrative.func_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
+    "narrative.func_bottom_n": "tandis que les {n} dernières catégories fonctionnelles sont ",
     # Parallel structure with narrative.econ_stable / econ_fluctuate:
     # "sont X et Y" instead of "dans X et Y", keeping both the functional
     # and economic narratives consistent in phrasing.
@@ -420,7 +420,7 @@ TRANSLATIONS = {
     # --- Economic narrative ---
     "narrative.econ_intro": "Pour {country}, BOOST fournit des données de dépenses sur {count} catégories économiques, généralement basées sur la classification économique des dépenses définie dans le cadre des statistiques de finances publiques (GFS). ",
     "narrative.econ_top_n": "En moyenne, les {n} premières catégories économiques de dépenses sont ",
-    "narrative.econ_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
+    "narrative.econ_bottom_n": "tandis que les {n} dernières catégories économiques sont ",
     # Restructured to avoid "les dépenses dans les dépenses d'investissement"
     # — several econ narrative forms start with "les dépenses" themselves,
     # which clashed with the old template's "les dépenses dans ...".
@@ -455,7 +455,7 @@ TRANSLATIONS = {
     # {que_worst} holds the right form of "que" — "que " or "qu'" — so the
     # sentence elides correctly before vowel-initial region names
     # ("tandis qu'Afar" vs "tandis que Kampala").
-    "narrative.subnat_rank_roi": " Parmi les régions infranationales, en termes de retour sur les dépenses publiques en {func} mesuré par {outcome_name}, {best} a eu le meilleur retour sur investissement (ROI) tandis {que_worst}{worst} a eu le plus faible.",
+    "narrative.subnat_rank_roi": " Parmi les régions infranationales, le retour sur investissement (ROI) des dépenses publiques en {func}, mesuré par {outcome_name}, a été le plus élevé pour {best} tandis {que_worst}{worst} a eu le plus faible.",
     "label.per_capita_expenditure_on": "Dépenses par habitant en {func}",
     # Lowercase form: includes the article "les" since its only consumer
     # is mid-sentence correlation narratives ("entre les dépenses par
@@ -544,9 +544,9 @@ TRANSLATIONS = {
     # are articled prose forms ("la santé", "la défense") for the second
     # clause ("avec la santé à 5.2%"), which reads as natural French.
     "narrative.both_similar_rates": "Les catégories {high} et {low} ont augmenté à des taux similaires, avec {high_narrative} à {high_rate:.1f} % et {low_narrative} à {low_rate:.1f} % par an.",
-    "narrative.high_expanded": "La catégorie {high} {high_phrase}, tandis que la catégorie {low} {low_phrase}. Cela pourrait suggérer un changement de politique vers la priorisation de la catégorie {high}, si le déploiement des ressources est en ligne avec les priorités de politique publique.",
-    "narrative.low_outpacing": "La catégorie {low} {low_phrase}, dépassant la catégorie {high}, qui {high_phrase}. Cela suggère un accent accru sur la catégorie {high}, si le déploiement des ressources est en ligne avec les priorités de politique publique.",
-    "narrative.expanded_significantly": "a augmenté significativement à {rate:.1f} %",
+    "narrative.high_expanded": "La catégorie {high} {high_phrase}, tandis que la catégorie {low} {low_phrase}. Cela pourrait suggérer un changement de politique vers la priorisation de la catégorie {high}, si le déploiement des ressources est conforme aux priorités de politique publique.",
+    "narrative.low_outpacing": "La catégorie {low} {low_phrase}, dépassant la catégorie {high}, qui {high_phrase}. Cela suggère un accent accru sur la catégorie {high}, si le déploiement des ressources est conforme aux priorités de politique publique.",
+    "narrative.expanded_significantly": "a augmenté à un rythme soutenu de {rate:.1f} %",
     "narrative.grew_steady": "a augmenté à un rythme régulier de {rate:.1f} %",
     "narrative.declined_by_rate": "a diminué de {rate:.1f} %",
     "narrative.grew_modest": "a augmenté à un rythme modeste de {rate:.1f} %",
