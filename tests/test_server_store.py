@@ -194,6 +194,27 @@ class TestServerStore(unittest.TestCase):
         server_store.set("s", "hello")
         self.assertEqual(server_store.get("s"), "hello")
 
+    # ------------------------------------------------------------------
+    # clear()
+    # ------------------------------------------------------------------
+
+    def test_clear_empties_store_but_leaves_factories(self):
+        """clear() drops cached values; registered factories still fire."""
+        calls = {"n": 0}
+
+        def factory():
+            calls["n"] += 1
+            return "fresh"
+
+        server_store.register("k", factory)
+        server_store.set("k", "stale")
+        self.assertEqual(server_store.get("k"), "stale")
+
+        server_store.clear()
+        self.assertFalse(server_store.has("k"))
+        self.assertEqual(server_store.get("k"), "fresh")
+        self.assertEqual(calls["n"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -83,3 +83,10 @@ def get(key):
 def has(key):
     with _lock:
         return key in _store
+
+
+def clear():
+    """Drop all cached values; factories stay registered and repopulate lazily."""
+    with _lock:
+        _store.clear()
+    logger.info("server_store cleared")
