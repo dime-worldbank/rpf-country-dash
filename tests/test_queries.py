@@ -38,6 +38,28 @@ class TestQueryService(unittest.TestCase):
             service = QueryService()
             self.assertIsNotNone(service.country_whitelist)
 
+    def test_init_country_whitelist_uses_deployment_countries(self):
+        # When only DEPLOYMENT_COUNTRIES is set, whitelist is exactly that list.
+        with patch("queries.PUBLIC_ONLY", False), \
+             patch("queries.DEPLOYMENT_COUNTRIES", ["Togo"]):
+            service = QueryService()
+            self.assertEqual(service.country_whitelist, ["Togo"])
+
+    def test_deployment_countries_override_public_only(self):
+        # When DEPLOYMENT_COUNTRIES is set, it takes precedence over
+        # PUBLIC_ONLY entirely — the public-availability query is skipped
+        # and the whitelist is exactly DEPLOYMENT_COUNTRIES.
+        with patch("queries.PUBLIC_ONLY", True), \
+             patch("queries.DEPLOYMENT_COUNTRIES", ["Togo"]):
+            service = QueryService()
+            self.assertEqual(service.country_whitelist, ["Togo"])
+
+    def test_init_country_whitelist_empty_when_nothing_set(self):
+        with patch("queries.PUBLIC_ONLY", False), \
+             patch("queries.DEPLOYMENT_COUNTRIES", []):
+            service = QueryService()
+            self.assertIsNone(service.country_whitelist)
+
     @patch("queries.PUBLIC_ONLY", False)
     def test_fetch_data_no_filter(self):
         df = self.query_service.fetch_data("SELECT * FROM test_table")

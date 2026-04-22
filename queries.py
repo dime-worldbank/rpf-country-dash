@@ -15,6 +15,12 @@ logging.basicConfig(
 )
 
 PUBLIC_ONLY = os.getenv("PUBLIC_ONLY", "False").lower() in ("true", "1", "yes")
+# Comma-separated country names to restrict the dashboard to (e.g. single-country
+# deployments like the Togo demo). Empty = no restriction. Combines with
+# PUBLIC_ONLY via intersection.
+DEPLOYMENT_COUNTRIES = [
+    c.strip() for c in os.getenv("DEPLOYMENT_COUNTRIES", "").split(",") if c.strip()
+]
 BOOST_SCHEMA = os.getenv("BOOST_SCHEMA", "boost")
 INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Invalidation is via the external refresh endpoint in server.py.
@@ -42,8 +48,14 @@ class QueryService:
     def __init__(self):
         self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR)
 
+        # DEPLOYMENT_COUNTRIES is an explicit per-deployment override (e.g.
+        # the Togo demo) and takes precedence over PUBLIC_ONLY. When set, we
+        # skip the PUBLIC_ONLY query entirely — no need to hit BOOST for a
+        # whitelist we're about to overwrite.
         self.country_whitelist = None
-        if PUBLIC_ONLY:
+        if DEPLOYMENT_COUNTRIES:
+            self.country_whitelist = list(DEPLOYMENT_COUNTRIES)
+        elif PUBLIC_ONLY:
             query = f"""
                 SELECT country_name, boost_source_url
                 FROM prd_mega.{BOOST_SCHEMA}.data_availability
