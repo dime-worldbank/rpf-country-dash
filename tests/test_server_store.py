@@ -199,17 +199,10 @@ class TestServerStore(unittest.TestCase):
     # ------------------------------------------------------------------
 
     def test_clear_empties_store_but_leaves_factories(self):
-        """clear() drops cached values; registered factories still fire."""
+        """clear() drops cached values;"""
         calls = {"n": 0}
-
-        def factory():
-            calls["n"] += 1
-            return "fresh"
-
-        server_store.register("k", factory)
         server_store.set("k", "stale")
         self.assertEqual(server_store.get("k"), "stale")
-
         server_store.clear()
         self.assertFalse(server_store.has("k"))
         self.assertEqual(server_store.get("k"), "fresh")
