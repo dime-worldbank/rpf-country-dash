@@ -137,13 +137,6 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    color: black;
-}
-
-/* wbg theme uses a dark header background, so flip header text + icon
-   to white. Quartz (and any other theme) keeps the default black. */
-body.theme-wbg #header {
-    color: white;
 }
 
 /* Logout icon — uses the SVG as a mask so its fill follows the
