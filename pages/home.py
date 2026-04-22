@@ -36,6 +36,7 @@ from constants import (
 from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
+import server_store
 
 
 db = QueryService.get_instance()
@@ -82,10 +83,8 @@ def update_overview_tab_labels(lang):
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
-        pefa_df = db.get_pefa(shared_data["countries"])
-        return {
-            "pefa": pefa_df.to_dict("records"),
-        }
+        server_store.get("pefa")
+        return {"ready": True}
     return dash.no_update
 
 @callback(
@@ -712,7 +711,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         locations="adm1_name",
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         zoom=zoom,
         range_color=[zmin, zmax],
         color_continuous_scale=get_map_colorscale(theme),
@@ -774,7 +773,7 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
         locations="adm1_name",
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         zoom=zoom,
         range_color=[zmin, zmax],
         custom_data=["per_capita_expenditure_formatted"],
@@ -852,7 +851,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         range_color=[zmin, zmax],
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         hover_data={"region_name": True, poverty_col: ":.2f"},
         color_continuous_scale=get_map_colorscale(theme),
     )
@@ -943,13 +942,13 @@ def update_heading(country, lang):
 )
 def render_overview_total_figure(data, basic_country_data, country, lang):
     lang = lang or "en"
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
+    all_countries = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(all_countries, country)
 
     # Extract currency_name once at callback level
-    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
+    basic_info = server_store.get("basic_country_info")[country]
     currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
     return total_figure(df, currency_name, currency_code, lang=lang), per_capita_figure(df, currency_name, currency_code, lang=lang), overview_narrative(df, lang=lang)
@@ -965,16 +964,16 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
 )
 def render_overview_func_figure(data, country, basic_country_data, lang):
     lang = lang or "en"
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_by_country_func_year"])
+    all_countries = server_store.get("func_by_country_year")
     func_df = filter_country_sort_year(all_countries, country)
     total_per_year = func_df.groupby("year")["expenditure"].sum().reset_index()
     func_df = func_df.merge(total_per_year, on="year", suffixes=("", "_total"))
     func_df["percentage"] = (
         func_df["expenditure"] / func_df["expenditure_total"]
     ) * 100
-    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     func_df["expenditure_formatted"] = func_df["expenditure"].apply(
         lambda x: format_currency(x, currency_code)
     )
@@ -992,9 +991,9 @@ def render_overview_func_figure(data, country, basic_country_data, lang):
 )
 def render_overview_econ_figure(data, country, basic_country_data, lang):
     lang = lang or "en"
-    if not data or not basic_country_data:
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_by_country_econ_year"])
+    all_countries = server_store.get("econ_by_country_year")
     econ_df = filter_country_sort_year(all_countries, country)
     total_per_year = econ_df.groupby("year")["expenditure"].sum().reset_index()
     econ_df = econ_df.merge(total_per_year, on="year", suffixes=("", "_total"))
@@ -1002,7 +1001,7 @@ def render_overview_econ_figure(data, country, basic_country_data, lang):
         econ_df["expenditure"] / econ_df["expenditure_total"]
     ) * 100
 
-    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
 
     return economic_figure(econ_df, currency_code, lang=lang), economic_narrative(econ_df, lang=lang)
 
@@ -1116,14 +1115,16 @@ def economic_narrative(df, lang="en"):
     Input("country-select", "value"),
 )
 def update_year_range(data, country):
+    if not data or not country:
+        return {"display": "block"}, {}, 0, 0, 0, {}
     try:
-        data = data["basic_country_info"]
-        expenditure_years = data[country].get("expenditure_years", [])
-        poverty_years = data[country].get("poverty_years", [])
+        country_info = server_store.get("basic_country_info")
+        expenditure_years = country_info[country].get("expenditure_years", [])
+        poverty_years = country_info[country].get("poverty_years", [])
 
         slider_configs = get_slider_config(expenditure_years, poverty_years)
         return slider_configs
-    except Exception as e:
+    except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
 
 
@@ -1143,19 +1144,19 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     if year is None or not data or not country_data or not country:
         return empty_plot(t("error.data_not_available", lang))
 
-    geojson = subnat_boundaries[country]
-    disputed_geojson = filter_geojson_by_country(data["disputed_boundaries"], country)
+    geojson = server_store.get("subnat_boundaries")
+    disputed_geojson = filter_geojson_by_country(server_store.get("disputed_boundaries"), country)
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
     filtered_geojson = filter_geojson_by_country(geojson, country)
-    df = pd.DataFrame(data["expenditure_by_country_geo1_year"])
+    df = server_store.get("geo1_expenditure")
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
-    currency_code = country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     add_currency_column(df, 'expenditure', currency_code)
     add_currency_column(df, 'per_capita_expenditure', currency_code)
 
@@ -1215,24 +1216,24 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     if year is None or not subnational_data or not country_data or not country:
         return empty_plot(t("error.data_not_available", lang))
 
-    geojson = subnat_boundaries[country]
+    geojson = server_store.get("subnat_boundaries")
     disputed_geojson = filter_geojson_by_country(
-        subnational_data["disputed_boundaries"], country
+        server_store.get("disputed_boundaries"), country
     )
     filtered_geojson = filter_geojson_by_country(geojson, country)
-    df = pd.DataFrame(subnational_data["subnational_poverty_rate"])
+    df = server_store.get("subnational_poverty_rate")
     df = filter_country_sort_year(df, country)
 
-    legend_min, legend_max = country_data["basic_country_info"][country].get(
+    legend_min, legend_max = server_store.get("basic_country_info")[country].get(
         "poverty_bounds", (None, None)
     )
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
-    available_years = country_data["basic_country_info"][country].get(
+    available_years = server_store.get("basic_country_info")[country].get(
         "poverty_years", []
     )
     relevant_years = [x for x in available_years if x <= year]
@@ -1240,7 +1241,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     if not relevant_years or df.empty:
         return empty_plot(t("error.poverty_unavailable", lang))
 
-    income_level = country_data["basic_country_info"][country].get("income_level")
+    income_level = server_store.get("basic_country_info")[country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
@@ -1271,19 +1272,19 @@ def render_subnational_spending_narrative(
     if year is None or not subnational_data or not country_data or not country:
         return t("error.data_not_available", lang)
 
-    df_poverty = pd.DataFrame(subnational_data["subnational_poverty_rate"])
+    df_poverty = server_store.get("subnational_poverty_rate")
     df_poverty = filter_country_sort_year(df_poverty, country)
 
-    available_years = country_data["basic_country_info"][country].get(
+    available_years = server_store.get("basic_country_info")[country].get(
         "poverty_years", []
     )
-    currency_code = country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     relevant_years = [x for x in available_years if x <= year]
 
     if not relevant_years or df_poverty.empty:
         df_poverty = pd.DataFrame()
 
-    df_spending = pd.DataFrame(subnational_data["expenditure_by_country_geo1_year"])
+    df_spending = server_store.get("geo1_expenditure")
     df_spending = filter_country_sort_year(df_spending, country)
     df_spending = df_spending[
         (df_spending.adm1_name != "Central Scope") & (df_spending.year == year)
@@ -1306,13 +1307,13 @@ def render_subnational_spending_narrative(
 )
 def render_pefa_overall(data, pefa_data, country, lang):
     lang = lang or "en"
-    if not pefa_data or not data:
+    if not pefa_data or not data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
-    pefa_df = pd.DataFrame(pefa_data["pefa"])
+    pefa_df = server_store.get("pefa")
     country_pefa_df = filter_country_sort_year(pefa_df, country)
 
-    all_countries_pov = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
+    all_countries_pov = server_store.get("expenditure_w_poverty")
     country_pov_df = filter_country_sort_year(all_countries_pov, country)
 
     return (

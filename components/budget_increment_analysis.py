@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from constants import FUNC_COLORS, translate_func
 from translations import t
+import server_store
+
 from utils import (
     filter_country_sort_year,
     empty_plot,
@@ -22,7 +24,7 @@ NUM_YEARS = 5
 def render_fig_and_narrative(data, country, exp_type, lang="en"):
     if not data:
         return empty_plot(t("loading", lang)), t("loading", lang)
-    country_budget_changes_df = pd.DataFrame(data["expenditure_by_country_func_year"])
+    country_budget_changes_df = server_store.get("func_by_country_year")
     country_budget_changes_df = filter_country_sort_year(
         country_budget_changes_df, country
     )

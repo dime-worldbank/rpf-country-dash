@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from translations import t, genitive, locative
 from constants import translate_econ
+import server_store
 from utils import empty_plot
 
 OP_WAGE_BILL = "Wage bill"
@@ -179,7 +180,7 @@ def _generate_econ_figure(data, func, lang="en"):
 def render_econ_breakdown(data, country_name, page_func, lang="en"):
     if not data:
         return empty_plot(t("loading", lang)), t("loading", lang)
-    df = pd.DataFrame(data["econ_expenditure_prop_by_func_country_year"])
+    df = server_store.get("prop_econ_by_func")
     filtered_df = df[
         (df["country_name"] == country_name) & (df["func"] == page_func)
     ]

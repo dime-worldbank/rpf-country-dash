@@ -9,6 +9,7 @@ from constants import get_map_disclaimer
 from translations import t, genitive, locative
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
+import server_store
 from utils import (
     add_currency_column,
     empty_plot,
@@ -54,7 +55,6 @@ def layout():
             dcc.Store(id="stored-data-health-total"),
             dcc.Store(id="stored-data-health-outcome"),
             dcc.Store(id="stored-data-health-private"),
-            dcc.Store(id="stored-data-health-sub-func"),
         ]
     )
 
@@ -76,13 +76,8 @@ def update_health_tab_labels(lang):
 )
 def fetch_health_total_data_once(health_data, shared_data):
     if health_data is None and shared_data:
-        # filter shared data down to health specific
-        exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
-        pub_exp = exp_by_func[exp_by_func.func == "Health"]
-
-        return {
-            "health_public_expenditure": pub_exp.to_dict("records"),
-        }
+        server_store.get("health_public_expenditure")
+        return {"ready": True}
     return dash.no_update
 
 
@@ -92,11 +87,8 @@ def fetch_health_total_data_once(health_data, shared_data):
 )
 def fetch_health_outcome_data_once(health_data):
     if health_data is None:
-        uhc_index = db.get_universal_health_coverage_index()
-
-        return {
-            "uhc_index": uhc_index.to_dict("records"),
-        }
+        server_store.get("uhc_index")
+        return {"ready": True}
     return dash.no_update
 
 
@@ -106,23 +98,8 @@ def fetch_health_outcome_data_once(health_data):
 )
 def fetch_health_private_data_once(health_data):
     if health_data is None:
-        priv_exp = db.get_health_private_expenditure()
-        return {
-            "health_private_expenditure": priv_exp.to_dict("records"),
-        }
-    return dash.no_update
-
-
-@callback(
-    Output("stored-data-health-sub-func", "data"),
-    Input("stored-data-health-sub-func", "data"),
-)
-def fetch_health_sub_func_data_once(health_data):
-    if health_data is None:
-        exp_by_sub_func = db.get_expenditure_by_country_sub_func_year()
-        return {
-            "expenditure_by_country_sub_func_year": exp_by_sub_func.to_dict("records"),
-        }
+        server_store.get("health_private_expenditure")
+        return {"ready": True}
     return dash.no_update
 
 
@@ -444,7 +421,7 @@ def total_health_figure(df, currency_code, lang="en"):
 
 
 def health_narrative(data, country, lang="en"):
-    spending = pd.DataFrame(data["health_public_expenditure"])
+    spending = server_store.get("health_public_expenditure")
     spending = filter_country_sort_year(spending, country)
 
     plot_df = (
@@ -537,10 +514,10 @@ def health_narrative(data, country, lang="en"):
 )
 def render_overview_total_figure(data, country, country_data, lang):
     lang = lang or "en"
-    if not data or not country_data:
+    if not data or not country_data or not country:
         return dash.no_update, dash.no_update
 
-    all_countries = pd.DataFrame(data["health_public_expenditure"])
+    all_countries = server_store.get("health_public_expenditure")
     df = filter_country_sort_year(all_countries, country)
 
     if df.empty:
@@ -548,7 +525,7 @@ def render_overview_total_figure(data, country, country_data, lang):
             empty_plot(t("error.no_data_period", lang)),
             t("error.data_unavailable", lang),
         )
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
     fig = total_health_figure(df, currency_code, lang=lang)
     return fig, health_narrative(data, country, lang=lang)
@@ -597,17 +574,17 @@ def public_private_narrative(df, country, lang="en"):
 )
 def render_public_private_figure(private_data, public_data, country, country_data, lang):
     lang = lang or "en"
-    if not private_data or not public_data:
+    if not private_data or not public_data or not country_data or not country:
         return dash.no_update, dash.no_update
 
     fig_title = t("chart.pct_govt_vs_household", lang)
     currency_code = country_data['basic_country_info'][country]['currency_code']
 
-    private = pd.DataFrame(private_data["health_private_expenditure"])
+    private = server_store.get("health_private_expenditure")
     private = filter_country_sort_year(private, country)
 
-    public_data = pd.DataFrame(public_data["health_public_expenditure"])
-    public = filter_country_sort_year(public_data, country)
+    public_df = server_store.get("health_public_expenditure")
+    public = filter_country_sort_year(public_df, country)
 
     merged = pd.merge(
         private,
@@ -719,15 +696,15 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="
 )
 def render_health_outcome(outcome_data, total_data, country, country_data, lang):
     lang = lang or "en"
-    if not total_data or not outcome_data:
+    if not total_data or not outcome_data or not country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
-    uhc = pd.DataFrame(outcome_data["uhc_index"])
+    uhc = server_store.get("uhc_index")
     uhc = filter_country_sort_year(uhc, country)
 
-    pub_exp = pd.DataFrame(total_data["health_public_expenditure"])
+    pub_exp = server_store.get("health_public_expenditure")
     pub_exp = filter_country_sort_year(pub_exp, country)
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -831,8 +808,10 @@ def update_health_year_range(data, country):
     Input("stored-language", "data"),
 )
 def render_health_subnat_overview(func_data, sub_func_data, country, selected_year, country_data, lang):
+    if not country_data or not country:
+        return empty_plot("Loading..."), empty_plot("Loading..."), "Loading..."    
     lang = lang or "en"
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_overview(
         func_data, sub_func_data, country, selected_year, 'Health', currency_code, lang=lang
     )
@@ -900,5 +879,5 @@ def update_health_index_map(
 )
 def render_health_subnat_rank(subnational_data, country, base_year, country_data, lang):
     lang = lang or "en"
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_rank(subnational_data, country, base_year, 'Health', currency_code, lang=lang)
