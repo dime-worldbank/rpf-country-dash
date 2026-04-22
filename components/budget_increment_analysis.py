@@ -217,8 +217,16 @@ def format_budget_increment_narrative(
     data, foreign_funding_isnull, exp_type, num_years, lang="en", threshold=0.75
 ):
     budget_cagr = data["Overall budget"]
-    highest_func_cat, highest_cagr = data["highest"]
-    lowest_func_cat, lowest_cagr = data["lowest"]
+    highest_func_cat_raw, highest_cagr = data["highest"]
+    lowest_func_cat_raw, lowest_cagr = data["lowest"]
+    # Two forms per category for the templates:
+    #  - Bare label form ("Santé") for "Les catégories X et Y" apposition
+    #  - Narrative form ("la santé") for mid-sentence prose like
+    #    "avec la santé à 5.2 %"
+    highest_func_cat = translate_func(highest_func_cat_raw, lang)
+    lowest_func_cat = translate_func(lowest_func_cat_raw, lang)
+    highest_func_cat_narrative = translate_func(highest_func_cat_raw, lang, narrative=True)
+    lowest_func_cat_narrative = translate_func(lowest_func_cat_raw, lang, narrative=True)
 
     if budget_cagr < 0:
         budget_growth_phrase = t("narrative.budget_declined", lang, rate=abs(budget_cagr))
@@ -244,14 +252,20 @@ def format_budget_increment_narrative(
     if abs(highest_cagr - lowest_cagr) < threshold:
         func_comparison = t("narrative.both_similar_rates", lang,
                             high=highest_func_cat, low=lowest_func_cat,
+                            high_narrative=highest_func_cat_narrative,
+                            low_narrative=lowest_func_cat_narrative,
                             high_rate=highest_cagr, low_rate=lowest_cagr)
     elif highest_cagr > lowest_cagr:
         func_comparison = t("narrative.high_expanded", lang,
                             high=highest_func_cat, low=lowest_func_cat,
+                            high_narrative=highest_func_cat_narrative,
+                            low_narrative=lowest_func_cat_narrative,
                             high_phrase=highest_phrase, low_phrase=lowest_phrase)
     else:
         func_comparison = t("narrative.low_outpacing", lang,
                             high=highest_func_cat, low=lowest_func_cat,
+                            high_narrative=highest_func_cat_narrative,
+                            low_narrative=lowest_func_cat_narrative,
                             high_phrase=highest_phrase, low_phrase=lowest_phrase)
 
     if foreign_funding_isnull:

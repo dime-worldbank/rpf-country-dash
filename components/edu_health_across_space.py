@@ -7,7 +7,8 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t, genitive, locative
+from translations import t, genitive, locative, elide_que
+from constants import translate_func_sub
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
     get_map_colorscale, darken_color, lighten_color, add_opacity,
@@ -90,10 +91,17 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
         return empty_plot(t("error.no_data_period", lang), fig_title)
 
     add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
+    # Translate the slice labels: "Central" → "Central" (same in FR),
+    # "Regional" → "Régional". Unknown values pass through unchanged.
+    geo0_key_map = {"Central": "trace.central", "Regional": "trace.regional"}
+    pie_labels = [
+        t(geo0_key_map[g], lang) if g in geo0_key_map else g
+        for g in central_vs_regional["geo0"]
+    ]
     fig = go.Figure(
         data=[
             go.Pie(
-                labels=central_vs_regional["geo0"],
+                labels=pie_labels,
                 values=central_vs_regional["real_expenditure"],
                 hole=0.5,
                 marker=dict(colors=[CENTRAL_COLOR, REGIONAL_COLOR]),
@@ -135,12 +143,16 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
 
     for i, row in enumerate(education_values.itertuples()):
         percent_of_total = (row.expenditure / total) * 100
+        # IDs stay in raw English: they are internal identifiers for plotly's
+        # treemap (parent/child linkage), not displayed to the user. The
+        # visible label is translated separately.
         parent_totals[row.func_sub] = row.expenditure
         base_color = TREEMAP_PALETTE[i % len(TREEMAP_PALETTE)]
         parent_colors[row.func_sub] = base_color
         ids.append(row.func_sub)
         parents.append("")
-        labels.append(f"{row.func_sub}<br>{format_currency(row.expenditure, currency_code)} ({percent_of_total:.0f}%)")
+        sub_label = translate_func_sub(row.func_sub, lang)
+        labels.append(f"{sub_label}<br>{format_currency(row.expenditure, currency_code)} ({percent_of_total:.0f}%)")
         values.append(row.expenditure)
         hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row.real_expenditure, currency_code)}")
         colors.append(base_color)
@@ -148,6 +160,10 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
     data_grouped = (
         data.groupby(["func_sub", "geo0"], sort=False).sum(numeric_only=True).reset_index()
     )
+
+    # Maps raw geo0 data values ("Central" / "Regional") to their
+    # translation keys. Other values fall through untranslated.
+    geo0_key_map = {"Central": "trace.central", "Regional": "trace.regional"}
 
     for _, row in data_grouped.iterrows():
         parent = row["func_sub"]
@@ -157,7 +173,9 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
         ids.append(f"{row['func_sub']} - {row['geo0']}")
         parents.append(parent)
         values.append(row["expenditure"])
-        labels.append(f"{row['geo0']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
+        geo0_key = geo0_key_map.get(row["geo0"])
+        geo0_label = t(geo0_key, lang) if geo0_key else row["geo0"]
+        labels.append(f"{geo0_label}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
         hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row['real_expenditure'], currency_code)}")
         base_color = parent_colors[parent]
         if row["geo0"] == "Central":
@@ -308,7 +326,18 @@ def update_func_expenditure_map(
 
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False
-    exp_type_label = expenditure_type.replace('_', ' ').title()
+    # Map the expenditure_type data key (e.g. "per_capita_expenditure") to a
+    # localized hover label. Previously this did `title()` on the snake_case
+    # name, which leaked English ("Per Capita Expenditure") into FR hovers.
+    exp_type_label_map = {
+        "per_capita_expenditure": "hover.per_capita_spending",
+        "expenditure": "hover.expenditure_label",
+    }
+    exp_type_label_key = exp_type_label_map.get(expenditure_type)
+    exp_type_label = (
+        t(exp_type_label_key, lang)
+        if exp_type_label_key else expenditure_type.replace('_', ' ').title()
+    )
     no_data_trace.hovertemplate = (
         f"<b>{t('hover.region', lang)}:</b> %{{location}}<br>"
         f"<b>{exp_type_label}:</b> {t('hover.data_not_available', lang)}<extra></extra>"
@@ -319,7 +348,7 @@ def update_func_expenditure_map(
         f"<b>{t('hover.region', lang)}:</b> %{{location}}<br>"
         f"<b>{exp_type_label}:</b> %{{customdata[0]}}<extra></extra>"
     )
-    add_disputed_overlay(fig, disputed_geojson, zoom)
+    add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
     cofog_name = t(f"cofog.{func.lower()}", lang)
     fig.update_layout(
@@ -476,7 +505,7 @@ def update_hd_index_map(
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
         + f"<b>{outcome_name}:</b> " + "%{customdata}<extra></extra>"
     )
-    add_disputed_overlay(fig, disputed_geojson, zoom)
+    add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
     fig.update_layout(
         title=t("chart.subnational_outcome", lang, outcome_name=outcome_name),
@@ -666,5 +695,8 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
         "narrative.subnat_rank_roi", lang,
         func=func_lower, outcome_name=outcome_narrative,
         best=best_ROI, worst=worst_ROI,
+        # que_worst handles elision of "que" before a vowel-initial region
+        # name ("tandis qu'Afar") in French. English template ignores it.
+        que_worst=elide_que(lang, worst_ROI),
     )
     return narrative

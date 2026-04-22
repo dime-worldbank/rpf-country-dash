@@ -108,6 +108,25 @@ def _locative_fr(name):
     return result[0].upper() + result[1:]
 
 
+def elide_que(lang, name):
+    """Return "que" or "qu'" depending on the first character of *name*.
+
+    French elides "que" to "qu'" before a vowel sound — required in
+    templates like "tandis que {name}" where {name} could start with
+    any letter (e.g. a region name like "Afar" or "Asmara"):
+
+    * ``elide_que("fr", "Afar")``  → ``"qu'"``
+    * ``elide_que("fr", "Kampala")`` → ``"que "``
+    * ``elide_que("en", …)`` → ``"that"`` (no elision in English)
+    """
+    if lang != "fr" or not name:
+        return "que "
+    first = name[0].lower()
+    if first in _FRENCH_VOWELS:
+        return "qu'"
+    return "que "
+
+
 def locative(lang, name):
     """Return the locative ("in X") form of *name* in the given language.
 

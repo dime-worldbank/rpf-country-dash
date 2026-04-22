@@ -60,26 +60,77 @@ ECON_KEY_MAP = {
 }
 
 
-def translate_func(name, lang="en"):
+def translate_func(name, lang="en", narrative=False):
     """Translate a raw COFOG func name (e.g. "Health") to *lang*.
 
-    Falls back to the raw name if it's not in COFOG_KEY_MAP — safer than
-    raising, since a future dataset value would silently pass through.
-    Used by chart code (legend names, hover text) and narrative helpers.
+    * ``narrative=False`` → bare label form ("Santé", "Health") for
+      chart legends and axis labels.
+    * ``narrative=True`` → lowercase + articled prose form ("la santé",
+      "health") for mid-sentence use like "dans la santé et la défense".
+
+    Falls back to the raw name if *name* isn't in COFOG_KEY_MAP, and to
+    the bare form if no ``.narrative`` variant is registered.
     """
     key = COFOG_KEY_MAP.get(name)
-    return t(key, lang) if key else name
+    if not key:
+        return name
+    if narrative:
+        val = t(f"{key}.narrative", lang)
+        # t() returns the key itself when missing — detect and fall back.
+        if val != f"{key}.narrative":
+            return val
+    return t(key, lang)
 
 
-def translate_econ(name, lang="en"):
+def translate_econ(name, lang="en", narrative=False):
     """Translate a raw econ category name (e.g. "Wage bill") to *lang*.
 
-    Translation keys in en.py/fr.py already capture the display-label
-    transformation (e.g. "Wage bill" → "Employees compensation" →
-    "Rémunération des employés"), so this is a single lookup. Falls back
-    to the raw name if unregistered.
+    Same shape as :func:`translate_func` — see that function's docstring.
     """
     key = ECON_KEY_MAP.get(name)
+    if not key:
+        return name
+    if narrative:
+        val = t(f"{key}.narrative", lang)
+        if val != f"{key}.narrative":
+            return val
+    return t(key, lang)
+
+
+# Maps COFOG sub-function values (the `func_sub` column) to their
+# translation keys. These are the leaf-level categories shown in the
+# treemap on Education/Health subnational pages. Values come from the
+# dataset query in queries.py and include categories spanning several
+# COFOG families (Education, Health, Economic affairs, Public order, ...).
+FUNC_SUB_KEY_MAP = {
+    "Agriculture":                           "func_sub.agriculture",
+    "Air Transport":                         "func_sub.air_transport",
+    "Energy":                                "func_sub.energy",
+    "Judiciary":                             "func_sub.judiciary",
+    "Post-Secondary Non-Tertiary Education": "func_sub.post_secondary",
+    "Primary Education":                     "func_sub.primary_education",
+    "Primary and Secondary Health":          "func_sub.primary_secondary_health",
+    "Primary and Secondary education":       "func_sub.primary_secondary_education",
+    "Public Safety":                         "func_sub.public_safety",
+    "Railroads":                             "func_sub.railroads",
+    "Roads":                                 "func_sub.roads",
+    "Secondary Education":                   "func_sub.secondary_education",
+    "Telecom":                               "func_sub.telecom",
+    "Tertiary Education":                    "func_sub.tertiary_education",
+    "Tertiary and Quaternary Health":        "func_sub.tertiary_quaternary_health",
+    "Transport":                             "func_sub.transport",
+    "Water Supply":                          "func_sub.water_supply",
+    "Water Transport":                       "func_sub.water_transport",
+}
+
+
+def translate_func_sub(name, lang="en"):
+    """Translate a COFOG sub-function name (e.g. "Primary Education") to *lang*.
+
+    Falls back to the raw name if it's not in FUNC_SUB_KEY_MAP. Used by
+    the treemap on subnational Education / Health pages.
+    """
+    key = FUNC_SUB_KEY_MAP.get(name)
     return t(key, lang) if key else name
 
 FUNC_PALETTE = QUALITATIVE

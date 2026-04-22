@@ -30,9 +30,9 @@ TRANSLATIONS = {
     "heading.country_regional_expenditure": "Dépenses régionales {country_gen}",
     "heading.who_pays_education": "Qui finance l'éducation ?",
     "heading.who_pays_health": "Qui finance la santé ?",
-    "heading.public_spending_education_outcome": "Dépenses publiques et résultats éducatifs",
-    "heading.public_spending_health_outcome": "Dépenses publiques et résultats sanitaires",
-    "heading.operational_vs_capital": "Dépenses de fonctionnement vs. dépenses d'investissement",
+    "heading.public_spending_education_outcome": "Dépenses publiques et résultats en matière d’éducation",
+    "heading.public_spending_health_outcome": "Dépenses publiques et résultats en matière de santé",
+    "heading.operational_vs_capital": "Dépenses opérationnelles et dépenses d’investissement",
     "heading.central_vs_geo_education": "Dépenses d'éducation centralisées vs. géographiquement allouées",
     "heading.central_vs_geo_health": "Dépenses de santé centralisées vs. géographiquement allouées",
     "heading.public_spending_education_regions": "Dépenses publiques vs. résultats éducatifs par région",
@@ -166,6 +166,39 @@ TRANSLATIONS = {
     # country names almost always take "le/la/les/l'" and the genitive()
     # helper relies on it to produce "du Kenya", "de la France",
     # "des États-Unis", "de l'Ouganda", etc.
+    # --- Statistics labels ---
+    # Standard-deviation abbreviation used inline in category lists like
+    # "Santé (écart-type=1.2), Éducation (écart-type=0.9)". The full form
+    # "écart-type" reads clearly; the shorter "é.-t." is also valid in
+    # technical French if brevity matters later.
+    "label.std_abbrev": "écart-type",
+
+    # --- Country income classification (used in poverty map annotation) ---
+    "income.low":          "faible revenu",
+    "income.lower_middle": "revenu intermédiaire inférieur",
+    "income.upper_middle": "revenu intermédiaire supérieur",
+    "income.high":         "revenu élevé",
+
+    # --- COFOG sub-function labels (used in subnational treemap) ---
+    "func_sub.agriculture":                  "Agriculture",
+    "func_sub.air_transport":                "Transport aérien",
+    "func_sub.energy":                       "Énergie",
+    "func_sub.judiciary":                    "Justice",
+    "func_sub.post_secondary":               "Enseignement post-secondaire non supérieur",
+    "func_sub.primary_education":            "Enseignement primaire",
+    "func_sub.primary_secondary_health":     "Santé primaire et secondaire",
+    "func_sub.primary_secondary_education":  "Enseignement primaire et secondaire",
+    "func_sub.public_safety":                "Sécurité publique",
+    "func_sub.railroads":                    "Transport ferroviaire",
+    "func_sub.roads":                        "Routes",
+    "func_sub.secondary_education":          "Enseignement secondaire",
+    "func_sub.telecom":                      "Télécommunications",
+    "func_sub.tertiary_education":           "Enseignement supérieur",
+    "func_sub.tertiary_quaternary_health":   "Santé tertiaire et quaternaire",
+    "func_sub.transport":                    "Transports",
+    "func_sub.water_supply":                 "Approvisionnement en eau",
+    "func_sub.water_transport":              "Transport maritime",
+
     "country.Albania": "l'Albanie",
     "country.Bangladesh": "le Bangladesh",
     "country.Bhutan": "le Bhoutan",
@@ -316,28 +349,56 @@ TRANSLATIONS = {
     "caveat.not_significant": "cela n'est pas statistiquement significatif (p={p_value:.2f}, n={n})",
 
     # --- Functional / COFOG categories ---
-    "cofog.social_protection": "Protection sociale",
-    "cofog.recreation": "Loisirs, culture et religion",
-    "cofog.public_order": "Ordre et sécurité publics",
-    "cofog.housing": "Logement et équipements collectifs",
-    "cofog.health": "Santé",
-    "cofog.general_public": "Services publics généraux",
-    "cofog.environment": "Protection de l'environnement",
-    "cofog.education": "Éducation",
-    "cofog.economic": "Affaires économiques",
-    "cofog.defence": "Défense",
+    # Two forms per category:
+    #   - Bare (title-case, no article) — for chart labels, legends
+    #   - ".narrative" (lowercase, with definite article, shortened if
+    #     needed) — for mid-sentence prose like "dans la santé et la
+    #     défense". Shortening avoids tangled "les loisirs, la culture
+    #     et la religion et la défense" when the list joiner is also "et".
+    "cofog.social_protection":           "Protection sociale",
+    "cofog.social_protection.narrative": "la protection sociale",
+    "cofog.recreation":                  "Loisirs, culture et religion",
+    "cofog.recreation.narrative":        "les loisirs",
+    "cofog.public_order":                "Ordre et sécurité publics",
+    "cofog.public_order.narrative":      "la sécurité publique",
+    "cofog.housing":                     "Logement et équipements collectifs",
+    "cofog.housing.narrative":           "le logement",
+    "cofog.health":                      "Santé",
+    "cofog.health.narrative":            "la santé",
+    "cofog.general_public":              "Services publics généraux",
+    "cofog.general_public.narrative":    "les services publics",
+    "cofog.environment":                 "Protection de l'environnement",
+    "cofog.environment.narrative":       "l'environnement",
+    "cofog.education":                   "Éducation",
+    "cofog.education.narrative":         "l'éducation",
+    "cofog.economic":                    "Affaires économiques",
+    "cofog.economic.narrative":          "les affaires économiques",
+    "cofog.defence":                     "Défense",
+    "cofog.defence.narrative":           "la défense",
 
     # --- Economic categories ---
-    "econ.capital_expenditures": "Dépenses d'investissement",
-    "econ.goods_services": "Biens et services",
-    "econ.social_benefits": "Prestations sociales",
-    "econ.subsidies": "Subventions",
-    "econ.employees_compensation": "Rémunération des employés",
-    "econ.interest_debt": "Intérêts de la dette",
-    "econ.grants_transfers": "Subventions et transferts",
-    "econ.other_expenses": "Autres dépenses",
-    "econ.wage_bill": "Masse salariale",
-    "econ.non_wage_recurrent": "Dépenses récurrentes hors salaires",
+    # Same pattern as COFOG: bare form for labels, .narrative (lowercase
+    # + article) for mid-sentence prose.
+    "econ.capital_expenditures":           "Dépenses d'investissement",
+    "econ.capital_expenditures.narrative": "les dépenses d'investissement",
+    "econ.goods_services":                 "Biens et services",
+    "econ.goods_services.narrative":       "les biens et services",
+    "econ.social_benefits":                "Prestations sociales",
+    "econ.social_benefits.narrative":      "les prestations sociales",
+    "econ.subsidies":                      "Subventions",
+    "econ.subsidies.narrative":            "les subventions",
+    "econ.employees_compensation":         "Rémunération des employés",
+    "econ.employees_compensation.narrative": "la rémunération des employés",
+    "econ.interest_debt":                  "Intérêts de la dette",
+    "econ.interest_debt.narrative":        "les intérêts de la dette",
+    "econ.grants_transfers":               "Subventions et transferts",
+    "econ.grants_transfers.narrative":     "les subventions et transferts",
+    "econ.other_expenses":                 "Autres dépenses",
+    "econ.other_expenses.narrative":       "les autres dépenses",
+    "econ.wage_bill":                      "Masse salariale",
+    "econ.wage_bill.narrative":            "la masse salariale",
+    "econ.non_wage_recurrent":             "Dépenses récurrentes hors salaires",
+    "econ.non_wage_recurrent.narrative":   "les dépenses récurrentes hors salaires",
 
     # --- Functional narrative ---
     "narrative.func_cofog_intro": "Pour {country}, BOOST fournit des données sur les dépenses fonctionnelles pour {count} catégories, basées sur la Classification des fonctions des administrations publiques (COFOG). ",
@@ -345,9 +406,12 @@ TRANSLATIONS = {
     "narrative.func_missing_multi": "Les catégories pour lesquelles nous ne disposons pas de données comprennent {cats}. ",
     "narrative.func_top_n": "En moyenne, les {n} premières catégories fonctionnelles de dépenses sont ",
     "narrative.func_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
-    "narrative.func_stable": "Relativement, les dépenses publiques restent les plus stables dans ",
-    "narrative.func_fluctuate": "tandis que les dépenses dans ",
-    "narrative.func_fluctuate_end": " fluctuent le plus au fil du temps. ",
+    # Parallel structure with narrative.econ_stable / econ_fluctuate:
+    # "sont X et Y" instead of "dans X et Y", keeping both the functional
+    # and economic narratives consistent in phrasing.
+    "narrative.func_stable": "En termes relatifs, les catégories fonctionnelles les plus stables sont ",
+    "narrative.func_fluctuate": "tandis que les catégories les plus fluctuantes sont ",
+    "narrative.func_fluctuate_end": ". ",
 
     # --- Economic narrative ---
     "narrative.econ_intro": "Pour {country}, BOOST fournit des données de dépenses sur {count} catégories économiques, généralement basées sur la classification économique des dépenses définie dans le cadre des statistiques de finances publiques (GFS). ",
@@ -355,9 +419,12 @@ TRANSLATIONS = {
     "narrative.econ_missing_multi": "Les catégories pour lesquelles nous ne disposons pas de données comprennent {cats}. ",
     "narrative.econ_top_n": "En moyenne, les {n} premières catégories économiques de dépenses sont ",
     "narrative.econ_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
-    "narrative.econ_stable": "Relativement, les dépenses publiques restent les plus stables dans ",
-    "narrative.econ_fluctuate": "tandis que les dépenses dans ",
-    "narrative.econ_fluctuate_end": " fluctuent le plus au fil du temps. ",
+    # Restructured to avoid "les dépenses dans les dépenses d'investissement"
+    # — several econ narrative forms start with "les dépenses" themselves,
+    # which clashed with the old template's "les dépenses dans ...".
+    "narrative.econ_stable": "En termes relatifs, les postes de dépenses les plus stables sont ",
+    "narrative.econ_fluctuate": "tandis que les postes les plus fluctuants sont ",
+    "narrative.econ_fluctuate_end": ". ",
 
     # --- Subnational narrative (home overview) ---
     "narrative.top_n_concentration": "Les {n} premières régions — {regions} — représentent {pct} des dépenses publiques totales, indiquant une concentration significative dans ces zones. ",
@@ -387,7 +454,10 @@ TRANSLATIONS = {
 
     # --- Subnational rank narrative ---
     "narrative.subnat_rank_year": "En {year}, {pcc}",
-    "narrative.subnat_rank_roi": " Parmi les régions infranationales, en termes de retour sur les dépenses publiques en {func} mesuré par {outcome_name}, {best} a eu le meilleur retour sur investissement (ROI) tandis que {worst} a eu le plus faible.",
+    # {que_worst} holds the right form of "que" — "que " or "qu'" — so the
+    # sentence elides correctly before vowel-initial region names
+    # ("tandis qu'Afar" vs "tandis que Kampala").
+    "narrative.subnat_rank_roi": " Parmi les régions infranationales, en termes de retour sur les dépenses publiques en {func} mesuré par {outcome_name}, {best} a eu le meilleur retour sur investissement (ROI) tandis {que_worst}{worst} a eu le plus faible.",
     "label.per_capita_expenditure_on": "Dépenses par habitant en {func}",
     # Lowercase form: includes the article "les" since its only consumer
     # is mid-sentence correlation narratives ("entre les dépenses par
@@ -471,7 +541,11 @@ TRANSLATIONS = {
     "narrative.budget_cagr": ", calculé à l'aide du taux de croissance annuel composé (CAGR)",
     "narrative.budget_after_inflation": " après prise en compte de l'inflation. ",
     "narrative.budget_period_end": ". ",
-    "narrative.both_similar_rates": "Les catégories {high} et {low} ont augmenté à des taux similaires, avec {high} à {high_rate:.1f} % et {low} à {low_rate:.1f} % par an.",
+    # {high}/{low} are bare label forms ("Santé", "Défense") for the
+    # "Les catégories X et Y" apposition; {high_narrative}/{low_narrative}
+    # are articled prose forms ("la santé", "la défense") for the second
+    # clause ("avec la santé à 5.2%"), which reads as natural French.
+    "narrative.both_similar_rates": "Les catégories {high} et {low} ont augmenté à des taux similaires, avec {high_narrative} à {high_rate:.1f} % et {low_narrative} à {low_rate:.1f} % par an.",
     "narrative.high_expanded": "La catégorie {high} {high_phrase}, tandis que la catégorie {low} {low_phrase}. Cela pourrait suggérer un changement de politique vers la priorisation de la catégorie {high}, si le déploiement des ressources est en ligne avec les priorités de politique publique.",
     "narrative.low_outpacing": "La catégorie {low} {low_phrase}, dépassant la catégorie {high}, qui {high_phrase}. Cela suggère un accent accru sur la catégorie {high}, si le déploiement des ressources est en ligne avec les priorités de politique publique.",
     "narrative.expanded_significantly": "a augmenté significativement à {rate:.1f} %",

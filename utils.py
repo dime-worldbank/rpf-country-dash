@@ -430,7 +430,7 @@ def calculate_cagr(start_value, end_value, time_period):
     return cagr
 
 
-def add_disputed_overlay(fig, disputed_geojson, zoom):
+def add_disputed_overlay(fig, disputed_geojson, zoom, lang="en"):
     """
     Adds disputed region overlay to a choropleth mapbox figure.
     Args:
@@ -466,7 +466,7 @@ def add_disputed_overlay(fig, disputed_geojson, zoom):
     # Remove border by setting marker.line.width to 0
     if hasattr(trace, "marker") and hasattr(trace.marker, "line"):
         trace.marker.line.width = 0
-    trace.hovertemplate = "Region: %{location}<extra></extra>"
+    trace.hovertemplate = f"{t('hover.region', lang)}: %{{location}}<extra></extra>"
     trace.showscale = False
     trace.showlegend = False
     fig.add_trace(trace)

@@ -547,76 +547,83 @@ def functional_narrative(df, lang="en"):
 
     if len(categories) < len(COFOG_CATS):
         missing_cats = set(COFOG_CATS) - set(categories)
-        translated_missing = [translate_func(c, lang) for c in missing_cats]
+        # Use narrative form so "La catégorie manquante est la santé" reads
+        # naturally instead of the label-style "est Santé".
+        translated_missing = [translate_func(c, lang, narrative=True) for c in missing_cats]
         if len(missing_cats) == 1:
             text += t("narrative.func_missing_single", lang, cats=translated_missing[0])
         else:
-            text += t("narrative.func_missing_multi", lang, cats=', '.join(translated_missing))
+            # Use _join_list to get "A, B et C" / "A, B, and C" — not the
+            # raw ", ".join which produces ungrammatical "A, B" with no "et".
+            text += t("narrative.func_missing_multi", lang,
+                      cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("func")["percentage"].mean().reset_index()
     n = 3
     top_funcs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
     text += t("narrative.func_top_n", lang, n=n)
-    text += format_func_cats_with_numbers(top_funcs, format_percentage, lang=lang)
+    text += _format_cat_list(top_funcs, "func", format_percentage, lang)
     text += "; "
 
     bottom_funcs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
     text += t("narrative.func_bottom_n", lang, n=n)
-    text += format_func_cats_with_numbers(bottom_funcs, format_percentage, lang=lang)
+    text += _format_cat_list(bottom_funcs, "func", format_percentage, lang)
     text += ". "
 
     std_percentage = df.groupby("func")["percentage"].std().reset_index()
     m = 2
     stable_funcs = std_percentage.sort_values(by="percentage", ascending=True).head(m)
     text += t("narrative.func_stable", lang)
-    text += format_func_cats_with_numbers(stable_funcs, format_std, lang=lang)
+    text += _format_cat_list(stable_funcs, "func", lambda n: format_std(n, lang), lang)
     text += "; "
 
     flux_funcs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
     text += t("narrative.func_fluctuate", lang)
-    text += format_func_cats_with_numbers(flux_funcs, format_std, lang=lang)
+    text += _format_cat_list(flux_funcs, "func", lambda n: format_std(n, lang), lang)
     text += t("narrative.func_fluctuate_end", lang)
 
     return text
 
 
-def format_func_cats_with_numbers(df, format_number_func, lang="en"):
-    return format_cats_with_numbers(df, format_func_cat, format_number_func, lang=lang)
+def _join_list(items, lang):
+    """Join strings with the language's conjunction.
 
-
-def format_cats_with_numbers(df, format_cat_func, format_number_func, lang="en"):
-    items = [
-        f"{format_cat_func(row, lang)} ({format_number_func(row['percentage'])})"
-        for _, row in df.iterrows()
-    ]
-
-    # Language-aware conjunction: "and" in English, "et" in French, etc.
+      ["A"]           → "A"
+      ["A", "B"]      → "A et B" (FR) / "A and B" (EN)
+      ["A", "B", "C"] → "A, B et C" (FR) / "A, B, and C" (EN)
+    """
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
     and_word = t("word.and", lang)
     if len(items) == 2:
         return f" {and_word} ".join(items)
-    elif len(items) > 2:
-        return ", ".join(items[:-1]) + f", {and_word} {items[-1]}"
-    elif items:
-        return items[0]
-    else:
-        return ""
+    return ", ".join(items[:-1]) + f", {and_word} {items[-1]}"
+
+
+def _format_cat_list(df, kind, format_num, lang="en"):
+    """Render a category dataframe as "A (40%), B (30%) et C (20%)".
+
+    *kind* is either ``"func"`` or ``"econ"`` — matches the dataframe
+    column and picks the right translator. Always uses the narrative
+    (articled, lowercase) form so the output flows as prose.
+    """
+    translator = translate_func if kind == "func" else translate_econ
+    items = [
+        f"{translator(row[kind], lang, narrative=True)} ({format_num(row['percentage'])})"
+        for _, row in df.iterrows()
+    ]
+    return _join_list(items, lang)
 
 
 def format_percentage(num):
     return f"{num:.1f}%"
 
 
-def format_std(num):
-    return f"std={num:.1f}"
-
-
-def format_func_cat(row, lang="en"):
-    """Return the category label in the target language.
-
-    Thin wrapper around translate_func() for the row-shaped input used by
-    the narrative helpers.
-    """
-    return translate_func(row["func"], lang)
+def format_std(num, lang="en"):
+    """Format a standard-deviation value with a localized label."""
+    return f"{t('label.std_abbrev', lang)}={num:.1f}"
 
 
 def subnational_spending_narrative(
@@ -742,7 +749,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
         "<b>" + t("hover.expenditure_label", lang) + ":</b> %{z}<extra></extra>"
     )
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
     return fig
 
 
@@ -784,9 +791,10 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
+    per_capita_label = t("hover.per_capita_spending", lang)
     no_data_trace.hovertemplate = (
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
-        "<b>Per capita expenditure:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
+        + f"<b>{per_capita_label}:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
     )
     fig.add_trace(no_data_trace)
 
@@ -802,18 +810,21 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
     )
     fig.data[0].hovertemplate = (
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{customdata[0]}<extra></extra>"
+        + f"<b>{per_capita_label}:</b> %{{customdata[0]}}<extra></extra>"
     )
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
     return fig
 
 
 INCOME_LEVEL_THRESHOLD = {
-    "LIC": ("$3.00", "Low Income"),
-    "LMC": ("$4.20", "Lower Middle Income"),
-    "UMC": ("$8.30", "Upper Middle Income"),
-    "HIC": ("$8.30", "High Income"),
+    # (threshold, translation_key) — the level name is looked up at render
+    # time via t() so French users see "à faible revenu" etc. rather than
+    # the English "Low Income" literal leaking into FR narratives.
+    "LIC": ("$3.00", "income.low"),
+    "LMC": ("$4.20", "income.lower_middle"),
+    "UMC": ("$8.30", "income.upper_middle"),
+    "HIC": ("$8.30", "income.high"),
 }
 
 def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en"):
@@ -857,9 +868,10 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
+    poverty_label = t("trace.poverty_rate", lang)
     no_data_trace.hovertemplate = (
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
-        "<b>Poverty rate:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
+        + f"<b>{poverty_label}:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
     )
     fig.add_trace(no_data_trace)
 
@@ -887,17 +899,20 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
     fig.data[0].hovertemplate = (
         "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
-        + "<b>Poverty rate:</b> %{z:.2f}%<extra></extra>"
+        + f"<b>{poverty_label}:</b> %{{z:.2f}}%<extra></extra>"
     )
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
     return fig
 
 
 def _get_poverty_source_text(income_level, lang="en"):
     if income_level and income_level in INCOME_LEVEL_THRESHOLD:
-        threshold, level_name = INCOME_LEVEL_THRESHOLD[income_level]
-        return t("annotation.poverty_threshold", lang, threshold=threshold, level_name=level_name)
+        threshold, level_key = INCOME_LEVEL_THRESHOLD[income_level]
+        return t(
+            "annotation.poverty_threshold", lang,
+            threshold=threshold, level_name=t(level_key, lang),
+        )
     return t("annotation.poverty_threshold_default", lang)
 
 
@@ -1056,49 +1071,38 @@ def economic_narrative(df, lang="en"):
 
     if len(categories) < len(ECON_CAT_MAP):
         missing_cats = set(ECON_CAT_MAP.keys()) - set(categories)
-        translated_missing = [translate_econ(c, lang) for c in missing_cats]
+        translated_missing = [translate_econ(c, lang, narrative=True) for c in missing_cats]
         if len(translated_missing) == 1:
             text += t("narrative.econ_missing_single", lang, cats=translated_missing[0])
         else:
-            text += t("narrative.econ_missing_multi", lang, cats=', '.join(translated_missing))
+            text += t("narrative.econ_missing_multi", lang,
+                      cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("econ")["percentage"].mean().reset_index()
     n = 3
     top_econs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
     text += t("narrative.econ_top_n", lang, n=n)
-    text += format_econ_cats_with_numbers(top_econs, format_percentage, lang=lang)
+    text += _format_cat_list(top_econs, "econ", format_percentage, lang)
     text += "; "
 
     bottom_econs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
     text += t("narrative.econ_bottom_n", lang, n=n)
-    text += format_econ_cats_with_numbers(bottom_econs, format_percentage, lang=lang)
+    text += _format_cat_list(bottom_econs, "econ", format_percentage, lang)
     text += ". "
 
     std_percentage = df.groupby("econ")["percentage"].std().reset_index()
     m = 2
     stable_econs = std_percentage.sort_values(by="percentage", ascending=True).head(m)
     text += t("narrative.econ_stable", lang)
-    text += format_econ_cats_with_numbers(stable_econs, format_std, lang=lang)
+    text += _format_cat_list(stable_econs, "econ", lambda n: format_std(n, lang), lang)
     text += "; "
 
     flux_econs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
     text += t("narrative.econ_fluctuate", lang)
-    text += format_econ_cats_with_numbers(flux_econs, format_std, lang=lang)
+    text += _format_cat_list(flux_econs, "econ", lambda n: format_std(n, lang), lang)
     text += t("narrative.econ_fluctuate_end", lang)
 
     return text
-
-
-def format_econ_cats_with_numbers(df, format_number_func, lang="en"):
-    return format_cats_with_numbers(df, format_econ_cat, format_number_func, lang=lang)
-
-
-def format_econ_cat(row, lang="en"):
-    """Return the economic category label in the target language.
-
-    Thin wrapper around translate_econ() for the row-shaped input.
-    """
-    return translate_econ(row["econ"], lang)
 
 
 @callback(
