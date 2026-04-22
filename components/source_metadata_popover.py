@@ -100,6 +100,7 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "overview-total": {"sources": [_BOOST]},
     "overview-per-capita": {"sources": [_BOOST, _POVERTY_RATE]},
+    "overview-funding-source": {"sources": [_BOOST]},
     "functional-breakdown": {"sources": [_BOOST]},
     "func-growth": {"sources": [_BOOST]},
     "economic-breakdown": {"sources": [_BOOST]},
@@ -115,6 +116,7 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "education-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
     "education-total": {"sources": [_BOOST]},
+    "education-funding-source": {"sources": [_BOOST]},
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
@@ -130,6 +132,7 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
     "health-total": {"sources": [_BOOST]},
+    "health-funding-source": {"sources": [_BOOST]},
     "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
     "econ-breakdown-func-health": {"sources": [_BOOST]},
     # ------------------------------------------------------------------

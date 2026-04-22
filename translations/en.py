@@ -23,6 +23,7 @@ TRANSLATIONS = {
 
     # --- Section headings ---
     "heading.total_expenditure": "Total Expenditure",
+    "heading.budget_funding_source": "Budget by Funding Source",
     "heading.spending_by_func": "Spending by Functional Categories",
     "heading.spending_by_econ": "Spending by Economic Categories",
     "heading.quality_budget": "Quality of Budget Institutions",
@@ -59,6 +60,7 @@ TRANSLATIONS = {
     "chart.subnational_func_spending": "Subnational {func} Spending",
     "chart.subnational_outcome": "Subnational {outcome_name}",
     "chart.budget_func_fluctuation": "How do budgets for functional categories fluctuate over time?",
+    "chart.budget_funding_source_over_time": "How has the foreign-funded share of the budget changed over time?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Inflation Adjusted",
@@ -74,6 +76,8 @@ TRANSLATIONS = {
     "trace.learning_poverty": "learning poverty rate",
     "trace.inflation_adjusted_per_capita": "inflation adjusted per capita public spending",
     "trace.inflation_adjusted_per_capita_health": "Inflation adjusted per capita public spending",
+    "trace.domestic_funded": "Domestically Funded",
+    "trace.foreign_funded": "Foreign Funded",
 
     # --- Hover templates ---
     "hover.real_expenditure": "Real Expenditure",
@@ -94,6 +98,8 @@ TRANSLATIONS = {
     "hover.expenditure_label": "Expenditure",
     "hover.region": "Region",
     "hover.data_not_available": "Data not available",
+    "hover.domestic_funded": "Domestically Funded",
+    "hover.foreign_funded": "Foreign Funded",
 
     # --- Axis labels ---
     "axis.total_expenditure": "Total Expenditure",
@@ -102,6 +108,7 @@ TRANSLATIONS = {
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
+    "axis.share_of_budget_pct": "Share of budget (%)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Per capita {sector} expenditure",
@@ -221,6 +228,12 @@ TRANSLATIONS = {
     "narrative.decentral_mean": "On average, {mean:.1f}% of total public spending is executed by local/regional government. ",
     "narrative.decentral_latest": "In {year}, which is the latest year with data available, expenditure decentralization is {pct:.1f}%. ",
     "narrative.no_regional_data": "BOOST does not have any local/regional spending data for {country}. ",
+
+    # --- Narrative templates: Budget by Funding Source ---
+    "narrative.funding_source_no_data": "BOOST does not have funding source data for {country}. ",
+    "narrative.funding_source_summary": "Between {start_year} and {end_year}, on average {domestic_pct:.0f}% of {country_gen} budget was domestically funded and {foreign_pct:.0f}% came from foreign sources. ",
+    "narrative.funding_source_all_domestic": "Throughout this period, {country_gen} budget was entirely domestically funded. ",
+    "narrative.funding_source_latest": "In {year}, the latest year with data, {foreign_pct:.0f}% of the budget was foreign-funded. ",
 
     # --- Narrative templates: Spending ---
     "narrative.central_spending_change": "In this time period, the central government's inflation-adjusted spending has {change_text} ",

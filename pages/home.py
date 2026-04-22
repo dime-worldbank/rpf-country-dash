@@ -21,6 +21,7 @@ from utils import (
 )
 
 from components import slider, get_slider_config, pefa, budget_increment_analysis
+from components import budget_funding_source
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
@@ -127,6 +128,31 @@ def render_overview_content(tab, lang):
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
+                        ),
+                    ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.budget_funding_source", lang))
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            chart_container("overview-funding-source"),
+                            xs=12, lg=8,
+                        ),
+                        dbc.Col(
+                            html.P(
+                                id="overview-funding-source-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=4,
                         ),
                     ],
                 ),
@@ -952,6 +978,25 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
     return total_figure(df, currency_name, currency_code, lang=lang), per_capita_figure(df, currency_name, currency_code, lang=lang), overview_narrative(df, lang=lang)
+
+
+@callback(
+    Output("overview-funding-source", "figure"),
+    Output("overview-funding-source-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("stored-basic-country-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_overview_funding_source(data, basic_country_data, country, lang):
+    lang = lang or "en"
+    if not data or not basic_country_data or not country:
+        return dash.no_update, dash.no_update
+    func_df = filter_country_sort_year(server_store.get("func_by_country_year"), country)
+    return (
+        budget_funding_source.figure(func_df, lang=lang),
+        budget_funding_source.narrative(func_df, country, lang=lang),
+    )
 
 
 @callback(

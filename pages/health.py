@@ -29,6 +29,7 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
+from components import budget_funding_source
 from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
 
 db = QueryService.get_instance()
@@ -148,6 +149,31 @@ def render_health_content(tab, lang):
                             lg={"size": 6, "offset": 0},
                         ),
                     ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.budget_funding_source", lang))
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            chart_container("health-funding-source"),
+                            xs=12, lg=8,
+                        ),
+                        dbc.Col(
+                            html.P(
+                                id="health-funding-source-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=4,
+                        ),
+                    ],
                 ),
                 dbc.Row(
                     dbc.Col(
@@ -531,6 +557,24 @@ def render_overview_total_figure(data, country, country_data, lang):
     return fig, health_narrative(data, country, lang=lang)
 
 
+@callback(
+    Output("health-funding-source", "figure"),
+    Output("health-funding-source-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_health_funding_source(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    func_df = filter_country_sort_year(server_store.get("func_by_country_year"), country)
+    return (
+        budget_funding_source.figure(func_df, lang=lang, func_filter="Health"),
+        budget_funding_source.narrative(func_df, country, lang=lang, func_filter="Health"),
+    )
+
+
 def public_private_narrative(df, country, lang="en"):
     latest_year = df.year.max()
     earliest_year = df.year.min()
@@ -578,7 +622,7 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         return dash.no_update, dash.no_update
 
     fig_title = t("chart.pct_govt_vs_household", lang)
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
     private = server_store.get("health_private_expenditure")
     private = filter_country_sort_year(private, country)
