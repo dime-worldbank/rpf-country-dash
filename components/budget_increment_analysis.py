@@ -6,7 +6,6 @@ from translations import t
 from utils import (
     filter_country_sort_year,
     empty_plot,
-    generate_error_prompt,
     calculate_cagr,
 )
 
@@ -113,11 +112,8 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     if (not valid_cagr_dict) & (exp_type == "real_domestic_funded_budget"):
         return (
             empty_plot(t("error.inflation_adjusted_unavailable", lang)),
-            generate_error_prompt(
-                "DATA_UNAVAILABLE_DATASET_NAME",
-                lang=lang,
-                dataset_name="Inflation adjusted domestic funded budget",
-            ),
+            t("error.data_unavailable_named", lang,
+              dataset_name="Inflation adjusted domestic funded budget"),
         )
     fig = create_func_growth_figure(country_budget_changes_df, exp_type, lang=lang)
 

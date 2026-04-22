@@ -20,7 +20,6 @@ from utils import (
     filter_country_sort_year,
     filter_geojson_by_country,
     format_currency,
-    generate_error_prompt,
     get_correlation_text,
     millify,
 )
@@ -62,7 +61,7 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
         return (
             empty_plot(t("error.no_data_period", lang)),
             empty_plot(t("error.no_data_period", lang)),
-            generate_error_prompt("DATA_UNAVAILABLE", lang=lang),
+            t("error.data_unavailable", lang),
         )
 
     fig1 = _central_vs_regional_fig(data_by_func_sub_geo0, func, currency_code, lang=lang)
@@ -239,7 +238,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
             text += t("narrative.subnat_no_level_data", lang, func=func_name, func_gen=func_gen)
     except:
         traceback.print_exc()
-        return generate_error_prompt("GENERIC_ERROR", lang=lang)
+        return t("error.generic", lang)
 
     return text
 
@@ -555,7 +554,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
     if data.empty:
         return empty_plot(
             t("error.no_outcome_data", lang)
-        ), generate_error_prompt("DATA_UNAVAILABLE", lang=lang)
+        ), t("error.data_unavailable", lang)
 
     outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
     outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]

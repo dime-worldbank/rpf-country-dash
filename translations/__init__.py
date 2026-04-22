@@ -51,6 +51,27 @@ def get_available_languages():
 
 _FRENCH_VOWELS = frozenset("aeiouyàâéèêëïîôùûüœæ")
 
+_FR_ARTICLES = ("les ", "le ", "la ", "l'")
+
+
+def strip_article(lang, name):
+    """Strip the leading article from *name* for the given language.
+
+    Used when a localized noun phrase needs to appear without its article
+    — e.g. dropdown labels that show "Kenya" / "Albanie" rather than
+    "le Kenya" / "l'Albanie", even though the articled form is what the
+    translations dict stores (because mid-sentence narratives need it).
+
+    Currently handles French articles; other languages return *name*
+    unchanged.
+    """
+    if not name or lang != "fr":
+        return name
+    for prefix in _FR_ARTICLES:
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return name
+
 
 def _genitive_fr(name):
     """French genitive: prefix *name* with the right form of "de".

@@ -551,11 +551,11 @@ def functional_narrative(df, lang="en"):
         # naturally instead of the label-style "est Santé".
         translated_missing = [translate_func(c, lang, narrative=True) for c in missing_cats]
         if len(missing_cats) == 1:
-            text += t("narrative.func_missing_single", lang, cats=translated_missing[0])
+            text += t("narrative.missing_single", lang, cats=translated_missing[0])
         else:
             # Use _join_list to get "A, B et C" / "A, B, and C" — not the
             # raw ", ".join which produces ungrammatical "A, B" with no "et".
-            text += t("narrative.func_missing_multi", lang,
+            text += t("narrative.missing_multi", lang,
                       cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("func")["percentage"].mean().reset_index()
@@ -580,7 +580,7 @@ def functional_narrative(df, lang="en"):
     flux_funcs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
     text += t("narrative.func_fluctuate", lang)
     text += _format_cat_list(flux_funcs, "func", lambda n: format_std(n, lang), lang)
-    text += t("narrative.func_fluctuate_end", lang)
+    text += t("narrative.fluctuate_end", lang)
 
     return text
 
@@ -1073,9 +1073,9 @@ def economic_narrative(df, lang="en"):
         missing_cats = set(ECON_CAT_MAP.keys()) - set(categories)
         translated_missing = [translate_econ(c, lang, narrative=True) for c in missing_cats]
         if len(translated_missing) == 1:
-            text += t("narrative.econ_missing_single", lang, cats=translated_missing[0])
+            text += t("narrative.missing_single", lang, cats=translated_missing[0])
         else:
-            text += t("narrative.econ_missing_multi", lang,
+            text += t("narrative.missing_multi", lang,
                       cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("econ")["percentage"].mean().reset_index()
@@ -1100,7 +1100,7 @@ def economic_narrative(df, lang="en"):
     flux_econs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
     text += t("narrative.econ_fluctuate", lang)
     text += _format_cat_list(flux_econs, "econ", lambda n: format_std(n, lang), lang)
-    text += t("narrative.econ_fluctuate_end", lang)
+    text += t("narrative.fluctuate_end", lang)
 
     return text
 

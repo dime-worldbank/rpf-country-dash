@@ -243,9 +243,7 @@ TRANSLATIONS = {
     "narrative.both_insufficient": "The relationship between education spending and outcomes cannot be determined due to limited data availability.",
 
     # --- Narrative templates: Correlation ---
-    "narrative.correlation_unknown": "the correlation between {x_name} and {y_name} is unknown due to limited data availability or variability.",
     "narrative.no_correlation": "there is no apparent correlation between {y_name} and {x_name}.",
-    "narrative.correlation": "the correlation between {y_name} and {x_name} is {pcc}, indicating a {intensity} {direction} relationship. Higher {y_name} is generally associated with {association} {x_name}.",
     "narrative.corr_insufficient": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points.",
     "narrative.corr_no_variability": "the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data.",
     "narrative.corr_relation": "a {intensity} {direction} relationship",
@@ -344,27 +342,26 @@ TRANSLATIONS = {
     "econ.non_wage_recurrent.narrative":     "non-wage recurrent",
 
     # --- Functional narrative ---
+    # Shared between func and econ narratives — same phrasing in both.
+    "narrative.missing_single": "The category we do not have data on is {cats}. ",
+    "narrative.missing_multi": "The categories we do not have data on include {cats}. ",
+    "narrative.fluctuate_end": ". ",
+
     "narrative.func_cofog_intro": "For {country}, BOOST provides functional spending data on {count} categories, based on Classification of the Functions of Government (COFOG). ",
-    "narrative.func_missing_single": "The category we do not have data on is {cats}. ",
-    "narrative.func_missing_multi": "The categories we do not have data on include {cats}. ",
     "narrative.func_top_n": "On average, the top {n} spending functional categories are ",
     "narrative.func_bottom_n": "while the bottom {n} spenders are ",
     # Parallel structure with narrative.econ_stable / econ_fluctuate.
     "narrative.func_stable": "Relatively, the most stable functional categories are ",
     "narrative.func_fluctuate": "while the most fluctuating categories are ",
-    "narrative.func_fluctuate_end": ". ",
 
     # --- Economic narrative ---
     "narrative.econ_intro": "For {country}, BOOST provides spending data on {count} economic categories, generally based on Economic Classification of Expense outlined in the Government Finance Statistics (GFS) framework. ",
-    "narrative.econ_missing_single": "The category we do not have data on is {cats}. ",
-    "narrative.econ_missing_multi": "The categories we do not have data on include {cats}. ",
     "narrative.econ_top_n": "On average, the top {n} spending economic categories are ",
     "narrative.econ_bottom_n": "while the bottom {n} spenders are ",
     # Restructured to match the FR version, which had to avoid a "dépenses
     # dans les dépenses..." duplication. Keeping both languages parallel.
     "narrative.econ_stable": "Relatively, the most stable spending items are ",
     "narrative.econ_fluctuate": "while the most fluctuating spending items are ",
-    "narrative.econ_fluctuate_end": ". ",
 
     # --- Subnational narrative (home overview) ---
     "narrative.top_n_concentration": "The top {n} regions—{regions}—account for {pct} of the total government expenditure, indicating a significant concentration in these areas. ",
@@ -372,9 +369,6 @@ TRANSLATIONS = {
     "narrative.select_total": "(Select the Total expenditure option above to see the breakdown by total amount).",
     "narrative.per_capita_wide_variation": "Per capita spending varies widely across regions, ranging from {min_val} to {max_val}, with a median of {median}. This indicates substantial variation in resource allocation per person.",
     "narrative.per_capita_even_distribution": "Per capita spending ranges from {min_val} to {max_val}, with a median of {median}. The distribution is relatively even across regions.",
-    "narrative.correlation_strong_inverse": "The correlation between per capita spending and poverty rates is {corr}, indicating a strong inverse relationship. Higher per capita spending is generally associated with lower poverty rates.",
-    "narrative.correlation_moderate_inverse": "The correlation between per capita spending and poverty rates is {corr}, suggesting a moderate inverse relationship. Generally, higher per capita spending is associated with lower poverty, though exceptions exist.",
-    "narrative.correlation_weak_inverse": "The correlation between per capita spending and poverty rates is {corr}, indicating a weak inverse relationship. There is little consistent pattern between higher per capita spending and poverty rates.",
 
     # --- Subnational across space narrative ---
     "narrative.subnat_intro": "{country_loc}, as of {year}, ",

@@ -287,9 +287,7 @@ TRANSLATIONS = {
     "narrative.both_insufficient": "La relation entre les dépenses d'éducation et les résultats ne peut être déterminée en raison de données insuffisantes.",
 
     # --- Narrative templates: Correlation ---
-    "narrative.correlation_unknown": "la corrélation entre {x_name} et {y_name} est inconnue en raison de la disponibilité ou de la variabilité limitée des données.",
     "narrative.no_correlation": "il n'y a pas de corrélation apparente entre {y_name} et {x_name}.",
-    "narrative.correlation": "la corrélation entre {y_name} et {x_name} est de {pcc}, indiquant une relation {direction} {intensity}. Un {y_name} plus élevé est généralement associé à un {x_name} plus {association}.",
     "narrative.corr_insufficient": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'un nombre insuffisant de points de données.",
     "narrative.corr_no_variability": "la corrélation entre {x_name} et {y_name} ne peut être déterminée en raison d'une variabilité insuffisante des données.",
     "narrative.corr_relation": "une relation {direction} {intensity}",
@@ -401,9 +399,16 @@ TRANSLATIONS = {
     "econ.non_wage_recurrent.narrative":   "les dépenses récurrentes hors salaires",
 
     # --- Functional narrative ---
+    # Shared between func and econ narratives — same phrasing in both.
+    # Drops the copula to sidestep number agreement: {cats} is a single
+    # category's narrative form, but that form can be singular ("la santé")
+    # or plural ("les loisirs", "les dépenses d'investissement"), which
+    # clashes with "La catégorie ... est ...".
+    "narrative.missing_single": "Nous ne disposons pas de données pour {cats}. ",
+    "narrative.missing_multi": "Les catégories pour lesquelles nous ne disposons pas de données comprennent {cats}. ",
+    "narrative.fluctuate_end": ". ",
+
     "narrative.func_cofog_intro": "Pour {country}, BOOST fournit des données sur les dépenses fonctionnelles pour {count} catégories, basées sur la Classification des fonctions des administrations publiques (COFOG). ",
-    "narrative.func_missing_single": "La catégorie pour laquelle nous ne disposons pas de données est {cats}. ",
-    "narrative.func_missing_multi": "Les catégories pour lesquelles nous ne disposons pas de données comprennent {cats}. ",
     "narrative.func_top_n": "En moyenne, les {n} premières catégories fonctionnelles de dépenses sont ",
     "narrative.func_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
     # Parallel structure with narrative.econ_stable / econ_fluctuate:
@@ -411,12 +416,9 @@ TRANSLATIONS = {
     # and economic narratives consistent in phrasing.
     "narrative.func_stable": "En termes relatifs, les catégories fonctionnelles les plus stables sont ",
     "narrative.func_fluctuate": "tandis que les catégories les plus fluctuantes sont ",
-    "narrative.func_fluctuate_end": ". ",
 
     # --- Economic narrative ---
     "narrative.econ_intro": "Pour {country}, BOOST fournit des données de dépenses sur {count} catégories économiques, généralement basées sur la classification économique des dépenses définie dans le cadre des statistiques de finances publiques (GFS). ",
-    "narrative.econ_missing_single": "La catégorie pour laquelle nous ne disposons pas de données est {cats}. ",
-    "narrative.econ_missing_multi": "Les catégories pour lesquelles nous ne disposons pas de données comprennent {cats}. ",
     "narrative.econ_top_n": "En moyenne, les {n} premières catégories économiques de dépenses sont ",
     "narrative.econ_bottom_n": "tandis que les {n} catégories les moins dépensières sont ",
     # Restructured to avoid "les dépenses dans les dépenses d'investissement"
@@ -424,7 +426,6 @@ TRANSLATIONS = {
     # which clashed with the old template's "les dépenses dans ...".
     "narrative.econ_stable": "En termes relatifs, les postes de dépenses les plus stables sont ",
     "narrative.econ_fluctuate": "tandis que les postes les plus fluctuants sont ",
-    "narrative.econ_fluctuate_end": ". ",
 
     # --- Subnational narrative (home overview) ---
     "narrative.top_n_concentration": "Les {n} premières régions — {regions} — représentent {pct} des dépenses publiques totales, indiquant une concentration significative dans ces zones. ",
@@ -432,9 +433,6 @@ TRANSLATIONS = {
     "narrative.select_total": "(Sélectionnez l'option Dépenses totales ci-dessus pour voir la répartition par montant total).",
     "narrative.per_capita_wide_variation": "Les dépenses par habitant varient considérablement entre les régions, allant de {min_val} à {max_val}, avec une médiane de {median}. Cela indique une variation substantielle dans l'allocation des ressources par personne.",
     "narrative.per_capita_even_distribution": "Les dépenses par habitant vont de {min_val} à {max_val}, avec une médiane de {median}. La distribution est relativement homogène entre les régions.",
-    "narrative.correlation_strong_inverse": "La corrélation entre les dépenses par habitant et les taux de pauvreté est de {corr}, indiquant une forte relation inverse. Des dépenses par habitant plus élevées sont généralement associées à des taux de pauvreté plus faibles.",
-    "narrative.correlation_moderate_inverse": "La corrélation entre les dépenses par habitant et les taux de pauvreté est de {corr}, suggérant une relation inverse modérée. En général, des dépenses par habitant plus élevées sont associées à une pauvreté plus faible, bien que des exceptions existent.",
-    "narrative.correlation_weak_inverse": "La corrélation entre les dépenses par habitant et les taux de pauvreté est de {corr}, indiquant une faible relation inverse. Il n'y a pas de schéma cohérent entre des dépenses par habitant plus élevées et les taux de pauvreté.",
 
     # --- Subnational across space narrative ---
     "narrative.subnat_intro": "{country_loc}, en {year}, ",
@@ -478,7 +476,7 @@ TRANSLATIONS = {
     "narrative.capital_under_investment": "indiquant un potentiel sous-investissement dans les infrastructures à long terme, ce qui pourrait affecter la prestation de services future.",
     "narrative.capital_expected_range": "ce qui se situe dans la fourchette attendue pour les secteurs sociaux mais pourrait nécessiter une priorisation supplémentaire en fonction des besoins en infrastructure.",
     "narrative.capital_strong_emphasis": "suggérant un accent fort sur l'infrastructure et l'expansion des capacités.",
-    "narrative.spending_patterns_intro": "Entre {start_year} et {end_year}, la première et la dernière année pour lesquelles des données sont disponibles, les tendances de dépenses sont les suivantes :",
+    "narrative.spending_patterns_intro": "Entre {start_year} et {end_year}, respectivement la plus ancienne et la plus récente année pour lesquelles des données sont disponibles, les tendances de dépenses sont les suivantes :",
     "narrative.capital_spending_change_up": "Les dépenses d'investissement ont augmenté de {amount:.0f} %, suggérant un engagement plus fort pour l'expansion et la modernisation des {facilities}.",
     "narrative.capital_spending_change_down": "Les dépenses d'investissement ont diminué de {amount:.0f} %, reflétant une réduction des investissements dans {targets} et les infrastructures.",
     "narrative.capital_spending_change_stable": "Les dépenses d'investissement sont restées stables.",

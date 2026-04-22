@@ -342,25 +342,6 @@ def detect_trend(df, x_col, lang="en"):
     return ""
 
 
-_ERROR_KEY_MAP = {
-    "DATA_UNAVAILABLE": "error.data_unavailable",
-    "DATA_UNAVAILABLE_DATASET_NAME": "error.data_unavailable_named",
-    "GENERIC_ERROR": "error.generic",
-}
-
-
-def generate_error_prompt(template_key, lang="en", **kwargs):
-    """
-    Generate a prompt message based on the template and the keyword arguments
-    :param template_key: str
-    :param lang: str
-    :param kwargs: dict
-    :return: str
-    """
-    translation_key = _ERROR_KEY_MAP.get(template_key, template_key)
-    return t(translation_key, lang, **kwargs)
-
-
 def remove_accents(input_str):
     normalized_str = unicodedata.normalize("NFD", input_str)
     stripped_str = "".join(c for c in normalized_str if not unicodedata.combining(c))

@@ -32,7 +32,7 @@ from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
 from server import server
-from translations import t, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
+from translations import t, strip_article, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
@@ -346,22 +346,6 @@ def fetch_subnational_data_once(data, country_data):
     return no_update
 
 
-def _dropdown_label(country_code, lang):
-    """Return a UI-friendly label for a country dropdown option.
-
-    Looks up the localized name (e.g. "le Kenya" in French) and strips
-    any leading article so the dropdown shows just "Kenya" / "Albanie" /
-    "République démocratique du Congo" — matching standard French UI
-    convention for dropdowns while keeping the full articled form
-    available for mid-sentence narratives via `country.<code>`.
-    """
-    localized = t(f"country.{country_code}", lang)
-    for prefix in ("les ", "le ", "la ", "l'"):
-        if localized.startswith(prefix):
-            return localized[len(prefix):]
-    return localized
-
-
 @app.callback(
     Output("country-select", "options"),
     Output("country-select", "value"),
@@ -381,8 +365,10 @@ def display_data(data, search, lang, current_country):
     lang = lang or "en"
 
     def get_country_select_options(countries):
+        # Dropdown label drops the article ("Kenya", not "le Kenya") while
+        # `value` stays the raw English key used throughout the app.
         options = [
-            {"label": _dropdown_label(c, lang), "value": c}
+            {"label": strip_article(lang, t(f"country.{c}", lang)), "value": c}
             for c in countries
         ]
         if options:

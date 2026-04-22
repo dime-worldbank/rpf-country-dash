@@ -60,18 +60,18 @@ ECON_KEY_MAP = {
 }
 
 
-def translate_func(name, lang="en", narrative=False):
-    """Translate a raw COFOG func name (e.g. "Health") to *lang*.
+def _translate_mapped(name, key_map, lang, narrative=False):
+    """Translate *name* via *key_map*, optionally returning the narrative variant.
 
     * ``narrative=False`` → bare label form ("Santé", "Health") for
       chart legends and axis labels.
     * ``narrative=True`` → lowercase + articled prose form ("la santé",
-      "health") for mid-sentence use like "dans la santé et la défense".
+      "health") for mid-sentence use. Falls back to the bare form if no
+      ``.narrative`` variant is registered.
 
-    Falls back to the raw name if *name* isn't in COFOG_KEY_MAP, and to
-    the bare form if no ``.narrative`` variant is registered.
+    Returns *name* unchanged if it isn't in *key_map*.
     """
-    key = COFOG_KEY_MAP.get(name)
+    key = key_map.get(name)
     if not key:
         return name
     if narrative:
@@ -82,19 +82,12 @@ def translate_func(name, lang="en", narrative=False):
     return t(key, lang)
 
 
-def translate_econ(name, lang="en", narrative=False):
-    """Translate a raw econ category name (e.g. "Wage bill") to *lang*.
+def translate_func(name, lang="en", narrative=False):
+    return _translate_mapped(name, COFOG_KEY_MAP, lang, narrative)
 
-    Same shape as :func:`translate_func` — see that function's docstring.
-    """
-    key = ECON_KEY_MAP.get(name)
-    if not key:
-        return name
-    if narrative:
-        val = t(f"{key}.narrative", lang)
-        if val != f"{key}.narrative":
-            return val
-    return t(key, lang)
+
+def translate_econ(name, lang="en", narrative=False):
+    return _translate_mapped(name, ECON_KEY_MAP, lang, narrative)
 
 
 # Maps COFOG sub-function values (the `func_sub` column) to their
@@ -128,10 +121,10 @@ def translate_func_sub(name, lang="en"):
     """Translate a COFOG sub-function name (e.g. "Primary Education") to *lang*.
 
     Falls back to the raw name if it's not in FUNC_SUB_KEY_MAP. Used by
-    the treemap on subnational Education / Health pages.
+    the treemap on subnational Education / Health pages. No narrative
+    variant — these values appear only in treemap labels.
     """
-    key = FUNC_SUB_KEY_MAP.get(name)
-    return t(key, lang) if key else name
+    return _translate_mapped(name, FUNC_SUB_KEY_MAP, lang)
 
 FUNC_PALETTE = QUALITATIVE
 FUNC_COLORS = create_category_color_map(COFOG_CATS, palette="qualitative")

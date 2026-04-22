@@ -14,7 +14,6 @@ from utils import (
     empty_plot,
     filter_country_sort_year,
     format_currency,
-    generate_error_prompt,
     get_percentage_change_text,
     millify,
     require_login,
@@ -547,7 +546,7 @@ def render_overview_total_figure(data, country, country_data, lang):
     if df.empty:
         return (
             empty_plot(t("error.no_data_period", lang)),
-            generate_error_prompt("DATA_UNAVAILABLE", lang=lang),
+            t("error.data_unavailable", lang),
         )
     currency_code = country_data['basic_country_info'][country]['currency_code']
 
@@ -581,9 +580,9 @@ def public_private_narrative(df, country, lang="en"):
                    ratio=f"{household_ratio:.1f}", year=latest_year)
 
     except IndexError:
-        return generate_error_prompt("DATA_UNAVAILABLE", lang=lang)
+        return t("error.data_unavailable", lang)
     except:
-        return generate_error_prompt("GENERIC_ERROR", lang=lang)
+        return t("error.generic", lang)
     return text
 
 
@@ -623,13 +622,11 @@ def render_public_private_figure(private_data, public_data, country, country_dat
 
     if merged.empty:
         if public.empty:
-            prompt = generate_error_prompt(
-                "DATA_UNAVAILABLE_DATASET_NAME", lang=lang, dataset_name="health public spending"
-            )
+            prompt = t("error.data_unavailable_named", lang,
+                       dataset_name="health public spending")
         elif private.empty:
-            prompt = generate_error_prompt(
-                "DATA_UNAVAILABLE_DATASET_NAME", lang=lang, dataset_name="health private spending"
-            )
+            prompt = t("error.data_unavailable_named", lang,
+                       dataset_name="health private spending")
         else:
             prompt = t("error.no_overlapping_data", lang, sector=t("sector.health", lang))
         return (empty_plot(prompt, fig_title=fig_title), prompt)
