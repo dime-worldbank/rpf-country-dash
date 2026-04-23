@@ -132,21 +132,42 @@ def filter_country_sort_year(df, country, start_year=START_YEAR):
     return df
 
 
-millnames = ["", " K", " M", " B", " T"]
+# Magnitude suffixes per language.
+#   EN: the standard K / M / B / T short-scale abbreviations.
+#   FR: French long-scale conventions — "Md" for milliard (10^9) and "Bn"
+#   for billion (10^12, which is *not* the same as EN "B" = 10^9). Lower-
+#   case "k" matches French typography ("100 k€") but upper-case "K" is
+#   also accepted; sticking to lowercase for correctness.
+_MILLNAMES = {
+    "en": ["", " K", " M", " B", " T"],
+    "fr": ["", " k", " M", " Md", " Bn"],
+}
 
 
-def millify(n):
+def millify(n, lang="en"):
+    """Compress ``n`` to a magnitude-suffixed string.
+
+    * English: ``"1.50 M"`` / ``"2.00 B"`` / ``"3.50 T"``.
+    * French: ``"1,50 M"`` / ``"2,00 Md"`` / ``"3,50 Bn"`` — comma as
+      decimal separator and French long-scale suffixes (Md = milliard,
+      Bn = billion 10^12) because French ``"B"`` historically means
+      10^18, not 10^9.
+    """
     n = float(n)
     if math.isnan(n):
         return "N/A"
+    names = _MILLNAMES.get(lang, _MILLNAMES["en"])
     millidx = max(
         0,
         min(
-            len(millnames) - 1, int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
+            len(names) - 1, int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
         ),
     )
 
-    return "{:.2f}{}".format(n / 10 ** (3 * millidx), millnames[millidx])
+    result = "{:.2f}{}".format(n / 10 ** (3 * millidx), names[millidx])
+    if lang == "fr":
+        result = result.replace(".", ",")
+    return result
 
 
 def filter_geojson_by_country(geojson, country):
@@ -494,12 +515,28 @@ def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
     return fig
 
 
-def format_currency(value, currency_code):
+def apply_locale(fig, lang="en"):
+    """Set plotly's number-format locale on ``fig`` so its native renderers
+    (hovertemplate format specs like ``%{y:.2f}%``, axis tick labels, etc.)
+    produce French decimals in French and English decimals in English.
+
+    ``separators`` is a 2-char plotly attribute: first = decimal, second =
+    thousands. ``",."`` means comma decimal and dot thousands, matching
+    common French-European number formatting.
+    """
+    if lang == "fr":
+        fig.update_layout(separators=",.")
+    return fig
+
+
+def format_currency(value, currency_code, lang="en"):
     """Format a number as currency with the given currency code."""
-    return f"{currency_code} {millify(value)}"
+    return f"{millify(value, lang=lang)} {currency_code}"
 
 
-def add_currency_column(df, column_name, currency_code):
-    df[f'{column_name}_formatted'] = df[column_name].apply(lambda x: format_currency(x, currency_code))
+def add_currency_column(df, column_name, currency_code, lang="en"):
+    df[f'{column_name}_formatted'] = df[column_name].apply(
+        lambda x: format_currency(x, currency_code, lang=lang)
+    )
 
 

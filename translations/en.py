@@ -222,6 +222,10 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": "per capita education spending",
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
+    # Plain-string labels used mid-sentence by get_correlation_text on the
+    # Overview – Across Space tab. Lowercase, no trailing punctuation.
+    "label.per_capita_spending_lower": "per capita spending",
+    "label.poverty_rates_lower": "poverty rates",
 
     # --- Narrative templates: Overview ---
     "narrative.after_inflation": "After accounting for inflation, {trend_narrative} ",

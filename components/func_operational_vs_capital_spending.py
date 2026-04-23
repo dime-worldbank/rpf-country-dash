@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from translations import t, genitive, locative
 from constants import translate_econ
 import server_store
-from utils import empty_plot
+from utils import apply_locale, empty_plot
 
 OP_WAGE_BILL = "Wage bill"
 CAPEX = "Capital expenditures"
@@ -174,7 +174,7 @@ def _generate_econ_figure(data, func, lang="en"):
     fig.update_traces(
             hovertemplate="%{y:.2f}%"
     )
-    return fig
+    return apply_locale(fig, lang)
 
 
 def render_econ_breakdown(data, country_name, page_func, lang="en"):

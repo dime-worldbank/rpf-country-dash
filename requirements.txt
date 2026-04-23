@@ -11,4 +11,4 @@ bcrypt
 dotenv
 plotly==5.22.0
 colormath
-trend-narrative>=0.3.0
+trend-narrative @ git+https://github.com/worldbank/trend-narrative.git@feature/internalization

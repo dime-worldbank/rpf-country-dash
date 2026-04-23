@@ -6,6 +6,7 @@ from translations import t
 import server_store
 
 from utils import (
+    apply_locale,
     filter_country_sort_year,
     empty_plot,
     calculate_cagr,
@@ -208,7 +209,7 @@ def create_func_growth_figure(df, exp_type, lang="en"):
         ),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def format_budget_increment_narrative(

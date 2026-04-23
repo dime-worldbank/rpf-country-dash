@@ -137,6 +137,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    color: white;
 }
 
 /* Logout icon — uses the SVG as a mask so its fill follows the

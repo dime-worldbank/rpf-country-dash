@@ -1,3 +1,6 @@
+import re
+import string
+
 from translations.en import TRANSLATIONS as EN
 from translations.fr import TRANSLATIONS as FR
 
@@ -12,6 +15,37 @@ LANGUAGE_OPTIONS = [
 ]
 
 DEFAULT_LANGUAGE = "en"
+
+
+# Matches a digit-dot-digit sequence — used to swap English decimal points
+# for French-style commas inside *substituted values only*.
+_DECIMAL_RE = re.compile(r"(\d)\.(\d)")
+
+
+class _FrenchFormatter(string.Formatter):
+    """str.format with French number localization applied per-field.
+
+    The key property is that ``format_field`` is invoked once per ``{…}``
+    placeholder during rendering, receiving only the value being
+    substituted — the surrounding template text never passes through
+    this hook. So:
+
+    * ``{x:.1f}`` with float ``23.4`` → ``"23,4"``
+    * ``{x}`` with float ``0.73`` → ``"0,73"``
+    * ``{corr}`` with a caller-preformatted string ``"0.73"`` → ``"0,73"``
+    * ``{country}`` with ``"le Kenya"`` → unchanged (no digit-dot-digit)
+    * A pillar label like ``"1. Fiabilité du budget"`` inside the template
+      text is left completely alone because it isn't a substituted value.
+    """
+
+    def format_field(self, value, format_spec):
+        result = super().format_field(value, format_spec)
+        if _DECIMAL_RE.search(result):
+            result = _DECIMAL_RE.sub(r"\1,\2", result)
+        return result
+
+
+_FR_FORMATTER = _FrenchFormatter()
 
 
 def t(key, lang=None, **kwargs):
@@ -29,15 +63,19 @@ def t(key, lang=None, **kwargs):
     Returns
     -------
     str
-        The translated (and optionally interpolated) string.
+        The translated (and optionally interpolated) string. For French,
+        numeric-looking substituted values render with comma decimals
+        (see :class:`_FrenchFormatter`).
     """
     if lang is None:
         lang = DEFAULT_LANGUAGE
     translations = _LANGUAGES.get(lang, _LANGUAGES[DEFAULT_LANGUAGE])
     template = translations.get(key, _LANGUAGES[DEFAULT_LANGUAGE].get(key, key))
-    if kwargs:
-        return template.format(**kwargs)
-    return template
+    if not kwargs:
+        return template
+    if lang == "fr":
+        return _FR_FORMATTER.vformat(template, (), kwargs)
+    return template.format(**kwargs)
 
 
 def get_available_languages():
