@@ -260,6 +260,13 @@ TRANSLATIONS = {
         "feminine": False,
     },
 
+    # Plain-string labels used mid-sentence by get_correlation_text on the
+    # Overview – Across Space tab. Include the definite article so the
+    # surrounding template ("la corrélation entre {y_name} et {x_name} …")
+    # reads grammatically.
+    "label.per_capita_spending_lower": "les dépenses par habitant",
+    "label.poverty_rates_lower": "les taux de pauvreté",
+
     # --- Narrative templates: Overview ---
     "narrative.after_inflation": "Après prise en compte de l'inflation, {trend_narrative} ",
     "narrative.decentral_mean": "En moyenne, {mean:.1f} % des dépenses publiques totales sont exécutées par les gouvernements locaux/régionaux. ",

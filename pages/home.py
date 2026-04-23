@@ -685,8 +685,8 @@ def subnational_spending_narrative(
         if len(corr_df) >= 3:
             corr_narrative = get_correlation_text(
                 corr_df,
-                x_col={"col_name": "poverty", "display": "poverty rates"},
-                y_col={"col_name": "per_capita", "display": "per capita spending"},
+                x_col={"col_name": "poverty", "display": t("label.poverty_rates_lower", lang)},
+                y_col={"col_name": "per_capita", "display": t("label.per_capita_spending_lower", lang)},
                 lang=lang,
             )
             corr_narrative = corr_narrative[0].upper() + corr_narrative[1:]
