@@ -10,6 +10,7 @@ from dash import (
     Output,
     State,
     MATCH,
+    ALL,
     ctx,
     page_container,
     page_registry,
@@ -29,6 +30,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 import server_store
 from server import server
+from translations import t, strip_article, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
@@ -69,16 +71,36 @@ db = QueryService.get_instance()
 header = html.Div(
     [
         html.Div(
-            id="user-status-header",
-            children=[
+            [
                 html.A(
-                    children="logout",
+                    o["label"],
+                    id={"type": "lang-link", "index": o["value"]},
                     n_clicks=0,
-                    id="logout-button",
-                    style={"display": "none"},
+                    className="lang-link",
+                    style={"cursor": "pointer"},
                 )
+                for o in LANGUAGE_OPTIONS
             ],
-        )
+            id="language-links",
+            className="language-links",
+        ),
+        html.A(
+            # A masked Span colors via `background-color` so the icon can
+            # follow the theme (white in wbg, black in quartz) — plain <img>
+            # can't inherit a fill color. See #logout-button rules in
+            # assets/90_custom.css.
+            children=html.Span(className="logout-icon", role="img",
+                               **{"aria-label": t("nav.logout", DEFAULT_LANGUAGE)}),
+            n_clicks=0,
+            id="logout-button",
+            style={"display": "none"},
+        ),
+        dbc.Tooltip(
+            t("nav.logout", DEFAULT_LANGUAGE),
+            id="logout-tooltip",
+            target="logout-button",
+            placement="bottom-start",
+        ),
     ],
     id="header",
 )
@@ -100,12 +122,8 @@ sidebar = html.Div(
         ),
         html.Hr(),
         dbc.Nav(
-            [
-                dbc.NavLink("Overview", href=get_relative_path("home"), active="exact"),
-                dbc.NavLink("Education", href=get_relative_path("education"), active="exact"),
-                dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
-                dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
-            ],
+            id="sidebar-nav",
+            vertical=True,
             pills=True,
         ),
     ],
@@ -143,6 +161,7 @@ dummy_div = html.Div(id="div-for-redirect")
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
+        dcc.Store(id="stored-language", storage_type="local", data=DEFAULT_LANGUAGE),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
         dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
@@ -168,6 +187,40 @@ def layout():
 
 
 app.layout = layout
+
+
+@app.callback(
+    Output("stored-language", "data"),
+    Input({"type": "lang-link", "index": ALL}, "n_clicks"),
+)
+def update_language(clicks):
+    if not ctx.triggered_id:
+        return DEFAULT_LANGUAGE
+    return ctx.triggered_id["index"]
+
+
+@app.callback(
+    Output({"type": "lang-link", "index": ALL}, "className"),
+    Input("stored-language", "data"),
+)
+def update_active_lang(lang):
+    return [
+        "lang-link active-lang" if o["value"] == lang else "lang-link"
+        for o in LANGUAGE_OPTIONS
+    ]
+
+
+@app.callback(
+    Output("sidebar-nav", "children"),
+    Input("stored-language", "data"),
+)
+def update_nav_links(lang):
+    return [
+        dbc.NavLink(t("nav.overview", lang), href=get_relative_path("home"), active="exact"),
+        dbc.NavLink(t("nav.education", lang), href=get_relative_path("education"), active="exact"),
+        dbc.NavLink(t("nav.health", lang), href=get_relative_path("health"), active="exact"),
+        dbc.NavLink(t("nav.about", lang), href=get_relative_path("about"), active="exact"),
+    ]
 
 
 @app.callback(
@@ -197,9 +250,17 @@ def display_page_or_redirect(pathname, logout_clicks):
 @app.callback(Output("logout-button", "style"), Input("url", "pathname"))
 def update_logout_button_visibility(pathname):
     if AUTH_ENABLED and current_user.is_authenticated:
-        return {"display": "block", "text-decoration": "underline", "cursor": "pointer"}
+        return {"display": "block", "cursor": "pointer"}
     else:
         return {"display": "none"}
+
+
+@app.callback(
+    Output("logout-tooltip", "children"),
+    Input("stored-language", "data"),
+)
+def update_logout_tooltip(lang):
+    return t("nav.logout", lang or DEFAULT_LANGUAGE)
 
 
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
@@ -241,16 +302,28 @@ def fetch_subnational_data_once(data, country_data):
     Output("country-select", "value"),
     Input("stored-data", "data"),
     Input("url", "search"),
+    Input("stored-language", "data"),
     State("country-select", "value"),
 )
-def display_data(data, search, current_country):
+def display_data(data, search, lang, current_country):
     """
     Populate country dropdown and optionally select country from URL.
     Usage: ?country=Kenya or ?country=Kenya&theme=wbg
+
+    The dropdown value remains the raw English country name (used as a
+    data key throughout the app). Only the visible label is localized.
     """
+    lang = lang or "en"
+
     def get_country_select_options(countries):
-        options = list({"label": c, "value": c} for c in countries)
-        options[0]["selected"] = True
+        # Dropdown label drops the article ("Kenya", not "le Kenya") while
+        # `value` stays the raw English key used throughout the app.
+        options = [
+            {"label": strip_article(lang, t(f"country.{c}", lang)), "value": c}
+            for c in countries
+        ]
+        if options:
+            options[0]["selected"] = True
         return options
 
     if data is not None:
@@ -267,7 +340,7 @@ def display_data(data, search, current_country):
                     selected_country = url_country
             return get_country_select_options(countries), selected_country
 
-        # URL changed but we already have a country selected - keep current
+        # URL changed or language changed but we already have a country — keep it
         return get_country_select_options(countries), current_country
     return ["No data available"], ""
 
@@ -413,15 +486,17 @@ def fetch_source_metadata_once(data):
     Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
     State("country-select", "value"),
     State("stored-source-metadata", "data"),
+    State("stored-language", "data"),
     prevent_initial_call=True,
 )
-def open_source_info_modal(n_clicks, country, source_meta):
+def open_source_info_modal(n_clicks, country, source_meta, lang):
     if not n_clicks:
         return no_update, no_update
 
+    lang = lang or "en"
     index = ctx.triggered_id["index"]
-    info = build_modal_info(index, country, source_meta)
-    return True, build_modal_children(info)
+    info = build_modal_info(index, country, source_meta, lang=lang)
+    return True, build_modal_children(info, lang=lang)
 
 
 @app.callback(

@@ -198,18 +198,15 @@ class TestServerStore(unittest.TestCase):
     # clear()
     # ------------------------------------------------------------------
 
-    def test_clear_empties_store_but_leaves_factories(self):
-        """clear() drops cached values; registered factories still fire."""
+    def test_clear_empties_store(self):
+        """clear() drops cached values; a registered loader repopulates on next get()."""
         calls = {"n": 0}
-
-        def factory():
+        def loader():
             calls["n"] += 1
             return "fresh"
-
-        server_store.register("k", factory)
+        data_mapping.function_data_mapping["k"] = loader
         server_store.set("k", "stale")
         self.assertEqual(server_store.get("k"), "stale")
-
         server_store.clear()
         self.assertFalse(server_store.has("k"))
         self.assertEqual(server_store.get("k"), "fresh")

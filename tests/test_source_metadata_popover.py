@@ -276,6 +276,29 @@ class TestBuildModalInfo(unittest.TestCase):
             "https://www.worldbank.org/en/programs/boost-portal/country-data"
         )
 
+    def test_build_modal_info_french(self):
+        """Labels, source names and descriptions should be translated for lang='fr'."""
+        info = build_modal_info("overview-per-capita", "Kenya", self.source_meta, lang="fr")
+
+        # BOOST section - French
+        boost_section = info["source_sections"][0]
+        self.assertEqual(boost_section["label"], "Données de dépenses BOOST")
+        self.assertEqual(boost_section["source_name"], "BOOST de la Banque mondiale")
+
+        # Poverty rate section - French with description
+        poverty_section = info["source_sections"][1]
+        self.assertEqual(poverty_section["label"], "Taux de pauvreté")
+        self.assertIn("Banque mondiale", poverty_section["source_name"])
+        self.assertIsNotNone(poverty_section.get("description"))
+        self.assertIn("seuils de pauvreté", poverty_section["description"])
+
+    def test_build_modal_info_default_lang_is_english(self):
+        """Omitting lang should produce English output (backward compat)."""
+        info = build_modal_info("overview-total", "Kenya", self.source_meta)
+        section = info["source_sections"][0]
+        self.assertEqual(section["label"], "BOOST Expenditure Data")
+        self.assertEqual(section["source_name"], "World Bank BOOST")
+
 
 if __name__ == "__main__":
     unittest.main()

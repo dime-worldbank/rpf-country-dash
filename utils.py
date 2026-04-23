@@ -12,10 +12,10 @@ from colormath.color_conversions import convert_color
 from auth import AUTH_ENABLED
 from collections import OrderedDict
 from constants import (
-    NARRATIVE_ERROR_TEMPLATES,
     START_YEAR,
     TREND_THRESHOLDS,
 )
+from translations import t
 from dash import dcc, get_app, html
 from flask_login import current_user
 from math import isnan
@@ -23,12 +23,12 @@ from shapely.geometry import shape, MultiPolygon, Polygon
 
 
 CORRELATION_THRESHOLDS = {
-    0: "no",
-    0.1: "no",
-    0.3: "weak",
-    0.7: "moderate",
-    0.9: "strong",
-    1: "very strong",
+    0: "word.no",
+    0.1: "word.no",
+    0.3: "word.weak",
+    0.7: "word.moderate",
+    0.9: "word.strong",
+    1: "word.very_strong",
 }
 
 # Constant for which region to sample for disputed overlay color
@@ -132,21 +132,42 @@ def filter_country_sort_year(df, country, start_year=START_YEAR):
     return df
 
 
-millnames = ["", " K", " M", " B", " T"]
+# Magnitude suffixes per language.
+#   EN: the standard K / M / B / T short-scale abbreviations.
+#   FR: French long-scale conventions — "Md" for milliard (10^9) and "Bn"
+#   for billion (10^12, which is *not* the same as EN "B" = 10^9). Lower-
+#   case "k" matches French typography ("100 k€") but upper-case "K" is
+#   also accepted; sticking to lowercase for correctness.
+_MILLNAMES = {
+    "en": ["", " K", " M", " B", " T"],
+    "fr": ["", " k", " M", " Md", " Bn"],
+}
 
 
-def millify(n):
+def millify(n, lang="en"):
+    """Compress ``n`` to a magnitude-suffixed string.
+
+    * English: ``"1.50 M"`` / ``"2.00 B"`` / ``"3.50 T"``.
+    * French: ``"1,50 M"`` / ``"2,00 Md"`` / ``"3,50 Bn"`` — comma as
+      decimal separator and French long-scale suffixes (Md = milliard,
+      Bn = billion 10^12) because French ``"B"`` historically means
+      10^18, not 10^9.
+    """
     n = float(n)
     if math.isnan(n):
         return "N/A"
+    names = _MILLNAMES.get(lang, _MILLNAMES["en"])
     millidx = max(
         0,
         min(
-            len(millnames) - 1, int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
+            len(names) - 1, int(math.floor(0 if n == 0 else math.log10(abs(n)) / 3))
         ),
     )
 
-    return "{:.2f}{}".format(n / 10 ** (3 * millidx), millnames[millidx])
+    result = "{:.2f}{}".format(n / 10 ** (3 * millidx), names[millidx])
+    if lang == "fr":
+        result = result.replace(".", ",")
+    return result
 
 
 def filter_geojson_by_country(geojson, country):
@@ -207,13 +228,13 @@ def empty_plot(message, fig_title="", max_line_length=40):
     return fig
 
 
-def get_percentage_change_text(percent):
+def get_percentage_change_text(percent, lang="en"):
     if abs(percent) < 0.01:
-        return "mostly remained unchanged"
+        return t("narrative.mostly_unchanged", lang)
     elif percent > 0:
-        return f"increased by {percent:.0%}"
+        return t("narrative.increased_by", lang, pct=f"{percent:.0%}")
     else:
-        return f"decreased by {-1 * percent:.0%}"
+        return t("narrative.decreased_by", lang, pct=f"{-1 * percent:.0%}")
 
 
 THRESHOLD_INSUFFICIENT = 3  # Minimum for any analysis
@@ -221,7 +242,7 @@ THRESHOLD_CORRELATION = 5   # Minimum for correlation analysis
 P_THRESHOLD = 0.10          # Threshold for statistical significance
 
 
-def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
+def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD, lang="en"):
     """
     Assess statistical confidence based on sample size and p-value.
 
@@ -232,43 +253,43 @@ def assess_statistical_confidence(n, p_value, p_threshold=P_THRESHOLD):
 
     Returns dict with:
     - confidence: "insufficient", "low", "high"
-    - verb: "cannot be determined", "tentatively suggests", "suggests", "indicates"
-    - caveat: optional caveat string or None
+    - verb: localized verb string
+    - caveat: localized caveat string or None
     - is_significant: whether result is statistically significant
     """
     if n < THRESHOLD_INSUFFICIENT:
         return {
             "confidence": "insufficient",
-            "verb": "cannot be determined",
-            "caveat": "due to insufficient data points",
+            "verb": t("word.cannot_be_determined", lang),
+            "caveat": t("caveat.insufficient_data_points", lang),
             "is_significant": False,
         }
 
     if n < THRESHOLD_CORRELATION:
         return {
             "confidence": "low",
-            "verb": "tentatively suggests",
-            "caveat": f"with only {n} data points, this should be interpreted with caution",
+            "verb": t("word.tentatively_suggests", lang),
+            "caveat": t("caveat.few_data_points", lang, n=n),
             "is_significant": False,
         }
 
     if p_value > p_threshold:
         return {
             "confidence": "low",
-            "verb": "suggests",
-            "caveat": f"this is not statistically significant (p={p_value:.2f}, n={n})",
+            "verb": t("word.suggests", lang),
+            "caveat": t("caveat.not_significant", lang, p_value=p_value, n=n),
             "is_significant": False,
         }
 
     return {
         "confidence": "high",
-        "verb": "indicates",
+        "verb": t("word.indicates", lang),
         "caveat": None,
         "is_significant": True,
     }
 
 
-def get_correlation_text(df, x_col, y_col):
+def get_correlation_text(df, x_col, y_col, lang="en"):
     """
     Get the correlation text based on Spearman correlation with statistical rigor.
     Uses Spearman (rank-based, robust to outliers) and adjusts the narrative based
@@ -282,72 +303,64 @@ def get_correlation_text(df, x_col, y_col):
     n = data.shape[0]
 
     if n < THRESHOLD_INSUFFICIENT:
-        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient data points."
+        return t("narrative.corr_insufficient", lang, x_name=x_name, y_name=y_name)
 
     # Use Spearman (rank-based) correlation - robust to outliers
     spearman_corr, p_value = stats.spearmanr(data[x], data[y])
     if isnan(spearman_corr):
-        return f"the correlation between {x_name} and {y_name} cannot be determined due to insufficient variability in the data."
+        return t("narrative.corr_no_variability", lang, x_name=x_name, y_name=y_name)
 
     # Determine direction and intensity
-    direction = "positive" if spearman_corr > 0 else "inverse"
-    association = "higher" if spearman_corr > 0 else "lower"
-    intensity = next(
-        (text for threshold, text in sorted(CORRELATION_THRESHOLDS.items())
+    direction = t("word.positive", lang) if spearman_corr > 0 else t("word.inverse", lang)
+    association = t("word.higher", lang) if spearman_corr > 0 else t("word.lower", lang)
+    intensity_key = next(
+        (key for threshold, key in sorted(CORRELATION_THRESHOLDS.items())
          if abs(spearman_corr) <= threshold),
-        "very strong"
+        "word.very_strong"
     )
 
-    if intensity == "no":
-        return f"there is no apparent correlation between {y_name} and {x_name}."
+    if intensity_key == "word.no":
+        return t("narrative.no_correlation", lang, y_name=y_name, x_name=x_name)
+
+    intensity = t(intensity_key, lang)
 
     # Build narrative components
-    confidence = assess_statistical_confidence(n, p_value)
-    relation = f"a {intensity} {direction} relationship"
+    confidence = assess_statistical_confidence(n, p_value, lang=lang)
+    relation = t("narrative.corr_relation", lang, intensity=intensity, direction=direction)
 
     if confidence["is_significant"]:
-        association_text = f"Higher {y_name} is generally associated with {association} {x_name}."
+        association_text = t("narrative.corr_association", lang, y_name=y_name, association=association, x_name=x_name)
     else:
-        association_text = f"Higher {y_name} may be associated with {association} {x_name}."
+        association_text = t("narrative.corr_association_tentative", lang, y_name=y_name, association=association, x_name=x_name)
 
     # Assemble narrative based on confidence level
     if n < THRESHOLD_CORRELATION:
-        intro = f"with only {n} data points, the rank-based correlation between {y_name} and {x_name} ({spearman_corr:.2f}) tentatively suggests"
-        caveat = "However, this should be interpreted with caution."
+        intro = t("narrative.corr_small_sample", lang, n=n, y_name=y_name, x_name=x_name, corr=f"{spearman_corr:.2f}")
+        caveat = t("narrative.corr_caution", lang)
     else:
-        intro = f"the rank-based correlation between {y_name} and {x_name} is {spearman_corr:.2f}, {confidence['verb']}"
-        caveat = f"However, {confidence['caveat']}." if confidence["caveat"] else ""
+        intro = t("narrative.corr_full", lang, y_name=y_name, x_name=x_name, corr=f"{spearman_corr:.2f}", verb=confidence['verb'])
+        caveat = t("narrative.corr_caveat", lang, caveat=confidence['caveat']) if confidence["caveat"] else ""
 
     return f"{intro} {relation}. {association_text} {caveat}".strip()
 
 
-def detect_trend(df, x_col):
+def detect_trend(df, x_col, lang="en"):
     """
     Detect the trend of the data based on the PCC value
     :param df: DataFrame
     :param x_col: str
+    :param lang: str
     :return: str
     """
     pcc = df.year.corr(df[x_col["col_name"]])
     abs_pcc = abs(pcc)
     if abs_pcc > TREND_THRESHOLDS:
         if pcc > 0:
-            return "an increasing trend"
+            return t("narrative.increasing_trend", lang)
         else:
-            return "a decreasing trend"
+            return t("narrative.decreasing_trend", lang)
 
     return ""
-
-
-def generate_error_prompt(template_key, **kwargs):
-    """
-    Generate a prompt message based on the template and the keyword arguments
-    :param template: str
-    :param kwargs: dict
-    :return: str
-    """
-    template = NARRATIVE_ERROR_TEMPLATES[template_key]
-    return template.format(**kwargs)
 
 
 def remove_accents(input_str):
@@ -419,7 +432,7 @@ def calculate_cagr(start_value, end_value, time_period):
     return cagr
 
 
-def add_disputed_overlay(fig, disputed_geojson, zoom):
+def add_disputed_overlay(fig, disputed_geojson, zoom, lang="en"):
     """
     Adds disputed region overlay to a choropleth mapbox figure.
     Args:
@@ -455,7 +468,7 @@ def add_disputed_overlay(fig, disputed_geojson, zoom):
     # Remove border by setting marker.line.width to 0
     if hasattr(trace, "marker") and hasattr(trace.marker, "line"):
         trace.marker.line.width = 0
-    trace.hovertemplate = "Region: %{location}<extra></extra>"
+    trace.hovertemplate = f"{t('hover.region', lang)}: %{{location}}<extra></extra>"
     trace.showscale = False
     trace.showlegend = False
     fig.add_trace(trace)
@@ -502,12 +515,28 @@ def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
     return fig
 
 
-def format_currency(value, currency_code):
+def apply_locale(fig, lang="en"):
+    """Set plotly's number-format locale on ``fig`` so its native renderers
+    (hovertemplate format specs like ``%{y:.2f}%``, axis tick labels, etc.)
+    produce French decimals in French and English decimals in English.
+
+    ``separators`` is a 2-char plotly attribute: first = decimal, second =
+    thousands. ``",."`` means comma decimal and dot thousands, matching
+    common French-European number formatting.
+    """
+    if lang == "fr":
+        fig.update_layout(separators=",.")
+    return fig
+
+
+def format_currency(value, currency_code, lang="en"):
     """Format a number as currency with the given currency code."""
-    return f"{currency_code} {millify(value)}"
+    return f"{millify(value, lang=lang)} {currency_code}"
 
 
-def add_currency_column(df, column_name, currency_code):
-    df[f'{column_name}_formatted'] = df[column_name].apply(lambda x: format_currency(x, currency_code))
+def add_currency_column(df, column_name, currency_code, lang="en"):
+    df[f'{column_name}_formatted'] = df[column_name].apply(
+        lambda x: format_currency(x, currency_code, lang=lang)
+    )
 
 

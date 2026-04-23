@@ -7,6 +7,8 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
+from translations import t, genitive, locative, elide_que
+from constants import translate_func_sub
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
     get_map_colorscale, darken_color, lighten_color, add_opacity,
@@ -15,11 +17,11 @@ import server_store
 from utils import (
     add_currency_column,
     add_disputed_overlay,
+    apply_locale,
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
     format_currency,
-    generate_error_prompt,
     get_correlation_text,
     millify,
 )
@@ -42,12 +44,12 @@ def update_year_slider(data, country, func):
     return get_slider_config(expenditure_years, outcome_years)
 
 
-def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code):
+def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code, lang="en"):
     if not func_econ_data or not sub_func_data or not country:
         return (
-            empty_plot("Loading..."),
-            empty_plot("Loading..."),
-            "Loading...",
+            empty_plot(t("loading", lang)),
+            empty_plot(t("loading", lang)),
+            t("loading", lang),
         )
 
     data_by_func_admin0 = _subset_data(
@@ -61,16 +63,16 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
 
     if data_by_func_admin0.empty and data_by_func_sub_geo0.empty:
         return (
-            empty_plot("No data available for this period"),
-            empty_plot("No data available for this period"),
-            generate_error_prompt("DATA_UNAVAILABLE"),
+            empty_plot(t("error.no_data_period", lang)),
+            empty_plot(t("error.no_data_period", lang)),
+            t("error.data_unavailable", lang),
         )
 
-    fig1 = _central_vs_regional_fig(data_by_func_sub_geo0, func, currency_code)
-    fig2 = _sub_func_fig(data_by_func_sub_geo0, func, currency_code)
+    fig1 = _central_vs_regional_fig(data_by_func_sub_geo0, func, currency_code, lang=lang)
+    fig2 = _sub_func_fig(data_by_func_sub_geo0, func, currency_code, lang=lang)
 
     narrative = _sub_func_narrative(
-        data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func
+        data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func, lang=lang
     )
     return fig1, fig2, narrative
 
@@ -78,24 +80,35 @@ def _subset_data(df, year, country, func):
     data = filter_country_sort_year(df, country)
     return data.loc[(data.func == func) & (data.year == year)]
 
-def _central_vs_regional_fig(data, func, currency_code):
-    fig_title = f"Where was {func.lower()} spending directed?"
+def _central_vs_regional_fig(data, func, currency_code, lang="en"):
+    func_lower = t(f"sector.{func.lower()}", lang)
+    fig_title = t(
+        "chart.func_spending_directed", lang,
+        func=func_lower, func_gen=genitive(lang, func_lower),
+    )
     central_vs_regional = (
         data.groupby("geo0").sum(numeric_only=True).reset_index()
     )
     if central_vs_regional.empty:
-        return empty_plot("No data available for this period", fig_title)
+        return empty_plot(t("error.no_data_period", lang), fig_title)
 
-    add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
+    add_currency_column(central_vs_regional, 'real_expenditure', currency_code, lang=lang)
+    # Translate the slice labels: "Central" → "Central" (same in FR),
+    # "Regional" → "Régional". Unknown values pass through unchanged.
+    geo0_key_map = {"Central": "trace.central", "Regional": "trace.regional"}
+    pie_labels = [
+        t(geo0_key_map[g], lang) if g in geo0_key_map else g
+        for g in central_vs_regional["geo0"]
+    ]
     fig = go.Figure(
         data=[
             go.Pie(
-                labels=central_vs_regional["geo0"],
+                labels=pie_labels,
                 values=central_vs_regional["real_expenditure"],
                 hole=0.5,
                 marker=dict(colors=[CENTRAL_COLOR, REGIONAL_COLOR]),
                 customdata=np.stack(central_vs_regional["real_expenditure_formatted"]),
-                hovertemplate="<b>Real expenditure</b>: %{customdata}<br>"
+                hovertemplate="<b>" + t("hover.real_expenditure", lang) + "</b>: %{customdata}<br>"
                 + "<extra></extra>",
             )
         ]
@@ -105,15 +118,19 @@ def _central_vs_regional_fig(data, func, currency_code):
         showlegend=True,
         plot_bgcolor="white",
     )
-    return fig
+    return apply_locale(fig, lang)
 
 
-def _sub_func_fig(data, func, currency_code):
-    fig_title = f"How much did the gov spend on different levels of {func.lower()}?"
+def _sub_func_fig(data, func, currency_code, lang="en"):
+    func_lower = t(f"sector.{func.lower()}", lang)
+    fig_title = t(
+        "chart.func_levels_spending", lang,
+        func=func_lower, func_gen=genitive(lang, func_lower),
+    )
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
 
     if education_values.empty:
-        return empty_plot("No data available for this period", fig_title)
+        return empty_plot(t("error.no_data_period", lang), fig_title)
 
     fig = go.Figure()
     total = data.expenditure.sum()
@@ -128,19 +145,27 @@ def _sub_func_fig(data, func, currency_code):
 
     for i, row in enumerate(education_values.itertuples()):
         percent_of_total = (row.expenditure / total) * 100
+        # IDs stay in raw English: they are internal identifiers for plotly's
+        # treemap (parent/child linkage), not displayed to the user. The
+        # visible label is translated separately.
         parent_totals[row.func_sub] = row.expenditure
         base_color = TREEMAP_PALETTE[i % len(TREEMAP_PALETTE)]
         parent_colors[row.func_sub] = base_color
         ids.append(row.func_sub)
         parents.append("")
-        labels.append(f"{row.func_sub}<br>{format_currency(row.expenditure, currency_code)} ({percent_of_total:.0f}%)")
+        sub_label = translate_func_sub(row.func_sub, lang)
+        labels.append(f"{sub_label}<br>{format_currency(row.expenditure, currency_code, lang=lang)} ({percent_of_total:.0f}%)")
         values.append(row.expenditure)
-        hover_texts.append(f"Real expenditure: {format_currency(row.real_expenditure, currency_code)}")
+        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row.real_expenditure, currency_code, lang=lang)}")
         colors.append(base_color)
 
     data_grouped = (
         data.groupby(["func_sub", "geo0"], sort=False).sum(numeric_only=True).reset_index()
     )
+
+    # Maps raw geo0 data values ("Central" / "Regional") to their
+    # translation keys. Other values fall through untranslated.
+    geo0_key_map = {"Central": "trace.central", "Regional": "trace.regional"}
 
     for _, row in data_grouped.iterrows():
         parent = row["func_sub"]
@@ -150,8 +175,10 @@ def _sub_func_fig(data, func, currency_code):
         ids.append(f"{row['func_sub']} - {row['geo0']}")
         parents.append(parent)
         values.append(row["expenditure"])
-        labels.append(f"{row['geo0']}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
-        hover_texts.append(f"Real expenditure: {format_currency(row['real_expenditure'], currency_code)}")
+        geo0_key = geo0_key_map.get(row["geo0"])
+        geo0_label = t(geo0_key, lang) if geo0_key else row["geo0"]
+        labels.append(f"{geo0_label}<br>{format_currency(row['expenditure'], currency_code, lang=lang)} ({percent_of_parent:.0f}%)")
+        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row['real_expenditure'], currency_code, lang=lang)}")
         base_color = parent_colors[parent]
         if row["geo0"] == "Central":
             colors.append(darken_color(base_color, 0.75))
@@ -179,9 +206,9 @@ def _sub_func_fig(data, func, currency_code):
         margin=dict(l=15, r=15, b=15),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
-def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func):
+def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func, lang="en"):
     try:
         total_spending = data_by_func_sub_geo0["real_expenditure"].sum()
         regional_spending = data_by_func_sub_geo0[
@@ -190,29 +217,31 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         geo_tagged = regional_spending / total_spending * 100
         decentralization = data_by_func_admin0.expenditure_decentralization.values[0] * 100
 
-        func_name = func.lower()
+        func_name = t(f"sector.{func.lower()}", lang)
+        func_gen = genitive(lang, func_name)
 
-        text = f"In {country}, as of {selected_year}, "
-
-        subnat_exp_available_text = f"{decentralization:.1f}% of {func_name} spending is executed by regional or local governments (decentralized spending)"
-        subnat_exp_not_available_text = f"we do not have data on {func_name} spending executed by regional or local governments (decentralized spending)"
-
-        geo_exp_available_text = f", while {geo_tagged:.1f}% of {func_name} spending is geographically allocated, meaning it may be funded either centrally or regionally but is directed toward specific regions. To explore disparities in spending and {func_name} outcomes across subnational regions, we will focus on geographically allocated spending, as it provides a more complete picture of resources benefiting each region."
-        geo_exp_not_available_text = ". However, data on geographically allocated spending – which would capture both central and regional spending benefiting specific locations — is not available. Ideally, we would use geographically allocated spending to analyze subnational disparities, but due to data limitations, we will use decentralized spending as a proxy."
+        country_display = t(f"country.{country}", lang)
+        text = t("narrative.subnat_intro", lang,
+                 country=country_display,
+                 country_loc=locative(lang, country_display),
+                 year=selected_year)
 
         subnat_exp_available = not math.isnan(decentralization) and not math.isclose(decentralization, 0)
-        geo_exp_available =  not math.isnan(geo_tagged) and not math.isclose(geo_tagged, decentralization)
+        geo_exp_available = not math.isnan(geo_tagged) and not math.isclose(geo_tagged, decentralization)
         if subnat_exp_available and geo_exp_available:
-            text += subnat_exp_available_text + geo_exp_available_text
+            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name, func_gen=func_gen)
+            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name, func_gen=func_gen)
         elif subnat_exp_available and not geo_exp_available:
-            text += subnat_exp_available_text + geo_exp_not_available_text
+            text += t("narrative.subnat_decentralized", lang, pct=decentralization, func=func_name, func_gen=func_gen)
+            text += t("narrative.subnat_geo_unavailable", lang)
         elif not subnat_exp_available and geo_exp_available:
-            text += subnat_exp_not_available_text + geo_exp_available_text
+            text += t("narrative.subnat_no_data", lang, func=func_name, func_gen=func_gen)
+            text += t("narrative.subnat_geo_available", lang, pct=geo_tagged, func=func_name, func_gen=func_gen)
         else:
-            text += f"we do not have {func_name} spending at subnational level."
-    except (KeyError, TypeError, ValueError, IndexError):
+            text += t("narrative.subnat_no_level_data", lang, func=func_name, func_gen=func_gen)
+    except:
         traceback.print_exc()
-        return generate_error_prompt("GENERIC_ERROR")
+        return t("error.generic", lang)
 
     return text
 
@@ -226,6 +255,7 @@ def update_func_expenditure_map(
     subnat_boundaries,
     func,
     theme,
+    lang="en",
 ):
 
     if (
@@ -235,7 +265,7 @@ def update_func_expenditure_map(
         or year is None
         or not subnat_boundaries
     ):
-        return empty_plot("Data not available")
+        return empty_plot(t("error.data_not_available", lang))
 
     currency_code = server_store.get("basic_country_info")[country]['currency_code']
     df = _subset_data(
@@ -245,10 +275,10 @@ def update_func_expenditure_map(
     df = df[df.adm1_name != 'Central Scope']
 
     if df.empty:
-        return empty_plot("No data available for the selected year")
+        return empty_plot(t("error.no_data_year", lang))
 
     if expenditure_type not in df.columns:
-        return empty_plot(f"{expenditure_type} data not available")
+        return empty_plot(t("error.data_unavailable_named", lang, dataset_name=expenditure_type))
 
     geojson = server_store.get("subnat_boundaries")
     disputed_geojson = server_store.get("disputed_boundaries")
@@ -262,7 +292,7 @@ def update_func_expenditure_map(
 
     # Drop NaN values and format
     df = df.dropna(subset=[expenditure_type])
-    add_currency_column(df, expenditure_type, currency_code)
+    add_currency_column(df, expenditure_type, currency_code, lang=lang)
 
     # Identify regions without data
     all_regions = [
@@ -271,7 +301,7 @@ def update_func_expenditure_map(
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
-    
+
 
     fig = px.choropleth_mapbox(
         df,
@@ -296,20 +326,39 @@ def update_func_expenditure_map(
         featureidkey="properties.region",
         zoom=zoom,
     ).data[0]
-    
+
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{expenditure_type.replace('_', ' ').title()}:</b> Data not available<extra></extra>"
+    # Map the expenditure_type data key (e.g. "per_capita_expenditure") to a
+    # localized hover label. Previously this did `title()` on the snake_case
+    # name, which leaked English ("Per Capita Expenditure") into FR hovers.
+    exp_type_label_map = {
+        "per_capita_expenditure": "hover.per_capita_spending",
+        "expenditure": "hover.expenditure_label",
+    }
+    exp_type_label_key = exp_type_label_map.get(expenditure_type)
+    exp_type_label = (
+        t(exp_type_label_key, lang)
+        if exp_type_label_key else expenditure_type.replace('_', ' ').title()
+    )
+    no_data_trace.hovertemplate = (
+        f"<b>{t('hover.region', lang)}:</b> %{{location}}<br>"
+        f"<b>{exp_type_label}:</b> {t('hover.data_not_available', lang)}<extra></extra>"
+    )
     fig.add_trace(no_data_trace)
 
     fig.data[0].hovertemplate = (
-        "<b>Region:</b> %{location}<br>"
-        f"<b>{expenditure_type.replace('_', ' ').title()}:</b> %{{customdata[0]}}<extra></extra>"
+        f"<b>{t('hover.region', lang)}:</b> %{{location}}<br>"
+        f"<b>{exp_type_label}:</b> %{{customdata[0]}}<extra></extra>"
     )
-    add_disputed_overlay(fig, disputed_geojson, zoom)
+    add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
+    cofog_name = t(f"cofog.{func.lower()}", lang)
     fig.update_layout(
-        title=f"Subnational {func} Spending",
+        title=t(
+            "chart.subnational_func_spending", lang,
+            func=cofog_name, func_gen=genitive(lang, cofog_name),
+        ),
         plot_bgcolor="white",
         coloraxis_colorbar=dict(
             title="",
@@ -323,7 +372,7 @@ def update_func_expenditure_map(
                 x=0,
                 y=-0.13,
                 xanchor="left",
-                text=f"Displaying data from {year}",
+                text=t("annotation.displaying_data_from", lang, year=year),
                 showarrow=False,
                 font=dict(size=12),
             ),
@@ -333,14 +382,14 @@ def update_func_expenditure_map(
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text="Source: BOOST Database, World Bank",
+                text=t("source.boost_database", lang),
                 showarrow=False,
                 font=dict(size=12),
             ),
         ],
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 FUNC_OUTCOME_MAP = {
     'Education': [
@@ -354,8 +403,15 @@ FUNC_OUTCOME_MAP = {
         lambda value: f"{value:.2f}",
     ],
 }
+
+FUNC_OUTCOME_KEY_MAP = {
+    'Education': 'outcome.school_attendance',
+    'Health': 'outcome.uhc_index',
+}
+
 def update_hd_index_map(
     subnational_data, country_data, country, year, subnat_boundaries, func, theme,
+    lang="en",
 ):
     if (
         not subnational_data
@@ -364,7 +420,7 @@ def update_hd_index_map(
         or year is None
         or not subnat_boundaries
     ):
-        return empty_plot("Data not available")
+        return empty_plot(t("error.data_not_available", lang))
 
     all_data = server_store.get("geo1_func_expenditure")
     all_data = filter_country_sort_year(all_data, country)
@@ -375,15 +431,17 @@ def update_hd_index_map(
     relevant_years = [y for y in available_years if y <= year]
 
     if not relevant_years:
-        return empty_plot("No outcome data available for this period")
+        return empty_plot(t("error.no_outcome_data", lang))
 
     display_year = relevant_years[-1]
     df = all_data[all_data.year == display_year].copy()
 
     if df.empty:
-        return empty_plot("No data available for the selected year")
+        return empty_plot(t("error.no_data_year", lang))
 
-    outcome_name, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
+    outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
+    outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
+    _, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
 
     geojson = server_store.get("subnat_boundaries")
@@ -422,7 +480,7 @@ def update_hd_index_map(
     formatted_outcome_index = df['outcome_index'].map(format_fn).values
     fig.update_traces(
         customdata=formatted_outcome_index,
-        hovertemplate="<b>Region:</b> %{location}<br>"
+        hovertemplate="<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
             + f"<b>{outcome_name}:</b> " + "%{customdata}<br>"
             + "<extra></extra>",
     )
@@ -437,19 +495,22 @@ def update_hd_index_map(
     ).data[0]
     no_data_trace.legendgroup = "no-data"
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = f"<b>Region:</b> %{{location}}<br><b>{outcome_name}:</b> Data not available<extra></extra>"
+    no_data_trace.hovertemplate = (
+        f"<b>{t('hover.region', lang)}:</b> %{{location}}<br>"
+        f"<b>{outcome_name}:</b> {t('hover.data_not_available', lang)}<extra></extra>"
+    )
     fig.add_trace(no_data_trace)
 
     formatted_outcome_index = df['outcome_index'].map(format_fn).values
     fig.data[0].customdata = formatted_outcome_index
     fig.data[0].hovertemplate = (
-        "<b>Region:</b> %{location}<br>"
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
         + f"<b>{outcome_name}:</b> " + "%{customdata}<extra></extra>"
     )
-    add_disputed_overlay(fig, disputed_geojson, zoom)
+    add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
     fig.update_layout(
-        title=f"Subnational {outcome_name}",
+        title=t("chart.subnational_outcome", lang, outcome_name=outcome_name),
         plot_bgcolor="white",
         coloraxis_colorbar=dict(
             title="",
@@ -463,7 +524,7 @@ def update_hd_index_map(
                 x=0,
                 y=-0.13,
                 xanchor="left",
-                text=f"Displaying data from {display_year}",
+                text=t("annotation.displaying_data_from", lang, year=display_year),
                 showarrow=False,
                 font=dict(size=12),
             ),
@@ -473,19 +534,19 @@ def update_hd_index_map(
                 x=0,
                 y=-0.2,
                 xanchor="left",
-                text="Source: UNDP through Global Data Lab",
+                text=t("source.undp_gdl", lang),
                 showarrow=False,
                 font=dict(size=12),
             ),
         ],
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code):
+def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code, lang="en"):
     if not subnational_data or not country:
-        return empty_plot("Loading..."), "Loading..."
+        return empty_plot(t("loading", lang)), t("loading", lang)
 
     data = _subset_data(
         server_store.get("geo1_func_expenditure"),
@@ -495,10 +556,12 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
     data = filter_country_sort_year(data, country)
     if data.empty:
         return empty_plot(
-            "No outcome data available for this period"
-        ), generate_error_prompt("DATA_UNAVAILABLE")
+            t("error.no_outcome_data", lang)
+        ), t("error.data_unavailable", lang)
 
-    outcome_name, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
+    outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
+    outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
+    _, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     data['outcome_index'] = data['outcome_index'].map(transform_fn)
 
     n = data.shape[0]
@@ -512,7 +575,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
     dest = list(data_outcome_sorted.adm1_name)
     node_custom_data = [
         (
-            f"{format_currency(data_expenditure_sorted.iloc[i]['per_capita_expenditure'], currency_code)}",
+            f"{format_currency(data_expenditure_sorted.iloc[i]['per_capita_expenditure'], currency_code, lang=lang)}",
             data_expenditure_sorted.iloc[i]["adm1_name"],
         )
         for i in range(n)
@@ -554,18 +617,19 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
                 target=[data.shape[0] + dest.index(source[i]) for i in range(n)],
                 color=node_colors_opaque,
                 value=[1 for i in range(n)],
-                hovertemplate="<b>Expenditure:</b> %{source.customdata[0]}<br>"
+                hovertemplate="<b>" + t("hover.expenditure_label", lang) + ":</b> %{source.customdata[0]}<br>"
                 + f"<b>{outcome_name}:</b> " + "%{target.customdata[0]}<br>"
                 + "<extra></extra>",
             ),
         )
     )
 
+    per_capita_label = t("label.per_capita_expenditure_on", lang, func=t(f"cofog.{func.lower()}", lang))
     fig.add_annotation(
         x=0.1,
         y=1,
         arrowcolor="rgba(0, 0, 0, 0)",
-        text=f"<b>Per Capita Expenditure on {func}</b><br> <b>{base_year}</b>",
+        text=f"<b>{per_capita_label}</b><br> <b>{base_year}</b>",
     )
     fig.add_annotation(
         x=0.9,
@@ -574,44 +638,67 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
         text=f"<b>{outcome_name}</b> <br> <b>{base_year}</b>",
     )
 
-    rank_mapping = {0: "1st", 10: "10th", 20: "20th", 30: "30th", 40: "40th"}
+    rank_keys = {0: "rank.1st", 10: "rank.10th", 20: "rank.20th", 30: "rank.30th", 40: "rank.40th"}
     for i in range(0, n + 1, 10):
-        fig.add_annotation(
-            y=1 - ((i + 1) / (n + 1)),
-            x=0.075,
-            yshift=10,
-            text=f"<b>{rank_mapping[i]}</b>",
-            showarrow=False,
-        )
+        rank_key = rank_keys.get(i)
+        if rank_key:
+            fig.add_annotation(
+                y=1 - ((i + 1) / (n + 1)),
+                x=0.075,
+                yshift=10,
+                text=f"<b>{t(rank_key, lang)}</b>",
+                showarrow=False,
+            )
 
-    narrative = _func_subnat_rank_narrative(base_year, func, data)
-    return fig, narrative
+    narrative = _func_subnat_rank_narrative(base_year, func, data, lang=lang)
+    return apply_locale(fig, lang), narrative
 
 
-def _func_subnat_rank_narrative(year, func, data):
-    func_lower = func.lower()
+def _func_subnat_rank_narrative(year, func, data, lang="en"):
+    func_lower = t(f"sector.{func.lower()}", lang)
 
-    outcome_name, _, _ = FUNC_OUTCOME_MAP[func]
-    outcome_name = re.sub(r'\buhc\b', 'UHC', outcome_name.lower(), flags=re.IGNORECASE)
+    outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
+    outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
+    outcome_name_lower = re.sub(r'\buhc\b', 'UHC', outcome_name.lower(), flags=re.IGNORECASE)
 
+    # For the correlation narrative, pass articled display names so the
+    # generated French reads "entre les dépenses... et l'indice UHC..."
+    # rather than the ungrammatical bare-noun concatenation.
+    outcome_display = (
+        t(f"{outcome_name_key}.narrative", lang)
+        if outcome_name_key else outcome_name_lower
+    )
     PCC = get_correlation_text(
         data,
         {
             "col_name": "outcome_index",
-            "display": outcome_name,
+            "display": outcome_display,
         },
         {
             "col_name": "per_capita_expenditure",
-            "display": f"per capita expenditure on {func_lower}",
+            "display": t("label.per_capita_expenditure_lower_on", lang, func=func_lower),
         },
+        lang=lang,
     )
 
-    narrative = f"In {year}, {PCC}"
+    narrative = t("narrative.subnat_rank_year", lang, year=year, pcc=PCC)
     data["ROI"] = data.outcome_index / data.per_capita_expenditure
     best_ROI = data[data["ROI"] == data.ROI.max()].adm1_name.values[0]
     worst_ROI = data[data["ROI"] == data.ROI.min()].adm1_name.values[0]
 
-    narrative += f" Among the subnational regions, in terms of return on public spending on {func_lower} measured by {outcome_name}, {best_ROI} had the highest return on investment (ROI) while {worst_ROI} had the lowest."
+    # Use the .narrative form (with definite article in French) for
+    # mid-sentence interpolation — "mesuré par l'indice UHC" not
+    # "mesuré par indice UHC".
+    outcome_narrative = (
+        t(f"{outcome_name_key}.narrative", lang)
+        if outcome_name_key else outcome_name_lower
+    )
+    narrative += t(
+        "narrative.subnat_rank_roi", lang,
+        func=func_lower, outcome_name=outcome_narrative,
+        best=best_ROI, worst=worst_ROI,
+        # que_worst handles elision of "que" before a vowel-initial region
+        # name ("tandis qu'Afar") in French. English template ignores it.
+        que_worst=elide_que(lang, worst_ROI),
+    )
     return narrative
-
-
