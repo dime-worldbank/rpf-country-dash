@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from plotly.subplots import make_subplots
 from translations import t, genitive
-from utils import empty_plot
+from utils import apply_locale, empty_plot
 import numpy as np
 import plotly.graph_objects as go
 import re
@@ -177,7 +177,7 @@ def pefa_overall_figure(df, pov_df, lang="en"):
             )
         ],
     )
-    return fig
+    return apply_locale(fig, lang)
 
 
 def pefa_pillar_heatmap(df, lang="en"):
@@ -252,7 +252,7 @@ def pefa_pillar_heatmap(df, lang="en"):
             'xanchor': 'center',
         },
     )
-    return fig
+    return apply_locale(fig, lang)
 
 
 def _score_to_grade(score):

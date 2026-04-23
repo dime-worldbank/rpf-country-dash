@@ -12,6 +12,7 @@ from queries import QueryService
 import server_store
 from utils import (
     add_currency_column,
+    apply_locale,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -371,9 +372,9 @@ def total_health_figure(df, currency_code, lang="en"):
 
     if df is None:
         return fig
-    add_currency_column(df, 'real_expenditure', currency_code)
-    add_currency_column(df, 'central_expenditure', currency_code)
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
+    add_currency_column(df, 'real_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'central_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'decentralized_expenditure', currency_code, lang=lang)
     fig.add_trace(
         go.Scatter(
             name=t("trace.inflation_adjusted", lang),
@@ -417,7 +418,7 @@ def total_health_figure(df, currency_code, lang="en"):
         legend=dict(orientation="h", yanchor="bottom", y=1),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def health_narrative(data, country, lang="en"):
@@ -613,8 +614,8 @@ def render_public_private_figure(private_data, public_data, country, country_dat
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    add_currency_column(merged, 'real_expenditure_private', currency_code)
-    add_currency_column(merged, 'real_expenditure_public', currency_code)
+    add_currency_column(merged, 'real_expenditure_private', currency_code, lang=lang)
+    add_currency_column(merged, 'real_expenditure_public', currency_code, lang=lang)
 
     fig = go.Figure()
 
@@ -659,7 +660,7 @@ def render_public_private_figure(private_data, public_data, country, country_dat
     )
 
     narrative = public_private_narrative(merged, country, lang=lang)
-    return fig, narrative
+    return apply_locale(fig, lang), narrative
 
 
 def outcome_measure(lang="en"):
@@ -677,7 +678,7 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="
         comparison_values=out_df["universal_health_coverage_index"].values,
         reference_name=t("metric.per_capita_health_spending", lang),
         comparison_name=t("metric.uhc_index", lang),
-        reference_format=lambda x: format_currency(x, currency_code),
+        reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=".1f",
         lang=lang,
     )
@@ -705,7 +706,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data, lang)
     pub_exp = server_store.get("health_public_expenditure")
     pub_exp = filter_country_sort_year(pub_exp, country)
     currency_code = server_store.get("basic_country_info")[country]['currency_code']
-    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code, lang=lang)
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -764,7 +765,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data, lang)
     fig.update_yaxes(range=[0, 120], secondary_y=True)
 
     narrative = outcome_narrative(uhc, pub_exp, country, currency_code, lang=lang)
-    return fig, outcome_measure(lang=lang), narrative
+    return apply_locale(fig, lang), outcome_measure(lang=lang), narrative
 
 
 @callback(

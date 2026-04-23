@@ -12,6 +12,7 @@ from queries import QueryService
 import server_store
 from utils import (
     add_currency_column,
+    apply_locale,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -375,9 +376,9 @@ def render_education_content(tab, lang):
 
 
 def total_edu_figure(df, currency_code, lang="en"):
-    add_currency_column(df, 'central_expenditure', currency_code)
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
-    add_currency_column(df, 'real_expenditure', currency_code)
+    add_currency_column(df, 'central_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'decentralized_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'real_expenditure', currency_code, lang=lang)
     fig = go.Figure()
 
     if df is None:
@@ -424,7 +425,7 @@ def total_edu_figure(df, currency_code, lang="en"):
         legend=dict(orientation="h", yanchor="bottom", y=1),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def education_narrative(data, country, lang="en"):
@@ -621,8 +622,8 @@ def render_public_private_figure(private_data, public_data, country, basic_count
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    add_currency_column(merged, 'real_expenditure_private', currency_code)
-    add_currency_column(merged, 'real_expenditure_public', currency_code)
+    add_currency_column(merged, 'real_expenditure_private', currency_code, lang=lang)
+    add_currency_column(merged, 'real_expenditure_public', currency_code, lang=lang)
     fig = go.Figure()
 
 
@@ -668,7 +669,7 @@ def render_public_private_figure(private_data, public_data, country, basic_count
     )
 
     narrative = public_private_narrative(merged, country, lang=lang)
-    return fig, narrative
+    return apply_locale(fig, lang), narrative
 
 
 def outcome_measure(country, lang="en"):
@@ -680,7 +681,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
     att_df = outcome_df.dropna(subset=["attendance_6to17yo"])
     pov_df_clean = pov_df.dropna(subset=["learning_poverty_rate"])
 
-    spending_fmt = lambda x: format_currency(x, currency_code)
+    spending_fmt = lambda x: format_currency(x, currency_code, lang=lang)
 
     attendance_result = get_relationship_narrative(
         reference_years=exp_df["year"].values,
@@ -745,7 +746,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
 
     currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
-    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code, lang=lang)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
@@ -815,7 +816,7 @@ def render_education_outcome(outcome_data, total_data, country, basic_country_da
 
     measure = outcome_measure(country, lang=lang)
     narrative = outcome_narrative(indicator, learning_poverty, pub_exp, country, currency_code, lang=lang)
-    return fig, measure, narrative
+    return apply_locale(fig, lang), measure, narrative
 
 
 @callback(

@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import (
     add_currency_column,
+    apply_locale,
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
@@ -364,9 +365,9 @@ def render_overview_content(tab, lang):
 
 def total_figure(df, currency_name, currency_code, lang="en"):
     fig = go.Figure()
-    add_currency_column(df, 'real_expenditure', currency_code)
-    df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code))
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
+    add_currency_column(df, 'real_expenditure', currency_code, lang=lang)
+    df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code, lang=lang))
+    add_currency_column(df, 'decentralized_expenditure', currency_code, lang=lang)
     fig.add_trace(
         go.Scatter(
             name=t("trace.inflation_adjusted", lang),
@@ -408,12 +409,12 @@ def total_figure(df, currency_name, currency_code, lang="en"):
         hovermode="x unified",
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def per_capita_figure(df, currency_name, currency_code, lang="en"):
-    add_currency_column(df, 'per_capita_expenditure', currency_code)
-    add_currency_column(df, 'per_capita_real_expenditure', currency_code)
+    add_currency_column(df, 'per_capita_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'per_capita_real_expenditure', currency_code, lang=lang)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
@@ -468,7 +469,7 @@ def per_capita_figure(df, currency_name, currency_code, lang="en"):
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def overview_narrative(df, lang="en"):
@@ -536,7 +537,7 @@ def functional_figure(df, lang="en"):
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def functional_narrative(df, lang="en"):
@@ -561,12 +562,12 @@ def functional_narrative(df, lang="en"):
     n = 3
     top_funcs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
     text += t("narrative.func_top_n", lang, n=n)
-    text += _format_cat_list(top_funcs, "func", format_percentage, lang)
+    text += _format_cat_list(top_funcs, "func", lambda n: format_percentage(n, lang), lang)
     text += "; "
 
     bottom_funcs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
     text += t("narrative.func_bottom_n", lang, n=n)
-    text += _format_cat_list(bottom_funcs, "func", format_percentage, lang)
+    text += _format_cat_list(bottom_funcs, "func", lambda n: format_percentage(n, lang), lang)
     text += ". "
 
     std_percentage = df.groupby("func")["percentage"].std().reset_index()
@@ -616,13 +617,25 @@ def _format_cat_list(df, kind, format_num, lang="en"):
     return _join_list(items, lang)
 
 
-def format_percentage(num):
-    return f"{num:.1f}%"
+def format_percentage(num, lang="en"):
+    """Format ``num`` as ``"12.3%"`` (EN) or ``"12,3%"`` (FR).
+
+    Output is concatenated directly into narratives via _format_cat_list
+    (it doesn't flow through t(), so the _FrenchFormatter in translations/
+    doesn't see it). Handle the decimal swap here.
+    """
+    result = f"{num:.1f}%"
+    if lang == "fr":
+        result = result.replace(".", ",")
+    return result
 
 
 def format_std(num, lang="en"):
-    """Format a standard-deviation value with a localized label."""
-    return f"{t('label.std_abbrev', lang)} = {num:.1f}"
+    """Format a standard-deviation value with a localized label and decimal."""
+    num_str = f"{num:.1f}"
+    if lang == "fr":
+        num_str = num_str.replace(".", ",")
+    return f"{t('label.std_abbrev', lang)} = {num_str}"
 
 
 def subnational_spending_narrative(
@@ -665,14 +678,14 @@ def subnational_spending_narrative(
 
     if per_capita_range > per_capita_thresh:
         per_capita_narrative = t("narrative.per_capita_wide_variation", lang,
-                                  min_val=format_currency(per_capita_expenditure.min(), currency_code),
-                                  max_val=format_currency(per_capita_expenditure.max(), currency_code),
-                                  median=format_currency(per_capita_median, currency_code))
+                                  min_val=format_currency(per_capita_expenditure.min(), currency_code, lang=lang),
+                                  max_val=format_currency(per_capita_expenditure.max(), currency_code, lang=lang),
+                                  median=format_currency(per_capita_median, currency_code, lang=lang))
     else:
         per_capita_narrative = t("narrative.per_capita_even_distribution", lang,
-                                  min_val=format_currency(per_capita_expenditure.min(), currency_code),
-                                  max_val=format_currency(per_capita_expenditure.max(), currency_code),
-                                  median=format_currency(per_capita_median, currency_code))
+                                  min_val=format_currency(per_capita_expenditure.min(), currency_code, lang=lang),
+                                  max_val=format_currency(per_capita_expenditure.max(), currency_code, lang=lang),
+                                  median=format_currency(per_capita_median, currency_code, lang=lang))
 
     corr_narrative = ""
     if not df_poverty.empty:
@@ -749,7 +762,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         "<b>" + t("hover.expenditure_label", lang) + ":</b> %{z}<extra></extra>"
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
-    return fig
+    return apply_locale(fig, lang)
 
 
 def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme, lang="en"):
@@ -813,7 +826,7 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 INCOME_LEVEL_THRESHOLD = {
@@ -902,7 +915,7 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
     fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def _get_poverty_source_text(income_level, lang="en"):
@@ -975,7 +988,7 @@ def render_overview_func_figure(data, country, basic_country_data, lang):
     ) * 100
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     func_df["expenditure_formatted"] = func_df["expenditure"].apply(
-        lambda x: format_currency(x, currency_code)
+        lambda x: format_currency(x, currency_code, lang=lang)
     )
 
     return functional_figure(func_df, lang=lang), functional_narrative(func_df, lang=lang)
@@ -1035,7 +1048,7 @@ def economic_figure(df, currency_code, lang="en"):
         cat_df = df[df.econ == cat]
         cat_df_with_formatted = cat_df.copy()
         cat_df_with_formatted['expenditure_formatted'] = cat_df_with_formatted['expenditure'].apply(
-            lambda x: format_currency(x, currency_code)
+            lambda x: format_currency(x, currency_code, lang=lang)
         )
         fig.add_trace(
             go.Bar(
@@ -1060,7 +1073,7 @@ def economic_figure(df, currency_code, lang="en"):
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def economic_narrative(df, lang="en"):
@@ -1081,12 +1094,12 @@ def economic_narrative(df, lang="en"):
     n = 3
     top_econs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
     text += t("narrative.econ_top_n", lang, n=n)
-    text += _format_cat_list(top_econs, "econ", format_percentage, lang)
+    text += _format_cat_list(top_econs, "econ", lambda n: format_percentage(n, lang), lang)
     text += "; "
 
     bottom_econs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
     text += t("narrative.econ_bottom_n", lang, n=n)
-    text += _format_cat_list(bottom_econs, "econ", format_percentage, lang)
+    text += _format_cat_list(bottom_econs, "econ", lambda n: format_percentage(n, lang), lang)
     text += ". "
 
     std_percentage = df.groupby("econ")["percentage"].std().reset_index()
@@ -1157,8 +1170,8 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    add_currency_column(df, 'expenditure', currency_code)
-    add_currency_column(df, 'per_capita_expenditure', currency_code)
+    add_currency_column(df, 'expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'per_capita_expenditure', currency_code, lang=lang)
 
     if df.empty or year not in df.year.unique():
         return empty_plot(t("error.no_expenditure_data_year", lang))

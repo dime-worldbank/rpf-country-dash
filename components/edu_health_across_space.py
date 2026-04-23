@@ -17,6 +17,7 @@ import server_store
 from utils import (
     add_currency_column,
     add_disputed_overlay,
+    apply_locale,
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
@@ -91,7 +92,7 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
     if central_vs_regional.empty:
         return empty_plot(t("error.no_data_period", lang), fig_title)
 
-    add_currency_column(central_vs_regional, 'real_expenditure', currency_code)
+    add_currency_column(central_vs_regional, 'real_expenditure', currency_code, lang=lang)
     # Translate the slice labels: "Central" → "Central" (same in FR),
     # "Regional" → "Régional". Unknown values pass through unchanged.
     geo0_key_map = {"Central": "trace.central", "Regional": "trace.regional"}
@@ -117,7 +118,7 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
         showlegend=True,
         plot_bgcolor="white",
     )
-    return fig
+    return apply_locale(fig, lang)
 
 
 def _sub_func_fig(data, func, currency_code, lang="en"):
@@ -153,9 +154,9 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
         ids.append(row.func_sub)
         parents.append("")
         sub_label = translate_func_sub(row.func_sub, lang)
-        labels.append(f"{sub_label}<br>{format_currency(row.expenditure, currency_code)} ({percent_of_total:.0f}%)")
+        labels.append(f"{sub_label}<br>{format_currency(row.expenditure, currency_code, lang=lang)} ({percent_of_total:.0f}%)")
         values.append(row.expenditure)
-        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row.real_expenditure, currency_code)}")
+        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row.real_expenditure, currency_code, lang=lang)}")
         colors.append(base_color)
 
     data_grouped = (
@@ -176,8 +177,8 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
         values.append(row["expenditure"])
         geo0_key = geo0_key_map.get(row["geo0"])
         geo0_label = t(geo0_key, lang) if geo0_key else row["geo0"]
-        labels.append(f"{geo0_label}<br>{format_currency(row['expenditure'], currency_code)} ({percent_of_parent:.0f}%)")
-        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row['real_expenditure'], currency_code)}")
+        labels.append(f"{geo0_label}<br>{format_currency(row['expenditure'], currency_code, lang=lang)} ({percent_of_parent:.0f}%)")
+        hover_texts.append(f"{t('hover.real_expenditure', lang)}: {format_currency(row['real_expenditure'], currency_code, lang=lang)}")
         base_color = parent_colors[parent]
         if row["geo0"] == "Central":
             colors.append(darken_color(base_color, 0.75))
@@ -205,7 +206,7 @@ def _sub_func_fig(data, func, currency_code, lang="en"):
         margin=dict(l=15, r=15, b=15),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, selected_year, func, lang="en"):
     try:
@@ -291,7 +292,7 @@ def update_func_expenditure_map(
 
     # Drop NaN values and format
     df = df.dropna(subset=[expenditure_type])
-    add_currency_column(df, expenditure_type, currency_code)
+    add_currency_column(df, expenditure_type, currency_code, lang=lang)
 
     # Identify regions without data
     all_regions = [
@@ -388,7 +389,7 @@ def update_func_expenditure_map(
         ],
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 FUNC_OUTCOME_MAP = {
     'Education': [
@@ -540,7 +541,7 @@ def update_hd_index_map(
         ],
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 def render_func_subnat_rank(subnational_data, country, base_year, func, currency_code, lang="en"):
@@ -574,7 +575,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
     dest = list(data_outcome_sorted.adm1_name)
     node_custom_data = [
         (
-            f"{format_currency(data_expenditure_sorted.iloc[i]['per_capita_expenditure'], currency_code)}",
+            f"{format_currency(data_expenditure_sorted.iloc[i]['per_capita_expenditure'], currency_code, lang=lang)}",
             data_expenditure_sorted.iloc[i]["adm1_name"],
         )
         for i in range(n)
@@ -650,7 +651,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
             )
 
     narrative = _func_subnat_rank_narrative(base_year, func, data, lang=lang)
-    return fig, narrative
+    return apply_locale(fig, lang), narrative
 
 
 def _func_subnat_rank_narrative(year, func, data, lang="en"):
