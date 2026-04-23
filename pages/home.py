@@ -622,7 +622,7 @@ def format_percentage(num):
 
 def format_std(num, lang="en"):
     """Format a standard-deviation value with a localized label."""
-    return f"{t('label.std_abbrev', lang)}={num:.1f}"
+    return f"{t('label.std_abbrev', lang)} = {num:.1f}"
 
 
 def subnational_spending_narrative(
