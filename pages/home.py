@@ -58,6 +58,7 @@ def layout():
                 )
             ),
             dcc.Store(id="stored-data-pefa"),
+            dcc.Store(id="stored-data-revenue-budget"),
         ]
     )
 
@@ -70,6 +71,17 @@ def layout():
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
         server_store.get("pefa")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-revenue-budget", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_revenue_budget_data_once(revenue_data, shared_data):
+    if revenue_data is None and shared_data:
+        server_store.get("revenue_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -215,6 +227,25 @@ def render_overview_content(tab):
                             lg={"size": 4, "offset": 0},
                         ),
                     ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children="Revenue & Expenditure")
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("revenue-expenditure-deficit"),
+                        xs={"size": 12, "offset": 0},
+                        sm={"size": 12, "offset": 0},
+                        md={"size": 12, "offset": 0},
+                        lg={"size": 12, "offset": 0},
+                    )
                 ),
                 dbc.Row(
                     dbc.Col(
@@ -1256,3 +1287,101 @@ def render_pefa_overall(data, pefa_data, country):
 )
 def render_budget_func_changes(data, country, exp_type):
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type)
+
+
+def revenue_expenditure_deficit_figure(df, currency_code):
+    if df.empty:
+        return empty_plot("No revenue budget data available")
+
+    df = df.copy().sort_values("year")
+    df['deficit'] = df['revenue'] - df['expenditure']
+    add_currency_column(df, 'revenue', currency_code)
+    add_currency_column(df, 'expenditure', currency_code)
+    add_currency_column(df, 'deficit', currency_code)
+
+    fig = go.Figure()
+
+    colors = ['green' if x >= 0 else 'red' for x in df['deficit']]
+
+    fig.add_trace(
+        go.Bar(
+            name="Surplus / Deficit",
+            x=df.year,
+            y=df.deficit,
+            marker_color=colors,
+            opacity=0.5,
+            customdata=df['deficit_formatted'],
+            hovertemplate="<b>Surplus / Deficit</b>: %{customdata}<extra></extra>",
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            name="Revenue",
+            x=df.year,
+            y=df.revenue,
+            mode="lines+markers",
+            marker_color="darkgreen",
+            customdata=df['revenue_formatted'],
+            hovertemplate="<b>Revenue</b>: %{customdata}<extra></extra>",
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            name="Expenditure",
+            x=df.year,
+            y=df.expenditure,
+            mode="lines+markers",
+            marker_color="darkblue",
+            customdata=df['expenditure_formatted'],
+            hovertemplate="<b>Expenditure</b>: %{customdata}<extra></extra>",
+        )
+    )
+
+    fig.add_hline(
+        y=0,
+        line_dash="solid",
+        line_color="black",
+        line_width=1,
+    )
+
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=sorted(df.year.unique()),
+        tickformat="d",
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        zeroline=True,
+        zerolinecolor="black",
+        zerolinewidth=1,
+    )
+    fig.update_layout(
+        title="Revenue, Expenditure, and Surplus / Deficit over time",
+        plot_bgcolor="white",
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1),
+    )
+
+    return fig
+
+
+@callback(
+    Output("revenue-expenditure-deficit", "figure"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+)
+def render_revenue_budget_figure(revenue_data, country, country_data):
+    if not revenue_data or not country_data or not country:
+        return dash.no_update
+
+    all_data = server_store.get("revenue_budget")
+    df = filter_country_sort_year(all_data, country)
+
+    if df.empty:
+        return empty_plot("No revenue budget data available")
+
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
+    return revenue_expenditure_deficit_figure(df, currency_code)

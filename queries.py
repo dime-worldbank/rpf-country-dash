@@ -229,3 +229,14 @@ class QueryService:
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
         """
         return self.fetch_data(query)
+
+    def get_revenue_budget_data(self):
+        query = f"""
+            SELECT
+                country_name,
+                year,
+                revenue,
+                expenditure
+            FROM prd_mega.{INDICATOR_SCHEMA}.revenue
+        """
+        return self.fetch_data(query)
