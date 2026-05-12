@@ -234,9 +234,30 @@ class QueryService:
         query = f"""
             SELECT
                 country_name,
+                country_code,
                 year,
-                revenue,
-                expenditure
-            FROM prd_mega.{INDICATOR_SCHEMA}.revenue
+                revenue_current_lcu AS revenue,
+                expenditure_current_lcu AS expenditure,
+                tax_expenditure,
+                data_source AS source
+            FROM prd_mega.{INDICATOR_SCHEMA}.togo_revenue_budget
+        """
+        return self.fetch_data(query)
+
+    def get_government_budget_data(self):
+        query = f"""
+            SELECT
+                country_name,
+                country_code,
+                region,
+                year,
+                revenue_current_lcu AS revenue,
+                expenditure_current_lcu AS expenditure,
+                data_source AS source
+            FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
+            WHERE data_source IN (
+                'WEO (World Economic Outlook), IMF — General Government',
+                'GFS_SOO (Statement of Operations), IMF — Budgetary Central Government'
+            )
         """
         return self.fetch_data(query)

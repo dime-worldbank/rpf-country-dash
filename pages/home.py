@@ -59,6 +59,7 @@ def layout():
             ),
             dcc.Store(id="stored-data-pefa"),
             dcc.Store(id="stored-data-revenue-budget"),
+            dcc.Store(id="stored-data-government-budget"),
         ]
     )
 
@@ -82,6 +83,17 @@ def fetch_pefa_data_once(pefa_data, shared_data):
 def fetch_revenue_budget_data_once(revenue_data, shared_data):
     if revenue_data is None and shared_data:
         server_store.get("revenue_budget")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-government-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_government_budget_data_once(gov_data, shared_data):
+    if gov_data is None and shared_data:
+        server_store.get("government_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -241,6 +253,24 @@ def render_overview_content(tab):
                 dbc.Row(
                     dbc.Col(
                         chart_container("revenue-expenditure-deficit"),
+                        xs={"size": 12, "offset": 0},
+                        sm={"size": 12, "offset": 0},
+                        md={"size": 12, "offset": 0},
+                        lg={"size": 12, "offset": 0},
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("revenue-expenditure-deficit-weo"),
+                        xs={"size": 12, "offset": 0},
+                        sm={"size": 12, "offset": 0},
+                        md={"size": 12, "offset": 0},
+                        lg={"size": 12, "offset": 0},
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("revenue-expenditure-deficit-gfs"),
                         xs={"size": 12, "offset": 0},
                         sm={"size": 12, "offset": 0},
                         md={"size": 12, "offset": 0},
@@ -1289,11 +1319,16 @@ def render_budget_func_changes(data, country, exp_type):
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type)
 
 
-def revenue_expenditure_deficit_figure(df, currency_code):
+def revenue_expenditure_deficit_figure(df, currency_code, title="Revenue, Expenditure, and Surplus / Deficit over time"):
     if df.empty:
         return empty_plot("No revenue budget data available")
 
     df = df.copy().sort_values("year")
+    df = df[df["year"] <= 2025]
+
+    if df.empty:
+        return empty_plot("No revenue budget data available")
+
     df['deficit'] = df['revenue'] - df['expenditure']
     add_currency_column(df, 'revenue', currency_code)
     add_currency_column(df, 'expenditure', currency_code)
@@ -1347,8 +1382,9 @@ def revenue_expenditure_deficit_figure(df, currency_code):
     )
 
     fig.update_xaxes(
+        range=[2009.5, 2025.5],
         tickmode="array",
-        tickvals=sorted(df.year.unique()),
+        tickvals=list(range(2010, 2026)),
         tickformat="d",
         zeroline=False,
     )
@@ -1358,7 +1394,7 @@ def revenue_expenditure_deficit_figure(df, currency_code):
         zerolinewidth=1,
     )
     fig.update_layout(
-        title="Revenue, Expenditure, and Surplus / Deficit over time",
+        title=title,
         plot_bgcolor="white",
         hovermode="x unified",
         legend=dict(orientation="h", yanchor="bottom", y=1),
@@ -1384,4 +1420,41 @@ def render_revenue_budget_figure(revenue_data, country, country_data):
         return empty_plot("No revenue budget data available")
 
     currency_code = server_store.get("basic_country_info")[country]['currency_code']
-    return revenue_expenditure_deficit_figure(df, currency_code)
+    return revenue_expenditure_deficit_figure(
+        df, currency_code,
+        title="Togo Revenue Budget — Revenue, Expenditure & Surplus / Deficit",
+    )
+
+
+WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
+GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
+
+
+@callback(
+    Output("revenue-expenditure-deficit-weo", "figure"),
+    Output("revenue-expenditure-deficit-gfs", "figure"),
+    Input("stored-data-government-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+)
+def render_government_budget_figures(gov_data, country, country_data):
+    if not gov_data or not country_data or not country:
+        return dash.no_update, dash.no_update
+
+    all_data = server_store.get("government_budget")
+    df = filter_country_sort_year(all_data, country)
+
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
+
+    weo_df = df[df["source"] == WEO_SOURCE]
+    gfs_df = df[df["source"] == GFS_SOO_SOURCE]
+
+    weo_fig = revenue_expenditure_deficit_figure(
+        weo_df, currency_code,
+        title="WEO (IMF, General Government) — Revenue, Expenditure & Surplus / Deficit",
+    )
+    gfs_fig = revenue_expenditure_deficit_figure(
+        gfs_df, currency_code,
+        title="GFS_SOO (IMF, Budgetary Central Government) — Revenue, Expenditure & Surplus / Deficit",
+    )
+    return weo_fig, gfs_fig
