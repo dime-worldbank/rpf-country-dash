@@ -104,8 +104,8 @@ TRANSLATIONS = {
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
 
     # --- Radio button labels ---
-    "radio.per_capita_expenditure": "Per capita {sector} expenditure",
-    "radio.total_expenditure": "Total {sector} expenditure",
+    "radio.per_capita_expenditure": "Per capita expenditure {sector_prep}",
+    "radio.total_expenditure": "Total expenditure {sector_prep}",
     "radio.per_capita_expenditure_plain": "  Per capita expenditure",
     "radio.total_expenditure_plain": "  Total expenditure",
     "radio.budget": "Budget",
@@ -150,13 +150,13 @@ TRANSLATIONS = {
     "error.poverty_unavailable": "Poverty data not available for this time period",
     "error.no_spending_data": "No spending data available",
     "error.inflation_adjusted_unavailable": "Inflation-adjusted budget data unavailable",
-    "error.no_overlapping_data": "Available public and private spending data on {sector} do not have an overlapping time period.",
+    "error.no_overlapping_data": "Available public and private spending data {sector_prep} do not have an overlapping time period.",
 
     # --- Sector names (lowercase, for mid-sentence use in narratives) ---
-    "sector.health": "health",
-    "sector.education": "education",
-    "sector.health.facilities": "health facilities",
-    "sector.education.facilities": "education facilities",
+    "sector.health": {"name": "health", "plural": False, "feminine": False},
+    "sector.education": {"name": "education", "plural": False, "feminine": False},
+    "sector.health.facilities": {"name": "health facilities", "plural": True, "feminine": False},
+    "sector.education.facilities": {"name": "education facilities", "plural": True, "feminine": False},
 
     # --- Country names (English — no article).
     # --- Statistics labels ---
@@ -188,24 +188,24 @@ TRANSLATIONS = {
     "func_sub.water_supply":                 "Water Supply",
     "func_sub.water_transport":              "Water Transport",
 
-    "country.Albania": "Albania",
-    "country.Bangladesh": "Bangladesh",
-    "country.Bhutan": "Bhutan",
-    "country.Burkina Faso": "Burkina Faso",
-    "country.Chile": "Chile",
-    "country.Colombia": "Colombia",
-    "country.Congo, Dem. Rep.": "Congo, Dem. Rep.",
-    "country.Ghana": "Ghana",
-    "country.Kenya": "Kenya",
-    "country.Liberia": "Liberia",
-    "country.Mozambique": "Mozambique",
-    "country.Nigeria": "Nigeria",
-    "country.Pakistan": "Pakistan",
-    "country.Paraguay": "Paraguay",
-    "country.South Africa": "South Africa",
-    "country.Togo": "Togo",
-    "country.Tunisia": "Tunisia",
-    "country.Uruguay": "Uruguay",
+    "country.Albania": {"name": "Albania", "plural": False, "feminine": False},
+    "country.Bangladesh": {"name": "Bangladesh", "plural": False, "feminine": False},
+    "country.Bhutan": {"name": "Bhutan", "plural": False, "feminine": False},
+    "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False},
+    "country.Chile": {"name": "Chile", "plural": False, "feminine": False},
+    "country.Colombia": {"name": "Colombia", "plural": False, "feminine": False},
+    "country.Congo, Dem. Rep.": {"name": "Congo, Dem. Rep.", "plural": False, "feminine": False},
+    "country.Ghana": {"name": "Ghana", "plural": False, "feminine": False},
+    "country.Kenya": {"name": "Kenya", "plural": False, "feminine": False},
+    "country.Liberia": {"name": "Liberia", "plural": False, "feminine": False},
+    "country.Mozambique": {"name": "Mozambique", "plural": False, "feminine": False},
+    "country.Nigeria": {"name": "Nigeria", "plural": False, "feminine": False},
+    "country.Pakistan": {"name": "Pakistan", "plural": False, "feminine": False},
+    "country.Paraguay": {"name": "Paraguay", "plural": False, "feminine": False},
+    "country.South Africa": {"name": "South Africa", "plural": False, "feminine": False},
+    "country.Togo": {"name": "Togo", "plural": False, "feminine": False},
+    "country.Tunisia": {"name": "Tunisia", "plural": False, "feminine": False},
+    "country.Uruguay": {"name": "Uruguay", "plural": False, "feminine": False},
 
     # --- Metric names (used by trend-narrative library) ---
     "metric.total_real_expenditure": "total real expenditure",
@@ -234,8 +234,8 @@ TRANSLATIONS = {
     "narrative.decentralization_unknown": "The extent of {sector} spending decentralization is unknown due to a lack of subnational public expenditure data.",
 
     # --- Narrative templates: Public vs Private ---
-    "narrative.govt_share_trend": "{country_loc}, the government's share of spending on {sector} {trend} from {earliest_pct} to {latest_pct} between {earliest_year} and {latest_year}. ",
-    "narrative.household_ratio": "For every unit of spending on {sector} by the government, households spent {ratio} units in {year}. ",
+    "narrative.govt_share_trend": "{country_loc}, the government's share of spending {sector_prep} {trend} from {earliest_pct} to {latest_pct} between {earliest_year} and {latest_year}. ",
+    "narrative.household_ratio": "For every unit of spending {sector_prep} by the government, households spent {ratio} units in {year}. ",
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
@@ -302,25 +302,25 @@ TRANSLATIONS = {
     # --- Functional / COFOG categories ---
     # Bare form for chart labels; ".narrative" (lowercase, shortened
     # where it helps prose) for mid-sentence use.
-    "cofog.social_protection":           "Social protection",
+    "cofog.social_protection":           {"name": "Social protection", "plural": False, "feminine": False},
     "cofog.social_protection.narrative": "social protection",
-    "cofog.recreation":                  "Recreation, culture and religion",
+    "cofog.recreation":                  {"name": "Recreation, culture and religion", "plural": False, "feminine": False},
     "cofog.recreation.narrative":        "recreation",
-    "cofog.public_order":                "Public order and safety",
+    "cofog.public_order":                {"name": "Public order and safety", "plural": False, "feminine": False},
     "cofog.public_order.narrative":      "public safety",
-    "cofog.housing":                     "Housing and community amenities",
+    "cofog.housing":                     {"name": "Housing and community amenities", "plural": False, "feminine": False},
     "cofog.housing.narrative":           "housing",
-    "cofog.health":                      "Health",
+    "cofog.health":                      {"name": "Health", "plural": False, "feminine": False},
     "cofog.health.narrative":            "health",
-    "cofog.general_public":              "General public services",
+    "cofog.general_public":              {"name": "General public services", "plural": False, "feminine": False},
     "cofog.general_public.narrative":    "public services",
-    "cofog.environment":                 "Environmental protection",
+    "cofog.environment":                 {"name": "Environmental protection", "plural": False, "feminine": False},
     "cofog.environment.narrative":       "environmental protection",
-    "cofog.education":                   "Education",
+    "cofog.education":                   {"name": "Education", "plural": False, "feminine": False},
     "cofog.education.narrative":         "education",
-    "cofog.economic":                    "Economic affairs",
+    "cofog.economic":                    {"name": "Economic affairs", "plural": False, "feminine": False},
     "cofog.economic.narrative":          "economic affairs",
-    "cofog.defence":                     "Defence",
+    "cofog.defence":                     {"name": "Defence", "plural": False, "feminine": False},
     "cofog.defence.narrative":           "defence",
 
     # --- Economic categories ---
@@ -392,9 +392,9 @@ TRANSLATIONS = {
 
     # --- Subnational rank narrative ---
     "narrative.subnat_rank_year": "In {year}, {pcc}",
-    "narrative.subnat_rank_roi": " Among the subnational regions, in terms of return on public spending on {func} measured by {outcome_name}, {best} had the highest return on investment (ROI) while {worst} had the lowest.",
-    "label.per_capita_expenditure_on": "Per Capita Expenditure on {func}",
-    "label.per_capita_expenditure_lower_on": "per capita expenditure on {func}",
+    "narrative.subnat_rank_roi": " Among the subnational regions, in terms of return on public spending {func_prep} measured by {outcome_name}, {best} had the highest return on investment (ROI) while {worst} had the lowest.",
+    "label.per_capita_expenditure_on": "Per Capita Expenditure {func_prep}",
+    "label.per_capita_expenditure_lower_on": "per capita expenditure {func_prep}",
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Displaying data from {year}",

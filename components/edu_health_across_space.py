@@ -7,7 +7,7 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t, genitive, locative, elide_que
+from translations import t, genitive, preposition, _LANGUAGES, elide_que
 from constants import translate_func_sub
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
@@ -221,9 +221,10 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         func_gen = genitive(lang, func_name)
 
         country_display = t(f"country.{country}", lang)
+        country_meta = _LANGUAGES[lang].get(f"country.{country}")
         text = t("narrative.subnat_intro", lang,
                  country=country_display,
-                 country_loc=locative(lang, country_display),
+                 country_loc=preposition(lang, country_meta, capitalize=True),
                  year=selected_year)
 
         subnat_exp_available = not math.isnan(decentralization) and not math.isclose(decentralization, 0)
@@ -624,7 +625,8 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
         )
     )
 
-    per_capita_label = t("label.per_capita_expenditure_on", lang, func=t(f"cofog.{func.lower()}", lang))
+    cofog_meta = _LANGUAGES[lang].get(f"cofog.{func.lower()}")
+    per_capita_label = t("label.per_capita_expenditure_on", lang, func_prep=preposition(lang, cofog_meta))
     fig.add_annotation(
         x=0.1,
         y=1,
@@ -656,6 +658,7 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
 
 def _func_subnat_rank_narrative(year, func, data, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
+    func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
 
     outcome_name_key = FUNC_OUTCOME_KEY_MAP.get(func)
     outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
@@ -676,7 +679,7 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
         },
         {
             "col_name": "per_capita_expenditure",
-            "display": t("label.per_capita_expenditure_lower_on", lang, func=func_lower),
+            "display": t("label.per_capita_expenditure_lower_on", lang, func_prep=preposition(lang, func_meta)),
         },
         lang=lang,
     )
@@ -693,9 +696,11 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
         t(f"{outcome_name_key}.narrative", lang)
         if outcome_name_key else outcome_name_lower
     )
+    func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
+    func_prep = preposition(lang, func_meta) if func_meta else f"in {func_lower}"
     narrative += t(
         "narrative.subnat_rank_roi", lang,
-        func=func_lower, outcome_name=outcome_narrative,
+        func_prep=func_prep, outcome_name=outcome_narrative,
         best=best_ROI, worst=worst_ROI,
         # que_worst handles elision of "que" before a vowel-initial region
         # name ("tandis qu'Afar") in French. English template ignores it.

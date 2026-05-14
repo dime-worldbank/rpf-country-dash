@@ -1,7 +1,7 @@
 from dash import html
 import pandas as pd
 import plotly.graph_objects as go
-from translations import t, genitive, locative
+from translations import t, genitive, preposition, _LANGUAGES
 from constants import translate_econ
 import server_store
 from utils import apply_locale, empty_plot
@@ -74,9 +74,10 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
 
     func_gen = genitive(lang, func_label)
     country_display = t(f"country.{country_name}", lang)
+    country_meta = _LANGUAGES[lang].get(f"country.{country_name}")
     intro_text = t("narrative.econ_breakdown_intro", lang,
                     country=country_display,
-                    country_loc=locative(lang, country_display),
+                    country_loc=preposition(lang, country_meta, capitalize=True),
                     emp_pct=emp_comp_pct,
                     func=func_label, func_gen=func_gen, other_pct=other_pct,
                     year=latest_year, emp_narrative=emp_narrative)

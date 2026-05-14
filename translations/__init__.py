@@ -62,8 +62,9 @@ def t(key, lang=None, **kwargs):
 
     Returns
     -------
-    str
-        The translated (and optionally interpolated) string. For French,
+    str or dict
+        The translated string (or dict with metadata for nouns with
+        grammatical properties like plural/feminine). For French,
         numeric-looking substituted values render with comma decimals
         (see :class:`_FrenchFormatter`).
     """
@@ -71,6 +72,11 @@ def t(key, lang=None, **kwargs):
         lang = DEFAULT_LANGUAGE
     translations = _LANGUAGES.get(lang, _LANGUAGES[DEFAULT_LANGUAGE])
     template = translations.get(key, _LANGUAGES[DEFAULT_LANGUAGE].get(key, key))
+
+    # If template is a dict (metadata), extract the display name for template rendering
+    if isinstance(template, dict):
+        template = template.get("name", str(template))
+
     if not kwargs:
         return template
     if lang == "fr":
@@ -111,60 +117,99 @@ def strip_article(lang, name):
     return name
 
 
-def _genitive_fr(name):
-    """French genitive: prefix *name* with the right form of "de".
+def _genitive_fr(noun_or_meta):
+    """Select French genitive preposition based on noun metadata or parse article.
 
-    * ``de + le``  → ``du``   (e.g. "du taux")
-    * ``de + les`` → ``des``  (e.g. "des dépenses")
-    * ``de + la``  → ``de la`` (no contraction)
-    * ``de + l'``  → ``de l'`` (no contraction)
-    * ``de`` + consonant-initial bare noun → ``de …``
-    * ``de`` + vowel-initial bare noun → ``d'…`` (elision)
+    Determines the correct "de" contraction based on noun's gender/number:
+
+    * Plural: "des"           (de + les)
+    * Masculine singular: "du" (de + le)
+    * Feminine singular: "de la" or "de l'" (no contraction)
+    * Bare noun (vowel-initial): "d'"
+    * Bare noun (consonant-initial): "de"
+
+    Parameters
+    ----------
+    noun_or_meta : str or dict
+        Either a dict with "plural" and "feminine" keys (metadata),
+        or a string with optional article prefix.
+
+    Returns
+    -------
+    str
+        The contraction: "du", "des", "de la", "de l'", "d'", or "de".
     """
-    if not name:
-        return name
-    if name.startswith("les "):
-        return "des " + name[4:]
-    if name.startswith("le "):
-        return "du " + name[3:]
-    if name.startswith(("la ", "l'")):
-        return "de " + name
-    first = name[0].lower()
+    if isinstance(noun_or_meta, dict):
+        # Metadata-driven selection
+        plural = noun_or_meta.get("plural", False)
+        feminine = noun_or_meta.get("feminine", False)
+
+        if plural:
+            return "des"
+        elif feminine:
+            return "de la"  # or "de l'" if vowel-initial, but let caller handle
+        else:
+            return "du"
+
+    # Legacy: parse article from string
+    if not noun_or_meta:
+        return "de"
+    if noun_or_meta.startswith("les "):
+        return "des " + noun_or_meta[4:]
+    if noun_or_meta.startswith("le "):
+        return "du " + noun_or_meta[3:]
+    if noun_or_meta.startswith(("la ", "l'")):
+        return "de " + noun_or_meta
+    first = noun_or_meta[0].lower()
     if first in _FRENCH_VOWELS:
-        return "d'" + name
-    return "de " + name
+        return "d'" + noun_or_meta
+    return "de " + noun_or_meta
 
 
-def _locative_fr(name):
-    """French locative: transform a country name into its "in X" form.
+def _preposition_fr(noun_or_meta):
+    """Select French preposition for locative context based on noun metadata.
 
-    Unlike English "in", French uses different prepositions depending on
-    the country's gender, number, and whether it takes an article:
+    Determines the correct preposition (en/au/aux) based on noun's gender
+    and number properties, following standard French grammar rules:
 
-    * ``le Kenya``       → ``au Kenya``      (à + le → au)
-    * ``les États-Unis`` → ``aux États-Unis`` (à + les → aux)
-    * ``la France``      → ``en France``      (feminine drops article)
-    * ``l'Albanie``      → ``en Albanie``     (vowel drops article)
-    * ``Cuba``           → ``à Cuba``          (no article → à)
+    * Feminine singular: "en"    (e.g., "en santé", "en France")
+    * Masculine singular: "au"   (e.g., "au transport", "au Kenya")
+    * Plural: "aux"             (e.g., "aux services", "aux États-Unis")
 
-    The returned form is capitalized since most consumers use it at the
-    start of a sentence ("Au Kenya, …", "En Albanie, …").
+    Parameters
+    ----------
+    noun_or_meta : str or dict
+        Either a dict with "plural" and "feminine" boolean keys (metadata),
+        or a string with article prefix for legacy support.
+
+    Returns
+    -------
+    str
+        The preposition: "en", "au", or "aux".
     """
-    if not name:
-        return name
-    if name.startswith("les "):
-        result = "aux " + name[4:]
-    elif name.startswith("le "):
-        result = "au " + name[3:]
-    elif name.startswith("la "):
-        result = "en " + name[3:]
-    elif name.startswith("l'"):
-        result = "en " + name[2:]
+    if isinstance(noun_or_meta, dict):
+        # Metadata-driven selection
+        plural = noun_or_meta.get("plural", False)
+        feminine = noun_or_meta.get("feminine", False)
+
+        if plural:
+            return "aux"
+        elif feminine:
+            return "en"
+        else:
+            return "au"
+
+    # Legacy: parse article from string (for backward compatibility)
+    if not noun_or_meta:
+        return "en"  # safe default
+    if noun_or_meta.startswith("les "):
+        return "aux"
+    elif noun_or_meta.startswith("le "):
+        return "au"
+    elif noun_or_meta.startswith(("la ", "l'")):
+        return "en"
     else:
-        # No article (e.g. "Cuba", "Haïti") — prepend "à"
-        result = "à " + name
-    # Capitalize first letter (E/A) for sentence-start usage
-    return result[0].upper() + result[1:]
+        return "à"  # no article — use "à"
 
 
 def elide_que(lang, name):
@@ -186,33 +231,64 @@ def elide_que(lang, name):
     return "que "
 
 
-def locative(lang, name):
-    """Return the locative ("in X") form of *name* in the given language.
+def preposition(lang, noun_or_meta, capitalize=False):
+    """Return preposition + noun for locative context ('in/at').
 
-    The locative role expresses location ("in X"). English uses "in X"
-    uniformly, but French distinguishes between au/aux/en/à depending on
-    gender and number — see :func:`_locative_fr`.
-
-    The result is capitalized so callers can drop it directly at the
-    start of a sentence ("Au Kenya, …", "In Kenya, …").
+    Selects the correct preposition based on noun's grammatical properties
+    (gender, number). French uses different prepositions (en/au/aux) depending
+    on the noun; English uses "in" uniformly.
 
     Parameters
     ----------
     lang : str
         Language code ("en", "fr", …).
-    name : str
-        The country or place name. For French, should include the article
-        ("le Kenya", "la France", "l'Albanie", "les États-Unis") so this
-        helper can pick the right preposition. For other languages, a
-        plain name works.
+    noun_or_meta : str or dict
+        Noun with grammatical metadata: dict with "name", "plural", and
+        "feminine" keys, OR a string with optional article prefix (legacy).
+        Examples:
+        * {"name": "santé", "plural": False, "feminine": True}
+        * {"name": "Kenya", "plural": False, "feminine": False}
+        * "le Kenya" (legacy, article-based)
+    capitalize : bool, default False
+        If True, capitalize the result for sentence-start usage.
+        Example: "Au Kenya" (True) vs "au Kenya" (False).
+
+    Returns
+    -------
+    str
+        Preposition + noun: "en santé", "Au Kenya", "in transport", etc.
     """
-    if not name:
-        return name
+    if not noun_or_meta:
+        return noun_or_meta
+
     if lang == "fr":
-        return _locative_fr(name)
-    if lang == "en":
-        return "In " + name
-    return name
+        prep = _preposition_fr(noun_or_meta)
+        # Extract noun name from metadata or string
+        if isinstance(noun_or_meta, dict):
+            noun_name = noun_or_meta.get("name", "")
+        else:
+            # Legacy: strip article from string
+            noun_name = noun_or_meta
+            for prefix in ("les ", "le ", "la ", "l'"):
+                if noun_name.startswith(prefix):
+                    noun_name = noun_name[len(prefix):]
+                    break
+        result = f"{prep} {noun_name}"
+    elif lang == "en":
+        # Extract noun name from metadata or string
+        if isinstance(noun_or_meta, dict):
+            noun_name = noun_or_meta.get("name", "")
+        else:
+            noun_name = noun_or_meta
+        result = f"in {noun_name}"
+    else:
+        result = noun_or_meta if isinstance(noun_or_meta, str) else str(noun_or_meta)
+
+    # Capitalize for sentence-start usage
+    if capitalize and result:
+        result = result[0].upper() + result[1:]
+
+    return result
 
 
 def genitive(lang, name):

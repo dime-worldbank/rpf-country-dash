@@ -107,8 +107,8 @@ TRANSLATIONS = {
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
 
     # --- Radio button labels ---
-    "radio.per_capita_expenditure": "Dépenses par habitant en {sector}",
-    "radio.total_expenditure": "Dépenses totales en {sector}",
+    "radio.per_capita_expenditure": "Dépenses par habitant {sector_prep}",
+    "radio.total_expenditure": "Dépenses totales {sector_prep}",
     "radio.per_capita_expenditure_plain": "  Dépenses par habitant",
     "radio.total_expenditure_plain": "  Dépenses totales",
     "radio.budget": "Budget",
@@ -153,13 +153,13 @@ TRANSLATIONS = {
     "error.poverty_unavailable": "Données de pauvreté non disponibles pour cette période",
     "error.no_spending_data": "Aucune donnée de dépenses disponible",
     "error.inflation_adjusted_unavailable": "Données budgétaires ajustées à l'inflation non disponibles",
-    "error.no_overlapping_data": "Les données disponibles sur les dépenses publiques et privées en {sector} ne couvrent pas de période commune.",
+    "error.no_overlapping_data": "Les données disponibles sur les dépenses publiques et privées {sector_prep} ne couvrent pas de période commune.",
 
-    # --- Sector names (lowercase, for mid-sentence use in narratives) ---
-    "sector.health": "santé",
-    "sector.education": "éducation",
-    "sector.health.facilities": "infrastructures sanitaires",
-    "sector.education.facilities": "infrastructures éducatives",
+    # --- Sector names with grammatical metadata for preposition/genitive agreement ---
+    "sector.health": {"name": "santé", "plural": False, "feminine": True},
+    "sector.education": {"name": "éducation", "plural": False, "feminine": True},
+    "sector.health.facilities": {"name": "infrastructures sanitaires", "plural": True, "feminine": True},
+    "sector.education.facilities": {"name": "infrastructures éducatives", "plural": True, "feminine": True},
 
     # --- Country names (French, with article for correct preposition
     # contraction via genitive()). The article is REQUIRED here — French
@@ -199,24 +199,24 @@ TRANSLATIONS = {
     "func_sub.water_supply":                 "Approvisionnement en eau",
     "func_sub.water_transport":              "Transport maritime",
 
-    "country.Albania": "l'Albanie",
-    "country.Bangladesh": "le Bangladesh",
-    "country.Bhutan": "le Bhoutan",
-    "country.Burkina Faso": "le Burkina Faso",
-    "country.Chile": "le Chili",
-    "country.Colombia": "la Colombie",
-    "country.Congo, Dem. Rep.": "la République démocratique du Congo",
-    "country.Ghana": "le Ghana",
-    "country.Kenya": "le Kenya",
-    "country.Liberia": "le Libéria",
-    "country.Mozambique": "le Mozambique",
-    "country.Nigeria": "le Nigéria",
-    "country.Pakistan": "le Pakistan",
-    "country.Paraguay": "le Paraguay",
-    "country.South Africa": "l'Afrique du Sud",
-    "country.Togo": "le Togo",
-    "country.Tunisia": "la Tunisie",
-    "country.Uruguay": "l'Uruguay",
+    "country.Albania": {"name": "Albanie", "plural": False, "feminine": True},
+    "country.Bangladesh": {"name": "Bangladesh", "plural": False, "feminine": False},
+    "country.Bhutan": {"name": "Bhoutan", "plural": False, "feminine": False},
+    "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False},
+    "country.Chile": {"name": "Chili", "plural": False, "feminine": False},
+    "country.Colombia": {"name": "Colombie", "plural": False, "feminine": True},
+    "country.Congo, Dem. Rep.": {"name": "République démocratique du Congo", "plural": False, "feminine": True},
+    "country.Ghana": {"name": "Ghana", "plural": False, "feminine": False},
+    "country.Kenya": {"name": "Kenya", "plural": False, "feminine": False},
+    "country.Liberia": {"name": "Libéria", "plural": False, "feminine": False},
+    "country.Mozambique": {"name": "Mozambique", "plural": False, "feminine": False},
+    "country.Nigeria": {"name": "Nigéria", "plural": False, "feminine": False},
+    "country.Pakistan": {"name": "Pakistan", "plural": False, "feminine": False},
+    "country.Paraguay": {"name": "Paraguay", "plural": False, "feminine": False},
+    "country.South Africa": {"name": "Afrique du Sud", "plural": False, "feminine": True},
+    "country.Togo": {"name": "Togo", "plural": False, "feminine": False},
+    "country.Tunisia": {"name": "Tunisie", "plural": False, "feminine": True},
+    "country.Uruguay": {"name": "Uruguay", "plural": False, "feminine": False},
 
     # --- Metric names (used by trend-narrative library) ---
     # Each entry is a dict bundling the display name with grammatical
@@ -281,8 +281,8 @@ TRANSLATIONS = {
     "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses {sector_gen} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
 
     # --- Narrative templates: Public vs Private ---
-    "narrative.govt_share_trend": "{country_loc}, la part des dépenses publiques en {sector} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
-    "narrative.household_ratio": "Pour chaque unité de dépense en {sector} par l'État, les ménages ont dépensé {ratio} unités en {year}. ",
+    "narrative.govt_share_trend": "{country_loc}, la part des dépenses publiques {sector_prep} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
+    "narrative.household_ratio": "Pour chaque unité de dépense {sector_prep} par l'État, les ménages ont dépensé {ratio} unités en {year}. ",
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
@@ -360,25 +360,25 @@ TRANSLATIONS = {
     #     needed) — for mid-sentence prose like "dans la santé et la
     #     défense". Shortening avoids tangled "les loisirs, la culture
     #     et la religion et la défense" when the list joiner is also "et".
-    "cofog.social_protection":           "Protection sociale",
+    "cofog.social_protection":           {"name": "Protection sociale", "plural": False, "feminine": True},
     "cofog.social_protection.narrative": "la protection sociale",
-    "cofog.recreation":                  "Loisirs, culture et religion",
+    "cofog.recreation":                  {"name": "Loisirs, culture et religion", "plural": True, "feminine": False},
     "cofog.recreation.narrative":        "les loisirs",
-    "cofog.public_order":                "Ordre et sécurité publics",
+    "cofog.public_order":                {"name": "Ordre et sécurité publics", "plural": True, "feminine": False},
     "cofog.public_order.narrative":      "la sécurité publique",
-    "cofog.housing":                     "Logement et équipements collectifs",
+    "cofog.housing":                     {"name": "Logement et équipements collectifs", "plural": False, "feminine": False},
     "cofog.housing.narrative":           "le logement",
-    "cofog.health":                      "Santé",
+    "cofog.health":                      {"name": "Santé", "plural": False, "feminine": True},
     "cofog.health.narrative":            "la santé",
-    "cofog.general_public":              "Services publics généraux",
+    "cofog.general_public":              {"name": "Services publics généraux", "plural": True, "feminine": False},
     "cofog.general_public.narrative":    "les services publics",
-    "cofog.environment":                 "Protection de l'environnement",
+    "cofog.environment":                 {"name": "Protection de l'environnement", "plural": False, "feminine": False},
     "cofog.environment.narrative":       "l'environnement",
-    "cofog.education":                   "Éducation",
+    "cofog.education":                   {"name": "Éducation", "plural": False, "feminine": True},
     "cofog.education.narrative":         "l'éducation",
-    "cofog.economic":                    "Affaires économiques",
+    "cofog.economic":                    {"name": "Affaires économiques", "plural": True, "feminine": True},
     "cofog.economic.narrative":          "les affaires économiques",
-    "cofog.defence":                     "Défense",
+    "cofog.defence":                     {"name": "Défense", "plural": False, "feminine": True},
     "cofog.defence.narrative":           "la défense",
 
     # --- Economic categories ---
@@ -462,13 +462,13 @@ TRANSLATIONS = {
     # {que_worst} holds the right form of "que" — "que " or "qu'" — so the
     # sentence elides correctly before vowel-initial region names
     # ("tandis qu'Afar" vs "tandis que Kampala").
-    "narrative.subnat_rank_roi": " Parmi les régions infranationales, le retour sur investissement (ROI) des dépenses publiques en {func}, mesuré par {outcome_name}, a été le plus élevé pour {best} tandis {que_worst}{worst} a eu le plus faible.",
-    "label.per_capita_expenditure_on": "Dépenses par habitant en {func}",
+    "narrative.subnat_rank_roi": " Parmi les régions infranationales, le retour sur investissement (ROI) des dépenses publiques {func_prep}, mesuré par {outcome_name}, a été le plus élevé pour {best} tandis {que_worst}{worst} a eu le plus faible.",
+    "label.per_capita_expenditure_on": "Dépenses par habitant {func_prep}",
     # Lowercase form: includes the article "les" since its only consumer
     # is mid-sentence correlation narratives ("entre les dépenses par
     # habitant en santé et l'indice UHC"), where the bare form would
     # produce ungrammatical French.
-    "label.per_capita_expenditure_lower_on": "les dépenses par habitant en {func}",
+    "label.per_capita_expenditure_lower_on": "les dépenses par habitant {func_prep}",
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Affichage des données de {year}",

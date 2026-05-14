@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from constants import get_map_disclaimer
-from translations import t, genitive, locative
+from translations import t, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -305,11 +305,11 @@ def render_education_content(tab, lang):
                                 id="education-expenditure-type",
                                 options=[
                                     {
-                                        "label": t("radio.per_capita_expenditure", lang, sector=t("sector.education", lang)),
+                                        "label": t("radio.per_capita_expenditure", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.education"))),
                                         "value": "per_capita_expenditure",
                                     },
                                     {
-                                        "label": t("radio.total_expenditure", lang, sector=t("sector.education", lang)),
+                                        "label": t("radio.total_expenditure", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.education"))),
                                         "value": "expenditure",
                                     },
                                 ],
@@ -554,15 +554,18 @@ def public_private_narrative(df, country, lang="en"):
         )
         if earliest_year != latest_year:
             country_display = t(f"country.{country}", lang)
+            country_meta = _LANGUAGES[lang].get(f"country.{country}")
+            sector_meta = _LANGUAGES[lang].get("sector.education")
             text += t("narrative.govt_share_trend", lang,
                        country=country_display,
-                       country_loc=locative(lang, country_display),
-                       sector=t("sector.education", lang), trend=trend,
+                       country_loc=preposition(lang, country_meta, capitalize=True),
+                       sector_prep=preposition(lang, sector_meta), trend=trend,
                        earliest_pct=f"{earliest_gov_share:.0%}",
                        latest_pct=f"{latest_gov_share:.0%}",
                        earliest_year=earliest_year, latest_year=latest_year)
 
-        text += t("narrative.household_ratio", lang, sector=t("sector.education", lang),
+        text += t("narrative.household_ratio", lang,
+                   sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.education")),
                    ratio=f"{household_ratio:.1f}", year=latest_year)
 
     except IndexError:
@@ -614,7 +617,7 @@ def render_public_private_figure(private_data, public_data, country, basic_count
             prompt = t("error.data_unavailable_named", lang,
                        dataset_name="Education private spending")
         else:
-            prompt = t("error.no_overlapping_data", lang, sector=t("sector.education", lang))
+            prompt = t("error.no_overlapping_data", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.education")))
         return (empty_plot(prompt, fig_title=fig_title), prompt)
 
     merged["private_percentage"] = merged["real_expenditure_private"] / (
