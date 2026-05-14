@@ -1,12 +1,13 @@
 from dash import html
 import dash_bootstrap_components as dbc
+from translations import t
 
 
-def disclaimer_tooltip(disclaimer_id, tooltip_text):
+def disclaimer_tooltip(disclaimer_id, tooltip_text, lang="en"):
     return html.Div(
         [
             html.Span(
-                "disclaimer",
+                t("disclaimer.label", lang),
                 id=disclaimer_id,
                 style={
                     "color": "CCCCCC",

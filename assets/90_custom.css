@@ -133,6 +133,23 @@
     right: 2rem;
     font-size: 20px;
     z-index: 1000;
+    /* Language toggle + logout icon are inline siblings. */
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+}
+
+/* Logout icon — uses the SVG as a mask so its fill follows the
+   currentColor of #header (see above). */
+#logout-button .logout-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    background-color: currentColor;
+    -webkit-mask: url("logout.svg") no-repeat center / contain;
+    mask: url("logout.svg") no-repeat center / contain;
 }
 
 #sidebar {
@@ -142,6 +159,36 @@
     bottom: 0;
     width: 14rem;
     padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Language toggle — sits next to the logout icon in #header.
+   Inherits color from #header so it follows the theme (black in quartz,
+   white in wbg). Size is smaller than the icon (14px) so the two don't
+   compete visually. */
+.language-links {
+    display: flex;
+    gap: 0.25rem;
+    font-size: 14px;
+}
+
+.language-links .lang-link {
+    padding: 0.15rem 0.5rem;
+    text-decoration: none;
+    color: currentColor;
+    opacity: 0.7;
+    border-radius: 3px;
+}
+
+.language-links .lang-link:hover {
+    opacity: 1;
+    background-color: rgba(128, 128, 128, 0.15);
+}
+
+.language-links .lang-link.active-lang {
+    font-weight: 700;
+    opacity: 1;
 }
 
 #sidebar .nav {
