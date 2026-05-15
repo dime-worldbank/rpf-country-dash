@@ -253,7 +253,8 @@ class QueryService:
                 year,
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,
-                data_source AS source
+                data_source AS source,
+                forecast
             FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
             WHERE data_source IN (
                 'WEO (World Economic Outlook), IMF — General Government',

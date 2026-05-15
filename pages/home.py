@@ -1374,12 +1374,10 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
     weo_df = _prep(weo_df)
 
     has_national = national_df is not None and not national_df.empty
-    forecast_start_year = None
     if has_national:
         national_years = set(national_df["year"].tolist())
         n_min = int(national_df["year"].min())
         n_max = int(national_df["year"].max())
-        forecast_start_year = n_max
         gfs_pre = (
             gfs_df[(gfs_df["year"] < n_min) & (~gfs_df["year"].isin(national_years))]
             if gfs_df is not None and not gfs_df.empty else None
@@ -1393,10 +1391,18 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         gfs_pre = gfs_df
         if gfs_df is not None and not gfs_df.empty and weo_df is not None and not weo_df.empty:
             gfs_max_year = int(gfs_df["year"].max())
-            forecast_start_year = gfs_max_year
             weo_post = weo_df[weo_df["year"] > gfs_max_year]
         else:
             weo_post = weo_df
+
+    # The grey forecast band corresponds to the actual forecast=True rows
+    forecast_starts = []
+    for src in (gfs_df, weo_df):
+        if src is not None and not src.empty and "forecast" in src.columns:
+            f = src[src["forecast"].astype(bool)]
+            if not f.empty:
+                forecast_starts.append(int(f["year"].min()))
+    forecast_start_year = (min(forecast_starts) - 1) if forecast_starts else None
 
     if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
         return empty_plot("No revenue budget data available")
@@ -1438,6 +1444,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         if is_forecast:
             cat = "forecast"
             label_suffix = " (forecast)"
+            hover_kind = "forecast"
             rev_color = SUPPLEMENT_REVENUE_COLOR
             exp_color = SUPPLEMENT_EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, dash="dash", width=2)
@@ -1447,6 +1454,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         else:
             cat = "actual"
             label_suffix = ""
+            hover_kind = "actual"
             rev_color = REVENUE_COLOR
             exp_color = EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, width=2.5)
@@ -1465,7 +1473,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
                 line=rev_line,
                 marker=rev_marker,
                 customdata=df["revenue_formatted"],
-                hovertemplate=f"<b>Revenue ({source_label})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>Revenue ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
@@ -1480,7 +1488,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
                 line=exp_line,
                 marker=exp_marker,
                 customdata=df["expenditure_formatted"],
-                hovertemplate=f"<b>Expenditure ({source_label})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>Expenditure ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
@@ -1494,14 +1502,30 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
                 marker_color=_deficit_bar_colors(df.deficit),
                 opacity=SUPPLEMENT_OPACITY,
                 customdata=df["deficit_formatted"],
-                hovertemplate=f"<b>Surplus / Deficit ({source_label})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>Surplus / Deficit ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
             ),
             row=2, col=1,
         )
         legend_shown[f"{cat}_def"] = True
 
-    add_series(gfs_pre, "GFS")
-    add_series(weo_post, "WEO", is_forecast=True)
+    def add_split(df, source_label):
+        if df is None or df.empty:
+            return
+        if "forecast" not in df.columns:
+            add_series(df, source_label)
+            return
+        df = df.sort_values("year")
+        actual = df[~df["forecast"].astype(bool)]
+        forecast = df[df["forecast"].astype(bool)]
+        # Plotly can't mix line styles in one trace, so we emit two — share the
+        # last actual row with the forecast trace so the lines meet at the boundary.
+        if not actual.empty and not forecast.empty:
+            forecast = pd.concat([actual.tail(1), forecast], ignore_index=True)
+        add_series(actual, source_label, is_forecast=False)
+        add_series(forecast, source_label, is_forecast=True)
+
+    add_split(gfs_pre, "GFS")
+    add_split(weo_post, "WEO")
     if has_national:
         add_series(national_df, "Official")
 
