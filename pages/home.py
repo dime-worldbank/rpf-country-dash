@@ -1415,13 +1415,38 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         subplot_titles=("Revenue & Expenditure", "Deficit (Revenue − Expenditure)"),
     )
 
-    sup_legend_shown = {"rev": False, "exp": False, "def": False}
+    legend_shown = {
+        "actual_rev": False, "actual_exp": False, "actual_def": False,
+        "forecast_rev": False, "forecast_exp": False, "forecast_def": False,
+    }
 
-    def add_supplement(df, name_suffix, primary=False):
+    def add_series(df, source_label, is_forecast=False):
+        """Add revenue/expenditure lines and a deficit bar for one data source.
+
+        Styling is driven entirely by ``is_forecast``:
+
+        * Actual data → solid line+markers, full-strength colors.
+        * Forecast data → dashed line (no markers), muted colors.
+
+        Legend entries dedupe across sources with the same category, so
+        Official + GFS share a single "Revenue" entry, while WEO contributes
+        a separate "Revenue (forecast)" entry.
+        """
         if df is None or df.empty:
             return
 
-        if primary:
+        if is_forecast:
+            cat = "forecast"
+            label_suffix = " (forecast)"
+            rev_color = SUPPLEMENT_REVENUE_COLOR
+            exp_color = SUPPLEMENT_EXPENDITURE_COLOR
+            rev_line = dict(color=rev_color, dash="dash", width=2)
+            exp_line = dict(color=exp_color, dash="dash", width=2)
+            rev_marker = exp_marker = None
+            scatter_mode = "lines"
+        else:
+            cat = "actual"
+            label_suffix = ""
             rev_color = REVENUE_COLOR
             exp_color = EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, width=2.5)
@@ -1429,109 +1454,56 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
             rev_marker = dict(color=rev_color, size=7)
             exp_marker = dict(color=exp_color, size=7)
             scatter_mode = "lines+markers"
-            bar_opacity = 1.0
-            bar_legend_name = f"Surplus / Deficit ({name_suffix})"
-            bar_legendgroup = f"def_{name_suffix}"
-            bar_showlegend = True
-        else:
-            rev_color = SUPPLEMENT_REVENUE_COLOR
-            exp_color = SUPPLEMENT_EXPENDITURE_COLOR
-            rev_line = dict(color=rev_color, dash="dot", width=2)
-            exp_line = dict(color=exp_color, dash="dot", width=2)
-            rev_marker = None
-            exp_marker = None
-            scatter_mode = "lines"
-            bar_opacity = SUPPLEMENT_OPACITY
-            bar_legend_name = "Surplus / Deficit — GFS / WEO"
-            bar_legendgroup = "def_sup"
-            bar_showlegend = not sup_legend_shown["def"]
 
         fig.add_trace(
             go.Scatter(
-                name=f"Revenue ({name_suffix})",
-                legendgroup="rev_sup" if not primary else f"rev_{name_suffix}",
-                showlegend=primary or not sup_legend_shown["rev"],
+                name=f"Revenue{label_suffix}",
+                legendgroup=f"{cat}_rev",
+                showlegend=not legend_shown[f"{cat}_rev"],
                 x=df.year, y=df.revenue,
                 mode=scatter_mode,
                 line=rev_line,
                 marker=rev_marker,
                 customdata=df["revenue_formatted"],
-                hovertemplate="<b>Revenue (%s)</b>: %%{customdata}<extra></extra>" % name_suffix,
+                hovertemplate=f"<b>Revenue ({source_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
-        if not primary:
-            sup_legend_shown["rev"] = True
+        legend_shown[f"{cat}_rev"] = True
         fig.add_trace(
             go.Scatter(
-                name=f"Expenditure ({name_suffix})",
-                legendgroup="exp_sup" if not primary else f"exp_{name_suffix}",
-                showlegend=primary or not sup_legend_shown["exp"],
+                name=f"Expenditure{label_suffix}",
+                legendgroup=f"{cat}_exp",
+                showlegend=not legend_shown[f"{cat}_exp"],
                 x=df.year, y=df.expenditure,
                 mode=scatter_mode,
                 line=exp_line,
                 marker=exp_marker,
                 customdata=df["expenditure_formatted"],
-                hovertemplate="<b>Expenditure (%s)</b>: %%{customdata}<extra></extra>" % name_suffix,
+                hovertemplate=f"<b>Expenditure ({source_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
-        if not primary:
-            sup_legend_shown["exp"] = True
+        legend_shown[f"{cat}_exp"] = True
         fig.add_trace(
             go.Bar(
-                name=bar_legend_name,
-                legendgroup=bar_legendgroup,
-                showlegend=bar_showlegend,
+                name=f"Surplus / Deficit{label_suffix}",
+                legendgroup=f"{cat}_def",
+                showlegend=not legend_shown[f"{cat}_def"],
                 x=df.year, y=df.deficit,
                 marker_color=_deficit_bar_colors(df.deficit),
-                opacity=bar_opacity,
+                opacity=SUPPLEMENT_OPACITY,
                 customdata=df["deficit_formatted"],
-                hovertemplate="<b>Surplus / Deficit (%s)</b>: %%{customdata}<extra></extra>" % name_suffix,
+                hovertemplate=f"<b>Surplus / Deficit ({source_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=2, col=1,
         )
-        if not primary:
-            sup_legend_shown["def"] = True
+        legend_shown[f"{cat}_def"] = True
 
-    add_supplement(gfs_pre, "GFS", primary=not has_national)
-    add_supplement(weo_post, "WEO", primary=False)
-
+    add_series(gfs_pre, "GFS")
+    add_series(weo_post, "WEO", is_forecast=True)
     if has_national:
-        fig.add_trace(
-            go.Scatter(
-                name="Revenue",
-                x=national_df.year, y=national_df.revenue,
-                mode="lines+markers",
-                line=dict(color=REVENUE_COLOR, width=2.5),
-                marker=dict(color=REVENUE_COLOR, size=7),
-                customdata=national_df["revenue_formatted"],
-                hovertemplate="<b>Revenue</b>: %{customdata}<extra></extra>",
-            ),
-            row=1, col=1,
-        )
-        fig.add_trace(
-            go.Scatter(
-                name="Expenditure",
-                x=national_df.year, y=national_df.expenditure,
-                mode="lines+markers",
-                line=dict(color=EXPENDITURE_COLOR, width=2.5),
-                marker=dict(color=EXPENDITURE_COLOR, size=7),
-                customdata=national_df["expenditure_formatted"],
-                hovertemplate="<b>Expenditure</b>: %{customdata}<extra></extra>",
-            ),
-            row=1, col=1,
-        )
-        fig.add_trace(
-            go.Bar(
-                name="Surplus / Deficit — national figures",
-                x=national_df.year, y=national_df.deficit,
-                marker_color=_deficit_bar_colors(national_df.deficit),
-                customdata=national_df["deficit_formatted"],
-                hovertemplate="<b>Surplus / Deficit (national)</b>: %{customdata}<extra></extra>",
-            ),
-            row=2, col=1,
-        )
+        add_series(national_df, "Official")
 
     if view_mode == "composite" and forecast_start_year is not None:
         fig.add_shape(
