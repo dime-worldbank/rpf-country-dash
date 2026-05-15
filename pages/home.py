@@ -256,6 +256,23 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
+                        dbc.RadioItems(
+                            id="revenue-expenditure-view",
+                            options=[
+                                {"label": "Composite", "value": "composite"},
+                                {"label": "Official Report", "value": "official"},
+                                {"label": "GFS", "value": "gfs"},
+                                {"label": "WEO", "value": "weo"},
+                            ],
+                            value="composite",
+                            inline=True,
+                            style={"padding": "10px"},
+                            labelStyle={"margin-right": "20px"},
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
                         html.P(
                             id="revenue-expenditure-narrative",
                             children="loading...",
@@ -1342,7 +1359,16 @@ def _prep(df):
     return df
 
 
-def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None):
+def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite"):
+    if view_mode == "official":
+        gfs_df, weo_df = None, None
+    elif view_mode == "gfs":
+        national_df, weo_df = gfs_df, None
+        gfs_df = None
+    elif view_mode == "weo":
+        national_df, gfs_df = weo_df, None
+        weo_df = None
+
     national_df = _prep(national_df)
     gfs_df = _prep(gfs_df)
     weo_df = _prep(weo_df)
@@ -1391,22 +1417,42 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
 
     sup_legend_shown = {"rev": False, "exp": False, "def": False}
 
-    def add_supplement(df, name_suffix, mode="lines"):
+    def add_supplement(df, name_suffix, primary=False):
         if df is None or df.empty:
             return
-        as_markers = mode == "markers"
-        rev_line = None if as_markers else dict(color=SUPPLEMENT_REVENUE_COLOR, dash="dot", width=2)
-        exp_line = None if as_markers else dict(color=SUPPLEMENT_EXPENDITURE_COLOR, dash="dot", width=2)
-        rev_marker = dict(color=SUPPLEMENT_REVENUE_COLOR, size=7) if as_markers else None
-        exp_marker = dict(color=SUPPLEMENT_EXPENDITURE_COLOR, size=7) if as_markers else None
+
+        if primary:
+            rev_color = REVENUE_COLOR
+            exp_color = EXPENDITURE_COLOR
+            rev_line = dict(color=rev_color, width=2.5)
+            exp_line = dict(color=exp_color, width=2.5)
+            rev_marker = dict(color=rev_color, size=7)
+            exp_marker = dict(color=exp_color, size=7)
+            scatter_mode = "lines+markers"
+            bar_opacity = 1.0
+            bar_legend_name = f"Surplus / Deficit ({name_suffix})"
+            bar_legendgroup = f"def_{name_suffix}"
+            bar_showlegend = True
+        else:
+            rev_color = SUPPLEMENT_REVENUE_COLOR
+            exp_color = SUPPLEMENT_EXPENDITURE_COLOR
+            rev_line = dict(color=rev_color, dash="dot", width=2)
+            exp_line = dict(color=exp_color, dash="dot", width=2)
+            rev_marker = None
+            exp_marker = None
+            scatter_mode = "lines"
+            bar_opacity = SUPPLEMENT_OPACITY
+            bar_legend_name = "Surplus / Deficit — GFS / WEO"
+            bar_legendgroup = "def_sup"
+            bar_showlegend = not sup_legend_shown["def"]
 
         fig.add_trace(
             go.Scatter(
                 name=f"Revenue ({name_suffix})",
-                legendgroup="rev_sup",
-                showlegend=not sup_legend_shown["rev"],
+                legendgroup="rev_sup" if not primary else f"rev_{name_suffix}",
+                showlegend=primary or not sup_legend_shown["rev"],
                 x=df.year, y=df.revenue,
-                mode=mode,
+                mode=scatter_mode,
                 line=rev_line,
                 marker=rev_marker,
                 customdata=df["revenue_formatted"],
@@ -1414,14 +1460,15 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
             ),
             row=1, col=1,
         )
-        sup_legend_shown["rev"] = True
+        if not primary:
+            sup_legend_shown["rev"] = True
         fig.add_trace(
             go.Scatter(
                 name=f"Expenditure ({name_suffix})",
-                legendgroup="exp_sup",
-                showlegend=not sup_legend_shown["exp"],
+                legendgroup="exp_sup" if not primary else f"exp_{name_suffix}",
+                showlegend=primary or not sup_legend_shown["exp"],
                 x=df.year, y=df.expenditure,
-                mode=mode,
+                mode=scatter_mode,
                 line=exp_line,
                 marker=exp_marker,
                 customdata=df["expenditure_formatted"],
@@ -1429,24 +1476,26 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
             ),
             row=1, col=1,
         )
-        sup_legend_shown["exp"] = True
+        if not primary:
+            sup_legend_shown["exp"] = True
         fig.add_trace(
             go.Bar(
-                name="Surplus / Deficit — GFS / WEO",
-                legendgroup="def_sup",
-                showlegend=not sup_legend_shown["def"],
+                name=bar_legend_name,
+                legendgroup=bar_legendgroup,
+                showlegend=bar_showlegend,
                 x=df.year, y=df.deficit,
                 marker_color=_deficit_bar_colors(df.deficit),
-                opacity=SUPPLEMENT_OPACITY,
+                opacity=bar_opacity,
                 customdata=df["deficit_formatted"],
                 hovertemplate="<b>Surplus / Deficit (%s)</b>: %%{customdata}<extra></extra>" % name_suffix,
             ),
             row=2, col=1,
         )
-        sup_legend_shown["def"] = True
+        if not primary:
+            sup_legend_shown["def"] = True
 
-    add_supplement(gfs_pre, "GFS")
-    add_supplement(weo_post, "WEO")
+    add_supplement(gfs_pre, "GFS", primary=not has_national)
+    add_supplement(weo_post, "WEO", primary=False)
 
     if has_national:
         fig.add_trace(
@@ -1484,7 +1533,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
             row=2, col=1,
         )
 
-    if forecast_start_year is not None:
+    if view_mode == "composite" and forecast_start_year is not None:
         fig.add_shape(
             type="rect",
             xref="x", yref="paper",
@@ -1559,8 +1608,9 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
     Input("stored-data-government-budget", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
 )
-def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data):
+def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode):
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
@@ -1577,6 +1627,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     currency_name = basic_info.get("currency_name", currency_code)
     return revenue_expenditure_combined_figure(
         national_df, gfs_df, weo_df, currency_code, currency_name=currency_name,
+        view_mode=view_mode or "composite",
     )
 
 
@@ -1644,8 +1695,36 @@ def _extract_national_insights(df):
     }
 
 
-def revenue_expenditure_narrative(national_df, gfs_df, weo_df, currency_code):
+def revenue_expenditure_narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite"):
     parts = []
+
+    if view_mode == "official":
+        nat = _extract_national_insights(_clean_revenue_expenditure(national_df))
+        if nat:
+            parts.append(national_narrative(
+                nat["source_name"], nat["year_min"], nat["year_max"],
+                nat["mean_balance"], currency_code,
+            ))
+        return " ".join(parts) if parts else ""
+
+    if view_mode == "gfs":
+        gfs = _extract_balance_insights(_clean_revenue_expenditure(gfs_df))
+        if gfs:
+            parts.append(period_narrative(
+                "Based on GFS data",
+                gfs["segments"], gfs["extrema"], currency_code,
+            ))
+        return " ".join(parts) if parts else ""
+
+    if view_mode == "weo":
+        weo = _extract_balance_insights(_clean_revenue_expenditure(weo_df))
+        if weo:
+            parts.append(period_narrative(
+                "Based on WEO projections",
+                weo["segments"], weo["extrema"], currency_code,
+                forecast=True,
+            ))
+        return " ".join(parts) if parts else ""
 
     nat_clean = _clean_revenue_expenditure(national_df)
     nat = _extract_national_insights(nat_clean)
@@ -1695,8 +1774,9 @@ def revenue_expenditure_narrative(national_df, gfs_df, weo_df, currency_code):
     Input("stored-data-government-budget", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
 )
-def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data):
+def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode):
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
@@ -1706,4 +1786,7 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     weo_df = gov_df[gov_df["source"] == WEO_SOURCE]
 
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    return revenue_expenditure_narrative(national_df, gfs_df, weo_df, currency_code)
+    return revenue_expenditure_narrative(
+        national_df, gfs_df, weo_df, currency_code,
+        view_mode=view_mode or "composite",
+    )
