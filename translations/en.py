@@ -599,7 +599,7 @@ TRANSLATIONS = {
     "deficit.narrative.avg_surplus": "averaged a surplus of {amount}",
     "deficit.narrative.avg_balanced": "averaged a balanced budget",
 
-    "deficit.narrative.national": "The recent official reports from {source_name} indicate that the budget {avg_phrase} {year_phrase}.",
+    "deficit.narrative.national": "According to {source_name}, the budget {avg_phrase} {year_phrase}.",
     "deficit.narrative.default_source": "the official report",
     "deficit.narrative.source.togo_dgb_budget_execution": "Togo DGB Budget Execution Report",
 

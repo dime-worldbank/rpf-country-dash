@@ -16,7 +16,7 @@ from plotly.subplots import make_subplots
 
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
-from utils import add_currency_column, empty_plot, format_currency
+from utils import add_currency_column, empty_plot, format_currency, apply_locale
 from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
 
 
@@ -115,7 +115,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     forecast_start_year = (min(forecast_starts) - 1) if forecast_starts else None
 
     if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
-        return empty_plot(t("deficit.chart.empty", lang))
+        return empty_plot(t("error.no_data_available", lang))
 
     year_bounds = []
     for df in (national_df, gfs_pre, weo_post):
@@ -312,7 +312,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         margin=dict(t=80, b=40, l=100, r=40),
     )
 
-    return fig
+    return apply_locale(fig, lang=lang)
 
 
 # ---- narrative ------------------------------------------------------------

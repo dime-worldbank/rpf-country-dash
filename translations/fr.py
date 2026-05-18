@@ -685,9 +685,9 @@ TRANSLATIONS = {
     "deficit.narrative.avg_surplus": "a enregistré un excédent moyen de {amount}",
     "deficit.narrative.avg_balanced": "était globalement équilibré",
 
-    "deficit.narrative.national": "Les récents {source_name} indiquent que le budget {avg_phrase} {year_phrase}.",
+    "deficit.narrative.national": "Selon {source_name}, le budget {avg_phrase} {year_phrase}.",
     "deficit.narrative.default_source": "le rapport officiel",
-    "deficit.narrative.source.togo_dgb_budget_execution": "Rapports d'exécution du budget de l'État",
+    "deficit.narrative.source.togo_dgb_budget_execution": "le Rapport d'exécution du budget de l'État",
 
     "deficit.narrative.prefix.gfs_historical": "D'après les données historiques des SFP",
     "deficit.narrative.prefix.gfs": "D'après les données des SFP",
