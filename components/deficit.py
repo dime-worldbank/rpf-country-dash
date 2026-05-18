@@ -16,6 +16,15 @@ from plotly.subplots import make_subplots
 from trend_narrative import InsightExtractor, TrendDetector
 from utils import add_currency_column, empty_plot, format_currency
 from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
+import narrative_phrases
+
+
+METRIC_SUBJECT = "the fiscal balance"
+NATIONAL_SUBJECT = "the budget"
+LOW_LABEL = "the largest deficit"
+HIGH_LABEL = "the largest surplus"
+LOW_LABEL_FORECAST = "the largest projected deficit"
+HIGH_LABEL_FORECAST = "the largest projected surplus"
 
 
 WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
@@ -75,11 +84,9 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     if view_mode == "official":
         gfs_df, weo_df = None, None
     elif view_mode == "gfs":
-        national_df, weo_df = gfs_df, None
-        gfs_df = None
+        national_df, weo_df = None, None
     elif view_mode == "weo":
-        national_df, gfs_df = weo_df, None
-        weo_df = None
+        national_df, gfs_df = None, None
 
     national_df = _clean_rev_exp(national_df)
     gfs_df = _clean_rev_exp(gfs_df)
@@ -306,11 +313,14 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 # ---- narrative ------------------------------------------------------------
 
 def _extract_balance_insights(df):
-    """Return ``{"segments": [...], "extrema": {"min": {...}, "max": {...}}}``.
+    """Return ``{"trend": {...} | None, "extrema": {"min": {...}, "max": {...}}}``.
 
-    Segments come from :class:`InsightExtractor` pinned to one segment
-    (overall direction). Extrema are pulled from the raw data so brief
-    surplus/deficit spikes aren't smoothed away.
+    The ``trend`` dict has primitive fields (``start_year``, ``end_year``,
+    ``slope``) — this is the only place that knows trend_narrative's
+    segment shape, so swapping the package later only touches this function.
+
+    Extrema are pulled from the raw data so brief surplus/deficit spikes
+    aren't smoothed away by the segmentation.
     """
     if df is None or len(df) < 2:
         return None
@@ -320,10 +330,18 @@ def _extract_balance_insights(df):
         detector=TrendDetector(max_segments=1),
     )
     segments = extractor.extract_full_suite()["segments"]
+    trend = None
+    if segments:
+        seg = segments[0]
+        trend = {
+            "start_year": int(seg["start_year"]),
+            "end_year": int(seg["end_year"]),
+            "slope": seg["slope"],
+        }
     min_idx = df["balance"].idxmin()
     max_idx = df["balance"].idxmax()
     return {
-        "segments": segments,
+        "trend": trend,
         "extrema": {
             "min": {
                 "year": int(df.loc[min_idx, "year"]),
@@ -354,87 +372,30 @@ def _extract_national_insights(df):
     }
 
 
-def _extrema_phrase(extrema, currency_code, forecast=False):
-    """Chronologically-ordered phrase joining the largest surplus/deficit."""
-    if not extrema:
+def _period(prefix, trend, extrema, currency_code, forecast=False):
+    """Balance-specific period sentence — wraps the generic helper with balance vocabulary."""
+    if not trend:
         return ""
-
-    deficit_label = "the largest projected deficit" if forecast else "the largest deficit"
-    surplus_label = "the largest projected surplus" if forecast else "the largest surplus"
-
-    notes = []
-    min_e = extrema.get("min")
-    if min_e and min_e["value"] < 0:
-        notes.append((
-            min_e["year"],
-            f"{deficit_label} of {format_currency(abs(min_e['value']), currency_code)} "
-            f"in {min_e['year']}",
-        ))
-    max_e = extrema.get("max")
-    if max_e and max_e["value"] > 0:
-        notes.append((
-            max_e["year"],
-            f"{surplus_label} of {format_currency(max_e['value'], currency_code)} "
-            f"in {max_e['year']}",
-        ))
-
-    notes.sort(key=lambda n: n[0])
-    phrases = [n[1] for n in notes]
-    if not phrases:
-        return ""
-    if len(phrases) == 1:
-        return phrases[0]
-    return f"{phrases[0]} and {phrases[1]}"
+    low_label = LOW_LABEL_FORECAST if forecast else LOW_LABEL
+    high_label = HIGH_LABEL_FORECAST if forecast else HIGH_LABEL
+    extras = narrative_phrases.extrema_phrase(extrema, currency_code, low_label, high_label)
+    return narrative_phrases.period_narrative(
+        prefix, METRIC_SUBJECT,
+        trend["start_year"], trend["end_year"], trend["slope"],
+        extras_clause=extras, forecast=forecast,
+    )
 
 
-def _period_narrative(prefix, segments, extrema, currency_code, forecast=False):
-    """Compose ``'{prefix}, [trend], with [extrema].'``. Empty when no segments."""
-    if not segments:
-        return ""
-
-    seg = segments[0]
-    slope = seg["slope"]
-    start_year = int(seg["start_year"])
-    end_year = int(seg["end_year"])
-
-    if forecast:
-        if slope > 0:
-            verb = "is expected to improve overall"
-        elif slope < 0:
-            verb = "is expected to deteriorate overall"
-        else:
-            verb = "is expected to remain relatively flat"
-    else:
-        if slope > 0:
-            verb = "improved overall"
-        elif slope < 0:
-            verb = "deteriorated overall"
-        else:
-            verb = "remained relatively flat"
-
-    trend = f"between {start_year} and {end_year}, the fiscal balance {verb}"
-    extras = _extrema_phrase(extrema, currency_code, forecast=forecast)
-    body = f"{trend}, with {extras}" if extras else trend
-    return f"{prefix}, {body}."
-
-
-def _national_narrative(source_name, year_min, year_max, mean_balance, currency_code):
-    """Build the ``'The recent official reports from {source_name} indicate ...'`` sentence."""
-    if year_min == year_max:
-        year_phrase = f"in {year_min}"
-    else:
-        year_phrase = f"from {year_min} to {year_max}"
-
+def _national(source_name, year_min, year_max, mean_balance, currency_code):
+    """Balance-specific official-report sentence."""
     if mean_balance < 0:
-        avg_phrase = f"averaged a deficit of {format_currency(abs(mean_balance), currency_code)}"
+        avg_clause = f"averaged a deficit of {format_currency(abs(mean_balance), currency_code)}"
     elif mean_balance > 0:
-        avg_phrase = f"averaged a surplus of {format_currency(mean_balance, currency_code)}"
+        avg_clause = f"averaged a surplus of {format_currency(mean_balance, currency_code)}"
     else:
-        avg_phrase = "averaged a balanced budget"
-
-    return (
-        f"The recent official reports from {source_name} indicate "
-        f"that the budget {avg_phrase} {year_phrase}."
+        avg_clause = "averaged a balanced budget"
+    return narrative_phrases.national_narrative(
+        source_name, NATIONAL_SUBJECT, avg_clause, year_min, year_max,
     )
 
 
@@ -444,7 +405,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
     if view_mode == "official":
         nat = _extract_national_insights(_clean_rev_exp(national_df, require_both=True))
         if nat:
-            parts.append(_national_narrative(
+            parts.append(_national(
                 nat["source_name"], nat["year_min"], nat["year_max"],
                 nat["mean_balance"], currency_code,
             ))
@@ -453,18 +414,18 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
     if view_mode == "gfs":
         gfs = _extract_balance_insights(_clean_rev_exp(gfs_df, require_both=True))
         if gfs:
-            parts.append(_period_narrative(
+            parts.append(_period(
                 "Based on GFS data",
-                gfs["segments"], gfs["extrema"], currency_code,
+                gfs["trend"], gfs["extrema"], currency_code,
             ))
         return " ".join(parts) if parts else ""
 
     if view_mode == "weo":
         weo = _extract_balance_insights(_clean_rev_exp(weo_df, require_both=True))
         if weo:
-            parts.append(_period_narrative(
+            parts.append(_period(
                 "Based on WEO projections",
-                weo["segments"], weo["extrema"], currency_code,
+                weo["trend"], weo["extrema"], currency_code,
                 forecast=True,
             ))
         return " ".join(parts) if parts else ""
@@ -480,13 +441,13 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
         gfs_clean = gfs_clean[gfs_clean["year"] < n_min]
     gfs = _extract_balance_insights(gfs_clean)
     if gfs:
-        parts.append(_period_narrative(
+        parts.append(_period(
             "Based on historical GFS data",
-            gfs["segments"], gfs["extrema"], currency_code,
+            gfs["trend"], gfs["extrema"], currency_code,
         ))
 
     if nat:
-        parts.append(_national_narrative(
+        parts.append(_national(
             nat["source_name"], nat["year_min"], nat["year_max"],
             nat["mean_balance"], currency_code,
         ))
@@ -496,9 +457,9 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
         weo_clean = weo_clean[weo_clean["year"] > n_max]
     weo = _extract_balance_insights(weo_clean)
     if weo:
-        parts.append(_period_narrative(
+        parts.append(_period(
             "Looking ahead, WEO projections suggest",
-            weo["segments"], weo["extrema"], currency_code,
+            weo["trend"], weo["extrema"], currency_code,
             forecast=True,
         ))
 
