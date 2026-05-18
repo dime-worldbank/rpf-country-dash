@@ -1,12 +1,13 @@
 """Revenue / expenditure / fiscal balance chart and narrative.
 
-The feature stitches three sources together on one timeline:
+The feature stitches the available sources for a country together on one timeline:
 
-* Official national report (pilot: Togo only)
-* GFS_SOO (IMF) — historical fill where official data isn't available
-* WEO (IMF) — forward-looking projections
+* Official national report (pilot: Togo only) — used where available, takes priority
+* GFS_SOO (IMF) — historical fill for years before the official report
+* WEO (IMF) — forward-looking projections beyond the official report
 
-A "composite" view combines all three; single-source views are also available.
+The "composite" view layers these on a single timeline; single-source views
+("official", "gfs", "weo") show the full record for one source.
 """
 
 import pandas as pd
@@ -252,7 +253,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     if has_national:
         add_series(national_df, t("deficit.chart.source_official", lang))
 
-    if view_mode == "composite" and forecast_start_year is not None:
+    if forecast_start_year is not None:
         fig.add_shape(
             type="rect",
             xref="x", yref="paper",
@@ -440,7 +441,10 @@ def _period(prefix, trend, extrema, currency_code, forecast=False, lang="en"):
     verb = t(verb_key, lang)
     extras = _extrema_phrase(extrema, currency_code, forecast=forecast, lang=lang)
 
-    template_key = "deficit.narrative.period_with_extras" if extras else "deficit.narrative.period_no_extras"
+    if forecast:
+        template_key = "deficit.narrative.period_forecast_with_extras" if extras else "deficit.narrative.period_forecast_no_extras"
+    else:
+        template_key = "deficit.narrative.period_with_extras" if extras else "deficit.narrative.period_no_extras"
     return t(
         template_key, lang,
         prefix=prefix,

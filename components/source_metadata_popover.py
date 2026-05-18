@@ -117,6 +117,11 @@ _TOGO_DGB = {
 # Chart-level metadata for the ⓘ info buttons.
 # Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
 # Dynamic per-country coverage years and source URLs are merged at runtime.
+# Optional fields:
+#   - ``info_key`` : translation key for a chart-level intro paragraph
+#     rendered above the per-source sections.
+# Per-source ``countries`` whitelists filter out sources that don't apply to
+# the selected country.
 # ---------------------------------------------------------------------------
 CHART_METADATA = {
     # ------------------------------------------------------------------

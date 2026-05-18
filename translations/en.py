@@ -589,6 +589,8 @@ TRANSLATIONS = {
 
     "deficit.narrative.period_with_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}, with {extras}.",
     "deficit.narrative.period_no_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}.",
+    "deficit.narrative.period_forecast_with_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}, with {extras}.",
+    "deficit.narrative.period_forecast_no_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}.",
 
     "deficit.narrative.year_single": "in {year}",
     "deficit.narrative.year_range": "from {start} to {end}",

@@ -239,7 +239,6 @@ class QueryService:
                 year,
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,
-                tax_expenditure,
                 data_source AS source
             FROM prd_mega.{INDICATOR_SCHEMA}.togo_revenue_budget
         """
@@ -250,7 +249,6 @@ class QueryService:
             SELECT
                 country_name,
                 country_code,
-                region,
                 year,
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,

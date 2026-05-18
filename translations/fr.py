@@ -655,36 +655,42 @@ TRANSLATIONS = {
     "deficit.chart.empty": "Aucune donnée budgétaire disponible",
     "deficit.chart.forecast_band": "prévision",
 
-    "deficit.narrative.extrema.deficit": "le plus grand déficit",
-    "deficit.narrative.extrema.surplus": "le plus grand excédent",
-    "deficit.narrative.extrema.deficit_forecast": "le plus grand déficit projeté",
-    "deficit.narrative.extrema.surplus_forecast": "le plus grand excédent projeté",
+    "deficit.narrative.extrema.deficit": "un déficit maximal",
+    "deficit.narrative.extrema.surplus": "un excédent maximal",
+    "deficit.narrative.extrema.deficit_forecast": "un déficit projeté maximal",
+    "deficit.narrative.extrema.surplus_forecast": "un excédent projeté maximal",
     "deficit.narrative.extrema.entry": "{label} de {amount} en {year}",
     "deficit.narrative.extrema.joiner": " et ",
 
     "deficit.narrative.verb.improved": "s'est globalement amélioré",
     "deficit.narrative.verb.deteriorated": "s'est globalement détérioré",
     "deficit.narrative.verb.flat": "est resté relativement stable",
-    "deficit.narrative.verb.improved_forecast": "devrait globalement s'améliorer",
-    "deficit.narrative.verb.deteriorated_forecast": "devrait globalement se détériorer",
-    "deficit.narrative.verb.flat_forecast": "devrait rester relativement stable",
+    # In French, forecast sentences use a noun-phrase structure (because the prefix
+    # ends in a noun-taking verb like "laissent entrevoir"). The "_forecast" verb
+    # values are therefore noun phrases — not verbs — so they fit naturally into
+    # the period_forecast_* templates below.
+    "deficit.narrative.verb.improved_forecast": "une amélioration globale du solde budgétaire",
+    "deficit.narrative.verb.deteriorated_forecast": "une détérioration globale du solde budgétaire",
+    "deficit.narrative.verb.flat_forecast": "une stabilité relative du solde budgétaire",
 
     "deficit.narrative.period_with_extras": "{prefix}, entre {start_year} et {end_year}, le solde budgétaire {verb}, avec {extras}.",
     "deficit.narrative.period_no_extras": "{prefix}, entre {start_year} et {end_year}, le solde budgétaire {verb}.",
+    "deficit.narrative.period_forecast_with_extras": "{prefix} {verb} entre {start_year} et {end_year}, avec {extras}.",
+    "deficit.narrative.period_forecast_no_extras": "{prefix} {verb} entre {start_year} et {end_year}.",
 
     "deficit.narrative.year_single": "en {year}",
-    "deficit.narrative.year_range": "de {start} à {end}",
+    "deficit.narrative.year_range": "entre {start} et {end}",
 
     "deficit.narrative.avg_deficit": "a enregistré un déficit moyen de {amount}",
     "deficit.narrative.avg_surplus": "a enregistré un excédent moyen de {amount}",
     "deficit.narrative.avg_balanced": "était globalement équilibré",
 
-    "deficit.narrative.national": "Les rapports officiels récents de {source_name} indiquent que le budget {avg_phrase} {year_phrase}.",
+    "deficit.narrative.national": "Les récents {source_name} indiquent que le budget {avg_phrase} {year_phrase}.",
     "deficit.narrative.default_source": "le rapport officiel",
-    "deficit.narrative.source.togo_dgb_budget_execution": "RAPPORT D'EXECUTION DU BUDGET DE L'ETAT",
+    "deficit.narrative.source.togo_dgb_budget_execution": "Rapports d'exécution du budget de l'État",
 
-    "deficit.narrative.prefix.gfs_historical": "D'après les données historiques SFP",
-    "deficit.narrative.prefix.gfs": "D'après les données SFP",
-    "deficit.narrative.prefix.weo": "D'après les projections PEM",
-    "deficit.narrative.prefix.weo_lookahead": "À l'avenir, les projections PEM suggèrent",
+    "deficit.narrative.prefix.gfs_historical": "D'après les données historiques des SFP",
+    "deficit.narrative.prefix.gfs": "D'après les données des SFP",
+    "deficit.narrative.prefix.weo": "Les projections des PEM laissent entrevoir",
+    "deficit.narrative.prefix.weo_lookahead": "À l'avenir, les projections des PEM laissent entrevoir",
 }
