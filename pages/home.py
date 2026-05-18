@@ -22,7 +22,8 @@ from utils import (
 )
 
 from components import slider, get_slider_config, pefa, budget_increment_analysis
-from trend_narrative import get_segment_narrative, InsightExtractor
+from trend_narrative import get_segment_narrative, InsightExtractor, TrendDetector
+from narrative import period_narrative, national_narrative
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
 from constants import (
@@ -35,7 +36,10 @@ from constants import (
     translate_func,
 )
 from translations import t, genitive
-from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
+from viz_theme import (
+    QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR,
+    SOLID_BLUE, BRIGHT_BLUE, WARM_BRIGHTER, lighten_color,
+)
 from queries import QueryService
 import server_store
 
@@ -62,6 +66,8 @@ def layout():
                 )
             ),
             dcc.Store(id="stored-data-pefa"),
+            dcc.Store(id="stored-data-revenue-budget"),
+            dcc.Store(id="stored-data-government-budget"),
         ]
     )
 
@@ -85,6 +91,28 @@ def update_overview_tab_labels(lang):
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
         server_store.get("pefa")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-revenue-budget", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_revenue_budget_data_once(revenue_data, shared_data):
+    if revenue_data is None and shared_data:
+        server_store.get("revenue_budget")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-government-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_government_budget_data_once(gov_data, shared_data):
+    if gov_data is None and shared_data:
+        server_store.get("government_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -241,6 +269,50 @@ def render_overview_content(tab, lang):
                 dbc.Row(
                     dbc.Col(
                         html.H3(children=t("heading.quality_budget", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.RadioItems(
+                            id="revenue-expenditure-view",
+                            options=[
+                                {"label": "Composite", "value": "composite"},
+                                {"label": "Official Report", "value": "official"},
+                                {"label": "GFS", "value": "gfs"},
+                                {"label": "WEO", "value": "weo"},
+                            ],
+                            value="composite",
+                            inline=True,
+                            style={"padding": "10px"},
+                            labelStyle={"margin-right": "20px"},
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.P(
+                            id="revenue-expenditure-narrative",
+                            children="loading...",
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("revenue-expenditure-combined"),
+                        xs={"size": 12, "offset": 0},
+                        sm={"size": 12, "offset": 0},
+                        md={"size": 12, "offset": 0},
+                        lg={"size": 12, "offset": 0},
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children="Quality of Budget Institutions")
                     )
                 ),
                 dbc.Row(
@@ -1345,5 +1417,462 @@ def render_pefa_overall(data, pefa_data, country, lang):
     Input("stored-language", "data"),
 )
 def render_budget_func_changes(data, country, exp_type, lang):
-    lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
+GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
+
+REVENUE_COLOR = SOLID_BLUE
+EXPENDITURE_COLOR = WARM_BRIGHTER[2]
+SURPLUS_COLOR = BRIGHT_BLUE
+DEFICIT_COLOR = WARM_BRIGHTER[2]
+SUPPLEMENT_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
+SUPPLEMENT_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
+SUPPLEMENT_OPACITY = 0.4
+
+
+def _deficit_bar_colors(series):
+    """Blue for surplus (>= 0), red/pink for deficit (< 0)."""
+    return [SURPLUS_COLOR if x >= 0 else DEFICIT_COLOR for x in series]
+
+
+def _prep(df):
+    if df is None or df.empty:
+        return df
+    df = df.copy().sort_values("year")
+    df["revenue"] = pd.to_numeric(df["revenue"], errors="coerce")
+    df["expenditure"] = pd.to_numeric(df["expenditure"], errors="coerce")
+    df = df.dropna(subset=["revenue", "expenditure"], how="all")
+    df = df[~((df["revenue"].fillna(0) == 0) & (df["expenditure"].fillna(0) == 0))]
+    df["deficit"] = df["revenue"] - df["expenditure"]
+    return df
+
+
+def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite"):
+    if view_mode == "official":
+        gfs_df, weo_df = None, None
+    elif view_mode == "gfs":
+        national_df, weo_df = gfs_df, None
+        gfs_df = None
+    elif view_mode == "weo":
+        national_df, gfs_df = weo_df, None
+        weo_df = None
+
+    national_df = _prep(national_df)
+    gfs_df = _prep(gfs_df)
+    weo_df = _prep(weo_df)
+
+    has_national = national_df is not None and not national_df.empty
+    if has_national:
+        national_years = set(national_df["year"].tolist())
+        n_min = int(national_df["year"].min())
+        n_max = int(national_df["year"].max())
+        gfs_pre = (
+            gfs_df[(gfs_df["year"] < n_min) & (~gfs_df["year"].isin(national_years))]
+            if gfs_df is not None and not gfs_df.empty else None
+        )
+        weo_post = (
+            weo_df[(weo_df["year"] > n_max) & (~weo_df["year"].isin(national_years))]
+            if weo_df is not None and not weo_df.empty else None
+        )
+    else:
+        n_min = n_max = None
+        gfs_pre = gfs_df
+        if gfs_df is not None and not gfs_df.empty and weo_df is not None and not weo_df.empty:
+            gfs_max_year = int(gfs_df["year"].max())
+            weo_post = weo_df[weo_df["year"] > gfs_max_year]
+        else:
+            weo_post = weo_df
+
+    # The grey forecast band corresponds to the actual forecast=True rows
+    forecast_starts = []
+    for src in (gfs_df, weo_df):
+        if src is not None and not src.empty and "forecast" in src.columns:
+            f = src[src["forecast"].astype(bool)]
+            if not f.empty:
+                forecast_starts.append(int(f["year"].min()))
+    forecast_start_year = (min(forecast_starts) - 1) if forecast_starts else None
+
+    if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
+        return empty_plot("No revenue budget data available")
+
+    for df in (national_df, gfs_pre, weo_post):
+        if df is not None and not df.empty:
+            add_currency_column(df, "revenue", currency_code)
+            add_currency_column(df, "expenditure", currency_code)
+            add_currency_column(df, "deficit", currency_code)
+
+    fig = make_subplots(
+        rows=2, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        row_heights=[0.65, 0.35],
+        subplot_titles=("Revenue & Expenditure", "Deficit (Revenue − Expenditure)"),
+    )
+
+    legend_shown = {
+        "actual_rev": False, "actual_exp": False, "actual_def": False,
+        "forecast_rev": False, "forecast_exp": False, "forecast_def": False,
+    }
+
+    def add_series(df, source_label, is_forecast=False):
+        """Add revenue/expenditure lines and a deficit bar for one data source.
+
+        Styling is driven entirely by ``is_forecast``:
+
+        * Actual data → solid line+markers, full-strength colors.
+        * Forecast data → dashed line (no markers), muted colors.
+
+        Legend entries dedupe across sources with the same category, so
+        Official + GFS share a single "Revenue" entry, while WEO contributes
+        a separate "Revenue (forecast)" entry.
+        """
+        if df is None or df.empty:
+            return
+
+        if is_forecast:
+            cat = "forecast"
+            label_suffix = " (forecast)"
+            hover_kind = "forecast"
+            rev_color = SUPPLEMENT_REVENUE_COLOR
+            exp_color = SUPPLEMENT_EXPENDITURE_COLOR
+            rev_line = dict(color=rev_color, dash="dash", width=2)
+            exp_line = dict(color=exp_color, dash="dash", width=2)
+            rev_marker = exp_marker = None
+            scatter_mode = "lines"
+        else:
+            cat = "actual"
+            label_suffix = ""
+            hover_kind = "actual"
+            rev_color = REVENUE_COLOR
+            exp_color = EXPENDITURE_COLOR
+            rev_line = dict(color=rev_color, width=2.5)
+            exp_line = dict(color=exp_color, width=2.5)
+            rev_marker = dict(color=rev_color, size=7)
+            exp_marker = dict(color=exp_color, size=7)
+            scatter_mode = "lines+markers"
+
+        fig.add_trace(
+            go.Scatter(
+                name=f"Revenue{label_suffix}",
+                legendgroup=f"{cat}_rev",
+                showlegend=not legend_shown[f"{cat}_rev"],
+                x=df.year, y=df.revenue,
+                mode=scatter_mode,
+                line=rev_line,
+                marker=rev_marker,
+                customdata=df["revenue_formatted"],
+                hovertemplate=f"<b>Revenue ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
+            ),
+            row=1, col=1,
+        )
+        legend_shown[f"{cat}_rev"] = True
+        fig.add_trace(
+            go.Scatter(
+                name=f"Expenditure{label_suffix}",
+                legendgroup=f"{cat}_exp",
+                showlegend=not legend_shown[f"{cat}_exp"],
+                x=df.year, y=df.expenditure,
+                mode=scatter_mode,
+                line=exp_line,
+                marker=exp_marker,
+                customdata=df["expenditure_formatted"],
+                hovertemplate=f"<b>Expenditure ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
+            ),
+            row=1, col=1,
+        )
+        legend_shown[f"{cat}_exp"] = True
+        fig.add_trace(
+            go.Bar(
+                name=f"Surplus / Deficit{label_suffix}",
+                legendgroup=f"{cat}_def",
+                showlegend=not legend_shown[f"{cat}_def"],
+                x=df.year, y=df.deficit,
+                marker_color=_deficit_bar_colors(df.deficit),
+                opacity=SUPPLEMENT_OPACITY,
+                customdata=df["deficit_formatted"],
+                hovertemplate=f"<b>Surplus / Deficit ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
+            ),
+            row=2, col=1,
+        )
+        legend_shown[f"{cat}_def"] = True
+
+    def add_split(df, source_label):
+        if df is None or df.empty:
+            return
+        if "forecast" not in df.columns:
+            add_series(df, source_label)
+            return
+        df = df.sort_values("year")
+        actual = df[~df["forecast"].astype(bool)]
+        forecast = df[df["forecast"].astype(bool)]
+        # Plotly can't mix line styles in one trace, so we emit two — share the
+        # last actual row with the forecast trace so the lines meet at the boundary.
+        if not actual.empty and not forecast.empty:
+            forecast = pd.concat([actual.tail(1), forecast], ignore_index=True)
+        add_series(actual, source_label, is_forecast=False)
+        add_series(forecast, source_label, is_forecast=True)
+
+    add_split(gfs_pre, "GFS")
+    add_split(weo_post, "WEO")
+    if has_national:
+        add_series(national_df, "Official")
+
+    if view_mode == "composite" and forecast_start_year is not None:
+        fig.add_shape(
+            type="rect",
+            xref="x", yref="paper",
+            x0=forecast_start_year + 0.5, x1=2028.5,
+            y0=0, y1=1,
+            fillcolor="rgba(0,0,0,0.04)",
+            line_width=0,
+            layer="below",
+        )
+        fig.add_annotation(
+            text="forecast",
+            xref="x", yref="paper",
+            x=2028.4, y=0.99,
+            xanchor="right", yanchor="top",
+            showarrow=False,
+            font=dict(size=11, color="gray"),
+        )
+
+    fig.update_xaxes(
+        range=[2009.5, 2028.5],
+        tickmode="array",
+        tickvals=list(range(2010, 2029, 2)),
+        tickformat="d",
+        zeroline=False,
+        row=2, col=1,
+    )
+    fig.update_xaxes(
+        range=[2009.5, 2028.5],
+        showticklabels=False,
+        zeroline=False,
+        row=1, col=1,
+    )
+    y_unit = currency_name or currency_code or ""
+
+    fig.update_yaxes(
+        zeroline=False,
+        row=1, col=1,
+    )
+    fig.update_yaxes(
+        zeroline=True,
+        zerolinecolor="black",
+        zerolinewidth=1,
+        row=2, col=1,
+    )
+
+    if y_unit:
+        fig.add_annotation(
+            text=f"Amount ({y_unit})",
+            xref="paper", yref="paper",
+            x=-0.08, y=0.5,
+            textangle=-90,
+            showarrow=False,
+            font=dict(size=13),
+            xanchor="right", yanchor="middle",
+        )
+
+    fig.update_layout(
+        plot_bgcolor="white",
+        hovermode="x unified",
+        height=650,
+        legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0),
+        barmode="overlay",
+        margin=dict(t=80, b=40, l=100, r=40),
+    )
+
+    return fig
+
+
+@callback(
+    Output("revenue-expenditure-combined", "figure"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+)
+def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_all = server_store.get("revenue_budget")
+    national_df = filter_country_sort_year(national_all, country)
+
+    gov_all = server_store.get("government_budget")
+    gov_df = filter_country_sort_year(gov_all, country)
+    gfs_df = gov_df[gov_df["source"] == GFS_SOO_SOURCE]
+    weo_df = gov_df[gov_df["source"] == WEO_SOURCE]
+
+    basic_info = server_store.get("basic_country_info")[country]
+    currency_code = basic_info["currency_code"]
+    currency_name = basic_info.get("currency_name", currency_code)
+    return revenue_expenditure_combined_figure(
+        national_df, gfs_df, weo_df, currency_code, currency_name=currency_name,
+        view_mode=view_mode or "composite",
+    )
+
+
+def _clean_revenue_expenditure(df):
+    """Sort, coerce to numeric, drop NaN/all-zero rows, attach signed balance."""
+    if df is None or df.empty:
+        return None
+    d = df.copy().sort_values("year")
+    d["revenue"] = pd.to_numeric(d["revenue"], errors="coerce")
+    d["expenditure"] = pd.to_numeric(d["expenditure"], errors="coerce")
+    d = d.dropna(subset=["revenue", "expenditure"])
+    d = d[~((d["revenue"] == 0) & (d["expenditure"] == 0))]
+    if d.empty:
+        return None
+    d["balance"] = d["revenue"] - d["expenditure"]
+    return d
+
+
+def _extract_balance_insights(df):
+    """Return ``{"segments": [...], "extrema": {"min": {...}, "max": {...}}}``.
+
+    The segments come from :class:`InsightExtractor` configured for one
+    segment (overall direction). Extrema are pulled directly from the
+    raw data so brief surplus/deficit spikes aren't missed.
+    """
+    if df is None or len(df) < 2:
+        return None
+    extractor = InsightExtractor(
+        df["year"].values,
+        df["balance"].values,
+        detector=TrendDetector(max_segments=1),
+    )
+    segments = extractor.extract_full_suite()["segments"]
+    min_idx = df["balance"].idxmin()
+    max_idx = df["balance"].idxmax()
+    return {
+        "segments": segments,
+        "extrema": {
+            "min": {
+                "year": int(df.loc[min_idx, "year"]),
+                "value": float(df.loc[min_idx, "balance"]),
+            },
+            "max": {
+                "year": int(df.loc[max_idx, "year"]),
+                "value": float(df.loc[max_idx, "balance"]),
+            },
+        },
+    }
+
+
+def _extract_national_insights(df):
+    """Return ``{"year_min", "year_max", "mean_balance", "source_name"}``."""
+    if df is None or df.empty:
+        return None
+    source_name = "the official report"
+    if "source" in df.columns:
+        sources = df["source"].dropna().unique().tolist()
+        if sources:
+            source_name = sources[0]
+    return {
+        "year_min": int(df["year"].min()),
+        "year_max": int(df["year"].max()),
+        "mean_balance": float(df["balance"].mean()),
+        "source_name": source_name,
+    }
+
+
+def revenue_expenditure_narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite"):
+    parts = []
+
+    if view_mode == "official":
+        nat = _extract_national_insights(_clean_revenue_expenditure(national_df))
+        if nat:
+            parts.append(national_narrative(
+                nat["source_name"], nat["year_min"], nat["year_max"],
+                nat["mean_balance"], currency_code,
+            ))
+        return " ".join(parts) if parts else ""
+
+    if view_mode == "gfs":
+        gfs = _extract_balance_insights(_clean_revenue_expenditure(gfs_df))
+        if gfs:
+            parts.append(period_narrative(
+                "Based on GFS data",
+                gfs["segments"], gfs["extrema"], currency_code,
+            ))
+        return " ".join(parts) if parts else ""
+
+    if view_mode == "weo":
+        weo = _extract_balance_insights(_clean_revenue_expenditure(weo_df))
+        if weo:
+            parts.append(period_narrative(
+                "Based on WEO projections",
+                weo["segments"], weo["extrema"], currency_code,
+                forecast=True,
+            ))
+        return " ".join(parts) if parts else ""
+
+    nat_clean = _clean_revenue_expenditure(national_df)
+    nat = _extract_national_insights(nat_clean)
+    n_min = nat["year_min"] if nat else None
+    n_max = nat["year_max"] if nat else None
+
+    gfs_clean = _clean_revenue_expenditure(gfs_df)
+    if gfs_clean is not None and n_min is not None:
+        gfs_clean = gfs_clean[gfs_clean["year"] < n_min]
+    gfs = _extract_balance_insights(gfs_clean)
+    if gfs:
+        parts.append(period_narrative(
+            "Based on historical GFS data",
+            gfs["segments"],
+            gfs["extrema"],
+            currency_code,
+        ))
+
+    if nat:
+        parts.append(national_narrative(
+            nat["source_name"],
+            nat["year_min"],
+            nat["year_max"],
+            nat["mean_balance"],
+            currency_code,
+        ))
+
+    weo_clean = _clean_revenue_expenditure(weo_df)
+    if weo_clean is not None and n_max is not None:
+        weo_clean = weo_clean[weo_clean["year"] > n_max]
+    weo = _extract_balance_insights(weo_clean)
+    if weo:
+        parts.append(period_narrative(
+            "Looking ahead, WEO projections suggest",
+            weo["segments"],
+            weo["extrema"],
+            currency_code,
+            forecast=True,
+        ))
+
+    return " ".join(parts) if parts else ""
+
+
+@callback(
+    Output("revenue-expenditure-narrative", "children"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+)
+def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_df = filter_country_sort_year(server_store.get("revenue_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
+    gfs_df = gov_df[gov_df["source"] == GFS_SOO_SOURCE]
+    weo_df = gov_df[gov_df["source"] == WEO_SOURCE]
+
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
+    return revenue_expenditure_narrative(
+        national_df, gfs_df, weo_df, currency_code,
+        view_mode=view_mode or "composite",
+    )
