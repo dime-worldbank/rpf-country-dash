@@ -101,7 +101,7 @@ def fetch_pefa_data_once(pefa_data, shared_data):
 )
 def fetch_revenue_budget_data_once(revenue_data, shared_data):
     if revenue_data is None and shared_data:
-        server_store.get("revenue_budget")
+        server_store.get("togo_revenue_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -1427,9 +1427,9 @@ REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
 SURPLUS_COLOR = BRIGHT_BLUE
 DEFICIT_COLOR = WARM_BRIGHTER[2]
-SUPPLEMENT_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
-SUPPLEMENT_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
-SUPPLEMENT_OPACITY = 0.4
+FORECAST_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
+FORECAST_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
+DEFICIT_BAR_OPACITY = 0.4
 
 
 def _deficit_bar_colors(series):
@@ -1497,6 +1497,13 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
     if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
         return empty_plot("No revenue budget data available")
 
+    year_bounds = []
+    for df in (national_df, gfs_pre, weo_post):
+        if df is not None and not df.empty:
+            year_bounds.append(int(df["year"].min()))
+            year_bounds.append(int(df["year"].max()))
+    year_min, year_max = min(year_bounds), max(year_bounds)
+
     for df in (national_df, gfs_pre, weo_post):
         if df is not None and not df.empty:
             add_currency_column(df, "revenue", currency_code)
@@ -1516,27 +1523,25 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         "forecast_rev": False, "forecast_exp": False, "forecast_def": False,
     }
 
-    def add_series(df, source_label, is_forecast=False):
+    def add_series(df, source_label, is_forecast=False, bar_df=None):
         """Add revenue/expenditure lines and a deficit bar for one data source.
 
-        Styling is driven entirely by ``is_forecast``:
-
-        * Actual data → solid line+markers, full-strength colors.
-        * Forecast data → dashed line (no markers), muted colors.
-
-        Legend entries dedupe across sources with the same category, so
-        Official + GFS share a single "Revenue" entry, while WEO contributes
-        a separate "Revenue (forecast)" entry.
+        ``bar_df`` lets the caller pass a different frame for the bar trace
+        than the line traces — used by ``add_split`` to avoid double-drawing
+        the boundary year, which the line traces need to share but the bars
+        must not.
         """
         if df is None or df.empty:
             return
+        if bar_df is None:
+            bar_df = df
 
         if is_forecast:
             cat = "forecast"
             label_suffix = " (forecast)"
             hover_kind = "forecast"
-            rev_color = SUPPLEMENT_REVENUE_COLOR
-            exp_color = SUPPLEMENT_EXPENDITURE_COLOR
+            rev_color = FORECAST_REVENUE_COLOR
+            exp_color = FORECAST_EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, dash="dash", width=2)
             exp_line = dict(color=exp_color, dash="dash", width=2)
             rev_marker = exp_marker = None
@@ -1588,10 +1593,10 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
                 name=f"Surplus / Deficit{label_suffix}",
                 legendgroup=f"{cat}_def",
                 showlegend=not legend_shown[f"{cat}_def"],
-                x=df.year, y=df.deficit,
-                marker_color=_deficit_bar_colors(df.deficit),
-                opacity=SUPPLEMENT_OPACITY,
-                customdata=df["deficit_formatted"],
+                x=bar_df.year, y=bar_df.deficit,
+                marker_color=_deficit_bar_colors(bar_df.deficit),
+                opacity=DEFICIT_BAR_OPACITY,
+                customdata=bar_df["deficit_formatted"],
                 hovertemplate=f"<b>Surplus / Deficit ({source_label}, {hover_kind})</b>: %{{customdata}}<extra></extra>",
             ),
             row=2, col=1,
@@ -1608,11 +1613,14 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         actual = df[~df["forecast"].astype(bool)]
         forecast = df[df["forecast"].astype(bool)]
         # Plotly can't mix line styles in one trace, so we emit two — share the
-        # last actual row with the forecast trace so the lines meet at the boundary.
+        # last actual row with the forecast line so they meet at the boundary.
+        # Bars use the un-joined frame to avoid stacking on the boundary year.
         if not actual.empty and not forecast.empty:
-            forecast = pd.concat([actual.tail(1), forecast], ignore_index=True)
+            forecast_lines = pd.concat([actual.tail(1), forecast], ignore_index=True)
+        else:
+            forecast_lines = forecast
         add_series(actual, source_label, is_forecast=False)
-        add_series(forecast, source_label, is_forecast=True)
+        add_series(forecast_lines, source_label, is_forecast=True, bar_df=forecast)
 
     add_split(gfs_pre, "GFS")
     add_split(weo_post, "WEO")
@@ -1623,7 +1631,7 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         fig.add_shape(
             type="rect",
             xref="x", yref="paper",
-            x0=forecast_start_year + 0.5, x1=2028.5,
+            x0=forecast_start_year + 0.5, x1=year_max + 0.5,
             y0=0, y1=1,
             fillcolor="rgba(0,0,0,0.04)",
             line_width=0,
@@ -1632,22 +1640,23 @@ def revenue_expenditure_combined_figure(national_df, gfs_df, weo_df, currency_co
         fig.add_annotation(
             text="forecast",
             xref="x", yref="paper",
-            x=2028.4, y=0.99,
+            x=year_max + 0.4, y=0.99,
             xanchor="right", yanchor="top",
             showarrow=False,
             font=dict(size=11, color="gray"),
         )
 
+    x_range = [year_min - 0.5, year_max + 0.5]
     fig.update_xaxes(
-        range=[2009.5, 2028.5],
+        range=x_range,
         tickmode="array",
-        tickvals=list(range(2010, 2029, 2)),
+        tickvals=list(range(year_min, year_max + 1, 2)),
         tickformat="d",
         zeroline=False,
         row=2, col=1,
     )
     fig.update_xaxes(
-        range=[2009.5, 2028.5],
+        range=x_range,
         showticklabels=False,
         zeroline=False,
         row=1, col=1,
@@ -1700,7 +1709,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
-    national_all = server_store.get("revenue_budget")
+    national_all = server_store.get("togo_revenue_budget")
     national_df = filter_country_sort_year(national_all, country)
 
     gov_all = server_store.get("government_budget")
@@ -1866,7 +1875,7 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
-    national_df = filter_country_sort_year(server_store.get("revenue_budget"), country)
+    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
     gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
     gfs_df = gov_df[gov_df["source"] == GFS_SOO_SOURCE]
     weo_df = gov_df[gov_df["source"] == WEO_SOURCE]

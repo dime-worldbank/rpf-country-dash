@@ -230,7 +230,8 @@ class QueryService:
         """
         return self.fetch_data(query)
 
-    def get_revenue_budget_data(self):
+    def get_togo_revenue_budget_data(self):
+        # TODO: switch to country-agnostic table once official data lands for more countries.
         query = f"""
             SELECT
                 country_name,
