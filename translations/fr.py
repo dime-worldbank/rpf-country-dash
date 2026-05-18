@@ -26,6 +26,7 @@ TRANSLATIONS = {
     "heading.spending_by_func": "Dépenses par catégories fonctionnelles",
     "heading.spending_by_econ": "Dépenses par catégories économiques",
     "heading.quality_budget": "Qualité des institutions budgétaires",
+    "heading.fiscal_balance": "Solde budgétaire",
     "heading.regional_expenditure": "Dépenses régionales",
     "heading.country_regional_expenditure": "Dépenses régionales {country_gen}",
     "heading.who_pays_education": "Qui finance l'éducation ?",
@@ -615,6 +616,9 @@ TRANSLATIONS = {
     "source_name.who_gho": "OMS (GHO)",
     "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
     "source_name.pefa_secretariat": "Secrétariat PEFA",
+    "source_name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
+    "source_name.imf_weo": "Perspectives de l'économie mondiale du FMI",
+    "source_name.togo_dgb": "Direction Générale du Budget du Togo",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé.",
@@ -622,4 +626,65 @@ TRANSLATIONS = {
     "source.pefa.description": "Les évaluations PEFA utilisent des notes alphabétiques (de A à D, avec des modificateurs +). Pour ce tableau de bord, les notes sont converties en scores numériques (A=4, B+=3,5, B=3, C+=2,5, C=2, D+=1,5, D=1). Les scores des piliers sont la moyenne arithmétique de leurs indicateurs constitutifs. Les données couvrent à la fois le cadre de 2011 (28 indicateurs, 6 piliers) et le cadre de 2016 (31 indicateurs, 7 piliers).",
     "source.edu_private.description": "Dérivées du total des dépenses d'éducation du Programme de comparaison internationale (ICP) moins les dépenses publiques d'éducation BOOST.",
     "source.health_private.description": "Dépenses payées de la poche des ménages par personne, calculées à partir des dépenses totales de santé et de la part payée de la poche, ajustées pour l'inflation.",
+    "source.imf_gfs.label": "SFP",
+    "source.imf_gfs.description": "Utilise les valeurs publiées par le FMI pour les Recettes (G1_T) et les Dépenses (G2M_T) au niveau de l'Administration centrale budgétaire.",
+    "source.imf_weo.label": "PEM",
+    "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
+    "source.togo_dgb.label": "Rapport officiel du Togo",
+    "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel.",
+    "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
+
+    # --- Deficit / solde budgétaire ---
+    "deficit.view.composite": "Composite",
+    "deficit.view.official": "Rapport officiel",
+    "deficit.view.gfs": "SFP",
+    "deficit.view.weo": "PEM",
+
+    "deficit.chart.subplot_revenue_expenditure": "Recettes et dépenses",
+    "deficit.chart.subplot_balance": "Déficit (Recettes − Dépenses)",
+    "deficit.chart.revenue": "Recettes",
+    "deficit.chart.expenditure": "Dépenses",
+    "deficit.chart.balance": "Excédent / Déficit",
+    "deficit.chart.forecast_suffix": " (prévision)",
+    "deficit.chart.actual": "réel",
+    "deficit.chart.forecast": "prévision",
+    "deficit.chart.source_official": "Officiel",
+    "deficit.chart.source_gfs": "SFP",
+    "deficit.chart.source_weo": "PEM",
+    "deficit.chart.amount_axis": "Montant ({unit})",
+    "deficit.chart.empty": "Aucune donnée budgétaire disponible",
+    "deficit.chart.forecast_band": "prévision",
+
+    "deficit.narrative.extrema.deficit": "le plus grand déficit",
+    "deficit.narrative.extrema.surplus": "le plus grand excédent",
+    "deficit.narrative.extrema.deficit_forecast": "le plus grand déficit projeté",
+    "deficit.narrative.extrema.surplus_forecast": "le plus grand excédent projeté",
+    "deficit.narrative.extrema.entry": "{label} de {amount} en {year}",
+    "deficit.narrative.extrema.joiner": " et ",
+
+    "deficit.narrative.verb.improved": "s'est globalement amélioré",
+    "deficit.narrative.verb.deteriorated": "s'est globalement détérioré",
+    "deficit.narrative.verb.flat": "est resté relativement stable",
+    "deficit.narrative.verb.improved_forecast": "devrait globalement s'améliorer",
+    "deficit.narrative.verb.deteriorated_forecast": "devrait globalement se détériorer",
+    "deficit.narrative.verb.flat_forecast": "devrait rester relativement stable",
+
+    "deficit.narrative.period_with_extras": "{prefix}, entre {start_year} et {end_year}, le solde budgétaire {verb}, avec {extras}.",
+    "deficit.narrative.period_no_extras": "{prefix}, entre {start_year} et {end_year}, le solde budgétaire {verb}.",
+
+    "deficit.narrative.year_single": "en {year}",
+    "deficit.narrative.year_range": "de {start} à {end}",
+
+    "deficit.narrative.avg_deficit": "a enregistré un déficit moyen de {amount}",
+    "deficit.narrative.avg_surplus": "a enregistré un excédent moyen de {amount}",
+    "deficit.narrative.avg_balanced": "était globalement équilibré",
+
+    "deficit.narrative.national": "Les rapports officiels récents de {source_name} indiquent que le budget {avg_phrase} {year_phrase}.",
+    "deficit.narrative.default_source": "le rapport officiel",
+    "deficit.narrative.source.togo_dgb_budget_execution": "RAPPORT D'EXECUTION DU BUDGET DE L'ETAT",
+
+    "deficit.narrative.prefix.gfs_historical": "D'après les données historiques SFP",
+    "deficit.narrative.prefix.gfs": "D'après les données SFP",
+    "deficit.narrative.prefix.weo": "D'après les projections PEM",
+    "deficit.narrative.prefix.weo_lookahead": "À l'avenir, les projections PEM suggèrent",
 }

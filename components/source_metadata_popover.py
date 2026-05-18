@@ -88,6 +88,30 @@ _HEALTH_PRIVATE = {
     "source_url": "https://apps.who.int/nha/database/",
 }
 
+_IMF_GFS = {
+    "key": "imf_gfs",
+    "label_key": "source.imf_gfs.label",
+    "source_name_key": "source_name.imf_gfs",
+    "description_key": "source.imf_gfs.description",
+    "source_url": "https://data.imf.org/en/datasets/IMF.STA:GFS_SOO",
+}
+
+_IMF_WEO = {
+    "key": "imf_weo",
+    "label_key": "source.imf_weo.label",
+    "source_name_key": "source_name.imf_weo",
+    "description_key": "source.imf_weo.description",
+    "source_url": "https://www.imf.org/en/Publications/WEO",
+}
+
+_TOGO_DGB = {
+    "key": "togo_dgb",
+    "label_key": "source.togo_dgb.label",
+    "source_name_key": "source_name.togo_dgb",
+    "description_key": "source.togo_dgb.description",
+    "countries": ["Togo"],
+}
+
 
 # ---------------------------------------------------------------------------
 # Chart-level metadata for the ⓘ info buttons.
@@ -105,6 +129,10 @@ CHART_METADATA = {
     "economic-breakdown": {"sources": [_BOOST]},
     "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
     "pefa-by-pillar": {"sources": [_PEFA]},
+    "revenue-expenditure-combined": {
+        "info_key": "chart.revenue_expenditure_combined.info",
+        "sources": [_TOGO_DGB, _IMF_GFS, _IMF_WEO],
+    },
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
@@ -266,6 +294,13 @@ def build_modal_children(info, lang="en"):
         )
     )
 
+    # Chart-level intro paragraph (optional) — appears once above all sources
+    chart_info = info.get("info")
+    if chart_info:
+        body.append(
+            html.P(chart_info, className="rpf-chart-info", style={"fontStyle": "italic"})
+        )
+
     # Per-source sections
     for section in source_sections:
         body.append(_build_source_section(section, country_name=info.get("country_name"), lang=lang))
@@ -346,6 +381,11 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
     # Build per-source sections
     source_sections = []
     for src in chart_meta.get("sources", []):
+        # Skip sources scoped to specific countries when the current country
+        # isn't in the whitelist (e.g. a pilot dataset that only exists for one country).
+        scoped_countries = src.get("countries")
+        if scoped_countries and country not in scoped_countries:
+            continue
         key = src["key"]
         description_key = src.get("description_key")
         section = {
@@ -364,9 +404,11 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
 
         source_sections.append(section)
 
+    info_key = chart_meta.get("info_key")
     return {
         **chart_meta,
         "_index": chart_id,
         "country_name": country,
         "source_sections": source_sections,
+        "info": t(info_key, lang) if info_key else None,
     }

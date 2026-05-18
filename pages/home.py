@@ -264,7 +264,7 @@ def render_overview_content(tab, lang):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children=t("heading.quality_budget", lang))
+                        html.H3(children=t("heading.fiscal_balance", lang))
                     )
                 ),
                 dbc.Row(
@@ -272,10 +272,10 @@ def render_overview_content(tab, lang):
                         dbc.RadioItems(
                             id="revenue-expenditure-view",
                             options=[
-                                {"label": "Composite", "value": "composite"},
-                                {"label": "Official Report", "value": "official"},
-                                {"label": "GFS", "value": "gfs"},
-                                {"label": "WEO", "value": "weo"},
+                                {"label": t("deficit.view.composite", lang), "value": "composite"},
+                                {"label": t("deficit.view.official", lang), "value": "official"},
+                                {"label": t("deficit.view.gfs", lang), "value": "gfs"},
+                                {"label": t("deficit.view.weo", lang), "value": "weo"},
                             ],
                             value="composite",
                             inline=True,
@@ -288,7 +288,7 @@ def render_overview_content(tab, lang):
                     dbc.Col(
                         html.P(
                             id="revenue-expenditure-narrative",
-                            children="loading...",
+                            children=t("loading", lang),
                         )
                     )
                 ),
@@ -308,7 +308,7 @@ def render_overview_content(tab, lang):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Quality of Budget Institutions")
+                        html.H3(children=t("heading.quality_budget", lang))
                     )
                 ),
                 dbc.Row(
@@ -1417,20 +1417,54 @@ def render_budget_func_changes(data, country, exp_type, lang='en'):
 
 
 @callback(
+    Output("revenue-expenditure-view", "options"),
+    Output("revenue-expenditure-view", "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    State("revenue-expenditure-view", "value"),
+)
+def update_revenue_expenditure_view_options(country, lang, revenue_data, current_view):
+    lang = lang or "en"
+    official_available = False
+    if country and revenue_data:
+        national_all = server_store.get("togo_revenue_budget")
+        if national_all is not None:
+            national_df = filter_country_sort_year(national_all, country)
+            official_available = national_df is not None and not national_df.empty
+
+    options = [
+        {"label": t("deficit.view.composite", lang), "value": "composite"},
+        {"label": t("deficit.view.official", lang), "value": "official", "disabled": not official_available},
+        {"label": t("deficit.view.gfs", lang), "value": "gfs"},
+        {"label": t("deficit.view.weo", lang), "value": "weo"},
+    ]
+
+    # If the user had "Official" selected but it's no longer available, fall back to composite.
+    if current_view == "official" and not official_available:
+        new_view = "composite"
+    else:
+        new_view = current_view or "composite"
+
+    return options, new_view
+
+
+@callback(
     Output("revenue-expenditure-combined", "figure"),
     Input("stored-data-revenue-budget", "data"),
     Input("stored-data-government-budget", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
 )
-def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode):
+def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode, lang):
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
     gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = deficit.split_government_budget(gov_df)
+    gfs_df, weo_df = deficit.split_imf_sources(gov_df)
 
     basic_info = server_store.get("basic_country_info")[country]
     return deficit.combined_figure(
@@ -1438,6 +1472,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
         currency_code=basic_info["currency_code"],
         currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
         view_mode=view_mode or "composite",
+        lang=lang or "en",
     )
 
 
@@ -1448,17 +1483,19 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
 )
-def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode):
+def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode, lang):
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
     gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = deficit.split_government_budget(gov_df)
+    gfs_df, weo_df = deficit.split_imf_sources(gov_df)
 
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     return deficit.narrative(
         national_df, gfs_df, weo_df, currency_code,
         view_mode=view_mode or "composite",
+        lang=lang or "en",
     )

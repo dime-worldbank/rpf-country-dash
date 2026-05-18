@@ -14,17 +14,9 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from trend_narrative import InsightExtractor, TrendDetector
+from translations import t
 from utils import add_currency_column, empty_plot, format_currency
 from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
-import narrative_phrases
-
-
-METRIC_SUBJECT = "the fiscal balance"
-NATIONAL_SUBJECT = "the budget"
-LOW_LABEL = "the largest deficit"
-HIGH_LABEL = "the largest surplus"
-LOW_LABEL_FORECAST = "the largest projected deficit"
-HIGH_LABEL_FORECAST = "the largest projected surplus"
 
 
 WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
@@ -39,8 +31,8 @@ FORECAST_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
 DEFICIT_BAR_OPACITY = 0.4
 
 
-def split_government_budget(gov_df):
-    """Split a government_budget frame into ``(gfs_df, weo_df)`` by data source."""
+def split_imf_sources(gov_df):
+    """Split an IMF government-budget frame into ``(gfs_df, weo_df)`` by data source."""
     if gov_df is None or gov_df.empty:
         return None, None
     return (
@@ -80,7 +72,7 @@ def _clean_rev_exp(df, require_both=False):
 
 # ---- figure ----------------------------------------------------------------
 
-def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite"):
+def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite", lang="en"):
     if view_mode == "official":
         gfs_df, weo_df = None, None
     elif view_mode == "gfs":
@@ -122,7 +114,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     forecast_start_year = (min(forecast_starts) - 1) if forecast_starts else None
 
     if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
-        return empty_plot("No revenue budget data available")
+        return empty_plot(t("deficit.chart.empty", lang))
 
     year_bounds = []
     for df in (national_df, gfs_pre, weo_post):
@@ -133,17 +125,27 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 
     for df in (national_df, gfs_pre, weo_post):
         if df is not None and not df.empty:
-            add_currency_column(df, "revenue", currency_code)
-            add_currency_column(df, "expenditure", currency_code)
-            add_currency_column(df, "balance", currency_code)
+            add_currency_column(df, "revenue", currency_code, lang=lang)
+            add_currency_column(df, "expenditure", currency_code, lang=lang)
+            add_currency_column(df, "balance", currency_code, lang=lang)
 
     fig = make_subplots(
         rows=2, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.08,
         row_heights=[0.65, 0.35],
-        subplot_titles=("Revenue & Expenditure", "Deficit (Revenue − Expenditure)"),
+        subplot_titles=(
+            t("deficit.chart.subplot_revenue_expenditure", lang),
+            t("deficit.chart.subplot_balance", lang),
+        ),
     )
+
+    revenue_label = t("deficit.chart.revenue", lang)
+    expenditure_label = t("deficit.chart.expenditure", lang)
+    balance_label = t("deficit.chart.balance", lang)
+    forecast_suffix = t("deficit.chart.forecast_suffix", lang)
+    actual_kind = t("deficit.chart.actual", lang)
+    forecast_kind = t("deficit.chart.forecast", lang)
 
     legend_shown = set()
 
@@ -161,7 +163,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 
         if is_forecast:
             cat = "forecast"
-            label_suffix = " (forecast)"
+            label_suffix = forecast_suffix
+            kind_label = forecast_kind
             rev_color = FORECAST_REVENUE_COLOR
             exp_color = FORECAST_EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, dash="dash", width=2)
@@ -171,6 +174,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         else:
             cat = "actual"
             label_suffix = ""
+            kind_label = actual_kind
             rev_color = REVENUE_COLOR
             exp_color = EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, width=2.5)
@@ -186,7 +190,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 
         fig.add_trace(
             go.Scatter(
-                name=f"Revenue{label_suffix}",
+                name=f"{revenue_label}{label_suffix}",
                 legendgroup=f"{cat}_rev",
                 showlegend=_show_once(f"{cat}_rev"),
                 x=df.year, y=df.revenue,
@@ -194,13 +198,13 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
                 line=rev_line,
                 marker=rev_marker,
                 customdata=df["revenue_formatted"],
-                hovertemplate=f"<b>Revenue ({source_label}, {cat})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>{revenue_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
         fig.add_trace(
             go.Scatter(
-                name=f"Expenditure{label_suffix}",
+                name=f"{expenditure_label}{label_suffix}",
                 legendgroup=f"{cat}_exp",
                 showlegend=_show_once(f"{cat}_exp"),
                 x=df.year, y=df.expenditure,
@@ -208,20 +212,20 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
                 line=exp_line,
                 marker=exp_marker,
                 customdata=df["expenditure_formatted"],
-                hovertemplate=f"<b>Expenditure ({source_label}, {cat})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>{expenditure_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=1, col=1,
         )
         fig.add_trace(
             go.Bar(
-                name=f"Surplus / Deficit{label_suffix}",
+                name=f"{balance_label}{label_suffix}",
                 legendgroup=f"{cat}_def",
                 showlegend=_show_once(f"{cat}_def"),
                 x=bar_df.year, y=bar_df.balance,
                 marker_color=_balance_bar_colors(bar_df.balance),
                 opacity=DEFICIT_BAR_OPACITY,
                 customdata=bar_df["balance_formatted"],
-                hovertemplate=f"<b>Surplus / Deficit ({source_label}, {cat})</b>: %{{customdata}}<extra></extra>",
+                hovertemplate=f"<b>{balance_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
             ),
             row=2, col=1,
         )
@@ -243,10 +247,10 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         add_series(actual, source_label, is_forecast=False)
         add_series(forecast_lines, source_label, is_forecast=True, bar_df=forecast)
 
-    add_split(gfs_pre, "GFS")
-    add_split(weo_post, "WEO")
+    add_split(gfs_pre, t("deficit.chart.source_gfs", lang))
+    add_split(weo_post, t("deficit.chart.source_weo", lang))
     if has_national:
-        add_series(national_df, "Official")
+        add_series(national_df, t("deficit.chart.source_official", lang))
 
     if view_mode == "composite" and forecast_start_year is not None:
         fig.add_shape(
@@ -259,7 +263,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             layer="below",
         )
         fig.add_annotation(
-            text="forecast",
+            text=t("deficit.chart.forecast_band", lang),
             xref="x", yref="paper",
             x=year_max + 0.4, y=0.99,
             xanchor="right", yanchor="top",
@@ -289,7 +293,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     y_unit = currency_name or currency_code or ""
     if y_unit:
         fig.add_annotation(
-            text=f"Amount ({y_unit})",
+            text=t("deficit.chart.amount_axis", lang, unit=y_unit),
             xref="paper", yref="paper",
             x=-0.08, y=0.5,
             textangle=-90,
@@ -356,10 +360,14 @@ def _extract_balance_insights(df):
 
 
 def _extract_national_insights(df):
-    """Return ``{"year_min", "year_max", "mean_balance", "source_name"}``."""
+    """Return ``{"year_min", "year_max", "mean_balance", "source_name"}``.
+
+    ``source_name`` is ``None`` when the frame has no ``source`` column or all
+    rows are null — the caller substitutes a localized default.
+    """
     if df is None or df.empty:
         return None
-    source_name = "the official report"
+    source_name = None
     if "source" in df.columns:
         sources = df["source"].dropna().unique().tolist()
         if sources:
@@ -372,34 +380,116 @@ def _extract_national_insights(df):
     }
 
 
-def _period(prefix, trend, extrema, currency_code, forecast=False):
-    """Balance-specific period sentence — wraps the generic helper with balance vocabulary."""
+def _extrema_phrase(extrema, currency_code, forecast=False, lang="en"):
+    """Chronologically-ordered phrase joining the largest surplus/deficit."""
+    if not extrema:
+        return ""
+
+    deficit_key = "deficit.narrative.extrema.deficit_forecast" if forecast else "deficit.narrative.extrema.deficit"
+    surplus_key = "deficit.narrative.extrema.surplus_forecast" if forecast else "deficit.narrative.extrema.surplus"
+    deficit_label = t(deficit_key, lang)
+    surplus_label = t(surplus_key, lang)
+
+    notes = []
+    min_e = extrema.get("min")
+    if min_e and min_e["value"] < 0:
+        notes.append((
+            min_e["year"],
+            t("deficit.narrative.extrema.entry", lang,
+              label=deficit_label,
+              amount=format_currency(abs(min_e["value"]), currency_code, lang=lang),
+              year=min_e["year"]),
+        ))
+    max_e = extrema.get("max")
+    if max_e and max_e["value"] > 0:
+        notes.append((
+            max_e["year"],
+            t("deficit.narrative.extrema.entry", lang,
+              label=surplus_label,
+              amount=format_currency(max_e["value"], currency_code, lang=lang),
+              year=max_e["year"]),
+        ))
+
+    notes.sort(key=lambda n: n[0])
+    phrases = [n[1] for n in notes]
+    if not phrases:
+        return ""
+    if len(phrases) == 1:
+        return phrases[0]
+    return t("deficit.narrative.extrema.joiner", lang).join(phrases)
+
+
+def _period(prefix, trend, extrema, currency_code, forecast=False, lang="en"):
+    """Compose the trend-period sentence for one data source."""
     if not trend:
         return ""
-    low_label = LOW_LABEL_FORECAST if forecast else LOW_LABEL
-    high_label = HIGH_LABEL_FORECAST if forecast else HIGH_LABEL
-    extras = narrative_phrases.extrema_phrase(extrema, currency_code, low_label, high_label)
-    return narrative_phrases.period_narrative(
-        prefix, METRIC_SUBJECT,
-        trend["start_year"], trend["end_year"], trend["slope"],
-        extras_clause=extras, forecast=forecast,
-    )
 
-
-def _national(source_name, year_min, year_max, mean_balance, currency_code):
-    """Balance-specific official-report sentence."""
-    if mean_balance < 0:
-        avg_clause = f"averaged a deficit of {format_currency(abs(mean_balance), currency_code)}"
-    elif mean_balance > 0:
-        avg_clause = f"averaged a surplus of {format_currency(mean_balance, currency_code)}"
+    slope = trend["slope"]
+    if forecast:
+        verb_key = (
+            "deficit.narrative.verb.improved_forecast" if slope > 0 else
+            "deficit.narrative.verb.deteriorated_forecast" if slope < 0 else
+            "deficit.narrative.verb.flat_forecast"
+        )
     else:
-        avg_clause = "averaged a balanced budget"
-    return narrative_phrases.national_narrative(
-        source_name, NATIONAL_SUBJECT, avg_clause, year_min, year_max,
+        verb_key = (
+            "deficit.narrative.verb.improved" if slope > 0 else
+            "deficit.narrative.verb.deteriorated" if slope < 0 else
+            "deficit.narrative.verb.flat"
+        )
+    verb = t(verb_key, lang)
+    extras = _extrema_phrase(extrema, currency_code, forecast=forecast, lang=lang)
+
+    template_key = "deficit.narrative.period_with_extras" if extras else "deficit.narrative.period_no_extras"
+    return t(
+        template_key, lang,
+        prefix=prefix,
+        start_year=trend["start_year"],
+        end_year=trend["end_year"],
+        verb=verb,
+        extras=extras,
     )
 
 
-def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite"):
+_SOURCE_NAME_KEYS = {
+    "Togo DGB Budget Execution Report": "deficit.narrative.source.togo_dgb_budget_execution",
+    # Add more as country data lands. Unknown source values pass through untranslated.
+}
+
+
+def _localize_source(source_name, lang):
+    """Translate a known database source name; pass through unknown values."""
+    if not source_name:
+        return None
+    key = _SOURCE_NAME_KEYS.get(source_name)
+    return t(key, lang) if key else source_name
+
+
+def _national(source_name, year_min, year_max, mean_balance, currency_code, lang="en"):
+    """Build the ``'The recent official reports from {source_name} indicate ...'`` sentence."""
+    source_name = _localize_source(source_name, lang)
+    if not source_name:
+        source_name = t("deficit.narrative.default_source", lang)
+
+    if year_min == year_max:
+        year_phrase = t("deficit.narrative.year_single", lang, year=year_min)
+    else:
+        year_phrase = t("deficit.narrative.year_range", lang, start=year_min, end=year_max)
+
+    if mean_balance < 0:
+        avg_phrase = t("deficit.narrative.avg_deficit", lang,
+                       amount=format_currency(abs(mean_balance), currency_code, lang=lang))
+    elif mean_balance > 0:
+        avg_phrase = t("deficit.narrative.avg_surplus", lang,
+                       amount=format_currency(mean_balance, currency_code, lang=lang))
+    else:
+        avg_phrase = t("deficit.narrative.avg_balanced", lang)
+
+    return t("deficit.narrative.national", lang,
+             source_name=source_name, avg_phrase=avg_phrase, year_phrase=year_phrase)
+
+
+def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite", lang="en"):
     parts = []
 
     if view_mode == "official":
@@ -407,7 +497,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
         if nat:
             parts.append(_national(
                 nat["source_name"], nat["year_min"], nat["year_max"],
-                nat["mean_balance"], currency_code,
+                nat["mean_balance"], currency_code, lang=lang,
             ))
         return " ".join(parts) if parts else ""
 
@@ -415,8 +505,8 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
         gfs = _extract_balance_insights(_clean_rev_exp(gfs_df, require_both=True))
         if gfs:
             parts.append(_period(
-                "Based on GFS data",
-                gfs["trend"], gfs["extrema"], currency_code,
+                t("deficit.narrative.prefix.gfs", lang),
+                gfs["trend"], gfs["extrema"], currency_code, lang=lang,
             ))
         return " ".join(parts) if parts else ""
 
@@ -424,9 +514,9 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
         weo = _extract_balance_insights(_clean_rev_exp(weo_df, require_both=True))
         if weo:
             parts.append(_period(
-                "Based on WEO projections",
+                t("deficit.narrative.prefix.weo", lang),
                 weo["trend"], weo["extrema"], currency_code,
-                forecast=True,
+                forecast=True, lang=lang,
             ))
         return " ".join(parts) if parts else ""
 
@@ -442,14 +532,14 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
     gfs = _extract_balance_insights(gfs_clean)
     if gfs:
         parts.append(_period(
-            "Based on historical GFS data",
-            gfs["trend"], gfs["extrema"], currency_code,
+            t("deficit.narrative.prefix.gfs_historical", lang),
+            gfs["trend"], gfs["extrema"], currency_code, lang=lang,
         ))
 
     if nat:
         parts.append(_national(
             nat["source_name"], nat["year_min"], nat["year_max"],
-            nat["mean_balance"], currency_code,
+            nat["mean_balance"], currency_code, lang=lang,
         ))
 
     weo_clean = _clean_rev_exp(weo_df, require_both=True)
@@ -458,9 +548,9 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite")
     weo = _extract_balance_insights(weo_clean)
     if weo:
         parts.append(_period(
-            "Looking ahead, WEO projections suggest",
+            t("deficit.narrative.prefix.weo_lookahead", lang),
             weo["trend"], weo["extrema"], currency_code,
-            forecast=True,
+            forecast=True, lang=lang,
         ))
 
     return " ".join(parts) if parts else ""

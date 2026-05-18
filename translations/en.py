@@ -26,6 +26,7 @@ TRANSLATIONS = {
     "heading.spending_by_func": "Spending by Functional Categories",
     "heading.spending_by_econ": "Spending by Economic Categories",
     "heading.quality_budget": "Quality of Budget Institutions",
+    "heading.fiscal_balance": "Fiscal Balance",
     "heading.regional_expenditure": "Regional Expenditure",
     "heading.country_regional_expenditure": "{country} Regional Expenditure",
     "heading.who_pays_education": "Who Pays for Education?",
@@ -533,6 +534,9 @@ TRANSLATIONS = {
     "source_name.who_gho": "WHO (GHO)",
     "source_name.who_health_db": "WHO Global Health Expenditure Database",
     "source_name.pefa_secretariat": "PEFA Secretariat",
+    "source_name.imf_gfs": "Government Finance Statistics — Statement of Operations",
+    "source_name.imf_weo": "IMF World Economic Outlook",
+    "source_name.togo_dgb": "Togo Direction Générale du Budget",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Poverty thresholds vary by country income classification: $3.00 for Low Income, $4.20 for Lower Middle Income, and $8.30 for Upper Middle and High Income countries.",
@@ -540,4 +544,65 @@ TRANSLATIONS = {
     "source.pefa.description": "PEFA assessments use letter grades (A to D, with + modifiers). For this dashboard, grades are converted to numerical scores (A=4, B+=3.5, B=3, C+=2.5, C=2, D+=1.5, D=1). Pillar scores are the arithmetic mean of their constituent indicators. Data covers both the 2011 framework (28 indicators, 6 pillars) and the 2016 framework (31 indicators, 7 pillars).",
     "source.edu_private.description": "Derived as total education spending from the International Comparison Program (ICP) minus BOOST public education expenditure.",
     "source.health_private.description": "Out-of-pocket spending per person, calculated from total health expenditure and the share paid out of pocket, adjusted for inflation.",
+    "source.imf_gfs.label": "GFS",
+    "source.imf_gfs.description": "Uses values reported by the IMF for Revenue (G1_T) and Expenditure (G2M_T) at the Budgetary Central Government level.",
+    "source.imf_weo.label": "WEO",
+    "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
+    "source.togo_dgb.label": "Togo Official Report",
+    "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report.",
+    "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
+
+    # --- Deficit / fiscal balance ---
+    "deficit.view.composite": "Composite",
+    "deficit.view.official": "Official Report",
+    "deficit.view.gfs": "GFS",
+    "deficit.view.weo": "WEO",
+
+    "deficit.chart.subplot_revenue_expenditure": "Revenue & Expenditure",
+    "deficit.chart.subplot_balance": "Deficit (Revenue − Expenditure)",
+    "deficit.chart.revenue": "Revenue",
+    "deficit.chart.expenditure": "Expenditure",
+    "deficit.chart.balance": "Surplus / Deficit",
+    "deficit.chart.forecast_suffix": " (forecast)",
+    "deficit.chart.actual": "actual",
+    "deficit.chart.forecast": "forecast",
+    "deficit.chart.source_official": "Official",
+    "deficit.chart.source_gfs": "GFS",
+    "deficit.chart.source_weo": "WEO",
+    "deficit.chart.amount_axis": "Amount ({unit})",
+    "deficit.chart.empty": "No revenue budget data available",
+    "deficit.chart.forecast_band": "forecast",
+
+    "deficit.narrative.extrema.deficit": "the largest deficit",
+    "deficit.narrative.extrema.surplus": "the largest surplus",
+    "deficit.narrative.extrema.deficit_forecast": "the largest projected deficit",
+    "deficit.narrative.extrema.surplus_forecast": "the largest projected surplus",
+    "deficit.narrative.extrema.entry": "{label} of {amount} in {year}",
+    "deficit.narrative.extrema.joiner": " and ",
+
+    "deficit.narrative.verb.improved": "improved overall",
+    "deficit.narrative.verb.deteriorated": "deteriorated overall",
+    "deficit.narrative.verb.flat": "remained relatively flat",
+    "deficit.narrative.verb.improved_forecast": "is expected to improve overall",
+    "deficit.narrative.verb.deteriorated_forecast": "is expected to deteriorate overall",
+    "deficit.narrative.verb.flat_forecast": "is expected to remain relatively flat",
+
+    "deficit.narrative.period_with_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}, with {extras}.",
+    "deficit.narrative.period_no_extras": "{prefix}, between {start_year} and {end_year}, the fiscal balance {verb}.",
+
+    "deficit.narrative.year_single": "in {year}",
+    "deficit.narrative.year_range": "from {start} to {end}",
+
+    "deficit.narrative.avg_deficit": "averaged a deficit of {amount}",
+    "deficit.narrative.avg_surplus": "averaged a surplus of {amount}",
+    "deficit.narrative.avg_balanced": "averaged a balanced budget",
+
+    "deficit.narrative.national": "The recent official reports from {source_name} indicate that the budget {avg_phrase} {year_phrase}.",
+    "deficit.narrative.default_source": "the official report",
+    "deficit.narrative.source.togo_dgb_budget_execution": "Togo DGB Budget Execution Report",
+
+    "deficit.narrative.prefix.gfs_historical": "Based on historical GFS data",
+    "deficit.narrative.prefix.gfs": "Based on GFS data",
+    "deficit.narrative.prefix.weo": "Based on WEO projections",
+    "deficit.narrative.prefix.weo_lookahead": "Looking ahead, WEO projections suggest",
 }
