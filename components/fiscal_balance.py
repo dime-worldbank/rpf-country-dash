@@ -407,7 +407,7 @@ def _extrema_phrase(extrema, currency_code, forecast=False, lang="en"):
     return t("deficit.narrative.extrema.joiner", lang).join(phrases)
 
 
-def _period(prefix, trend, extrema, currency_code, forecast=False, lang="en"):
+def _build_period_sentence(prefix, trend, extrema, currency_code, forecast=False, lang="en"):
     """Compose the trend-period sentence for one data source."""
     if not trend:
         return ""
@@ -488,11 +488,51 @@ def _append_period_from_df(parts, prefix, df, currency_code, forecast=False, lan
     insights = _extract_balance_insights(df)
     if not insights:
         return
-    parts.append(_period(
+    parts.append(_build_period_sentence(
         prefix,
         insights["trend"], insights["extrema"], currency_code,
         forecast=forecast, lang=lang,
     ))
+
+
+def _append_weo_periods(parts, weo_df, currency_code, lang="en", composite_mode=False):
+    """Append WEO narrative sentence(s), splitting actual/forecast when available."""
+    if weo_df is None:
+        return
+
+    if "forecast" not in weo_df.columns:
+        prefix = t("deficit.narrative.prefix.weo_lookahead", lang) if composite_mode else t("deficit.narrative.prefix.weo", lang)
+        _append_period_from_df(parts, prefix, weo_df, currency_code, forecast=composite_mode, lang=lang)
+        return
+
+    forecast_mask = weo_df["forecast"].astype(bool)
+    has_actual = (~forecast_mask).any()
+    has_forecast = forecast_mask.any()
+
+    if has_actual:
+        _append_period_from_df(
+            parts,
+            t("deficit.narrative.prefix.weo", lang),
+            weo_df[~forecast_mask],
+            currency_code,
+            forecast=False,
+            lang=lang,
+        )
+
+    if has_forecast:
+        forecast_prefix = (
+            t("deficit.narrative.prefix.weo_lookahead", lang)
+            if composite_mode or has_actual else
+            t("deficit.narrative.prefix.weo", lang)
+        )
+        _append_period_from_df(
+            parts,
+            forecast_prefix,
+            weo_df[forecast_mask],
+            currency_code,
+            forecast=True,
+            lang=lang,
+        )
 
 
 def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite", lang="en"):
@@ -525,45 +565,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         return _finalize_parts(parts)
 
     if view_mode == "weo":
-        weo_clean = weo_view
-        if weo_clean is not None and "forecast" in weo_clean.columns:
-            forecast_mask = weo_clean["forecast"].astype(bool)
-            has_actual = (~forecast_mask).any()
-            has_forecast = forecast_mask.any()
-
-            if has_actual:
-                _append_period_from_df(
-                    parts,
-                    t("deficit.narrative.prefix.weo", lang),
-                    weo_clean[~forecast_mask],
-                    currency_code,
-                    forecast=False,
-                    lang=lang,
-                )
-
-            if has_forecast:
-                forecast_prefix = (
-                    t("deficit.narrative.prefix.weo_lookahead", lang)
-                    if has_actual else
-                    t("deficit.narrative.prefix.weo", lang)
-                )
-                _append_period_from_df(
-                    parts,
-                    forecast_prefix,
-                    weo_clean[forecast_mask],
-                    currency_code,
-                    forecast=True,
-                    lang=lang,
-                )
-        else:
-            _append_period_from_df(
-                parts,
-                t("deficit.narrative.prefix.weo", lang),
-                weo_clean,
-                currency_code,
-                forecast=True,
-                lang=lang,
-            )
+        _append_weo_periods(parts, weo_view, currency_code, lang=lang, composite_mode=False)
         return _finalize_parts(parts)
 
     # Composite: historical GFS up to national, national, WEO beyond national.
@@ -582,13 +584,6 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
             nat["mean_balance"], currency_code, lang=lang,
         ))
 
-    _append_period_from_df(
-        parts,
-        t("deficit.narrative.prefix.weo_lookahead", lang),
-        weo_view,
-        currency_code,
-        forecast=True,
-        lang=lang,
-    )
+    _append_weo_periods(parts, weo_view, currency_code, lang=lang, composite_mode=True)
 
     return _finalize_parts(parts)

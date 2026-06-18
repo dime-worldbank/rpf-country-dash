@@ -80,6 +80,21 @@ class TestFiscalBalanceNarrativeWEO(unittest.TestCase):
         self.assertEqual(gfs_call_df["year"].tolist(), [2018, 2019, 2020])
         self.assertEqual(weo_call_df["year"].tolist(), [2021, 2022])
 
+    def test_composite_weo_mixed_actual_and_forecast_uses_mixed_tense(self):
+        weo_df = pd.DataFrame(
+            {
+                "year": [2020, 2021, 2022, 2023],
+                "revenue": [100.0, 102.0, 104.0, 106.0],
+                "expenditure": [102.0, 103.0, 104.2, 104.5],
+                "forecast": [False, False, True, True],
+            }
+        )
+
+        text = narrative(None, None, weo_df, "USD", view_mode="composite", lang="en")
+
+        self.assertIn("improved overall", text)
+        self.assertIn("is expected to improve overall", text)
+
 
 if __name__ == "__main__":
     unittest.main()
