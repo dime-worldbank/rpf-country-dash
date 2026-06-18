@@ -113,13 +113,11 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 
     has_national = national_df is not None and not national_df.empty
 
-    forecast_starts = []
-    for src in (gfs_pre, weo_post):
-        if src is not None and not src.empty and "forecast" in src.columns:
-            f = src[src["forecast"].astype(bool)]
-            if not f.empty:
-                forecast_starts.append(int(f["year"].min()))
-    forecast_start_year = (min(forecast_starts) - 1) if forecast_starts else None
+    forecast_start_year = None
+    if weo_post is not None and not weo_post.empty and "forecast" in weo_post.columns:
+        f = weo_post[weo_post["forecast"].astype(bool)]
+        if not f.empty:
+            forecast_start_year = int(f["year"].min()) - 1
 
     if not has_national and (gfs_pre is None or gfs_pre.empty) and (weo_post is None or weo_post.empty):
         return empty_plot(t("error.no_data_available", lang))
@@ -238,8 +236,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             row=2, col=1,
         )
 
-    def add_split(df, source_label):
-        """Split a source into actual/forecast traces (lines share the boundary; bars don't)."""
+    def add_weo_split(df, source_label):
+        """Split WEO into actual/forecast traces (lines share the boundary; bars don't)."""
         if df is None or df.empty:
             return
         if "forecast" not in df.columns:
@@ -255,8 +253,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         add_series(actual, source_label, is_forecast=False)
         add_series(forecast_lines, source_label, is_forecast=True, bar_df=forecast)
 
-    add_split(gfs_pre, t("deficit.chart.source_gfs", lang))
-    add_split(weo_post, t("deficit.chart.source_weo", lang))
+    add_series(gfs_pre, t("deficit.chart.source_gfs", lang))
+    add_weo_split(weo_post, t("deficit.chart.source_weo", lang))
     if has_national:
         add_series(national_df, t("deficit.chart.source_official", lang))
 
@@ -279,24 +277,6 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             font=dict(size=11, color="gray"),
         )
 
-    x_range = [year_min - 0.5, year_max + 0.5]
-    fig.update_xaxes(
-        range=x_range,
-        tickmode="array",
-        tickvals=list(range(year_min, year_max + 1, 2)),
-        tickformat="d",
-        zeroline=False,
-        row=2, col=1,
-    )
-    fig.update_xaxes(
-        range=x_range,
-        showticklabels=False,
-        zeroline=False,
-        row=1, col=1,
-    )
-
-    fig.update_yaxes(zeroline=False, row=1, col=1)
-    fig.update_yaxes(zeroline=True, zerolinecolor="black", zerolinewidth=1, row=2, col=1)
 
     y_unit = currency_name or currency_code or ""
     if y_unit:
