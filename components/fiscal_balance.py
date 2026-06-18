@@ -44,23 +44,18 @@ def _balance_bar_colors(series):
     return [SURPLUS_COLOR if x >= 0 else DEFICIT_COLOR for x in series]
 
 
-def _clean_rev_exp(df, require_both=False):
-    """Sort, coerce numeric, drop empties, attach signed balance.
+def _clean_rev_exp(df):
+    """Sort, coerce numeric, and keep rows where both revenue/expenditure exist.
 
-    ``require_both=True`` drops rows where either revenue or expenditure is
-    missing — used for trend analysis, where ``balance`` must be defined.
-    ``require_both=False`` keeps rows with one side present — used for
-    plotting, where each line can have its own coverage.
+    Fiscal-balance analysis and charting require both series for each year,
+    so rows missing either side are dropped before balance is computed.
     """
     if df is None or df.empty:
         return None
     d = df.copy().sort_values("year")
     d["revenue"] = pd.to_numeric(d["revenue"], errors="coerce")
     d["expenditure"] = pd.to_numeric(d["expenditure"], errors="coerce")
-    if require_both:
-        d = d.dropna(subset=["revenue", "expenditure"])
-    else:
-        d = d.dropna(subset=["revenue", "expenditure"], how="all")
+    d = d.dropna(subset=["revenue", "expenditure"])
     d = d[~((d["revenue"].fillna(0) == 0) & (d["expenditure"].fillna(0) == 0))]
     if d.empty:
         return None
@@ -68,43 +63,58 @@ def _clean_rev_exp(df, require_both=False):
     return d
 
 
+def _none_if_empty(df):
+    return None if df is None or df.empty else df
+
+
+def _frames_for_view(national_df, gfs_df, weo_df, view_mode="composite"):
+    """Return view-specific frames after applying source-priority year windows."""
+    national_df = _none_if_empty(national_df)
+    gfs_df = _none_if_empty(gfs_df)
+    weo_df = _none_if_empty(weo_df)
+
+    if view_mode == "official":
+        return national_df, None, None
+    if view_mode == "gfs":
+        return None, gfs_df, None
+    if view_mode == "weo":
+        return None, None, weo_df
+
+    # Composite: national has priority, GFS fills pre-national years,
+    # and WEO covers post-national years (or post-GFS if no national).
+    n_min = n_max = None
+    if national_df is not None:
+        n_min = int(national_df["year"].min())
+        n_max = int(national_df["year"].max())
+
+    gfs_end_year = None
+    if gfs_df is not None:
+        gfs_end_year = (n_min - 1) if n_min is not None else int(gfs_df["year"].max())
+        gfs_df = gfs_df[gfs_df["year"] <= gfs_end_year]
+
+    if weo_df is not None:
+        if n_max is not None:
+            weo_df = weo_df[weo_df["year"] > n_max]
+        elif gfs_end_year is not None:
+            weo_df = weo_df[weo_df["year"] > gfs_end_year]
+
+    return _none_if_empty(national_df), _none_if_empty(gfs_df), _none_if_empty(weo_df)
+
+
 # ---- figure ----------------------------------------------------------------
 
 def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite", lang="en"):
-    if view_mode == "official":
-        gfs_df, weo_df = None, None
-    elif view_mode == "gfs":
-        national_df, weo_df = None, None
-    elif view_mode == "weo":
-        national_df, gfs_df = None, None
-
     national_df = _clean_rev_exp(national_df)
     gfs_df = _clean_rev_exp(gfs_df)
     weo_df = _clean_rev_exp(weo_df)
+    national_df, gfs_pre, weo_post = _frames_for_view(
+        national_df, gfs_df, weo_df, view_mode=view_mode
+    )
 
     has_national = national_df is not None and not national_df.empty
-    if has_national:
-        national_years = set(national_df["year"].tolist())
-        n_min = int(national_df["year"].min())
-        n_max = int(national_df["year"].max())
-        gfs_pre = (
-            gfs_df[(gfs_df["year"] < n_min) & (~gfs_df["year"].isin(national_years))]
-            if gfs_df is not None and not gfs_df.empty else None
-        )
-        weo_post = (
-            weo_df[(weo_df["year"] > n_max) & (~weo_df["year"].isin(national_years))]
-            if weo_df is not None and not weo_df.empty else None
-        )
-    else:
-        gfs_pre = gfs_df
-        if gfs_df is not None and not gfs_df.empty and weo_df is not None and not weo_df.empty:
-            gfs_max_year = int(gfs_df["year"].max())
-            weo_post = weo_df[weo_df["year"] > gfs_max_year]
-        else:
-            weo_post = weo_df
 
     forecast_starts = []
-    for src in (gfs_df, weo_df):
+    for src in (gfs_pre, weo_post):
         if src is not None and not src.empty and "forecast" in src.columns:
             f = src[src["forecast"].astype(bool)]
             if not f.empty:
@@ -508,8 +518,15 @@ def _append_period_from_df(parts, prefix, df, currency_code, forecast=False, lan
 def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite", lang="en"):
     parts = []
 
+    national_df = _clean_rev_exp(national_df)
+    gfs_df = _clean_rev_exp(gfs_df)
+    weo_df = _clean_rev_exp(weo_df)
+    nat_view, gfs_view, weo_view = _frames_for_view(
+        national_df, gfs_df, weo_df, view_mode=view_mode
+    )
+
     if view_mode == "official":
-        nat = _extract_national_insights(_clean_rev_exp(national_df, require_both=True))
+        nat = _extract_national_insights(nat_view)
         if nat:
             parts.append(_national(
                 nat["source_name"], nat["year_min"], nat["year_max"],
@@ -521,14 +538,14 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         _append_period_from_df(
             parts,
             t("deficit.narrative.prefix.gfs", lang),
-            _clean_rev_exp(gfs_df, require_both=True),
+            gfs_view,
             currency_code,
             lang=lang,
         )
         return _finalize_parts(parts)
 
     if view_mode == "weo":
-        weo_clean = _clean_rev_exp(weo_df, require_both=True)
+        weo_clean = weo_view
         if weo_clean is not None and "forecast" in weo_clean.columns:
             forecast_mask = weo_clean["forecast"].astype(bool)
             has_actual = (~forecast_mask).any()
@@ -570,18 +587,11 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         return _finalize_parts(parts)
 
     # Composite: historical GFS up to national, national, WEO beyond national.
-    nat_clean = _clean_rev_exp(national_df, require_both=True)
-    nat = _extract_national_insights(nat_clean)
-    n_min = nat["year_min"] if nat else None
-    n_max = nat["year_max"] if nat else None
-
-    gfs_clean = _clean_rev_exp(gfs_df, require_both=True)
-    if gfs_clean is not None and n_min is not None:
-        gfs_clean = gfs_clean[gfs_clean["year"] < n_min]
+    nat = _extract_national_insights(nat_view)
     _append_period_from_df(
         parts,
         t("deficit.narrative.prefix.gfs_historical", lang),
-        gfs_clean,
+        gfs_view,
         currency_code,
         lang=lang,
     )
@@ -592,17 +602,10 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
             nat["mean_balance"], currency_code, lang=lang,
         ))
 
-    weo_clean = _clean_rev_exp(weo_df, require_both=True)
-    if weo_clean is not None:
-        if n_max is not None:
-            weo_clean = weo_clean[weo_clean["year"] > n_max]
-        elif gfs_clean is not None and not gfs_clean.empty:
-            gfs_max_year = int(gfs_clean["year"].max())
-            weo_clean = weo_clean[weo_clean["year"] > gfs_max_year]
     _append_period_from_df(
         parts,
         t("deficit.narrative.prefix.weo_lookahead", lang),
-        weo_clean,
+        weo_view,
         currency_code,
         forecast=True,
         lang=lang,
