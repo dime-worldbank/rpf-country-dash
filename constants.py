@@ -7,6 +7,11 @@ START_YEAR = 2010
 TREND_THRESHOLDS = 0.4
 
 
+WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
+GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
+IMF_GOVERNMENT_BUDGET_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
+
+
 def get_map_disclaimer(lang="en"):
     return t("disclaimer.map", lang)
 

@@ -605,6 +605,6 @@ TRANSLATIONS = {
 
     "deficit.narrative.prefix.gfs_historical": "Based on historical GFS data",
     "deficit.narrative.prefix.gfs": "Based on GFS data",
-    "deficit.narrative.prefix.weo": "Based on WEO projections",
-    "deficit.narrative.prefix.weo_lookahead": "Looking ahead, WEO projections suggest",
+    "deficit.narrative.prefix.weo": "Based on WEO estimates",
+    "deficit.narrative.prefix.weo_lookahead": "Looking ahead, WEO estimates suggest",
 }

@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis, deficit
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
@@ -1412,7 +1412,8 @@ def render_pefa_overall(data, pefa_data, country, lang):
     Input("budget-increment-radio", "value"),
     Input("stored-language", "data"),
 )
-def render_budget_func_changes(data, country, exp_type, lang='en'):
+def render_budget_func_changes(data, country, exp_type, lang):
+    lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
 
 
@@ -1464,10 +1465,10 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
 
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
     gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = deficit.split_imf_sources(gov_df)
+    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
 
     basic_info = server_store.get("basic_country_info")[country]
-    return deficit.combined_figure(
+    return fiscal_balance.combined_figure(
         national_df, gfs_df, weo_df,
         currency_code=basic_info["currency_code"],
         currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
@@ -1491,10 +1492,10 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
 
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
     gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = deficit.split_imf_sources(gov_df)
+    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
 
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    return deficit.narrative(
+    return fiscal_balance.narrative(
         national_df, gfs_df, weo_df, currency_code,
         view_mode=view_mode or "composite",
         lang=lang or "en",

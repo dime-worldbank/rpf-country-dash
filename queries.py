@@ -6,6 +6,7 @@ from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
 
+from constants import IMF_GOVERNMENT_BUDGET_SOURCES
 from query_cache import PersistentQueryCache
 
 
@@ -245,6 +246,9 @@ class QueryService:
         return self.fetch_data(query)
 
     def get_government_budget_data(self):
+        source_filter = ",\n                ".join(
+            f"'{src}'" for src in IMF_GOVERNMENT_BUDGET_SOURCES
+        )
         query = f"""
             SELECT
                 country_name,
@@ -256,8 +260,7 @@ class QueryService:
                 forecast
             FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
             WHERE data_source IN (
-                'WEO (World Economic Outlook), IMF — General Government',
-                'GFS_SOO (Statement of Operations), IMF — Budgetary Central Government'
+                {source_filter}
             )
         """
         return self.fetch_data(query)

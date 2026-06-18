@@ -691,6 +691,6 @@ TRANSLATIONS = {
 
     "deficit.narrative.prefix.gfs_historical": "D'après les données historiques des SFP",
     "deficit.narrative.prefix.gfs": "D'après les données des SFP",
-    "deficit.narrative.prefix.weo": "Les projections des PEM laissent entrevoir",
-    "deficit.narrative.prefix.weo_lookahead": "À l'avenir, les projections des PEM laissent entrevoir",
+    "deficit.narrative.prefix.weo": "Les estimations des PEM laissent entrevoir",
+    "deficit.narrative.prefix.weo_lookahead": "À l'avenir, les estimations des PEM laissent entrevoir",
 }

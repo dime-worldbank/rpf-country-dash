@@ -14,14 +14,11 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from constants import WEO_SOURCE, GFS_SOO_SOURCE
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
 from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
-
-
-WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
-GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
 
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
@@ -515,13 +512,42 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         return " ".join(parts) if parts else ""
 
     if view_mode == "weo":
-        weo = _extract_balance_insights(_clean_rev_exp(weo_df, require_both=True))
-        if weo:
-            parts.append(_period(
-                t("deficit.narrative.prefix.weo", lang),
-                weo["trend"], weo["extrema"], currency_code,
-                forecast=True, lang=lang,
-            ))
+        weo_clean = _clean_rev_exp(weo_df, require_both=True)
+        if weo_clean is not None and "forecast" in weo_clean.columns:
+            forecast_mask = weo_clean["forecast"].astype(bool)
+            has_actual = (~forecast_mask).any()
+            has_forecast = forecast_mask.any()
+
+            if has_actual:
+                weo_actual = _extract_balance_insights(weo_clean[~forecast_mask])
+                if weo_actual:
+                    parts.append(_period(
+                        t("deficit.narrative.prefix.weo", lang),
+                        weo_actual["trend"], weo_actual["extrema"], currency_code,
+                        forecast=False, lang=lang,
+                    ))
+
+            if has_forecast:
+                weo_forecast = _extract_balance_insights(weo_clean[forecast_mask])
+                if weo_forecast:
+                    forecast_prefix = (
+                        t("deficit.narrative.prefix.weo_lookahead", lang)
+                        if has_actual else
+                        t("deficit.narrative.prefix.weo", lang)
+                    )
+                    parts.append(_period(
+                        forecast_prefix,
+                        weo_forecast["trend"], weo_forecast["extrema"], currency_code,
+                        forecast=True, lang=lang,
+                    ))
+        else:
+            weo = _extract_balance_insights(weo_clean)
+            if weo:
+                parts.append(_period(
+                    t("deficit.narrative.prefix.weo", lang),
+                    weo["trend"], weo["extrema"], currency_code,
+                    forecast=True, lang=lang,
+                ))
         return " ".join(parts) if parts else ""
 
     # Composite: historical GFS up to national, national, WEO beyond national.
@@ -547,8 +573,12 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         ))
 
     weo_clean = _clean_rev_exp(weo_df, require_both=True)
-    if weo_clean is not None and n_max is not None:
-        weo_clean = weo_clean[weo_clean["year"] > n_max]
+    if weo_clean is not None:
+        if n_max is not None:
+            weo_clean = weo_clean[weo_clean["year"] > n_max]
+        elif gfs_clean is not None and not gfs_clean.empty:
+            gfs_max_year = int(gfs_clean["year"].max())
+            weo_clean = weo_clean[weo_clean["year"] > gfs_max_year]
     weo = _extract_balance_insights(weo_clean)
     if weo:
         parts.append(_period(
