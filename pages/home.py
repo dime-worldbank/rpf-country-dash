@@ -1417,6 +1417,15 @@ def render_budget_func_changes(data, country, exp_type, lang):
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
 
 
+def _get_revenue_budget_context(country):
+    """Load country-scoped fiscal-balance inputs from server store."""
+    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
+    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
+    basic_info = server_store.get("basic_country_info")[country]
+    return national_df, gfs_df, weo_df, basic_info
+
+
 @callback(
     Output("revenue-expenditure-view", "options"),
     Output("revenue-expenditure-view", "value"),
@@ -1429,10 +1438,8 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     lang = lang or "en"
     official_available = False
     if country and revenue_data:
-        national_all = server_store.get("togo_revenue_budget")
-        if national_all is not None:
-            national_df = filter_country_sort_year(national_all, country)
-            official_available = national_df is not None and not national_df.empty
+        national_df, _, _, _ = _get_revenue_budget_context(country)
+        official_available = national_df is not None and not national_df.empty
 
     options = [
         {"label": t("deficit.view.composite", lang), "value": "composite"},
@@ -1463,11 +1470,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
-    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
-
-    basic_info = server_store.get("basic_country_info")[country]
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.combined_figure(
         national_df, gfs_df, weo_df,
         currency_code=basic_info["currency_code"],
@@ -1490,13 +1493,9 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     if not revenue_data or not gov_data or not country_data or not country:
         return dash.no_update
 
-    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
-    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
-
-    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.narrative(
-        national_df, gfs_df, weo_df, currency_code,
+        national_df, gfs_df, weo_df, basic_info["currency_code"],
         view_mode=view_mode or "composite",
         lang=lang or "en",
     )

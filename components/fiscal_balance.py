@@ -490,6 +490,21 @@ def _national(source_name, year_min, year_max, mean_balance, currency_code, lang
              source_name=source_name, avg_phrase=avg_phrase, year_phrase=year_phrase)
 
 
+def _finalize_parts(parts):
+    return " ".join(parts) if parts else ""
+
+
+def _append_period_from_df(parts, prefix, df, currency_code, forecast=False, lang="en"):
+    insights = _extract_balance_insights(df)
+    if not insights:
+        return
+    parts.append(_period(
+        prefix,
+        insights["trend"], insights["extrema"], currency_code,
+        forecast=forecast, lang=lang,
+    ))
+
+
 def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite", lang="en"):
     parts = []
 
@@ -500,16 +515,17 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
                 nat["source_name"], nat["year_min"], nat["year_max"],
                 nat["mean_balance"], currency_code, lang=lang,
             ))
-        return " ".join(parts) if parts else ""
+        return _finalize_parts(parts)
 
     if view_mode == "gfs":
-        gfs = _extract_balance_insights(_clean_rev_exp(gfs_df, require_both=True))
-        if gfs:
-            parts.append(_period(
-                t("deficit.narrative.prefix.gfs", lang),
-                gfs["trend"], gfs["extrema"], currency_code, lang=lang,
-            ))
-        return " ".join(parts) if parts else ""
+        _append_period_from_df(
+            parts,
+            t("deficit.narrative.prefix.gfs", lang),
+            _clean_rev_exp(gfs_df, require_both=True),
+            currency_code,
+            lang=lang,
+        )
+        return _finalize_parts(parts)
 
     if view_mode == "weo":
         weo_clean = _clean_rev_exp(weo_df, require_both=True)
@@ -519,36 +535,39 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
             has_forecast = forecast_mask.any()
 
             if has_actual:
-                weo_actual = _extract_balance_insights(weo_clean[~forecast_mask])
-                if weo_actual:
-                    parts.append(_period(
-                        t("deficit.narrative.prefix.weo", lang),
-                        weo_actual["trend"], weo_actual["extrema"], currency_code,
-                        forecast=False, lang=lang,
-                    ))
+                _append_period_from_df(
+                    parts,
+                    t("deficit.narrative.prefix.weo", lang),
+                    weo_clean[~forecast_mask],
+                    currency_code,
+                    forecast=False,
+                    lang=lang,
+                )
 
             if has_forecast:
-                weo_forecast = _extract_balance_insights(weo_clean[forecast_mask])
-                if weo_forecast:
-                    forecast_prefix = (
-                        t("deficit.narrative.prefix.weo_lookahead", lang)
-                        if has_actual else
-                        t("deficit.narrative.prefix.weo", lang)
-                    )
-                    parts.append(_period(
-                        forecast_prefix,
-                        weo_forecast["trend"], weo_forecast["extrema"], currency_code,
-                        forecast=True, lang=lang,
-                    ))
+                forecast_prefix = (
+                    t("deficit.narrative.prefix.weo_lookahead", lang)
+                    if has_actual else
+                    t("deficit.narrative.prefix.weo", lang)
+                )
+                _append_period_from_df(
+                    parts,
+                    forecast_prefix,
+                    weo_clean[forecast_mask],
+                    currency_code,
+                    forecast=True,
+                    lang=lang,
+                )
         else:
-            weo = _extract_balance_insights(weo_clean)
-            if weo:
-                parts.append(_period(
-                    t("deficit.narrative.prefix.weo", lang),
-                    weo["trend"], weo["extrema"], currency_code,
-                    forecast=True, lang=lang,
-                ))
-        return " ".join(parts) if parts else ""
+            _append_period_from_df(
+                parts,
+                t("deficit.narrative.prefix.weo", lang),
+                weo_clean,
+                currency_code,
+                forecast=True,
+                lang=lang,
+            )
+        return _finalize_parts(parts)
 
     # Composite: historical GFS up to national, national, WEO beyond national.
     nat_clean = _clean_rev_exp(national_df, require_both=True)
@@ -559,12 +578,13 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
     gfs_clean = _clean_rev_exp(gfs_df, require_both=True)
     if gfs_clean is not None and n_min is not None:
         gfs_clean = gfs_clean[gfs_clean["year"] < n_min]
-    gfs = _extract_balance_insights(gfs_clean)
-    if gfs:
-        parts.append(_period(
-            t("deficit.narrative.prefix.gfs_historical", lang),
-            gfs["trend"], gfs["extrema"], currency_code, lang=lang,
-        ))
+    _append_period_from_df(
+        parts,
+        t("deficit.narrative.prefix.gfs_historical", lang),
+        gfs_clean,
+        currency_code,
+        lang=lang,
+    )
 
     if nat:
         parts.append(_national(
@@ -579,12 +599,13 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         elif gfs_clean is not None and not gfs_clean.empty:
             gfs_max_year = int(gfs_clean["year"].max())
             weo_clean = weo_clean[weo_clean["year"] > gfs_max_year]
-    weo = _extract_balance_insights(weo_clean)
-    if weo:
-        parts.append(_period(
-            t("deficit.narrative.prefix.weo_lookahead", lang),
-            weo["trend"], weo["extrema"], currency_code,
-            forecast=True, lang=lang,
-        ))
+    _append_period_from_df(
+        parts,
+        t("deficit.narrative.prefix.weo_lookahead", lang),
+        weo_clean,
+        currency_code,
+        forecast=True,
+        lang=lang,
+    )
 
-    return " ".join(parts) if parts else ""
+    return _finalize_parts(parts)
