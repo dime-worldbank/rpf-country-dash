@@ -6,6 +6,7 @@ from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
 
+from constants import IMF_GOVERNMENT_BUDGET_SOURCES
 from query_cache import PersistentQueryCache
 
 
@@ -227,5 +228,40 @@ class QueryService:
                 boost_earliest_year AS earliest_year,
                 boost_latest_year AS latest_year
             FROM prd_mega.{BOOST_SCHEMA}.data_availability
+        """
+        return self.fetch_data(query)
+
+    def get_togo_revenue_budget_data(self):
+        # TODO: switch to country-agnostic table once official data lands for more countries.
+        query = f"""
+            SELECT
+                country_name,
+                country_code,
+                year,
+                revenue_current_lcu AS revenue,
+                expenditure_current_lcu AS expenditure,
+                tax_expenditure AS tax_expenditure,
+                data_source AS source
+            FROM prd_mega.{INDICATOR_SCHEMA}.togo_revenue_budget
+        """
+        return self.fetch_data(query)
+
+    def get_government_budget_data(self):
+        source_filter = ",\n                ".join(
+            f"'{src}'" for src in IMF_GOVERNMENT_BUDGET_SOURCES
+        )
+        query = f"""
+            SELECT
+                country_name,
+                country_code,
+                year,
+                revenue_current_lcu AS revenue,
+                expenditure_current_lcu AS expenditure,
+                data_source AS source,
+                is_forecast
+            FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
+            WHERE data_source IN (
+                {source_filter}
+            )
         """
         return self.fetch_data(query)

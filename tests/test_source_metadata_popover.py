@@ -299,6 +299,38 @@ class TestBuildModalInfo(unittest.TestCase):
         self.assertEqual(section["label"], "BOOST Expenditure Data")
         self.assertEqual(section["source_name"], "World Bank BOOST")
 
+    def test_build_modal_info_country_scoped_source_included(self):
+        """A source with a ``countries`` whitelist shows when the current country is in it."""
+        info = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta)
+        labels = [s["label"] for s in info["source_sections"]]
+        # Togo Official Report has countries=["Togo"]; should be present for Togo.
+        self.assertIn("Togo Official Report", labels)
+
+    def test_build_modal_info_country_scoped_source_excluded(self):
+        """A source with a ``countries`` whitelist is filtered out for other countries."""
+        info = build_modal_info("revenue-expenditure-combined", "Kenya", self.source_meta)
+        labels = [s["label"] for s in info["source_sections"]]
+        # Togo Official Report has countries=["Togo"]; should NOT appear for Kenya.
+        self.assertNotIn("Togo Official Report", labels)
+        # Un-scoped sources (no ``countries`` field) still appear.
+        self.assertIn("GFS", labels)
+        self.assertIn("WEO", labels)
+
+    def test_build_modal_info_chart_level_info(self):
+        """Charts with ``info_key`` produce a translated chart-level ``info`` string."""
+        info_en = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta, lang="en")
+        self.assertIsNotNone(info_en.get("info"))
+        self.assertIn("composite view", info_en["info"].lower())
+
+        info_fr = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta, lang="fr")
+        self.assertIsNotNone(info_fr.get("info"))
+        self.assertIn("vue composite", info_fr["info"].lower())
+
+    def test_build_modal_info_no_chart_level_info(self):
+        """Charts without ``info_key`` return ``info=None``."""
+        info = build_modal_info("overview-total", "Kenya", self.source_meta)
+        self.assertIsNone(info.get("info"))
+
 
 if __name__ == "__main__":
     unittest.main()

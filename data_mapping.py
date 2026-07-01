@@ -206,6 +206,8 @@ function_data_mapping = {
     "learning_poverty": lambda: _db().get_learning_poverty_rate(),
     "hd_index": lambda: _db().get_hd_index(_countries()),
     "edu_private_expenditure": lambda: _db().get_edu_private_expenditure(),
+    "togo_revenue_budget": lambda: _db().get_togo_revenue_budget_data(),
+    "government_budget": lambda: _db().get_government_budget_data(),
     # Transformation loaders
     "func_econ_raw": load_func_econ_raw,
     "func_by_country_year": load_func_by_country_year,

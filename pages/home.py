@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import html, dcc, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
@@ -33,6 +33,12 @@ from constants import (
     get_map_disclaimer,
     translate_econ,
     translate_func,
+    VIEW_COMPOSITE,
+    VIEW_OFFICIAL,
+    VIEW_GFS,
+    VIEW_WEO,
+    DEFAULT_FISCAL_VIEW,
+    COMPOSITE_VIEW_COUNTRIES,
 )
 from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
@@ -62,6 +68,8 @@ def layout():
                 )
             ),
             dcc.Store(id="stored-data-pefa"),
+            dcc.Store(id="stored-data-revenue-budget"),
+            dcc.Store(id="stored-data-government-budget"),
         ]
     )
 
@@ -85,6 +93,28 @@ def update_overview_tab_labels(lang):
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
         server_store.get("pefa")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-revenue-budget", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_revenue_budget_data_once(revenue_data, shared_data):
+    if revenue_data is None and shared_data:
+        server_store.get("togo_revenue_budget")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-government-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_government_budget_data_once(gov_data, shared_data):
+    if gov_data is None and shared_data:
+        server_store.get("government_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -232,6 +262,50 @@ def render_overview_content(tab, lang):
                             lg={"size": 4, "offset": 0},
                         ),
                     ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.fiscal_balance", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.RadioItems(
+                            id="revenue-expenditure-view",
+                            options=[
+                                {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                            ],
+                            value=DEFAULT_FISCAL_VIEW,
+                            inline=True,
+                            style={"padding": "10px"},
+                            labelStyle={"margin-right": "20px"},
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.P(
+                            id="revenue-expenditure-narrative",
+                            children=t("loading", lang),
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("revenue-expenditure-combined"),
+                        xs={"size": 12, "offset": 0},
+                        sm={"size": 12, "offset": 0},
+                        md={"size": 12, "offset": 0},
+                        lg={"size": 12, "offset": 0},
+                    )
                 ),
                 dbc.Row(
                     dbc.Col(
@@ -1347,3 +1421,98 @@ def render_pefa_overall(data, pefa_data, country, lang):
 def render_budget_func_changes(data, country, exp_type, lang):
     lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+def _get_revenue_budget_context(country):
+    """Load country-scoped fiscal-balance inputs from server store."""
+    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
+    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
+    basic_info = server_store.get("basic_country_info")[country]
+    return national_df, gfs_df, weo_df, basic_info
+
+
+@callback(
+    Output("revenue-expenditure-view", "options"),
+    Output("revenue-expenditure-view", "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    State("revenue-expenditure-view", "value"),
+)
+def update_revenue_expenditure_view_options(country, lang, revenue_data, current_view):
+    lang = lang or "en"
+
+    # Official needs a national report; composite needs GFS/WEO to be comparable,
+    # which only holds where subnational activity is negligible (Togo, not e.g. Colombia).
+    official_available = False
+    if country and revenue_data:
+        national_df, _, _, _ = _get_revenue_budget_context(country)
+        official_available = national_df is not None and not national_df.empty
+    composite_available = country in COMPOSITE_VIEW_COUNTRIES
+
+    available = {VIEW_GFS, VIEW_WEO}
+    if composite_available:
+        available.add(VIEW_COMPOSITE)
+    if official_available:
+        available.add(VIEW_OFFICIAL)
+
+    options = [
+        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE, "disabled": not composite_available},
+        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
+        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+    ]
+
+    # Reset on country switch; otherwise keep the current view if still valid.
+    default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
+    if ctx.triggered_id == "country-select" or current_view not in available:
+        new_view = default_view
+    else:
+        new_view = current_view
+
+    return options, new_view
+
+
+@callback(
+    Output("revenue-expenditure-combined", "figure"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
+)
+def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode, lang):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
+    return fiscal_balance.combined_figure(
+        national_df, gfs_df, weo_df,
+        currency_code=basic_info["currency_code"],
+        currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
+        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        lang=lang or "en",
+    )
+
+
+@callback(
+    Output("revenue-expenditure-narrative", "children"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-budget", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
+)
+def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode, lang):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
+    return fiscal_balance.narrative(
+        national_df, gfs_df, weo_df, basic_info["currency_code"],
+        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        lang=lang or "en",
+    )
