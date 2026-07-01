@@ -20,7 +20,7 @@ class TestFiscalBalanceNarrativeWEO(unittest.TestCase):
                 "year": [2020, 2021, 2022],
                 "revenue": [10, 12, 15],
                 "expenditure": [12, 13, 14],
-                "forecast": [False, False, False],
+                "is_forecast": [False, False, False],
             }
         )
 
@@ -41,7 +41,7 @@ class TestFiscalBalanceNarrativeWEO(unittest.TestCase):
                 "year": [2023, 2024, 2025],
                 "revenue": [10, 12, 15],
                 "expenditure": [12, 13, 14],
-                "forecast": [True, True, True],
+                "is_forecast": [True, True, True],
             }
         )
 
@@ -86,7 +86,7 @@ class TestFiscalBalanceNarrativeWEO(unittest.TestCase):
                 "year": [2020, 2021, 2022, 2023],
                 "revenue": [100.0, 102.0, 104.0, 106.0],
                 "expenditure": [102.0, 103.0, 104.2, 104.5],
-                "forecast": [False, False, True, True],
+                "is_forecast": [False, False, True, True],
             }
         )
 
