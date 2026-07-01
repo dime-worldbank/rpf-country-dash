@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import html, dcc, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -38,6 +38,7 @@ from constants import (
     VIEW_GFS,
     VIEW_WEO,
     DEFAULT_FISCAL_VIEW,
+    COMPOSITE_VIEW_COUNTRIES,
 )
 from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
@@ -1441,23 +1442,34 @@ def _get_revenue_budget_context(country):
 )
 def update_revenue_expenditure_view_options(country, lang, revenue_data, current_view):
     lang = lang or "en"
+
+    # Official needs a national report; composite needs GFS/WEO to be comparable,
+    # which only holds where subnational activity is negligible (Togo, not e.g. Colombia).
     official_available = False
     if country and revenue_data:
         national_df, _, _, _ = _get_revenue_budget_context(country)
         official_available = national_df is not None and not national_df.empty
+    composite_available = country in COMPOSITE_VIEW_COUNTRIES
+
+    available = {VIEW_GFS, VIEW_WEO}
+    if composite_available:
+        available.add(VIEW_COMPOSITE)
+    if official_available:
+        available.add(VIEW_OFFICIAL)
 
     options = [
-        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE, "disabled": not composite_available},
         {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
         {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
         {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
     ]
 
-    # If the user had "Official" selected but it's no longer available, fall back to composite.
-    if current_view == VIEW_OFFICIAL and not official_available:
-        new_view = VIEW_COMPOSITE
+    # Reset on country switch; otherwise keep the current view if still valid.
+    default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
+    if ctx.triggered_id == "country-select" or current_view not in available:
+        new_view = default_view
     else:
-        new_view = current_view or DEFAULT_FISCAL_VIEW
+        new_view = current_view
 
     return options, new_view
 
