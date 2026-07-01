@@ -55,6 +55,10 @@ def _clean_rev_exp(df):
     d = df.copy().sort_values("year")
     d["revenue"] = pd.to_numeric(d["revenue"], errors="coerce")
     d["expenditure"] = pd.to_numeric(d["expenditure"], errors="coerce")
+    if "tax_expenditure" in d.columns:
+        tax_exp = pd.to_numeric(d["tax_expenditure"], errors="coerce").fillna(0)
+        d["revenue"] = d["revenue"] - tax_exp
+        d["expenditure"] = d["expenditure"] - tax_exp
     d = d.dropna(subset=["revenue", "expenditure"])
     d = d[~((d["revenue"].fillna(0) == 0) & (d["expenditure"].fillna(0) == 0))]
     if d.empty:

@@ -618,7 +618,7 @@ TRANSLATIONS = {
     "source_name.pefa_secretariat": "Secrétariat PEFA",
     "source_name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
     "source_name.imf_weo": "Perspectives de l'économie mondiale du FMI",
-    "source_name.togo_dgb": "Direction Générale du Budget du Togo",
+    "source_name.togo_dgb": "Direction Générale du Budget du Togo — Rapport d'exécution du budget de l'État",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé.",
@@ -631,7 +631,7 @@ TRANSLATIONS = {
     "source.imf_weo.label": "PEM",
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
-    "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel.",
+    "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---

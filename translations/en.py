@@ -536,7 +536,7 @@ TRANSLATIONS = {
     "source_name.pefa_secretariat": "PEFA Secretariat",
     "source_name.imf_gfs": "Government Finance Statistics — Statement of Operations",
     "source_name.imf_weo": "IMF World Economic Outlook",
-    "source_name.togo_dgb": "Togo Direction Générale du Budget",
+    "source_name.togo_dgb": "Togo Direction Générale du Budget — Rapport d'exécution du budget de l'État",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Poverty thresholds vary by country income classification: $3.00 for Low Income, $4.20 for Lower Middle Income, and $8.30 for Upper Middle and High Income countries.",
@@ -549,7 +549,7 @@ TRANSLATIONS = {
     "source.imf_weo.label": "WEO",
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
-    "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report.",
+    "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---
