@@ -14,7 +14,14 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from constants import WEO_SOURCE, GFS_SOO_SOURCE
+from constants import (
+    WEO_SOURCE,
+    GFS_SOO_SOURCE,
+    VIEW_COMPOSITE,
+    VIEW_OFFICIAL,
+    VIEW_GFS,
+    VIEW_WEO,
+)
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
@@ -56,11 +63,14 @@ def _clean_rev_exp(df):
     d["revenue"] = pd.to_numeric(d["revenue"], errors="coerce")
     d["expenditure"] = pd.to_numeric(d["expenditure"], errors="coerce")
     if "tax_expenditure" in d.columns:
-        tax_exp = pd.to_numeric(d["tax_expenditure"], errors="coerce").fillna(0)
-        d["revenue"] = d["revenue"] - tax_exp
-        d["expenditure"] = d["expenditure"] - tax_exp
+        # Drop years where tax expenditure wasn't reported (0 is a valid value);
+        # subtract it from both sides so totals are comparable to GFS/WEO.
+        d["tax_expenditure"] = pd.to_numeric(d["tax_expenditure"], errors="coerce")
+        d = d[d["tax_expenditure"].notna()]
+        d["revenue"] = d["revenue"] - d["tax_expenditure"]
+        d["expenditure"] = d["expenditure"] - d["tax_expenditure"]
     d = d.dropna(subset=["revenue", "expenditure"])
-    d = d[~((d["revenue"].fillna(0) == 0) & (d["expenditure"].fillna(0) == 0))]
+    d = d[~((d["revenue"] == 0) & (d["expenditure"] == 0))]
     if d.empty:
         return None
     d["balance"] = d["revenue"] - d["expenditure"]
@@ -71,17 +81,17 @@ def _none_if_empty(df):
     return None if df is None or df.empty else df
 
 
-def _frames_for_view(national_df, gfs_df, weo_df, view_mode="composite"):
+def _frames_for_view(national_df, gfs_df, weo_df, view_mode=VIEW_COMPOSITE):
     """Return view-specific frames after applying source-priority year windows."""
     national_df = _none_if_empty(national_df)
     gfs_df = _none_if_empty(gfs_df)
     weo_df = _none_if_empty(weo_df)
 
-    if view_mode == "official":
+    if view_mode == VIEW_OFFICIAL:
         return national_df, None, None
-    if view_mode == "gfs":
+    if view_mode == VIEW_GFS:
         return None, gfs_df, None
-    if view_mode == "weo":
+    if view_mode == VIEW_WEO:
         return None, None, weo_df
 
     # Composite: national has priority, GFS fills pre-national years,
@@ -107,7 +117,7 @@ def _frames_for_view(national_df, gfs_df, weo_df, view_mode="composite"):
 
 # ---- figure ----------------------------------------------------------------
 
-def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode="composite", lang="en"):
+def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=None, view_mode=VIEW_COMPOSITE, lang="en"):
     national_df = _clean_rev_exp(national_df)
     gfs_df = _clean_rev_exp(gfs_df)
     weo_df = _clean_rev_exp(weo_df)
@@ -118,8 +128,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     has_national = national_df is not None and not national_df.empty
 
     forecast_start_year = None
-    if weo_post is not None and not weo_post.empty and "forecast" in weo_post.columns:
-        f = weo_post[weo_post["forecast"].astype(bool)]
+    if weo_post is not None and not weo_post.empty and "is_forecast" in weo_post.columns:
+        f = weo_post[weo_post["is_forecast"].astype(bool)]
         if not f.empty:
             forecast_start_year = int(f["year"].min()) - 1
 
@@ -159,17 +169,11 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
 
     legend_shown = set()
 
-    def add_series(df, source_label, is_forecast=False, bar_df=None):
-        """Emit revenue/expenditure lines and a balance bar for one source.
-
-        ``bar_df`` lets the caller pass a different frame for the bar trace
-        than the lines — used by ``add_split`` so the boundary year isn't
-        drawn twice in the bar row.
-        """
+    def add_series(df, source_label, is_forecast=False):
+        """Emit revenue/expenditure lines and a balance bar for one source."""
         if df is None or df.empty:
             return
-        if bar_df is None:
-            bar_df = df
+        bar_df = df
 
         if is_forecast:
             cat = "forecast"
@@ -241,21 +245,38 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         )
 
     def add_weo_split(df, source_label):
-        """Split WEO into actual/forecast traces (lines share the boundary; bars don't)."""
+        """Split WEO into actual and forecast traces.
+
+        The boundary year belongs to the actual series. A separate hover-free
+        dashed connector bridges it to the first forecast point, so the line
+        stays continuous without that year being tagged both actual and forecast.
+        """
         if df is None or df.empty:
             return
-        if "forecast" not in df.columns:
+        if "is_forecast" not in df.columns:
             add_series(df, source_label)
             return
         df = df.sort_values("year")
-        actual = df[~df["forecast"].astype(bool)]
-        forecast = df[df["forecast"].astype(bool)]
-        if not actual.empty and not forecast.empty:
-            forecast_lines = pd.concat([actual.tail(1), forecast], ignore_index=True)
-        else:
-            forecast_lines = forecast
+        actual = df[~df["is_forecast"].astype(bool)]
+        forecast = df[df["is_forecast"].astype(bool)]
         add_series(actual, source_label, is_forecast=False)
-        add_series(forecast_lines, source_label, is_forecast=True, bar_df=forecast)
+        add_series(forecast, source_label, is_forecast=True)
+        if not actual.empty and not forecast.empty:
+            bridge = pd.concat([actual.tail(1), forecast.head(1)], ignore_index=True)
+            for col, color in (
+                ("revenue", FORECAST_REVENUE_COLOR),
+                ("expenditure", FORECAST_EXPENDITURE_COLOR),
+            ):
+                fig.add_trace(
+                    go.Scatter(
+                        x=bridge.year, y=bridge[col],
+                        mode="lines",
+                        line=dict(color=color, dash="dash", width=2),
+                        showlegend=False,
+                        hoverinfo="skip",
+                    ),
+                    row=1, col=1,
+                )
 
     add_series(gfs_pre, t("deficit.chart.source_gfs", lang))
     add_weo_split(weo_post, t("deficit.chart.source_weo", lang))
@@ -504,12 +525,12 @@ def _append_weo_periods(parts, weo_df, currency_code, lang="en", composite_mode=
     if weo_df is None:
         return
 
-    if "forecast" not in weo_df.columns:
+    if "is_forecast" not in weo_df.columns:
         prefix = t("deficit.narrative.prefix.weo_lookahead", lang) if composite_mode else t("deficit.narrative.prefix.weo", lang)
         _append_period_from_df(parts, prefix, weo_df, currency_code, forecast=composite_mode, lang=lang)
         return
 
-    forecast_mask = weo_df["forecast"].astype(bool)
+    forecast_mask = weo_df["is_forecast"].astype(bool)
     has_actual = (~forecast_mask).any()
     has_forecast = forecast_mask.any()
 
@@ -539,7 +560,7 @@ def _append_weo_periods(parts, weo_df, currency_code, lang="en", composite_mode=
         )
 
 
-def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite", lang="en"):
+def narrative(national_df, gfs_df, weo_df, currency_code, view_mode=VIEW_COMPOSITE, lang="en"):
     parts = []
 
     national_df = _clean_rev_exp(national_df)
@@ -549,7 +570,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         national_df, gfs_df, weo_df, view_mode=view_mode
     )
 
-    if view_mode == "official":
+    if view_mode == VIEW_OFFICIAL:
         nat = _extract_national_insights(nat_view)
         if nat:
             parts.append(_national(
@@ -558,7 +579,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
             ))
         return _finalize_parts(parts)
 
-    if view_mode == "gfs":
+    if view_mode == VIEW_GFS:
         _append_period_from_df(
             parts,
             t("deficit.narrative.prefix.gfs", lang),
@@ -568,7 +589,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode="composite",
         )
         return _finalize_parts(parts)
 
-    if view_mode == "weo":
+    if view_mode == VIEW_WEO:
         _append_weo_periods(parts, weo_view, currency_code, lang=lang, composite_mode=False)
         return _finalize_parts(parts)
 

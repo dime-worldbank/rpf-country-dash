@@ -258,7 +258,7 @@ class QueryService:
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,
                 data_source AS source,
-                forecast
+                is_forecast
             FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
             WHERE data_source IN (
                 {source_filter}

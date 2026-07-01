@@ -33,6 +33,11 @@ from constants import (
     get_map_disclaimer,
     translate_econ,
     translate_func,
+    VIEW_COMPOSITE,
+    VIEW_OFFICIAL,
+    VIEW_GFS,
+    VIEW_WEO,
+    DEFAULT_FISCAL_VIEW,
 )
 from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
@@ -272,12 +277,12 @@ def render_overview_content(tab, lang):
                         dbc.RadioItems(
                             id="revenue-expenditure-view",
                             options=[
-                                {"label": t("deficit.view.composite", lang), "value": "composite"},
-                                {"label": t("deficit.view.official", lang), "value": "official"},
-                                {"label": t("deficit.view.gfs", lang), "value": "gfs"},
-                                {"label": t("deficit.view.weo", lang), "value": "weo"},
+                                {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
                             ],
-                            value="composite",
+                            value=DEFAULT_FISCAL_VIEW,
                             inline=True,
                             style={"padding": "10px"},
                             labelStyle={"margin-right": "20px"},
@@ -1442,17 +1447,17 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
         official_available = national_df is not None and not national_df.empty
 
     options = [
-        {"label": t("deficit.view.composite", lang), "value": "composite"},
-        {"label": t("deficit.view.official", lang), "value": "official", "disabled": not official_available},
-        {"label": t("deficit.view.gfs", lang), "value": "gfs"},
-        {"label": t("deficit.view.weo", lang), "value": "weo"},
+        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
+        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
     ]
 
     # If the user had "Official" selected but it's no longer available, fall back to composite.
-    if current_view == "official" and not official_available:
-        new_view = "composite"
+    if current_view == VIEW_OFFICIAL and not official_available:
+        new_view = VIEW_COMPOSITE
     else:
-        new_view = current_view or "composite"
+        new_view = current_view or DEFAULT_FISCAL_VIEW
 
     return options, new_view
 
@@ -1475,7 +1480,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
         national_df, gfs_df, weo_df,
         currency_code=basic_info["currency_code"],
         currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
-        view_mode=view_mode or "composite",
+        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
         lang=lang or "en",
     )
 
@@ -1496,6 +1501,6 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.narrative(
         national_df, gfs_df, weo_df, basic_info["currency_code"],
-        view_mode=view_mode or "composite",
+        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
         lang=lang or "en",
     )

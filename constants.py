@@ -11,6 +11,14 @@ WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
 GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
 IMF_GOVERNMENT_BUDGET_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
 
+# Fiscal-balance view modes — shared by the deficit chart component
+# (components/fiscal_balance.py) and the home page's view selector.
+VIEW_COMPOSITE = "composite"
+VIEW_OFFICIAL = "official"
+VIEW_GFS = "gfs"
+VIEW_WEO = "weo"
+DEFAULT_FISCAL_VIEW = VIEW_COMPOSITE
+
 
 def get_map_disclaimer(lang="en"):
     return t("disclaimer.map", lang)
