@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, funding_source
 from trend_narrative import get_segment_narrative, InsightExtractor
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
@@ -40,7 +40,7 @@ from constants import (
     DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
-from translations import t, genitive
+from translations import t, genitive, _LANGUAGES
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -184,6 +184,38 @@ def render_overview_content(tab, lang):
                         dbc.Col(
                             html.P(
                                 id="functional-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs={"size": 12, "offset": 0},
+                            sm={"size": 12, "offset": 0},
+                            md={"size": 12, "offset": 0},
+                            lg={"size": 4, "offset": 0},
+                        ),
+                    ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.budget", lang))
+                    )
+                ),
+                # How is the budget financed by domestic vs foreign sources?
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            chart_container("funding-source"),
+                            xs={"size": 12, "offset": 0},
+                            sm={"size": 12, "offset": 0},
+                            md={"size": 12, "offset": 0},
+                            lg={"size": 8, "offset": 0},
+                        ),
+                        dbc.Col(
+                            html.P(
+                                id="funding-source-narrative",
                                 children=t("loading", lang),
                             ),
                             xs={"size": 12, "offset": 0},
@@ -1012,9 +1044,12 @@ def update_heading(country, lang):
     if not country:
         return t("heading.regional_expenditure", lang)
     country_display = t(f"country.{country}", lang)
+    # Use the country's grammatical metadata (gender/number) for a correct
+    # French genitive — "Dépenses régionales du Togo / de la Colombie".
+    country_meta = _LANGUAGES.get(lang, {}).get(f"country.{country}", country_display)
     return t(
         "heading.country_regional_expenditure", lang,
-        country=country_display, country_gen=genitive(lang, country_display),
+        country=country_display, country_gen=genitive(lang, country_meta),
     )
 
 
@@ -1421,6 +1456,20 @@ def render_pefa_overall(data, pefa_data, country, lang):
 def render_budget_func_changes(data, country, exp_type, lang):
     lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+@callback(
+    Output("funding-source", "figure"),
+    Output("funding-source-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_funding_source(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return funding_source.render_fig_and_narrative(country, lang=lang)
 
 
 def _get_revenue_budget_context(country):

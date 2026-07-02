@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from plotly.subplots import make_subplots
-from translations import t, genitive
+from translations import t, genitive, _LANGUAGES
 from utils import apply_locale, empty_plot
 import numpy as np
 import plotly.graph_objects as go
@@ -287,9 +287,12 @@ def pefa_narrative(df, lang="en"):
     lowest_pillar_name = _pillar_text(lowest_pillar, lang)
 
     country_display = t(f"country.{country}", lang)
+    # Use the country's grammatical metadata (gender/number) for a correct
+    # French genitive — "des institutions budgétaires du Togo / de la Colombie".
+    country_meta = _LANGUAGES.get(lang, {}).get(f"country.{country}", country_display)
     text = t("narrative.pefa_latest", lang,
              year=latest_year, country=country_display,
-             country_gen=genitive(lang, country_display),
+             country_gen=genitive(lang, country_meta),
              highest_pillar=highest_pillar_name, highest_score=highest_score,
              highest_grade=highest_grade, strength_narrative=strength_narrative,
              lowest_pillar=lowest_pillar_name, lowest_score=lowest_score,

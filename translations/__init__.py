@@ -140,16 +140,21 @@ def _genitive_fr(noun_or_meta):
         The contraction: "du", "des", "de la", "de l'", "d'", or "de".
     """
     if isinstance(noun_or_meta, dict):
-        # Metadata-driven selection
+        # Metadata-driven selection: build the full "de …" phrase, choosing
+        # the contraction from the noun's number/gender and eliding before a
+        # vowel. e.g. "du Togo", "de la Colombie", "de l'Albanie", "des …".
+        name = noun_or_meta.get("name", "")
         plural = noun_or_meta.get("plural", False)
         feminine = noun_or_meta.get("feminine", False)
-
+        if not name:
+            return ""
         if plural:
-            return "des"
-        elif feminine:
-            return "de la"  # or "de l'" if vowel-initial, but let caller handle
-        else:
-            return "du"
+            return f"des {name}"
+        if name[0].lower() in _FRENCH_VOWELS:
+            return f"de l'{name}"
+        if feminine:
+            return f"de la {name}"
+        return f"du {name}"
 
     # Legacy: parse article from string
     if not noun_or_meta:
@@ -320,6 +325,8 @@ def genitive(lang, name):
         return name
     if lang == "fr":
         return _genitive_fr(name)
+    # Non-French: accept either a bare string or a metadata dict.
+    display = name.get("name", "") if isinstance(name, dict) else name
     if lang == "en":
-        return "of " + name
-    return name
+        return "of " + display
+    return display

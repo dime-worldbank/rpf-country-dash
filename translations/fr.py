@@ -24,6 +24,7 @@ TRANSLATIONS = {
     # --- Section headings ---
     "heading.total_expenditure": "Dépenses totales",
     "heading.spending_by_func": "Dépenses par catégories fonctionnelles",
+    "heading.budget": "Budget de l'État",
     "heading.spending_by_econ": "Dépenses par catégories économiques",
     "heading.quality_budget": "Qualité des institutions budgétaires",
     "heading.fiscal_balance": "Solde budgétaire",
@@ -63,6 +64,7 @@ TRANSLATIONS = {
     # without requiring gendered adjective agreement ("infranational(e)").
     "chart.subnational_outcome": "{outcome_name} au niveau infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
+    "chart.budget_by_funding_source": "Comment le budget est financé : sources intérieures et extérieures",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajusté à l'inflation",
@@ -71,6 +73,8 @@ TRANSLATIONS = {
     "trace.public_expenditure": "Dépenses publiques",
     "trace.private_expenditure": "Dépenses privées",
     "trace.poverty_rate": "Taux de pauvreté",
+    "trace.domestic_funded": "Financement intérieur",
+    "trace.foreign_funded": "Financement extérieur",
     "trace.per_capita": "Par habitant",
     "trace.pefa_score": "Score PEFA",
     "trace.uhc_index": "Indice de couverture sanitaire universelle",
@@ -106,6 +110,7 @@ TRANSLATIONS = {
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
+    "axis.budget_share": "Part du budget (%)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Dépenses par habitant {sector_prep}",
@@ -259,6 +264,11 @@ TRANSLATIONS = {
         "name": "le taux de pauvreté des apprentissages",
         "plural": False,
         "feminine": False,
+    },
+    "metric.foreign_funded_share": {
+        "name": "la part du budget financée par des sources extérieures (en points de pourcentage)",
+        "plural": False,
+        "feminine": True,
     },
 
     # Plain-string labels used mid-sentence by get_correlation_text on the
@@ -560,6 +570,7 @@ TRANSLATIONS = {
     "narrative.grew_modest": "a augmenté à un rythme modeste de {rate:.1f} %",
     "narrative.external_financing_included": "Cette analyse inclut actuellement le financement externe car les données budgétaires utilisées ont une granularité limitée. Idéalement, elle exclurait le financement externe en raison de sa volatilité.",
     "narrative.external_financing_excluded": "Cette analyse exclut le financement externe en raison de sa tendance à la volatilité.",
+    "narrative.funding_source_average": "En moyenne sur cette période, les sources extérieures ont financé {foreign_share:.1f} % du budget {country_gen}, les {domestic_share:.1f} % restants étant financés par des sources intérieures.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "Par défaut, seuls le budget global, la santé, l'éducation et les services publics généraux sont affichés dans le graphique. Cliquez sur la légende pour voir le taux de croissance budgétaire annuel des autres catégories fonctionnelles.",

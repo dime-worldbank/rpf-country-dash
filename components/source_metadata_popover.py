@@ -131,6 +131,7 @@ CHART_METADATA = {
     "overview-per-capita": {"sources": [_BOOST, _POVERTY_RATE]},
     "functional-breakdown": {"sources": [_BOOST]},
     "func-growth": {"sources": [_BOOST]},
+    "funding-source": {"sources": [_BOOST]},
     "economic-breakdown": {"sources": [_BOOST]},
     "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
     "pefa-by-pillar": {"sources": [_PEFA]},
