@@ -1,29 +1,34 @@
 import re
 import string
 
+from babel.numbers import get_currency_name
+
 from translations.en import TRANSLATIONS as EN
 from translations.fr import TRANSLATIONS as FR
+from translations.pt import TRANSLATIONS as PT
 
 _LANGUAGES = {
     "en": EN,
     "fr": FR,
+    "pt": PT,
 }
 
 LANGUAGE_OPTIONS = [
     {"label": "English", "value": "en"},
     {"label": "Français", "value": "fr"},
+    {"label": "Português (Brasil)", "value": "pt"},
 ]
 
 DEFAULT_LANGUAGE = "en"
 
 
 # Matches a digit-dot-digit sequence — used to swap English decimal points
-# for French-style commas inside *substituted values only*.
+# for comma-decimal languages inside *substituted values only*.
 _DECIMAL_RE = re.compile(r"(\d)\.(\d)")
 
 
-class _FrenchFormatter(string.Formatter):
-    """str.format with French number localization applied per-field.
+class _CommaDecimalFormatter(string.Formatter):
+    """str.format with comma-decimal number localization applied per-field.
 
     The key property is that ``format_field`` is invoked once per ``{…}``
     placeholder during rendering, receiving only the value being
@@ -45,7 +50,13 @@ class _FrenchFormatter(string.Formatter):
         return result
 
 
-_FR_FORMATTER = _FrenchFormatter()
+_COMMA_DECIMAL_FORMATTER = _CommaDecimalFormatter()
+_COMMA_DECIMAL_LANGS = {"fr", "pt"}
+
+_CURRENCY_LOCALES = {
+    "fr": "fr_FR",
+    "pt": "pt_BR",
+}
 
 
 def t(key, lang=None, **kwargs):
@@ -56,7 +67,7 @@ def t(key, lang=None, **kwargs):
     key : str
         Dot-separated translation key, e.g. "nav.overview".
     lang : str, optional
-        Language code ("en", "fr"). Falls back to DEFAULT_LANGUAGE.
+        Language code ("en", "fr", "pt"). Falls back to DEFAULT_LANGUAGE.
     **kwargs :
         Values to interpolate into the template string via str.format().
 
@@ -79,14 +90,26 @@ def t(key, lang=None, **kwargs):
 
     if not kwargs:
         return template
-    if lang == "fr":
-        return _FR_FORMATTER.vformat(template, (), kwargs)
+    if lang in _COMMA_DECIMAL_LANGS:
+        return _COMMA_DECIMAL_FORMATTER.vformat(template, (), kwargs)
     return template.format(**kwargs)
 
 
 def get_available_languages():
     """Return list of supported language codes."""
     return list(_LANGUAGES.keys())
+
+
+def localize_currency_name(currency_name, lang=None, currency_code=None):
+    """Return a Babel-localized currency name for supported languages."""
+    if lang is None:
+        lang = DEFAULT_LANGUAGE
+
+    locale = _CURRENCY_LOCALES.get(lang)
+    if locale and currency_code:
+        return get_currency_name(currency_code, count=2, locale=locale)
+
+    return currency_name or currency_code or ""
 
 
 # ---------------------------------------------------------------------------
@@ -96,6 +119,7 @@ def get_available_languages():
 _FRENCH_VOWELS = frozenset("aeiouyàâéèêëïîôùûüœæ")
 
 _FR_ARTICLES = ("les ", "le ", "la ", "l'")
+_PT_ARTICLES = ("os ", "as ", "o ", "a ")
 
 
 def strip_article(lang, name):
@@ -106,15 +130,73 @@ def strip_article(lang, name):
     "le Kenya" / "l'Albanie", even though the articled form is what the
     translations dict stores (because mid-sentence narratives need it).
 
-    Currently handles French articles; other languages return *name*
-    unchanged.
+    Currently handles French and Portuguese articles; other languages return
+    *name* unchanged.
     """
-    if not name or lang != "fr":
+    if not name:
         return name
-    for prefix in _FR_ARTICLES:
+    prefixes = _FR_ARTICLES if lang == "fr" else _PT_ARTICLES if lang == "pt" else ()
+    for prefix in prefixes:
         if name.startswith(prefix):
             return name[len(prefix):]
     return name
+
+
+def _article_pt(noun_or_meta):
+    if isinstance(noun_or_meta, dict):
+        article = noun_or_meta.get("article")
+        if article is not None:
+            return article
+        if noun_or_meta.get("plural", False):
+            return "as" if noun_or_meta.get("feminine", False) else "os"
+        return "a" if noun_or_meta.get("feminine", False) else "o"
+
+    if not noun_or_meta:
+        return ""
+    lower = noun_or_meta.lower()
+    for article in ("os", "as", "o", "a"):
+        if lower.startswith(article + " "):
+            return article
+    return ""
+
+
+def _noun_name(noun_or_meta):
+    if isinstance(noun_or_meta, dict):
+        return noun_or_meta.get("name", "")
+    return noun_or_meta or ""
+
+
+def _strip_pt_article(name):
+    for prefix in _PT_ARTICLES:
+        if name.startswith(prefix):
+            return name[len(prefix):]
+    return name
+
+
+def _genitive_pt(noun_or_meta):
+    article = _article_pt(noun_or_meta)
+    name = _strip_pt_article(_noun_name(noun_or_meta))
+    contractions = {
+        "o": "do",
+        "a": "da",
+        "os": "dos",
+        "as": "das",
+        "": "de",
+    }
+    prep = contractions.get(article, "de")
+    return f"{prep} {name}".strip()
+
+
+def _preposition_pt(noun_or_meta):
+    article = _article_pt(noun_or_meta)
+    contractions = {
+        "o": "no",
+        "a": "na",
+        "os": "nos",
+        "as": "nas",
+        "": "em",
+    }
+    return contractions.get(article, "em")
 
 
 def _genitive_fr(noun_or_meta):
@@ -223,10 +305,10 @@ def elide_que(lang, name):
     * ``elide_que("fr", "Kampala")`` → ``"que "``
     * ``elide_que("en", …)`` → ``"that"`` (no elision in English)
     """
-    if lang != "fr" or not name:
+    if lang not in {"fr", "pt"} or not name:
         return "que "
     first = name[0].lower()
-    if first in _FRENCH_VOWELS:
+    if lang == "fr" and first in _FRENCH_VOWELS:
         return "qu'"
     return "que "
 
@@ -274,6 +356,10 @@ def preposition(lang, noun_or_meta, capitalize=False):
                     noun_name = noun_name[len(prefix):]
                     break
         result = f"{prep} {noun_name}"
+    elif lang == "pt":
+        prep = _preposition_pt(noun_or_meta)
+        noun_name = _strip_pt_article(_noun_name(noun_or_meta))
+        result = f"{prep} {noun_name}"
     elif lang == "en":
         # Extract noun name from metadata or string
         if isinstance(noun_or_meta, dict):
@@ -320,6 +406,8 @@ def genitive(lang, name):
         return name
     if lang == "fr":
         return _genitive_fr(name)
+    if lang == "pt":
+        return _genitive_pt(name)
     if lang == "en":
         return "of " + name
     return name

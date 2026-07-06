@@ -22,7 +22,8 @@ from utils import (
 )
 
 from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
-from trend_narrative import get_segment_narrative, InsightExtractor
+from trend_narrative import InsightExtractor
+from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
 from constants import (
@@ -40,7 +41,7 @@ from constants import (
     DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
-from translations import t, genitive
+from translations import t, genitive, localize_currency_name
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -557,7 +558,12 @@ def overview_narrative(df, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.total_real_expenditure", lang), lang=lang)
+    trend_narrative = get_segment_narrative_i18n(
+        extractor=extractor,
+        metric=t("metric.total_real_expenditure", lang),
+        lang=lang,
+        fallback_kwargs={"metric": t("metric.total_real_expenditure", "en")},
+    )
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
@@ -692,14 +698,14 @@ def _format_cat_list(df, kind, format_num, lang="en"):
 
 
 def format_percentage(num, lang="en"):
-    """Format ``num`` as ``"12.3%"`` (EN) or ``"12,3%"`` (FR).
+    """Format ``num`` as ``"12.3%"`` (EN) or comma decimals for FR/PT.
 
     Output is concatenated directly into narratives via _format_cat_list
     (it doesn't flow through t(), so the _FrenchFormatter in translations/
     doesn't see it). Handle the decimal swap here.
     """
     result = f"{num:.1f}%"
-    if lang == "fr":
+    if lang in {"fr", "pt"}:
         result = result.replace(".", ",")
     return result
 
@@ -707,7 +713,7 @@ def format_percentage(num, lang="en"):
 def format_std(num, lang="en"):
     """Format a standard-deviation value with a localized label and decimal."""
     num_str = f"{num:.1f}"
-    if lang == "fr":
+    if lang in {"fr", "pt"}:
         num_str = num_str.replace(".", ",")
     return f"{t('label.std_abbrev', lang)} = {num_str}"
 
@@ -1034,10 +1040,13 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     all_countries = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(all_countries, country)
 
-    # Extract currency_name once at callback level
     basic_info = server_store.get("basic_country_info")[country]
-    currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
+    currency_name = localize_currency_name(
+        basic_info.get("currency_name"),
+        lang=lang,
+        currency_code=currency_code,
+    )
     return total_figure(df, currency_name, currency_code, lang=lang), per_capita_figure(df, currency_name, currency_code, lang=lang), overview_narrative(df, lang=lang)
 
 
@@ -1200,8 +1209,10 @@ def economic_narrative(df, lang="en"):
     Output("year-slider", "tooltip"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_year_range(data, country):
+def update_year_range(data, country, lang):
+    lang = lang or "en"
     if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
     try:
@@ -1209,7 +1220,7 @@ def update_year_range(data, country):
         expenditure_years = country_info[country].get("expenditure_years", [])
         poverty_years = country_info[country].get("poverty_years", [])
 
-        slider_configs = get_slider_config(expenditure_years, poverty_years)
+        slider_configs = get_slider_config(expenditure_years, poverty_years, lang=lang)
         return slider_configs
     except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
@@ -1491,7 +1502,11 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     return fiscal_balance.combined_figure(
         national_df, gfs_df, weo_df,
         currency_code=basic_info["currency_code"],
-        currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
+        currency_name=localize_currency_name(
+            basic_info.get("currency_name"),
+            lang=lang or "en",
+            currency_code=basic_info["currency_code"],
+        ),
         view_mode=view_mode or DEFAULT_FISCAL_VIEW,
         lang=lang or "en",
     )
