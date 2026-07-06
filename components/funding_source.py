@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from translations import t, genitive, _LANGUAGES
+from translations import t, genitive
 from trend_narrative import get_segment_narrative, InsightExtractor, TrendDetector
 from utils import (
     apply_locale,
@@ -105,13 +105,11 @@ def format_funding_source_narrative(df, country, lang="en"):
 
     plot_df = df.dropna(subset=["foreign_share"]).sort_values("year")
     mean_foreign = plot_df["foreign_share"].mean()
-    # Country metadata drives the French genitive ("du Togo" / "de la Colombie").
-    country_meta = _LANGUAGES.get(lang, {}).get(f"country.{country}", country_label)
     average_text = t(
         "narrative.funding_source_average",
         lang,
         country=country_label,
-        country_gen=genitive(lang, country_meta),
+        country_gen=genitive(lang, country_label),
         foreign_share=mean_foreign,
         domestic_share=100 - mean_foreign,
     )

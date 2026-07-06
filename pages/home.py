@@ -40,7 +40,7 @@ from constants import (
     DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
-from translations import t, genitive, _LANGUAGES
+from translations import t, genitive
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -1044,12 +1044,9 @@ def update_heading(country, lang):
     if not country:
         return t("heading.regional_expenditure", lang)
     country_display = t(f"country.{country}", lang)
-    # Use the country's grammatical metadata (gender/number) for a correct
-    # French genitive — "Dépenses régionales du Togo / de la Colombie".
-    country_meta = _LANGUAGES.get(lang, {}).get(f"country.{country}", country_display)
     return t(
         "heading.country_regional_expenditure", lang,
-        country=country_display, country_gen=genitive(lang, country_meta),
+        country=country_display, country_gen=genitive(lang, country_display),
     )
 
 
