@@ -434,11 +434,11 @@ TRANSLATIONS = {
     "outcome.uhc_index": "Índice UHC",
     "outcome.school_attendance.narrative": "a frequência escolar de 6 a 17 anos",
     "outcome.uhc_index.narrative": "o índice UHC",
-    "rank.1st": "1o",
-    "rank.10th": "10o",
-    "rank.20th": "20o",
-    "rank.30th": "30o",
-    "rank.40th": "40o",
+    "rank.1st": "1º",
+    "rank.10th": "10º",
+    "rank.20th": "20º",
+    "rank.30th": "30º",
+    "rank.40th": "40º",
     "label.overall_budget": "Orçamento geral",
 
     # --- Source metadata modal ---
