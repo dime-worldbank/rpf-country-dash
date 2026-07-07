@@ -91,7 +91,7 @@ TRANSLATIONS = {
     "hover.per_capita_spending": "Despesa pública per capita",
     "hover.real_central_expenditure": "Despesa central real",
     "hover.real_decentralized_expenditure": "Despesa descentralizada real",
-    "hover.real_public_expenditure": "Despesa pública real ",
+    "hover.real_public_expenditure": "Despesa pública real",
     "hover.real_private_expenditure": "Despesa privada real",
     "hover.func_category": "Categoria funcional",
     "hover.year": "Ano",
