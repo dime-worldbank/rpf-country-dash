@@ -146,7 +146,7 @@ TRANSLATIONS = {
     "error.no_expenditure_data_year": "Nenhum dado de despesa disponível para o ano selecionado",
     "error.no_outcome_data": "Nenhum dado de resultado disponível para este período",
     "error.subnat_expenditure_unavailable": "Dados de despesa subnacional não disponíveis",
-    "error.subnat_population_unavailable": "Dados de população subnacional não disponíveis ",
+    "error.subnat_population_unavailable": "Dados de população subnacional não disponíveis",
     "error.subnat_poverty_unavailable": "Dados de pobreza subnacional não disponíveis",
     "error.pefa_unavailable": "Dados PEFA não disponíveis",
     "error.pefa_pillar_unavailable": "Dados PEFA por pilar não disponíveis",
