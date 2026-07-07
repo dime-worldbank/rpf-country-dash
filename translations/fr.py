@@ -37,6 +37,7 @@ TRANSLATIONS = {
     "heading.central_vs_geo_education": "Dépenses d'éducation centralisées vs. géographiquement allouées",
     "heading.central_vs_geo_health": "Dépenses de santé centralisées vs. géographiquement allouées",
     "heading.public_spending_education_regions": "Dépenses publiques vs. résultats éducatifs par région",
+    "heading.edu_func_sub_econ": "Dépenses publiques par niveau d'enseignement",
     "heading.public_spending_health_regions": "Dépenses publiques vs. résultats sanitaires par région",
 
     # --- Chart titles ---
@@ -44,6 +45,7 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
+    "chart.edu_func_sub_econ": "Comment les dépenses d'éducation par sous-fonction ont-elles évolué au fil du temps ?",
     "chart.health_spending_over_time": "Comment les dépenses publiques en santé ont-elles évolué au fil du temps ?",
     "chart.pct_govt_vs_household": "Quel % a été dépensé par l'État vs les ménages ?",
     "chart.education_outcome": "Comment les résultats éducatifs ont-ils évolué ?",
@@ -114,6 +116,10 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Dépenses totales",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
+
+    # --- Étiquettes de menu déroulant / filtre ---
+    "label.filter_by_econ": "Filtrer par catégorie économique",
+    "dropdown.all_econ_categories": "Toutes les catégories économiques",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source : BOOST & IPC : World Bank",
@@ -287,6 +293,7 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
+    "narrative.edu_func_sub_econ": "Ce graphique montre l'évolution des dépenses publiques au fil du temps selon les niveaux d'enseignement, tels que l'enseignement primaire, secondaire et supérieur. Utilisez le menu déroulant pour vous concentrer sur un seul type de dépense, comme la masse salariale ou les dépenses d'investissement.",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",
     "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",

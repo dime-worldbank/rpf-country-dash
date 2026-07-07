@@ -37,6 +37,7 @@ TRANSLATIONS = {
     "heading.central_vs_geo_education": "Centrally vs. Geographically Allocated Education Spending",
     "heading.central_vs_geo_health": "Centrally vs. Geographically Allocated Health Spending",
     "heading.public_spending_education_regions": "Public Spending vs. Education Outcomes across Regions",
+    "heading.edu_func_sub_econ": "Public Spending by Education Levels",
     "heading.public_spending_health_regions": "Public Spending vs. Health Outcomes across Regions",
 
     # --- Chart titles ---
@@ -44,6 +45,7 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "How has per capita expenditure changed over time?",
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
+    "chart.edu_func_sub_econ": "How has education spending by sub-function changed over time?",
     "chart.health_spending_over_time": "How has govt spending on health changed over time?",
     "chart.pct_govt_vs_household": "What % was spent by the govt vs household?",
     "chart.education_outcome": "How has education outcome changed?",
@@ -111,6 +113,10 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Total expenditure",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
+
+    # --- Dropdown / filter labels ---
+    "label.filter_by_econ": "Filter by economic category",
+    "dropdown.all_econ_categories": "All economic categories",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source: BOOST & CPI: World Bank",
@@ -240,6 +246,7 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
+    "narrative.edu_func_sub_econ": "This chart shows how public spending has changed over time across education levels like primary, secondary, and tertiary. Use the dropdown to focus on a single type of spending, such as wage bill or capital expenditure.",
     "narrative.education_outcome_measure": "To check if this is the case for {country}, we can use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on education, use school attendance rate of 6-17 year-old children to proximate access to education, and use learning poverty rate as an indicator for education quality.",
     "narrative.health_outcome_measure": "We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome.",
     "narrative.outcome_from_to": "From {start_year} to {end_year}, {pcc}",

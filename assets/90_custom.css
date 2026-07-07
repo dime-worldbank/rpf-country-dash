@@ -1,3 +1,9 @@
+/* Economic-category filter dropdown (Education sub-function chart):
+   keep the border but drop the theme's blue focus glow. */
+body.theme-wbg .form-select.econ-filter-select:focus {
+    box-shadow: none;
+}
+
 /* Detail row styling in modal */
 .detail-row {
     margin-bottom: 8px;

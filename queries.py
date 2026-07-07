@@ -134,6 +134,14 @@ class QueryService:
         """
         return self.fetch_data(query)
 
+    def get_edu_expenditure_by_func_sub_econ(self):
+        query = f"""
+            SELECT country_name, year, func_sub, econ, expenditure
+            FROM prd_mega.{BOOST_SCHEMA}.expenditure_by_country_admin_func_sub_econ_sub_year_test
+            WHERE func = 'Education'
+        """
+        return self.fetch_data(query)
+
     def get_basic_country_data(self, countries):
         country_list = "', '".join(countries)
         query = f"""

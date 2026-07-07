@@ -150,6 +150,7 @@ CHART_METADATA = {
     "education-total": {"sources": [_BOOST]},
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
+    "education-func-sub-econ": {"sources": [_BOOST_EDU]},
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------

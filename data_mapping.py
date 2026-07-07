@@ -200,6 +200,7 @@ function_data_mapping = {
     "geo1_expenditure": lambda: _db().get_expenditure_by_country_geo1_year(),
     "geo1_func_expenditure": lambda: _db().expenditure_and_outcome_by_country_geo1_func_year(),
     "sub_func_expenditure": lambda: _db().get_expenditure_by_country_sub_func_year(),
+    "edu_func_sub_econ_expenditure": lambda: _db().get_edu_expenditure_by_func_sub_econ(),
     "pefa": lambda: _db().get_pefa(_countries()),
     "uhc_index": lambda: _db().get_universal_health_coverage_index(),
     "health_private_expenditure": lambda: _db().get_health_private_expenditure(),

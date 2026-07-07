@@ -5,9 +5,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-from constants import get_map_disclaimer
+from constants import get_map_disclaimer, translate_econ, translate_func_sub
 from translations import t, genitive, preposition, _LANGUAGES
-from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
+from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR, create_category_color_map
 from queries import QueryService
 import server_store
 from utils import (
@@ -220,6 +220,53 @@ def render_education_content(tab, lang):
                             ]
                         ),
                     ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.H3(children=t("heading.edu_func_sub_econ", lang)),
+                            xs=12, md=7, lg=8,
+                            className="d-flex align-items-center",
+                        ),
+                        dbc.Col(
+                            [
+                                dbc.Label(
+                                    t("label.filter_by_econ", lang),
+                                    html_for="education-func-sub-econ-filter",
+                                    className="mb-1",
+                                ),
+                                dbc.Select(
+                                    id="education-func-sub-econ-filter",
+                                    size="sm",
+                                    className="econ-filter-select",
+                                    value="Capital expenditures",
+                                    options=[
+                                        {
+                                            "label": t("dropdown.all_econ_categories", lang),
+                                            "value": "__all__",
+                                        }
+                                    ],
+                                ),
+                            ],
+                            xs=12, md=5, lg=4,
+                        ),
+                    ],
+                    align="center",
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.P(children=t("narrative.edu_func_sub_econ", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        chart_container("education-func-sub-econ"),
+                    )
                 ),
             ]
         )
@@ -538,6 +585,136 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
 
     fig = total_edu_figure(df, currency_code, lang=lang)
     return fig, education_narrative(data, country, lang=lang)
+
+
+# Education levels shown in the sub-function chart, in display order. Any
+# func_sub value outside this list (nulls, mis-tagged rows like "Roads") is
+# ignored. Not every country reports every level. The fixed list also gives
+# each level a consistent color across countries and econ filters.
+EDU_FUNC_SUB_ORDER = [
+    "Primary Education",
+    "Primary and Secondary education",
+    "Secondary Education",
+    "Post-Secondary Non-Tertiary Education",
+    "Tertiary Education",
+]
+EDU_FUNC_SUB_COLORS = create_category_color_map(EDU_FUNC_SUB_ORDER)
+
+
+@callback(
+    Output("education-func-sub-econ-filter", "options"),
+    Output("education-func-sub-econ-filter", "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    State("education-func-sub-econ-filter", "value"),
+)
+def update_edu_func_sub_econ_options(country, lang, current_value):
+    lang = lang or "en"
+    options = [
+        {"label": t("dropdown.all_econ_categories", lang), "value": "__all__"}
+    ]
+    if country:
+        df = server_store.get("edu_func_sub_econ_expenditure")
+        econ_values = sorted(
+            df[df["country_name"] == country]["econ"].dropna().unique()
+        )
+        options += [
+            {"label": translate_econ(e, lang), "value": e} for e in econ_values
+        ]
+    valid_values = {opt["value"] for opt in options}
+    if current_value in valid_values:
+        value = current_value
+    elif "Capital expenditures" in valid_values:
+        value = "Capital expenditures"
+    else:
+        value = "__all__"
+    return options, value
+
+
+@callback(
+    Output("education-func-sub-econ", "figure"),
+    Input("country-select", "value"),
+    Input("education-func-sub-econ-filter", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
+    lang = lang or "en"
+    if not country:
+        return empty_plot(t("loading", lang))
+
+    df = server_store.get("edu_func_sub_econ_expenditure")
+    df = df[df["country_name"] == country].copy()
+    df = df[df["func_sub"].isin(EDU_FUNC_SUB_ORDER)]
+    if econ_filter and econ_filter != "__all__":
+        df = df[df["econ"] == econ_filter]
+    if df.empty:
+        return empty_plot(t("error.no_data_period", lang))
+
+    grouped = (
+        df.groupby(["func_sub", "year"], as_index=False)["expenditure"]
+        .sum()
+        .sort_values("year")
+    )
+
+    currency_name = None
+    currency_code = None
+    if basic_country_data:
+        info = server_store.get("basic_country_info").get(country, {})
+        currency_name = info.get("currency_name")
+        currency_code = info.get("currency_code")
+
+    # Fixed display order; skip levels this country/filter doesn't report.
+    present = set(grouped["func_sub"].unique())
+    ordered = [f for f in EDU_FUNC_SUB_ORDER if f in present]
+
+    fig = go.Figure()
+    for func_sub in ordered:
+        sub = grouped[grouped["func_sub"] == func_sub]
+        label = translate_func_sub(func_sub, lang)
+        color = EDU_FUNC_SUB_COLORS.get(func_sub)
+        if currency_code:
+            formatted = sub["expenditure"].apply(
+                lambda v: format_currency(v, currency_code, lang=lang)
+            )
+            customdata = np.column_stack([formatted])
+            hovertemplate = f"<b>{label}</b>: %{{customdata[0]}}<extra></extra>"
+        else:
+            customdata = None
+            hovertemplate = f"<b>{label}</b>: %{{y}}<extra></extra>"
+        fig.add_trace(
+            go.Scatter(
+                name=label,
+                x=sub["year"],
+                y=sub["expenditure"],
+                mode="lines+markers",
+                line=dict(color=color),
+                marker=dict(color=color),
+                customdata=customdata,
+                hovertemplate=hovertemplate,
+            )
+        )
+
+    fig.update_xaxes(tickformat="d")
+    fig.update_yaxes(fixedrange=True)
+    if currency_name:
+        fig.update_yaxes(
+            title_text=f"{t('axis.total_expenditure', lang)} ({currency_name})"
+        )
+    fig.update_layout(
+        hovermode="x unified",
+        title=t("chart.edu_func_sub_econ", lang),
+        plot_bgcolor="white",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.3,
+            xanchor="center",
+            x=0.5,
+        ),
+        margin=dict(l=20, r=20, t=50, b=80),
+    )
+    return apply_locale(fig, lang)
 
 
 def public_private_narrative(df, country, lang="en"):
