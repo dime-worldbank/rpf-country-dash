@@ -295,7 +295,7 @@ def _preposition_fr(noun_or_meta):
 
 
 def elide_que(lang, name):
-    """Return "que" or "qu'" depending on the first character of *name*.
+    """Return the language-appropriate equivalent of "that"/"que".
 
     French elides "que" to "qu'" before a vowel sound — required in
     templates like "tandis que {name}" where {name} could start with
@@ -303,13 +303,13 @@ def elide_que(lang, name):
 
     * ``elide_que("fr", "Afar")``  → ``"qu'"``
     * ``elide_que("fr", "Kampala")`` → ``"que "``
-    * ``elide_que("en", …)`` → ``"that"`` (no elision in English)
+    * ``elide_que("en", …)`` → ``"that "`` (no elision in English)
     """
-    if lang not in {"fr", "pt"} or not name:
-        return "que "
-    first = name[0].lower()
-    if lang == "fr" and first in _FRENCH_VOWELS:
+    if lang == "fr" and name and name[0].lower() in _FRENCH_VOWELS:
         return "qu'"
+    if lang == "fr" or lang == "pt":
+        return "que "
+    return "that "
     return "que "
 
 

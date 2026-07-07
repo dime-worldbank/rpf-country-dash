@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from components.source_metadata_popover import build_modal_info
 from translations import (
     _LANGUAGES,
+    elide_que,
     genitive,
     get_available_languages,
     localize_currency_name,
@@ -39,6 +40,13 @@ class TestPortugueseTranslations(unittest.TestCase):
         self.assertEqual(preposition("pt", _LANGUAGES["pt"]["country.Kenya"]), "no Quênia")
         self.assertEqual(genitive("pt", t("country.Kenya", "pt")), "do Quênia")
         self.assertEqual(strip_article("pt", t("country.Kenya", "pt")), "Quênia")
+
+    def test_elide_que_language_outputs(self):
+        self.assertEqual(elide_que("fr", "Afar"), "qu'")
+        self.assertEqual(elide_que("fr", "Kampala"), "que ")
+        self.assertEqual(elide_que("pt", "Afar"), "que ")
+        self.assertEqual(elide_que("en", "Afar"), "that ")
+        self.assertEqual(elide_que("es", "Afar"), "that ")
 
     def test_portuguese_millify_and_plotly_separators(self):
         self.assertEqual(millify(1_500_000, lang="pt"), "1,50 M")
