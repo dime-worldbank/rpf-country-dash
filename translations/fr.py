@@ -45,7 +45,7 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
-    "chart.edu_func_sub_econ": "Comment les dépenses d'éducation par habitant et par niveau, ajustées à l'inflation, ont-elles évolué au fil du temps ?",
+    "chart.edu_func_sub_econ": "Dépenses publiques par habitant ajustées à l'inflation",
     "chart.teacher_salary": "Salaires des enseignants par niveau d'enseignement",
     "chart.completion_rate": "Taux d'achèvement par niveau d'enseignement (%)",
     "chart.schools_electricity": "Écoles disposant de l'électricité (%)",
@@ -108,7 +108,6 @@ TRANSLATIONS = {
     # --- Axis labels ---
     "axis.total_expenditure": "Dépenses totales",
     "axis.per_capita_expenditure": "Dépenses par habitant ({currency_name})",
-    "axis.per_capita_real_expenditure": "Dépenses par habitant ajustées à l'inflation ({currency_name})",
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",

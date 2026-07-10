@@ -243,89 +243,97 @@ def render_education_content(tab, lang):
                         html.H3(children=t("heading.edu_func_sub_econ", lang))
                     )
                 ),
+                # Both filters share one background bar, each label on top.
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Img(
+                                            src=_FILTER_ICON,
+                                            className="edu-filter-icon",
+                                            alt="",
+                                        ),
+                                        dbc.Label(
+                                            t("label.economic_category", lang),
+                                            html_for="education-func-sub-econ-filter",
+                                            className="edu-filter-label mb-0",
+                                        ),
+                                    ],
+                                    className="edu-filter-label-row",
+                                ),
+                                dbc.Select(
+                                    id="education-func-sub-econ-filter",
+                                    size="sm",
+                                    className="econ-filter-select",
+                                    value="__all__",
+                                    options=[
+                                        {
+                                            "label": t("dropdown.all_econ_categories", lang),
+                                            "value": "__all__",
+                                        }
+                                    ],
+                                ),
+                            ],
+                            className="edu-filter-item",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Img(
+                                            src=_FILTER_ICON,
+                                            className="edu-filter-icon",
+                                            alt="",
+                                        ),
+                                        dbc.Label(
+                                            t("label.outcome_indicator", lang),
+                                            html_for="education-outcome-indicator",
+                                            className="edu-filter-label mb-0",
+                                        ),
+                                    ],
+                                    className="edu-filter-label-row",
+                                ),
+                                dbc.Select(
+                                    id="education-outcome-indicator",
+                                    size="sm",
+                                    className="econ-filter-select",
+                                    value="completion_rate",
+                                    options=[
+                                        {"label": t("outcome.completion_rate", lang), "value": "completion_rate"},
+                                        {"label": t("outcome.teacher_salary", lang), "value": "teacher_salary"},
+                                        {"label": t("outcome.electricity", lang), "value": "electricity"},
+                                        {"label": t("outcome.internet", lang), "value": "internet"},
+                                    ],
+                                ),
+                            ],
+                            className="edu-filter-item",
+                        ),
+                    ],
+                    className="edu-filter-bar",
+                ),
+                # Spending and outcome charts side by side.
                 dbc.Row(
                     [
                         dbc.Col(
-                            [
-                                # Economic-category filter, above the spending chart.
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Img(
-                                                    src=_FILTER_ICON,
-                                                    className="edu-filter-icon",
-                                                    alt="",
-                                                ),
-                                                dbc.Label(
-                                                    t("label.economic_category", lang),
-                                                    html_for="education-func-sub-econ-filter",
-                                                    className="edu-filter-label mb-0",
-                                                ),
-                                            ],
-                                            className="edu-filter-label-row",
-                                        ),
-                                        dbc.Select(
-                                            id="education-func-sub-econ-filter",
-                                            size="sm",
-                                            className="econ-filter-select",
-                                            value="Capital expenditures",
-                                            options=[
-                                                {
-                                                    "label": t("dropdown.all_econ_categories", lang),
-                                                    "value": "__all__",
-                                                }
-                                            ],
-                                        ),
-                                    ],
-                                    className="edu-filter-box",
-                                ),
-                                chart_container("education-func-sub-econ"),
-                                # Outcome-indicator filter, above the outcome chart.
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Img(
-                                                    src=_FILTER_ICON,
-                                                    className="edu-filter-icon",
-                                                    alt="",
-                                                ),
-                                                dbc.Label(
-                                                    t("label.outcome_indicator", lang),
-                                                    html_for="education-outcome-indicator",
-                                                    className="edu-filter-label mb-0",
-                                                ),
-                                            ],
-                                            className="edu-filter-label-row",
-                                        ),
-                                        dbc.Select(
-                                            id="education-outcome-indicator",
-                                            size="sm",
-                                            className="econ-filter-select",
-                                            value="completion_rate",
-                                            options=[
-                                                {"label": t("outcome.completion_rate", lang), "value": "completion_rate"},
-                                                {"label": t("outcome.teacher_salary", lang), "value": "teacher_salary"},
-                                                {"label": t("outcome.electricity", lang), "value": "electricity"},
-                                                {"label": t("outcome.internet", lang), "value": "internet"},
-                                            ],
-                                        ),
-                                    ],
-                                    className="edu-filter-box",
-                                ),
-                                chart_container("education-level-outcome"),
-                            ],
+                            chart_container("education-func-sub-econ"),
                             xs=12, lg=6,
                         ),
                         dbc.Col(
-                            html.P(
-                                id="education-func-sub-narrative",
-                                children=t("loading", lang),
-                            ),
+                            chart_container("education-level-outcome"),
                             xs=12, lg=6,
                         ),
                     ]
+                ),
+                # Narrative below the charts.
+                dbc.Row(
+                    dbc.Col(
+                        html.P(
+                            id="education-func-sub-narrative",
+                            children=t("loading", lang),
+                        )
+                    )
                 ),
             ]
         )
@@ -760,12 +768,7 @@ def update_edu_func_sub_econ_options(country, lang, current_value):
             {"label": translate_econ(e, lang), "value": e} for e in econ_values
         ]
     valid_values = {opt["value"] for opt in options}
-    if current_value in valid_values:
-        value = current_value
-    elif "Capital expenditures" in valid_values:
-        value = "Capital expenditures"
-    else:
-        value = "__all__"
+    value = current_value if current_value in valid_values else "__all__"
     return options, value
 
 
@@ -814,11 +817,9 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
         .rename(columns={"per_capita_real_expenditure": "value"})
     )
 
-    currency_name = None
     currency_code = None
     if basic_country_data:
         info = server_store.get("basic_country_info").get(country, {})
-        currency_name = info.get("currency_name")
         currency_code = info.get("currency_code")
 
     # Fixed display order; skip levels this country/filter doesn't report.
@@ -871,10 +872,6 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
     else:
         fig.update_xaxes(tickformat="d")
     fig.update_yaxes(fixedrange=True)
-    if currency_name:
-        fig.update_yaxes(
-            title_text=t("axis.per_capita_real_expenditure", lang, currency_name=currency_name)
-        )
     fig.update_layout(
         hovermode="x unified",
         title=t("chart.edu_func_sub_econ", lang),

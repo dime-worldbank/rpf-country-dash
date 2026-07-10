@@ -45,7 +45,7 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "How has per capita expenditure changed over time?",
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
-    "chart.edu_func_sub_econ": "How has inflation-adjusted per-capita education spending by level changed over time?",
+    "chart.edu_func_sub_econ": "Inflation-adjusted per capita public expenditure",
     "chart.teacher_salary": "Teacher salaries by education level",
     "chart.completion_rate": "Completion rate by education level (%)",
     "chart.schools_electricity": "Schools with electricity (%)",
@@ -105,7 +105,6 @@ TRANSLATIONS = {
     # --- Axis labels ---
     "axis.total_expenditure": "Total Expenditure",
     "axis.per_capita_expenditure": "Per Capita Expenditure ({currency_name})",
-    "axis.per_capita_real_expenditure": "Inflation-adjusted per capita expenditure ({currency_name})",
     "axis.poverty_rate": "Poverty Rate (%)",
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
