@@ -5,9 +5,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
-from constants import get_map_disclaimer, translate_econ, translate_func_sub
+from constants import get_map_disclaimer, translate_econ, START_YEAR
 from translations import t, genitive, preposition, _LANGUAGES
-from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR, create_category_color_map
+from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR, QUALITATIVE
 from queries import QueryService
 import server_store
 from utils import (
@@ -37,6 +37,18 @@ from trend_narrative import get_relationship_narrative, get_segment_narrative, I
 db = QueryService.get_instance()
 
 dash.register_page(__name__)
+
+# Inline funnel (filter) icon as a data URI — no icon font is loaded, so this
+# keeps the "this is a filter" affordance self-contained.
+import urllib.parse as _urllib_parse
+_FILTER_SVG = (
+    "<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' "
+    "fill='#495057' viewBox='0 0 16 16'>"
+    "<path d='M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334"
+    "L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 "
+    "3.834A.5.5 0 0 1 1.5 3.5z'/></svg>"
+)
+_FILTER_ICON = "data:image/svg+xml," + _urllib_parse.quote(_FILTER_SVG)
 
 
 @require_login
@@ -227,46 +239,93 @@ def render_education_content(tab, lang):
                     )
                 ),
                 dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.edu_func_sub_econ", lang))
+                    )
+                ),
+                dbc.Row(
                     [
                         dbc.Col(
-                            html.H3(children=t("heading.edu_func_sub_econ", lang)),
-                            xs=12, md=7, lg=8,
-                            className="d-flex align-items-center",
+                            [
+                                # Economic-category filter, above the spending chart.
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Img(
+                                                    src=_FILTER_ICON,
+                                                    className="edu-filter-icon",
+                                                    alt="",
+                                                ),
+                                                dbc.Label(
+                                                    t("label.economic_category", lang),
+                                                    html_for="education-func-sub-econ-filter",
+                                                    className="edu-filter-label mb-0",
+                                                ),
+                                            ],
+                                            className="edu-filter-label-row",
+                                        ),
+                                        dbc.Select(
+                                            id="education-func-sub-econ-filter",
+                                            size="sm",
+                                            className="econ-filter-select",
+                                            value="Capital expenditures",
+                                            options=[
+                                                {
+                                                    "label": t("dropdown.all_econ_categories", lang),
+                                                    "value": "__all__",
+                                                }
+                                            ],
+                                        ),
+                                    ],
+                                    className="edu-filter-box",
+                                ),
+                                chart_container("education-func-sub-econ"),
+                                # Outcome-indicator filter, above the outcome chart.
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Img(
+                                                    src=_FILTER_ICON,
+                                                    className="edu-filter-icon",
+                                                    alt="",
+                                                ),
+                                                dbc.Label(
+                                                    t("label.outcome_indicator", lang),
+                                                    html_for="education-outcome-indicator",
+                                                    className="edu-filter-label mb-0",
+                                                ),
+                                            ],
+                                            className="edu-filter-label-row",
+                                        ),
+                                        dbc.Select(
+                                            id="education-outcome-indicator",
+                                            size="sm",
+                                            className="econ-filter-select",
+                                            value="completion_rate",
+                                            options=[
+                                                {"label": t("outcome.completion_rate", lang), "value": "completion_rate"},
+                                                {"label": t("outcome.teacher_salary", lang), "value": "teacher_salary"},
+                                                {"label": t("outcome.electricity", lang), "value": "electricity"},
+                                                {"label": t("outcome.internet", lang), "value": "internet"},
+                                            ],
+                                        ),
+                                    ],
+                                    className="edu-filter-box",
+                                ),
+                                chart_container("education-level-outcome"),
+                            ],
+                            xs=12, lg=6,
                         ),
                         dbc.Col(
-                            [
-                                dbc.Label(
-                                    t("label.filter_by_econ", lang),
-                                    html_for="education-func-sub-econ-filter",
-                                    className="mb-1",
-                                ),
-                                dbc.Select(
-                                    id="education-func-sub-econ-filter",
-                                    size="sm",
-                                    className="econ-filter-select",
-                                    value="Capital expenditures",
-                                    options=[
-                                        {
-                                            "label": t("dropdown.all_econ_categories", lang),
-                                            "value": "__all__",
-                                        }
-                                    ],
-                                ),
-                            ],
-                            xs=12, md=5, lg=4,
+                            html.P(
+                                id="education-func-sub-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=6,
                         ),
-                    ],
-                    align="center",
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        html.P(children=t("narrative.edu_func_sub_econ", lang))
-                    )
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        chart_container("education-func-sub-econ"),
-                    )
+                    ]
                 ),
             ]
         )
@@ -587,10 +646,46 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     return fig, education_narrative(data, country, lang=lang)
 
 
+# Canonical education levels shared by the spending-breakdown and outcome
+# charts. Both charts label and color their legend entries from this single
+# model, so the same level reads identically (same wording, same color) in
+# both legends. Order is pedagogical (early → late).
+_LEVEL_ORDER = [
+    "pre_primary",
+    "primary",
+    "primary_secondary",
+    "lower_secondary",
+    "secondary",
+    "upper_secondary",
+    "post_secondary",
+    "tertiary",
+]
+# Colors come from the QUALITATIVE palette (ColorBrewer Paired), whose
+# light/dark hue pairs are assigned to follow the education progression:
+# blue family for primary-and-earlier, green for secondary, orange for
+# post-secondary/tertiary. Levels that never share a chart may reuse a shade.
+_LEVEL_COLORS = {
+    "pre_primary":       QUALITATIVE[0],  # light blue
+    "primary":           QUALITATIVE[1],  # blue
+    "primary_secondary": QUALITATIVE[2],  # light green
+    "lower_secondary":   QUALITATIVE[2],  # light green
+    "secondary":         QUALITATIVE[3],  # green
+    "upper_secondary":   QUALITATIVE[3],  # green
+    "post_secondary":    QUALITATIVE[6],  # light orange
+    "tertiary":          QUALITATIVE[7],  # orange
+}
+
+# Shared legend/margin so both charts' legend boxes match in placement & style.
+_LEGEND_STYLE = dict(
+    orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5,
+    font=dict(size=11),
+)
+_CHART_MARGIN = dict(l=20, r=20, t=50, b=80)
+
 # Education levels shown in the sub-function chart, in display order. Any
 # func_sub value outside this list (nulls, mis-tagged rows like "Roads") is
-# ignored. Not every country reports every level. The fixed list also gives
-# each level a consistent color across countries and econ filters.
+# ignored. Not every country reports every level. Each is mapped to a
+# canonical level so its legend entry matches the outcome chart.
 EDU_FUNC_SUB_ORDER = [
     "Primary Education",
     "Primary and Secondary education",
@@ -598,7 +693,50 @@ EDU_FUNC_SUB_ORDER = [
     "Post-Secondary Non-Tertiary Education",
     "Tertiary Education",
 ]
-EDU_FUNC_SUB_COLORS = create_category_color_map(EDU_FUNC_SUB_ORDER)
+_FUNC_SUB_TO_LEVEL = {
+    "Primary Education": "primary",
+    "Primary and Secondary education": "primary_secondary",
+    "Secondary Education": "secondary",
+    "Post-Secondary Non-Tertiary Education": "post_secondary",
+    "Tertiary Education": "tertiary",
+}
+
+
+def _year_axis_ticks(years):
+    """Return (tick0, dtick) that keep year-axis ticks on whole years.
+
+    A plain linear axis with few points lets Plotly pick a fractional dtick
+    (e.g. 0.5), which ``tickformat="d"`` then rounds to repeated year labels.
+    Forcing an integer dtick (~10 ticks max) avoids the duplicates.
+    """
+    years = [int(y) for y in years]
+    if not years:
+        return 0, 1
+    span = max(years) - min(years)
+    dtick = max(1, round(span / 10)) if span else 1
+    return min(years), dtick
+
+
+def _shared_year_range(country, econ_filter):
+    """[min, max] year range for the x-axis, derived from the spending
+    (breakdown) data only, floored at START_YEAR. Both charts use it so they
+    share one x-axis — and, crucially, the outcome indicator does NOT influence
+    it, so switching indicators never moves the spending chart. Returns None
+    if there's no spending data.
+    """
+    breakdown = server_store.get("edu_func_sub_econ_expenditure")
+    breakdown = breakdown[
+        (breakdown["country_name"] == country)
+        & (breakdown["func_sub"].isin(EDU_FUNC_SUB_ORDER))
+    ]
+    if econ_filter and econ_filter != "__all__":
+        breakdown = breakdown[breakdown["econ"] == econ_filter]
+
+    years = breakdown["year"].tolist()
+    if not years:
+        return None
+    years = [int(y) for y in years]
+    return max(min(years), START_YEAR), max(years)
 
 
 @callback(
@@ -631,6 +769,24 @@ def update_edu_func_sub_econ_options(country, lang, current_value):
     return options, value
 
 
+# Each economic category has a natural default outcome indicator. Selecting a
+# category updates the outcome dropdown; the reverse is deliberately NOT wired,
+# so picking a different outcome indicator leaves the economic category alone.
+_ECON_DEFAULT_OUTCOME = {
+    "Wage bill": "teacher_salary",
+    "Capital expenditures": "electricity",
+    "Goods and services": "internet",
+}
+
+
+@callback(
+    Output("education-outcome-indicator", "value"),
+    Input("education-func-sub-econ-filter", "value"),
+)
+def default_outcome_for_econ(econ_filter):
+    return _ECON_DEFAULT_OUTCOME.get(econ_filter, "completion_rate")
+
+
 @callback(
     Output("education-func-sub-econ", "figure"),
     Input("country-select", "value"),
@@ -652,9 +808,10 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
         return empty_plot(t("error.no_data_period", lang))
 
     grouped = (
-        df.groupby(["func_sub", "year"], as_index=False)["expenditure"]
+        df.groupby(["func_sub", "year"], as_index=False)["per_capita_real_expenditure"]
         .sum()
         .sort_values("year")
+        .rename(columns={"per_capita_real_expenditure": "value"})
     )
 
     currency_name = None
@@ -670,11 +827,20 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
 
     fig = go.Figure()
     for func_sub in ordered:
-        sub = grouped[grouped["func_sub"] == func_sub]
-        label = translate_func_sub(func_sub, lang)
-        color = EDU_FUNC_SUB_COLORS.get(func_sub)
+        # Drop 0/missing values — they mean unreported spending (or no
+        # population), not a real zero, so the line skips those years.
+        sub = grouped[
+            (grouped["func_sub"] == func_sub)
+            & grouped["value"].notna()
+            & (grouped["value"] != 0)
+        ]
+        if sub.empty:
+            continue
+        level = _FUNC_SUB_TO_LEVEL[func_sub]
+        label = t(f"level.{level}", lang)
+        color = _LEVEL_COLORS.get(level)
         if currency_code:
-            formatted = sub["expenditure"].apply(
+            formatted = sub["value"].apply(
                 lambda v: format_currency(v, currency_code, lang=lang)
             )
             customdata = np.column_stack([formatted])
@@ -686,7 +852,7 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
             go.Scatter(
                 name=label,
                 x=sub["year"],
-                y=sub["expenditure"],
+                y=sub["value"],
                 mode="lines+markers",
                 line=dict(color=color),
                 marker=dict(color=color),
@@ -695,24 +861,221 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
             )
         )
 
-    fig.update_xaxes(tickformat="d")
+    year_range = _shared_year_range(country, econ_filter)
+    if year_range:
+        lo, hi = year_range
+        tick0, dtick = _year_axis_ticks([lo, hi])
+        fig.update_xaxes(
+            tickformat="d", tick0=tick0, dtick=dtick, range=[lo - 0.5, hi + 0.5]
+        )
+    else:
+        fig.update_xaxes(tickformat="d")
     fig.update_yaxes(fixedrange=True)
     if currency_name:
         fig.update_yaxes(
-            title_text=f"{t('axis.total_expenditure', lang)} ({currency_name})"
+            title_text=t("axis.per_capita_real_expenditure", lang, currency_name=currency_name)
         )
     fig.update_layout(
         hovermode="x unified",
         title=t("chart.edu_func_sub_econ", lang),
         plot_bgcolor="white",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=-0.3,
-            xanchor="center",
-            x=0.5,
-        ),
-        margin=dict(l=20, r=20, t=50, b=80),
+        legend=_LEGEND_STYLE,
+        margin=_CHART_MARGIN,
+    )
+    return apply_locale(fig, lang)
+
+
+@callback(
+    Output("education-func-sub-narrative", "children"),
+    Input("country-select", "value"),
+    Input("education-func-sub-econ-filter", "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_narrative(country, econ_filter, lang):
+    lang = lang or "en"
+    if not country:
+        return t("loading", lang)
+
+    df = server_store.get("edu_func_sub_econ_expenditure")
+    df = df[
+        (df["country_name"] == country)
+        & (df["func_sub"].isin(EDU_FUNC_SUB_ORDER))
+        & df["per_capita_real_expenditure"].notna()
+        & (df["per_capita_real_expenditure"] != 0)
+    ]
+    if econ_filter and econ_filter != "__all__":
+        df = df[df["econ"] == econ_filter]
+    if df.empty:
+        return t("error.no_data_period", lang)
+
+    currency_code = (
+        server_store.get("basic_country_info").get(country, {}).get("currency_code")
+    )
+
+    def _fmt(value):
+        if currency_code:
+            return format_currency(value, currency_code, lang=lang)
+        return millify(value, lang=lang)
+
+    # Make the selected economic category explicit (lowercased for mid-sentence).
+    if econ_filter and econ_filter != "__all__":
+        scope = t(
+            "narrative.econ_scope_one", lang,
+            econ=translate_econ(econ_filter, lang).lower(),
+        )
+    else:
+        scope = t("narrative.econ_scope_all", lang)
+
+    # Rank levels by average real per-capita spending over the years, so a
+    # level with more years of data isn't favored over one with fewer.
+    means = df.groupby("func_sub")["per_capita_real_expenditure"].mean()
+    start_year, end_year = int(df["year"].min()), int(df["year"].max())
+    most_key = means.idxmax()
+    most_label = t(f"level.{_FUNC_SUB_TO_LEVEL[most_key]}.long", lang)
+
+    if len(means) == 1:
+        return t(
+            "narrative.edu_func_sub_single", lang,
+            scope=scope, level=most_label, start=start_year, end=end_year,
+            level_val=_fmt(means.loc[most_key]),
+        )
+    least_key = means.idxmin()
+    least_label = t(f"level.{_FUNC_SUB_TO_LEVEL[least_key]}.long", lang)
+    return t(
+        "narrative.edu_func_sub_most_least", lang,
+        scope=scope, most=most_label, least=least_label,
+        start=start_year, end=end_year,
+        most_val=_fmt(means.loc[most_key]), least_val=_fmt(means.loc[least_key]),
+    )
+
+
+# Intermediate-outcome indicator shown next to the sub-function breakdown,
+# selected by the econ dropdown. Each config maps education levels to the
+# indicator column; any econ not listed falls back to completion rate.
+_TEACHER_SALARY_OUTCOME = {
+    "store_key": "teacher_salaries",
+    "title_key": "chart.teacher_salary",
+    "axis_key": "axis.teacher_salary",
+    "value_fmt": ".2f",
+    "suffix": "",
+    "y_range": None,
+    "columns": {
+        "pre_primary": "teacher_salary_pre_primary",
+        "primary": "teacher_salary_primary",
+        "lower_secondary": "teacher_salary_lower_secondary",
+        "upper_secondary": "teacher_salary_upper_secondary",
+    },
+}
+_ELECTRICITY_OUTCOME = {
+    "store_key": "school_basic_services",
+    "title_key": "chart.schools_electricity",
+    "axis_key": "axis.pct_schools",
+    "value_fmt": ".1f",
+    "suffix": "%",
+    "y_range": [0, 100],
+    "columns": {
+        "primary": "schools_with_electricity_primary",
+        "lower_secondary": "schools_with_electricity_lower_secondary",
+        "upper_secondary": "schools_with_electricity_upper_secondary",
+    },
+}
+_INTERNET_OUTCOME = {
+    "store_key": "school_basic_services",
+    "title_key": "chart.schools_internet",
+    "axis_key": "axis.pct_schools",
+    "value_fmt": ".1f",
+    "suffix": "%",
+    "y_range": [0, 100],
+    "columns": {
+        "primary": "schools_with_internet_primary",
+        "lower_secondary": "schools_with_internet_lower_secondary",
+        "upper_secondary": "schools_with_internet_upper_secondary",
+    },
+}
+_COMPLETION_RATE_OUTCOME = {
+    "store_key": "completion_rates",
+    "title_key": "chart.completion_rate",
+    "axis_key": "axis.completion_rate",
+    "value_fmt": ".1f",
+    "suffix": "%",
+    "y_range": [0, 100],
+    "columns": {
+        "primary": "completion_rate_primary",
+        "lower_secondary": "completion_rate_lower_secondary",
+        "upper_secondary": "completion_rate_upper_secondary",
+    },
+}
+# Outcome indicator the user can pick from the second dropdown.
+_OUTCOME_BY_KEY = {
+    "completion_rate": _COMPLETION_RATE_OUTCOME,
+    "teacher_salary": _TEACHER_SALARY_OUTCOME,
+    "electricity": _ELECTRICITY_OUTCOME,
+    "internet": _INTERNET_OUTCOME,
+}
+_DEFAULT_OUTCOME_KEY = "completion_rate"
+
+
+@callback(
+    Output("education-level-outcome", "figure"),
+    Input("country-select", "value"),
+    Input("education-func-sub-econ-filter", "value"),
+    Input("education-outcome-indicator", "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_level_outcome(country, econ_filter, indicator, lang):
+    lang = lang or "en"
+    if not country:
+        return empty_plot(t("loading", lang))
+
+    cfg = _OUTCOME_BY_KEY.get(indicator, _COMPLETION_RATE_OUTCOME)
+    df = server_store.get(cfg["store_key"])
+    df = df[df["country_name"] == country].sort_values("year")
+
+    fig = go.Figure()
+    for level in _LEVEL_ORDER:
+        col = cfg["columns"].get(level)
+        if not col or col not in df.columns:
+            continue
+        # Drop missing and 0 values (0 = not reported, not a real zero).
+        series = df[["year", col]].dropna()
+        series = series[series[col] != 0]
+        if series.empty:
+            continue
+        label = t(f"level.{level}", lang)
+        color = _LEVEL_COLORS.get(level)
+        fig.add_trace(
+            go.Scatter(
+                name=label,
+                x=series["year"],
+                y=series[col],
+                mode="lines+markers",
+                line=dict(color=color),
+                marker=dict(color=color),
+                hovertemplate=f"<b>{label}</b>: %{{y:{cfg['value_fmt']}}}{cfg['suffix']}<extra></extra>",
+            )
+        )
+
+    if not fig.data:
+        return empty_plot(t("error.no_data_period", lang))
+
+    year_range = _shared_year_range(country, econ_filter)
+    if year_range:
+        lo, hi = year_range
+        tick0, dtick = _year_axis_ticks([lo, hi])
+        fig.update_xaxes(
+            tickformat="d", tick0=tick0, dtick=dtick, range=[lo - 0.5, hi + 0.5]
+        )
+    else:
+        fig.update_xaxes(tickformat="d")
+    fig.update_yaxes(fixedrange=True, title_text=t(cfg["axis_key"], lang))
+    if cfg["y_range"]:
+        fig.update_yaxes(range=cfg["y_range"])
+    fig.update_layout(
+        hovermode="x unified",
+        title=t(cfg["title_key"], lang),
+        plot_bgcolor="white",
+        legend=_LEGEND_STYLE,
+        margin=_CHART_MARGIN,
     )
     return apply_locale(fig, lang)
 

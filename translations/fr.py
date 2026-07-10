@@ -45,7 +45,11 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
-    "chart.edu_func_sub_econ": "Comment les dépenses d'éducation par sous-fonction ont-elles évolué au fil du temps ?",
+    "chart.edu_func_sub_econ": "Comment les dépenses d'éducation par habitant et par niveau, ajustées à l'inflation, ont-elles évolué au fil du temps ?",
+    "chart.teacher_salary": "Salaires des enseignants par niveau d'enseignement",
+    "chart.completion_rate": "Taux d'achèvement par niveau d'enseignement (%)",
+    "chart.schools_electricity": "Écoles disposant de l'électricité (%)",
+    "chart.schools_internet": "Écoles disposant d'un accès à Internet (%)",
     "chart.health_spending_over_time": "Comment les dépenses publiques en santé ont-elles évolué au fil du temps ?",
     "chart.pct_govt_vs_household": "Quel % a été dépensé par l'État vs les ménages ?",
     "chart.education_outcome": "Comment les résultats éducatifs ont-ils évolué ?",
@@ -104,9 +108,32 @@ TRANSLATIONS = {
     # --- Axis labels ---
     "axis.total_expenditure": "Dépenses totales",
     "axis.per_capita_expenditure": "Dépenses par habitant ({currency_name})",
+    "axis.per_capita_real_expenditure": "Dépenses par habitant ajustées à l'inflation ({currency_name})",
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
+    "axis.teacher_salary": "Salaire des enseignants",
+    "axis.completion_rate": "Taux d'achèvement (%)",
+    "axis.pct_schools": "% des écoles",
+
+    # --- Niveaux d'enseignement ---
+    "level.pre_primary": "Préprimaire",
+    "level.primary": "Primaire",
+    "level.primary_secondary": "Primaire et secondaire",
+    "level.post_secondary": "Post-secondaire non supérieur",
+    # Formes longues pour les narratifs ("l'enseignement secondaire").
+    "level.pre_primary.long": "l'enseignement préprimaire",
+    "level.primary.long": "l'enseignement primaire",
+    "level.primary_secondary.long": "l'enseignement primaire et secondaire",
+    "level.lower_secondary.long": "le premier cycle du secondaire",
+    "level.secondary.long": "l'enseignement secondaire",
+    "level.upper_secondary.long": "le deuxième cycle du secondaire",
+    "level.post_secondary.long": "l'enseignement post-secondaire non supérieur",
+    "level.tertiary.long": "l'enseignement supérieur",
+    "level.secondary": "Secondaire",
+    "level.lower_secondary": "Premier cycle du secondaire",
+    "level.upper_secondary": "Deuxième cycle du secondaire",
+    "level.tertiary": "Supérieur",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
 
     # --- Radio button labels ---
@@ -119,6 +146,12 @@ TRANSLATIONS = {
 
     # --- Étiquettes de menu déroulant / filtre ---
     "label.filter_by_econ": "Filtrer par catégorie économique",
+    "label.economic_category": "Catégorie économique",
+    "label.outcome_indicator": "Indicateur de résultat",
+    "outcome.completion_rate": "Taux d'achèvement",
+    "outcome.teacher_salary": "Salaires des enseignants",
+    "outcome.electricity": "Écoles avec électricité",
+    "outcome.internet": "Écoles avec Internet",
     "dropdown.all_econ_categories": "Toutes les catégories économiques",
 
     # --- Source annotations ---
@@ -293,7 +326,11 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
-    "narrative.edu_func_sub_econ": "Ce graphique montre l'évolution des dépenses publiques au fil du temps selon les niveaux d'enseignement, tels que l'enseignement primaire, secondaire et supérieur. Utilisez le menu déroulant pour vous concentrer sur un seul type de dépense, comme la masse salariale ou les dépenses d'investissement.",
+    "narrative.edu_func_sub_econ": "Ce graphique montre l'évolution des dépenses publiques par habitant, ajustées à l'inflation, au fil du temps selon les niveaux d'enseignement, tels que l'enseignement primaire, secondaire et supérieur. Utilisez le menu déroulant pour vous concentrer sur un seul type de dépense, comme la masse salariale ou les dépenses d'investissement.",
+    "narrative.edu_func_sub_most_least": "{scope}, entre {start} et {end}, {most} a reçu le plus de dépenses par habitant ajustées à l'inflation, avec une moyenne de {most_val} par an, tandis que {least} en a reçu le moins, à {least_val}.",
+    "narrative.edu_func_sub_single": "{scope}, entre {start} et {end}, {level} était le seul niveau avec des dépenses déclarées, avec une moyenne de {level_val} par habitant et par an.",
+    "narrative.econ_scope_all": "Toutes catégories économiques confondues",
+    "narrative.econ_scope_one": "Pour {econ}",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",
     "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",
@@ -613,6 +650,9 @@ TRANSLATIONS = {
     "source.pefa.label": "Évaluation PEFA",
     "source.edu_private.label": "Dépenses privées d'éducation",
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
+    "source.teacher_salary.label": "Salaires des enseignants",
+    "source.completion_rate.label": "Taux d'achèvement scolaire",
+    "source.school_services.label": "Services de base des écoles",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "BOOST de la Banque mondiale",
@@ -620,6 +660,7 @@ TRANSLATIONS = {
     "source_name.world_bank": "Banque mondiale",
     "source_name.world_bank_icp": "ICP de la Banque mondiale",
     "source_name.global_data_lab": "Global Data Lab",
+    "source_name.unesco_uis": "Institut de statistique de l'UNESCO (ISU)",
     "source_name.who_gho": "OMS (GHO)",
     "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
     "source_name.pefa_secretariat": "Secrétariat PEFA",

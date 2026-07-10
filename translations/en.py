@@ -45,7 +45,11 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "How has per capita expenditure changed over time?",
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
-    "chart.edu_func_sub_econ": "How has education spending by sub-function changed over time?",
+    "chart.edu_func_sub_econ": "How has inflation-adjusted per-capita education spending by level changed over time?",
+    "chart.teacher_salary": "Teacher salaries by education level",
+    "chart.completion_rate": "Completion rate by education level (%)",
+    "chart.schools_electricity": "Schools with electricity (%)",
+    "chart.schools_internet": "Schools with internet access (%)",
     "chart.health_spending_over_time": "How has govt spending on health changed over time?",
     "chart.pct_govt_vs_household": "What % was spent by the govt vs household?",
     "chart.education_outcome": "How has education outcome changed?",
@@ -101,9 +105,32 @@ TRANSLATIONS = {
     # --- Axis labels ---
     "axis.total_expenditure": "Total Expenditure",
     "axis.per_capita_expenditure": "Per Capita Expenditure ({currency_name})",
+    "axis.per_capita_real_expenditure": "Inflation-adjusted per capita expenditure ({currency_name})",
     "axis.poverty_rate": "Poverty Rate (%)",
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
+    "axis.teacher_salary": "Teacher salary",
+    "axis.completion_rate": "Completion rate (%)",
+    "axis.pct_schools": "% of schools",
+
+    # --- Education level labels ---
+    "level.pre_primary": "Pre-primary",
+    "level.primary": "Primary",
+    "level.primary_secondary": "Primary & secondary",
+    "level.post_secondary": "Post-secondary non-tertiary",
+    # Longer, mid-sentence forms used in narratives ("secondary education").
+    "level.pre_primary.long": "pre-primary education",
+    "level.primary.long": "primary education",
+    "level.primary_secondary.long": "primary & secondary education",
+    "level.lower_secondary.long": "lower secondary education",
+    "level.secondary.long": "secondary education",
+    "level.upper_secondary.long": "upper secondary education",
+    "level.post_secondary.long": "post-secondary non-tertiary education",
+    "level.tertiary.long": "tertiary education",
+    "level.secondary": "Secondary",
+    "level.lower_secondary": "Lower secondary",
+    "level.upper_secondary": "Upper secondary",
+    "level.tertiary": "Tertiary",
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
 
     # --- Radio button labels ---
@@ -116,6 +143,12 @@ TRANSLATIONS = {
 
     # --- Dropdown / filter labels ---
     "label.filter_by_econ": "Filter by economic category",
+    "label.economic_category": "Economic category",
+    "label.outcome_indicator": "Outcome indicator",
+    "outcome.completion_rate": "Completion rate",
+    "outcome.teacher_salary": "Teacher salaries",
+    "outcome.electricity": "Schools with electricity",
+    "outcome.internet": "Schools with internet",
     "dropdown.all_econ_categories": "All economic categories",
 
     # --- Source annotations ---
@@ -246,7 +279,11 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
-    "narrative.edu_func_sub_econ": "This chart shows how public spending has changed over time across education levels like primary, secondary, and tertiary. Use the dropdown to focus on a single type of spending, such as wage bill or capital expenditure.",
+    "narrative.edu_func_sub_econ": "This chart shows how inflation-adjusted public spending per capita has changed over time across education levels like primary, secondary, and tertiary. Use the dropdown to focus on a single type of spending, such as wage bill or capital expenditure.",
+    "narrative.edu_func_sub_most_least": "{scope}, between {start} and {end}, {most} received the most inflation-adjusted per-capita spending, averaging {most_val} per year, while {least} received the least, at {least_val}.",
+    "narrative.edu_func_sub_single": "{scope}, between {start} and {end}, {level} was the only level with reported spending, averaging {level_val} per capita per year.",
+    "narrative.econ_scope_all": "Across all economic categories",
+    "narrative.econ_scope_one": "For {econ}",
     "narrative.education_outcome_measure": "To check if this is the case for {country}, we can use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on education, use school attendance rate of 6-17 year-old children to proximate access to education, and use learning poverty rate as an indicator for education quality.",
     "narrative.health_outcome_measure": "We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome.",
     "narrative.outcome_from_to": "From {start_year} to {end_year}, {pcc}",
@@ -531,6 +568,9 @@ TRANSLATIONS = {
     "source.pefa.label": "PEFA Assessment",
     "source.edu_private.label": "Private Education Expenditure",
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
+    "source.teacher_salary.label": "Teacher Salaries",
+    "source.completion_rate.label": "Education Completion Rate",
+    "source.school_services.label": "School Basic Services",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "World Bank BOOST",
@@ -538,6 +578,7 @@ TRANSLATIONS = {
     "source_name.world_bank": "World Bank",
     "source_name.world_bank_icp": "World Bank ICP",
     "source_name.global_data_lab": "Global Data Lab",
+    "source_name.unesco_uis": "UNESCO Institute for Statistics (UIS)",
     "source_name.who_gho": "WHO (GHO)",
     "source_name.who_health_db": "WHO Global Health Expenditure Database",
     "source_name.pefa_secretariat": "PEFA Secretariat",
