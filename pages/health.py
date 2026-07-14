@@ -28,7 +28,7 @@ from components.edu_health_across_space import (
     update_hd_index_map,
     render_func_subnat_rank,
 )
-from components.year_slider import slider, stored_year_for_country
+from components.year_slider import slider
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
 from trend_narrative import InsightExtractor
@@ -61,7 +61,6 @@ def layout():
             dcc.Store(id="stored-data-health-total"),
             dcc.Store(id="stored-data-health-outcome"),
             dcc.Store(id="stored-data-health-private"),
-            dcc.Store(id="year-slider-health-selected-year"),
         ]
     )
 
@@ -793,27 +792,10 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func, lang)
     Output("year-slider-health", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
-    State("year-slider-health-selected-year", "data"),
+    Input("stored-language", "data"),
 )
-def update_health_year_range(data, country, selected_year):
-    return update_year_slider(
-        data,
-        country,
-        'Health',
-        selected_year=stored_year_for_country(selected_year, country),
-    )
-
-
-@callback(
-    Output("year-slider-health-selected-year", "data"),
-    Input("year-slider-health", "value"),
-    State("country-select", "value"),
-    prevent_initial_call=True,
-)
-def remember_health_selected_year(year, country):
-    if year is None or not country:
-        return dash.no_update
-    return {"country": country, "year": year}
+def update_health_year_range(data, country, lang):
+    return update_year_slider(data, country, 'Health', lang=lang or "en")
 
 
 @callback(

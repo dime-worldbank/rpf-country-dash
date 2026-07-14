@@ -27,7 +27,7 @@ from utils import (
 )
 
 
-def update_year_slider(data, country, func, selected_year=None):
+def update_year_slider(data, country, func, lang="en"):
     if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
     data = server_store.get("geo1_func_expenditure")
@@ -41,7 +41,7 @@ def update_year_slider(data, country, func, selected_year=None):
     expenditure_years = list(data.year.astype("int").unique())
     data = data[data["outcome_index"].notna()]
     outcome_years = list(data.year.astype("int").unique())
-    return get_slider_config(expenditure_years, outcome_years, selected_year=selected_year)
+    return get_slider_config(expenditure_years, outcome_years, lang=lang)
 
 
 def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected_year, func, currency_code, lang="en"):

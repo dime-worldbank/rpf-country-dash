@@ -21,7 +21,7 @@ from utils import (
     require_login,
 )
 import numpy as np
-from components.year_slider import slider, get_slider_config, stored_year_for_country
+from components.year_slider import slider, get_slider_config
 from components.func_operational_vs_capital_spending import render_econ_breakdown
 from components.edu_health_across_space import (
     update_year_slider,
@@ -62,7 +62,6 @@ def layout():
             dcc.Store(id="stored-data-education-total"),
             dcc.Store(id="stored-data-education-outcome"),
             dcc.Store(id="stored-data-education-private"),
-            dcc.Store(id="year-slider-edu-selected-year"),
         ]
     )
 
@@ -843,27 +842,10 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func, lang)
     Output("year-slider-edu", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
-    State("year-slider-edu-selected-year", "data"),
+    Input("stored-language", "data"),
 )
-def update_education_year_range(data, country, selected_year):
-    return update_year_slider(
-        data,
-        country,
-        'Education',
-        selected_year=stored_year_for_country(selected_year, country),
-    )
-
-
-@callback(
-    Output("year-slider-edu-selected-year", "data"),
-    Input("year-slider-edu", "value"),
-    State("country-select", "value"),
-    prevent_initial_call=True,
-)
-def remember_education_selected_year(year, country):
-    if year is None or not country:
-        return dash.no_update
-    return {"country": country, "year": year}
+def update_education_year_range(data, country, lang):
+    return update_year_slider(data, country, 'Education', lang=lang or "en")
 
 
 @callback(

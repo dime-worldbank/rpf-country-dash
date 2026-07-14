@@ -22,7 +22,6 @@ from utils import (
 )
 
 from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
-from components.year_slider import stored_year_for_country
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
@@ -72,7 +71,6 @@ def layout():
             dcc.Store(id="stored-data-pefa"),
             dcc.Store(id="stored-data-revenue-budget"),
             dcc.Store(id="stored-data-government-budget"),
-            dcc.Store(id="year-slider-selected-year"),
         ]
     )
 
@@ -1210,9 +1208,10 @@ def economic_narrative(df, lang="en"):
     Output("year-slider", "tooltip"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
-    State("year-slider-selected-year", "data"),
+    Input("stored-language", "data"),
 )
-def update_year_range(data, country, selected_year):
+def update_year_range(data, country, lang):
+    lang = lang or "en"
     if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
     try:
@@ -1220,26 +1219,10 @@ def update_year_range(data, country, selected_year):
         expenditure_years = country_info[country].get("expenditure_years", [])
         poverty_years = country_info[country].get("poverty_years", [])
 
-        slider_configs = get_slider_config(
-            expenditure_years,
-            poverty_years,
-            selected_year=stored_year_for_country(selected_year, country),
-        )
+        slider_configs = get_slider_config(expenditure_years, poverty_years, lang=lang)
         return slider_configs
     except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
-
-
-@callback(
-    Output("year-slider-selected-year", "data"),
-    Input("year-slider", "value"),
-    State("country-select", "value"),
-    prevent_initial_call=True,
-)
-def remember_selected_year(year, country):
-    if year is None or not country:
-        return dash.no_update
-    return {"country": country, "year": year}
 
 
 @callback(
