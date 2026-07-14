@@ -447,7 +447,6 @@ def education_narrative(data, country, lang="en"):
         extractor=extractor,
         metric=t("metric.real_expenditure", lang),
         lang=lang,
-        fallback_kwargs={"metric": t("metric.real_expenditure", "en")},
     )
 
     if trend_narrative:
@@ -705,11 +704,6 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_format=spending_fmt,
         comparison_format=".1f",
         lang=lang,
-        fallback_kwargs={
-            "reference_name": t("metric.per_capita_education_spending", "en"),
-            "comparison_name": t("metric.school_attendance", "en"),
-            "reference_format": lambda x: format_currency(x, currency_code, lang="en"),
-        },
     )
 
     poverty_result = get_relationship_narrative_i18n(
@@ -722,11 +716,6 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_format=spending_fmt,
         comparison_format=".1f",
         lang=lang,
-        fallback_kwargs={
-            "reference_name": t("metric.per_capita_education_spending", "en"),
-            "comparison_name": t("metric.learning_poverty_rate", "en"),
-            "reference_format": lambda x: format_currency(x, currency_code, lang="en"),
-        },
     )
 
     both_insufficient = (
@@ -865,10 +854,9 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func, lang)
     Output("year-slider-edu", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
-    Input("stored-language", "data"),
 )
-def update_education_year_range(data, country, lang):
-    return update_year_slider(data, country, 'Education', lang=lang or "en")
+def update_education_year_range(data, country):
+    return update_year_slider(data, country, 'Education')
 
 
 @callback(

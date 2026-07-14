@@ -1,7 +1,5 @@
 from dash import dcc, html
 
-from translations import t
-
 
 def slider(id, container_id):
     return html.Div(
@@ -14,6 +12,8 @@ def slider(id, container_id):
                 value=None,
                 step=None,
                 included=False,
+                persistence=True,
+                persistence_type="memory",
             ),
         ],
     )
@@ -24,7 +24,7 @@ YEAR_PARTIAL_STYLE = {"color": "#888888", "fontWeight": "400"}
 YEAR_DEFAULT_STYLE = {"color": "#888888"}
 
 
-def get_slider_config(expenditure_years, outcome_years, lang="en"):
+def get_slider_config(expenditure_years, outcome_years):
     """
     Helper function to create the slider configuration.
 
@@ -47,7 +47,7 @@ def get_slider_config(expenditure_years, outcome_years, lang="en"):
             2015,
             2010,
             2021,
-            {"template": t("error.data_not_available", lang), "always_visible": True},
+            {},
         )
 
     common_years = [year for year in expenditure_years if year in outcome_years]

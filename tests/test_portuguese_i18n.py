@@ -17,7 +17,6 @@ from translations import (
 from translations.en import TRANSLATIONS as EN
 from translations.pt import TRANSLATIONS as PT
 from trend_narrative_i18n import (
-    PORTUGUESE_TREND_LANGUAGE_CODES,
     get_relationship_narrative_i18n,
     get_segment_narrative_i18n,
 )
@@ -106,51 +105,47 @@ class TestPortugueseSourceMetadata(unittest.TestCase):
         self.assertIn("linhas de pobreza", poverty_section["description"])
 
 
-class TestPortugueseTrendNarrativeFallback(unittest.TestCase):
-    def test_segment_narrative_tries_portuguese_before_english_fallback(self):
+class TestTrendNarrativeLanguageFallback(unittest.TestCase):
+    def test_segment_narrative_falls_back_to_english_for_unsupported_language(self):
         calls = []
 
         def fake_segment(**kwargs):
             calls.append(kwargs["lang"])
-            if kwargs["lang"] in PORTUGUESE_TREND_LANGUAGE_CODES:
-                raise ValueError(f"Unsupported language: {kwargs['lang']}")
-            self.assertEqual(kwargs["metric"], "real expenditure")
+            if kwargs["lang"] == "fr":
+                raise ValueError("Unsupported language 'fr'.")
+            self.assertEqual(kwargs["metric"], "depense reelle")
             return "English fallback"
 
         with patch("trend_narrative_i18n.get_segment_narrative", side_effect=fake_segment):
             result = get_segment_narrative_i18n(
                 extractor=object(),
-                metric="despesa real",
-                lang="pt",
-                fallback_kwargs={"metric": "real expenditure"},
+                metric="depense reelle",
+                lang="fr",
             )
 
         self.assertEqual(result, "English fallback")
-        self.assertEqual(calls, [*PORTUGUESE_TREND_LANGUAGE_CODES, "en"])
+        self.assertEqual(calls, ["fr", "en"])
 
-    def test_relationship_narrative_uses_first_supported_portuguese_code(self):
+    def test_relationship_narrative_reraises_non_language_errors(self):
         calls = []
 
         def fake_relationship(**kwargs):
             calls.append(kwargs["lang"])
-            if kwargs["lang"] == "pt":
-                raise ValueError("Unsupported language: pt")
-            self.assertEqual(kwargs["reference_name"], "despesa")
-            return {"method": "ok", "narrative": "Narrativa em portugues"}
+            raise RuntimeError("Trend narrative failed")
 
         with patch("trend_narrative_i18n.get_relationship_narrative", side_effect=fake_relationship):
-            result = get_relationship_narrative_i18n(
-                reference_years=[2020],
-                reference_values=[1],
-                comparison_years=[2020],
-                comparison_values=[2],
-                reference_name="despesa",
-                comparison_name="resultado",
-                lang="pt",
-            )
+            with self.assertRaises(RuntimeError):
+                get_relationship_narrative_i18n(
+                    reference_years=[2020],
+                    reference_values=[1],
+                    comparison_years=[2020],
+                    comparison_values=[2],
+                    reference_name="despesa",
+                    comparison_name="resultado",
+                    lang="pt",
+                )
 
-        self.assertEqual(result["narrative"], "Narrativa em portugues")
-        self.assertEqual(calls, ["pt", "ptbr"])
+        self.assertEqual(calls, ["pt"])
 
 
 if __name__ == "__main__":

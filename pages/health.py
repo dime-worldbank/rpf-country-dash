@@ -440,7 +440,6 @@ def health_narrative(data, country, lang="en"):
         extractor=extractor,
         metric=t("metric.real_expenditure", lang),
         lang=lang,
-        fallback_kwargs={"metric": t("metric.real_expenditure", "en")},
     )
 
     if trend_narrative:
@@ -693,11 +692,6 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="
         reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=".1f",
         lang=lang,
-        fallback_kwargs={
-            "reference_name": t("metric.per_capita_health_spending", "en"),
-            "comparison_name": t("metric.uhc_index", "en"),
-            "reference_format": lambda x: format_currency(x, currency_code, lang="en"),
-        },
     )
     return result["narrative"]
 
@@ -809,10 +803,9 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func, lang)
     Output("year-slider-health", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
-    Input("stored-language", "data"),
 )
-def update_health_year_range(data, country, lang):
-    return update_year_slider(data, country, 'Health', lang=lang or "en")
+def update_health_year_range(data, country):
+    return update_year_slider(data, country, 'Health')
 
 
 @callback(

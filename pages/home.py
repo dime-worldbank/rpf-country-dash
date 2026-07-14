@@ -562,7 +562,6 @@ def overview_narrative(df, lang="en"):
         extractor=extractor,
         metric=t("metric.total_real_expenditure", lang),
         lang=lang,
-        fallback_kwargs={"metric": t("metric.total_real_expenditure", "en")},
     )
 
     if trend_narrative:
@@ -1209,10 +1208,8 @@ def economic_narrative(df, lang="en"):
     Output("year-slider", "tooltip"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
-    Input("stored-language", "data"),
 )
-def update_year_range(data, country, lang):
-    lang = lang or "en"
+def update_year_range(data, country):
     if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
     try:
@@ -1220,7 +1217,7 @@ def update_year_range(data, country, lang):
         expenditure_years = country_info[country].get("expenditure_years", [])
         poverty_years = country_info[country].get("poverty_years", [])
 
-        slider_configs = get_slider_config(expenditure_years, poverty_years, lang=lang)
+        slider_configs = get_slider_config(expenditure_years, poverty_years)
         return slider_configs
     except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
