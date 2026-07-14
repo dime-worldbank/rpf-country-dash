@@ -279,8 +279,8 @@ TRANSLATIONS = {
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
     "narrative.edu_func_sub_econ": "This chart shows how inflation-adjusted public spending per capita has changed over time across education levels like primary, secondary, and tertiary. Use the dropdown to focus on a single type of spending, such as wage bill or capital expenditure.",
-    "narrative.edu_func_sub_most_least": "{scope}, between {start} and {end}, {most} received the most inflation-adjusted per-capita spending, averaging {most_val} per year, while {least} received the least, at {least_val}.",
-    "narrative.edu_func_sub_single": "{scope}, between {start} and {end}, {level} was the only level with reported spending, averaging {level_val} per capita per year.",
+    "narrative.func_sub_most_least": "{scope}, between {start} and {end}, {most} received the most inflation-adjusted per-capita spending, averaging {most_val} per year, while {least} received the least, at {least_val}.",
+    "narrative.func_sub_single": "{scope}, between {start} and {end}, {level} was the only level with reported spending, averaging {level_val} per capita per year.",
     "narrative.econ_scope_all": "Across all economic categories",
     "narrative.econ_scope_one": "For {econ}",
     "narrative.education_outcome_measure": "To check if this is the case for {country}, we can use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on education, use school attendance rate of 6-17 year-old children to proximate access to education, and use learning poverty rate as an indicator for education quality.",

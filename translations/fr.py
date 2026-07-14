@@ -326,8 +326,8 @@ TRANSLATIONS = {
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
     "narrative.edu_func_sub_econ": "Ce graphique montre l'évolution des dépenses publiques par habitant, ajustées à l'inflation, au fil du temps selon les niveaux d'enseignement, tels que l'enseignement primaire, secondaire et supérieur. Utilisez le menu déroulant pour vous concentrer sur un seul type de dépense, comme la masse salariale ou les dépenses d'investissement.",
-    "narrative.edu_func_sub_most_least": "{scope}, entre {start} et {end}, {most} a reçu le plus de dépenses par habitant ajustées à l'inflation, avec une moyenne de {most_val} par an, tandis que {least} en a reçu le moins, à {least_val}.",
-    "narrative.edu_func_sub_single": "{scope}, entre {start} et {end}, {level} était le seul niveau avec des dépenses déclarées, avec une moyenne de {level_val} par habitant et par an.",
+    "narrative.func_sub_most_least": "{scope}, entre {start} et {end}, {most} a reçu le plus de dépenses par habitant ajustées à l'inflation, avec une moyenne de {most_val} par an, tandis que {least} en a reçu le moins, à {least_val}.",
+    "narrative.func_sub_single": "{scope}, entre {start} et {end}, {level} était le seul niveau avec des dépenses déclarées, avec une moyenne de {level_val} par habitant et par an.",
     "narrative.econ_scope_all": "Toutes catégories économiques confondues",
     "narrative.econ_scope_one": "Pour {econ}",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",

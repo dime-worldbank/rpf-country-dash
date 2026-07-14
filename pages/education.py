@@ -20,7 +20,7 @@ from utils import (
     require_login,
 )
 import numpy as np
-from components import edu_spending_by_level
+from components import func_sub_spending_by_level as fss
 from components.year_slider import slider, get_slider_config
 from components.func_operational_vs_capital_spending import render_econ_breakdown
 from components.edu_health_across_space import (
@@ -35,6 +35,9 @@ from components.source_metadata_popover import chart_container, empty_modal
 from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
 
 db = QueryService.get_instance()
+
+# Sector config for the reusable "spending by func-sub level" section.
+_EDU = fss.EDU_CONFIG
 
 dash.register_page(__name__)
 
@@ -221,7 +224,7 @@ def render_education_content(tab, lang):
                         ),
                     ]
                 ),
-                edu_spending_by_level.layout(lang),
+                fss.layout(_EDU, lang),
             ]
         )
     elif tab == "edu-tab-space":
@@ -542,56 +545,54 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
 
 
 @callback(
-    Output(edu_spending_by_level.ECON_FILTER_ID, "options"),
-    Output(edu_spending_by_level.ECON_FILTER_ID, "value"),
+    Output(_EDU.econ_filter_id, "options"),
+    Output(_EDU.econ_filter_id, "value"),
     Input("country-select", "value"),
     Input("stored-language", "data"),
-    State(edu_spending_by_level.ECON_FILTER_ID, "value"),
+    State(_EDU.econ_filter_id, "value"),
 )
 def update_edu_func_sub_econ_options(country, lang, current_value):
-    return edu_spending_by_level.econ_filter_options(country, lang, current_value)
+    return fss.econ_filter_options(_EDU, country, lang, current_value)
 
 
 @callback(
-    Output(edu_spending_by_level.OUTCOME_FILTER_ID, "value"),
-    Input(edu_spending_by_level.ECON_FILTER_ID, "value"),
+    Output(_EDU.outcome_filter_id, "value"),
+    Input(_EDU.econ_filter_id, "value"),
 )
 def default_outcome_for_econ(econ_filter):
-    return edu_spending_by_level.default_outcome_indicator(econ_filter)
+    return fss.default_outcome_indicator(_EDU, econ_filter)
 
 
 @callback(
-    Output(edu_spending_by_level.SPENDING_CHART_ID, "figure"),
+    Output(_EDU.spending_chart_id, "figure"),
     Input("country-select", "value"),
-    Input(edu_spending_by_level.ECON_FILTER_ID, "value"),
+    Input(_EDU.econ_filter_id, "value"),
     Input("stored-basic-country-data", "data"),
     Input("stored-language", "data"),
 )
 def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
-    return edu_spending_by_level.spending_figure(
-        country, econ_filter, basic_country_data, lang
-    )
+    return fss.spending_figure(_EDU, country, econ_filter, basic_country_data, lang)
 
 
 @callback(
-    Output(edu_spending_by_level.NARRATIVE_ID, "children"),
+    Output(_EDU.narrative_id, "children"),
     Input("country-select", "value"),
-    Input(edu_spending_by_level.ECON_FILTER_ID, "value"),
+    Input(_EDU.econ_filter_id, "value"),
     Input("stored-language", "data"),
 )
 def render_edu_func_sub_narrative(country, econ_filter, lang):
-    return edu_spending_by_level.spending_narrative(country, econ_filter, lang)
+    return fss.spending_narrative(_EDU, country, econ_filter, lang)
 
 
 @callback(
-    Output(edu_spending_by_level.OUTCOME_CHART_ID, "figure"),
+    Output(_EDU.outcome_chart_id, "figure"),
     Input("country-select", "value"),
-    Input(edu_spending_by_level.ECON_FILTER_ID, "value"),
-    Input(edu_spending_by_level.OUTCOME_FILTER_ID, "value"),
+    Input(_EDU.econ_filter_id, "value"),
+    Input(_EDU.outcome_filter_id, "value"),
     Input("stored-language", "data"),
 )
 def render_edu_level_outcome(country, econ_filter, indicator, lang):
-    return edu_spending_by_level.outcome_figure(country, econ_filter, indicator, lang)
+    return fss.outcome_figure(_EDU, country, econ_filter, indicator, lang)
 
 
 def public_private_narrative(df, country, lang="en"):

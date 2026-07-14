@@ -1,6 +1,10 @@
-/* Economic-category filter dropdown (Education sub-function chart):
-   keep the border but drop the theme's blue focus glow. */
+/* Education filter dropdowns: soften the theme's strong navy border and drop
+   the blue focus glow (keep the theme hue, just lighter). */
+body.theme-wbg .form-select.econ-filter-select {
+    border-color: rgba(0, 34, 68, 0.25);  /* --wbg-solid-blue at low opacity */
+}
 body.theme-wbg .form-select.econ-filter-select:focus {
+    border-color: rgba(0, 34, 68, 0.35);
     box-shadow: none;
 }
 
@@ -13,8 +17,8 @@ body.theme-wbg .form-select.econ-filter-select:focus {
 .edu-filter-bar {
     display: flex;
     gap: 1.5rem;
-    background-color: #f1f3f5;
-    padding: 0.6rem 0.9rem;
+    background-color: rgba(108, 117, 125, 0.1);  /* theme muted grey, light tint */
+    padding: 0.9rem 0.9rem;
     border-radius: 0.375rem;
     margin-bottom: 0.75rem;
 }
@@ -41,8 +45,8 @@ body.theme-wbg .form-select.econ-filter-select:focus {
 }
 .edu-filter-label {
     font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--wbg-body-text);
+    font-weight: 500;
+    color: #6c757d;  /* theme muted gray (matches .text-muted) */
 }
 
 /* Detail row styling in modal */
