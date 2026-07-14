@@ -46,7 +46,7 @@ TRANSLATIONS = {
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
     "chart.edu_func_sub_econ": "Dépenses publiques par habitant ajustées à l'inflation",
-    "chart.teacher_salary": "Salaires des enseignants par niveau d'enseignement",
+    "chart.teacher_salary": "Compétitivité salariale des enseignants par niveau d'enseignement",
     "chart.completion_rate": "Taux d'achèvement par niveau d'enseignement (%)",
     "chart.schools_electricity": "Écoles disposant de l'électricité (%)",
     "chart.schools_internet": "Écoles disposant d'un accès à Internet (%)",
@@ -111,7 +111,7 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
-    "axis.teacher_salary": "Salaire des enseignants",
+    "axis.teacher_salary": "Compétitivité salariale des enseignants",
     "axis.completion_rate": "Taux d'achèvement (%)",
     "axis.pct_schools": "% des écoles",
 
@@ -148,7 +148,7 @@ TRANSLATIONS = {
     "label.economic_category": "Catégorie économique",
     "label.outcome_indicator": "Indicateur de résultat",
     "outcome.completion_rate": "Taux d'achèvement",
-    "outcome.teacher_salary": "Salaires des enseignants",
+    "outcome.teacher_salary": "Compétitivité salariale des enseignants",
     "outcome.electricity": "Écoles avec électricité",
     "outcome.internet": "Écoles avec Internet",
     "dropdown.all_econ_categories": "Toutes les catégories économiques",
@@ -298,6 +298,15 @@ TRANSLATIONS = {
         "plural": False,
         "feminine": False,
     },
+
+    # Dynamic metrics for the func-sub spending section's trend narrative.
+    # Include the article (get_segment_narrative uses the name as-is in FR).
+    "metric.level_spending": "les dépenses pour {level}",
+    "metric.level_outcome": "{indicator} pour {level}",
+    "metric.completion_rate": "le taux d'achèvement",
+    "metric.teacher_salary": "la compétitivité salariale des enseignants",
+    "metric.electricity": "l'accès à l'électricité",
+    "metric.internet": "l'accès à Internet",
 
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Include the definite article so the
@@ -649,7 +658,8 @@ TRANSLATIONS = {
     "source.pefa.label": "Évaluation PEFA",
     "source.edu_private.label": "Dépenses privées d'éducation",
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
-    "source.teacher_salary.label": "Salaires des enseignants",
+    "source.teacher_salary.label": "Compétitivité salariale des enseignants",
+    "source.teacher_salary.description": "Le rapport entre le salaire statutaire d'un enseignant et la rémunération des travailleurs ayant des qualifications comparables. Une valeur de 1,0 signifie que les enseignants sont rémunérés au même niveau que des professions similaires ; en dessous de 1,0, moins ; au-dessus, davantage. Indique l'attractivité et l'équité de la rémunération de l'enseignement.",
     "source.completion_rate.label": "Taux d'achèvement scolaire",
     "source.school_services.label": "Services de base des écoles",
 
@@ -679,6 +689,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
+    "chart.outcome_secondary.info": "Pour s'aligner sur le niveau « Secondaire » combiné du côté des dépenses, les valeurs du secondaire présentées ici correspondent à la moyenne des chiffres du premier et du deuxième cycle du secondaire publiés par l'ISU de l'UNESCO (en ignorant tout sous-niveau manquant).",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---

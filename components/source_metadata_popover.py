@@ -57,6 +57,7 @@ _TEACHER_SALARIES = {
     "key": "teacher_salaries",
     "label_key": "source.teacher_salary.label",
     "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.teacher_salary.description",
 }
 
 _COMPLETION_RATES = {
@@ -170,7 +171,8 @@ CHART_METADATA = {
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
     "education-func-sub-econ": {"sources": [_BOOST_EDU]},
     "education-level-outcome": {
-        "sources": [_COMPLETION_RATES, _TEACHER_SALARIES, _SCHOOL_BASIC_SERVICES]
+        "info_key": "chart.outcome_secondary.info",
+        "sources": [_COMPLETION_RATES, _TEACHER_SALARIES, _SCHOOL_BASIC_SERVICES],
     },
     # ------------------------------------------------------------------
     # Education – Across Space

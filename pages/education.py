@@ -578,10 +578,11 @@ def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
     Output(_EDU.narrative_id, "children"),
     Input("country-select", "value"),
     Input(_EDU.econ_filter_id, "value"),
+    Input(_EDU.outcome_filter_id, "value"),
     Input("stored-language", "data"),
 )
-def render_edu_func_sub_narrative(country, econ_filter, lang):
-    return fss.spending_narrative(_EDU, country, econ_filter, lang)
+def render_edu_func_sub_narrative(country, econ_filter, indicator, lang):
+    return fss.spending_narrative(_EDU, country, econ_filter, indicator, lang)
 
 
 @callback(

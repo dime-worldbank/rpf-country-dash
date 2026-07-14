@@ -23,6 +23,7 @@ from constants import START_YEAR, translate_econ
 from translations import t
 from utils import apply_locale, empty_plot, format_currency, millify
 from viz_theme import QUALITATIVE
+from trend_narrative import get_relationship_narrative
 from components import econ_outcome_filter
 from components.econ_outcome_filter import ALL_ECON
 from components.source_metadata_popover import chart_container
@@ -58,7 +59,7 @@ _LEGEND_STYLE = dict(
     orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5,
     font=dict(size=11),
 )
-_CHART_MARGIN = dict(l=20, r=20, t=50, b=80)
+_CHART_MARGIN = dict(l=20, r=20, t=20, b=80)
 
 
 # ---------------------------------------------------------------------------
@@ -114,15 +115,19 @@ def _apply_shared_xaxis(config, fig, country, econ_filter):
         fig.update_xaxes(tickformat="d")
 
 
-def _finalize(fig, title, lang):
-    """Shared layout (hover, legend, margin) + locale, common to both charts."""
+def _finalize(fig, lang):
+    """Shared layout (hover, legend, margin) + locale, common to both charts.
+
+    Neither chart uses a top title — each chart's title lives on its y-axis.
+    """
     fig.update_layout(
         hovermode="x unified",
-        title=title,
+        title=None,
         plot_bgcolor="white",
         legend=_LEGEND_STYLE,
         margin=_CHART_MARGIN,
     )
+    fig.update_yaxes(automargin=True)
     return apply_locale(fig, lang)
 
 
@@ -212,12 +217,77 @@ def spending_figure(config, country, econ_filter, basic_country_data, lang="en")
         )
 
     _apply_shared_xaxis(config, fig, country, econ_filter)
-    fig.update_yaxes(fixedrange=True)
-    return _finalize(fig, t(config.chart_title_key, lang), lang)
+    # Chart title lives on the y-axis, with the selected econ scope on line 2.
+    if econ_filter and econ_filter != ALL_ECON:
+        scope = translate_econ(econ_filter, lang)
+    else:
+        scope = t("dropdown.all_econ_categories", lang)
+    fig.update_yaxes(
+        fixedrange=True,
+        title_text=f"{t(config.chart_title_key, lang)}<br>({scope})",
+    )
+    return _finalize(fig, lang)
 
 
-def spending_narrative(config, country, econ_filter, lang="en"):
-    """Which level got the most/least per-capita spending, with the averages."""
+def _relationship_sentence(
+    config, country, econ_filter, indicator, most_key, level, totals,
+    currency_code, lang,
+):
+    """Detected relationship between the best-funded level's spending and the
+    selected indicator for that same level (trend-narrative's relationship
+    analysis). "" when the level isn't in the indicator or there's too little
+    overlapping data. Outcome is restricted to the shared x-axis window."""
+    cfg = config.outcome_by_key.get(indicator) or config.outcome_by_key[
+        config.default_outcome_key
+    ]
+    col = cfg["columns"].get(level)
+    if not col:
+        return ""
+
+    spend = totals[totals["func_sub"] == most_key].sort_values("year")
+    outcome = server_store.get(cfg["store_key"])
+    outcome = outcome[outcome["country_name"] == country][["year", col]].dropna()
+    outcome = outcome[outcome[col] != 0]
+    year_range = _shared_year_range(config, country, econ_filter)
+    if year_range:
+        lo, hi = year_range
+        outcome = outcome[(outcome["year"] >= lo) & (outcome["year"] <= hi)]
+    outcome = outcome.sort_values("year")
+    if len(spend) < 2 or len(outcome) < 2:
+        return ""
+
+    def _spend_fmt(x):
+        return format_currency(x, currency_code, lang=lang) if currency_code else millify(x, lang=lang)
+
+    try:
+        result = get_relationship_narrative(
+            reference_years=spend["year"].values,
+            reference_values=spend["per_capita_real_expenditure"].values,
+            comparison_years=outcome["year"].values,
+            comparison_values=outcome[col].values,
+            reference_name=t(
+                "metric.level_spending", lang, level=t(f"level.{level}.long", lang)
+            ),
+            comparison_name=t(
+                "metric.level_outcome", lang,
+                level=t(f"level.{level}", lang).lower(),
+                indicator=t(cfg["metric_key"], lang),
+            ),
+            reference_format=_spend_fmt,
+            comparison_format=cfg["value_fmt"],
+            lang=lang,
+        )
+    except Exception:
+        return ""
+    if result.get("method") == "insufficient_data":
+        return ""
+    return result.get("narrative", "")
+
+
+def spending_narrative(config, country, econ_filter, indicator, lang="en"):
+    """Most/least funded level with averages, plus the detected relationship
+    between the best-funded level's spending and the selected indicator (when
+    that level is reported by the indicator)."""
     lang = lang or "en"
     if not country:
         return t("loading", lang)
@@ -265,19 +335,28 @@ def spending_narrative(config, country, econ_filter, lang="en"):
     most_label = t(f"level.{config.func_sub_to_level[most_key]}.long", lang)
 
     if len(means) == 1:
-        return t(
+        base = t(
             "narrative.func_sub_single", lang,
             scope=scope, level=most_label, start=start_year, end=end_year,
             level_val=_fmt(means.loc[most_key]),
         )
-    least_key = means.idxmin()
-    least_label = t(f"level.{config.func_sub_to_level[least_key]}.long", lang)
-    return t(
-        "narrative.func_sub_most_least", lang,
-        scope=scope, most=most_label, least=least_label,
-        start=start_year, end=end_year,
-        most_val=_fmt(means.loc[most_key]), least_val=_fmt(means.loc[least_key]),
+    else:
+        least_key = means.idxmin()
+        least_label = t(f"level.{config.func_sub_to_level[least_key]}.long", lang)
+        base = t(
+            "narrative.func_sub_most_least", lang,
+            scope=scope, most=most_label, least=least_label,
+            start=start_year, end=end_year,
+            most_val=_fmt(means.loc[most_key]), least_val=_fmt(means.loc[least_key]),
+        )
+
+    # Relationship between the best-funded level's spending and the selected
+    # indicator for that same level (when the indicator reports that level).
+    relationship = _relationship_sentence(
+        config, country, econ_filter, indicator,
+        most_key, config.func_sub_to_level[most_key], totals, currency_code, lang,
     )
+    return " ".join(p for p in (base, relationship) if p)
 
 
 def outcome_figure(config, country, econ_filter, indicator, lang="en"):
@@ -320,10 +399,11 @@ def outcome_figure(config, country, econ_filter, indicator, lang="en"):
         return empty_plot(t("error.no_data_period", lang))
 
     _apply_shared_xaxis(config, fig, country, econ_filter)
-    fig.update_yaxes(fixedrange=True, title_text=t(cfg["axis_key"], lang))
+    # Chart title lives on the y-axis (no top title).
+    fig.update_yaxes(fixedrange=True, title_text=t(cfg["title_key"], lang))
     if cfg["y_range"]:
         fig.update_yaxes(range=cfg["y_range"])
-    return _finalize(fig, t(cfg["title_key"], lang), lang)
+    return _finalize(fig, lang)
 
 
 # ---------------------------------------------------------------------------
@@ -347,16 +427,16 @@ def layout(config, lang="en"):
                 lang,
                 outcome_value=config.default_outcome_key,
             ),
+            # Narrative above the charts.
+            dbc.Row(
+                dbc.Col(html.P(id=config.narrative_id, children=t("loading", lang)))
+            ),
             # Spending and outcome charts side by side.
             dbc.Row(
                 [
                     dbc.Col(chart_container(config.spending_chart_id), xs=12, lg=6),
                     dbc.Col(chart_container(config.outcome_chart_id), xs=12, lg=6),
                 ]
-            ),
-            # Narrative below the charts.
-            dbc.Row(
-                dbc.Col(html.P(id=config.narrative_id, children=t("loading", lang)))
             ),
         ]
     )
@@ -394,6 +474,7 @@ _EDU_FUNC_SUB_TO_LEVEL = {
 _TEACHER_SALARY_OUTCOME = {
     "store_key": "teacher_salaries",
     "title_key": "chart.teacher_salary",
+    "metric_key": "metric.teacher_salary",
     "axis_key": "axis.teacher_salary",
     "value_fmt": ".2f",
     "suffix": "",
@@ -401,47 +482,46 @@ _TEACHER_SALARY_OUTCOME = {
     "columns": {
         "pre_primary": "teacher_salary_pre_primary",
         "primary": "teacher_salary_primary",
-        "lower_secondary": "teacher_salary_lower_secondary",
-        "upper_secondary": "teacher_salary_upper_secondary",
+        "secondary": "teacher_salary_secondary",
     },
 }
 _ELECTRICITY_OUTCOME = {
     "store_key": "school_basic_services",
     "title_key": "chart.schools_electricity",
+    "metric_key": "metric.electricity",
     "axis_key": "axis.pct_schools",
     "value_fmt": ".1f",
     "suffix": "%",
     "y_range": [0, 100],
     "columns": {
         "primary": "schools_with_electricity_primary",
-        "lower_secondary": "schools_with_electricity_lower_secondary",
-        "upper_secondary": "schools_with_electricity_upper_secondary",
+        "secondary": "schools_with_electricity_secondary",
     },
 }
 _INTERNET_OUTCOME = {
     "store_key": "school_basic_services",
     "title_key": "chart.schools_internet",
+    "metric_key": "metric.internet",
     "axis_key": "axis.pct_schools",
     "value_fmt": ".1f",
     "suffix": "%",
     "y_range": [0, 100],
     "columns": {
         "primary": "schools_with_internet_primary",
-        "lower_secondary": "schools_with_internet_lower_secondary",
-        "upper_secondary": "schools_with_internet_upper_secondary",
+        "secondary": "schools_with_internet_secondary",
     },
 }
 _COMPLETION_RATE_OUTCOME = {
     "store_key": "completion_rates",
     "title_key": "chart.completion_rate",
+    "metric_key": "metric.completion_rate",
     "axis_key": "axis.completion_rate",
     "value_fmt": ".1f",
     "suffix": "%",
     "y_range": [0, 100],
     "columns": {
         "primary": "completion_rate_primary",
-        "lower_secondary": "completion_rate_lower_secondary",
-        "upper_secondary": "completion_rate_upper_secondary",
+        "secondary": "completion_rate_secondary",
     },
 }
 

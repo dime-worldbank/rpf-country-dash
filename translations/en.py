@@ -46,7 +46,7 @@ TRANSLATIONS = {
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
     "chart.edu_func_sub_econ": "Inflation-adjusted per capita public expenditure",
-    "chart.teacher_salary": "Teacher salaries by education level",
+    "chart.teacher_salary": "Teacher salary competitiveness by education level",
     "chart.completion_rate": "Completion rate by education level (%)",
     "chart.schools_electricity": "Schools with electricity (%)",
     "chart.schools_internet": "Schools with internet access (%)",
@@ -108,7 +108,7 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Poverty Rate (%)",
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
-    "axis.teacher_salary": "Teacher salary",
+    "axis.teacher_salary": "Teacher salary competitiveness",
     "axis.completion_rate": "Completion rate (%)",
     "axis.pct_schools": "% of schools",
 
@@ -145,7 +145,7 @@ TRANSLATIONS = {
     "label.economic_category": "Economic category",
     "label.outcome_indicator": "Outcome indicator",
     "outcome.completion_rate": "Completion rate",
-    "outcome.teacher_salary": "Teacher salaries",
+    "outcome.teacher_salary": "Teacher salary competitiveness",
     "outcome.electricity": "Schools with electricity",
     "outcome.internet": "Schools with internet",
     "dropdown.all_econ_categories": "All economic categories",
@@ -254,6 +254,13 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": "per capita education spending",
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
+    # Dynamic metrics for the func-sub spending section's trend narrative.
+    "metric.level_spending": "{level} spending",
+    "metric.level_outcome": "{level} {indicator}",
+    "metric.completion_rate": "completion rate",
+    "metric.teacher_salary": "teacher salary competitiveness",
+    "metric.electricity": "electricity access",
+    "metric.internet": "internet access",
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",
@@ -567,7 +574,8 @@ TRANSLATIONS = {
     "source.pefa.label": "PEFA Assessment",
     "source.edu_private.label": "Private Education Expenditure",
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
-    "source.teacher_salary.label": "Teacher Salaries",
+    "source.teacher_salary.label": "Teacher Salary Competitiveness",
+    "source.teacher_salary.description": "The ratio of a teacher's statutory salary to the earnings of workers with comparable qualifications. A value of 1.0 means teachers are paid on par with similar professions; below 1.0 means less, above 1.0 more. Indicates how attractive and fairly compensated teaching is.",
     "source.completion_rate.label": "Education Completion Rate",
     "source.school_services.label": "School Basic Services",
 
@@ -597,6 +605,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
     "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
+    "chart.outcome_secondary.info": "To align with the combined 'Secondary' level shown on the spending side, secondary-level values here are the average of the lower-secondary and upper-secondary figures reported by UNESCO UIS (skipping any missing sub-level).",
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---
