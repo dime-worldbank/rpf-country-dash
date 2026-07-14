@@ -216,7 +216,8 @@ def _shared_year_range(country, econ_filter):
     if not years:
         return None
     years = [int(y) for y in years]
-    return max(min(years), START_YEAR), max(years)
+    lo, hi = max(min(years), START_YEAR), max(years)
+    return (lo, hi) if lo <= hi else None
 
 
 # ---------------------------------------------------------------------------
@@ -251,8 +252,9 @@ def spending_figure(country, econ_filter, basic_country_data, lang="en"):
         return empty_plot(t("loading", lang))
 
     df = server_store.get("edu_func_sub_econ_expenditure")
-    df = df[df["country_name"] == country].copy()
-    df = df[df["func_sub"].isin(EDU_FUNC_SUB_ORDER)]
+    df = df[
+        (df["country_name"] == country) & (df["func_sub"].isin(EDU_FUNC_SUB_ORDER))
+    ]
     if econ_filter and econ_filter != ALL_ECON:
         df = df[df["econ"] == econ_filter]
     if df.empty:
@@ -312,14 +314,7 @@ def spending_figure(country, econ_filter, basic_country_data, lang="en"):
 
     _apply_shared_xaxis(fig, country, econ_filter)
     fig.update_yaxes(fixedrange=True)
-    fig.update_layout(
-        hovermode="x unified",
-        title=t("chart.edu_func_sub_econ", lang),
-        plot_bgcolor="white",
-        legend=_LEGEND_STYLE,
-        margin=_CHART_MARGIN,
-    )
-    return apply_locale(fig, lang)
+    return _finalize(fig, t("chart.edu_func_sub_econ", lang), lang)
 
 
 def spending_narrative(country, econ_filter, lang="en"):
@@ -358,10 +353,15 @@ def spending_narrative(country, econ_filter, lang="en"):
     else:
         scope = t("narrative.econ_scope_all", lang)
 
-    # Rank levels by average real per-capita spending over the years, so a
-    # level with more years of data isn't favored over one with fewer.
-    means = df.groupby("func_sub")["per_capita_real_expenditure"].mean()
-    start_year, end_year = int(df["year"].min()), int(df["year"].max())
+    # Rank levels by average yearly per-capita spending. Sum across econ
+    # categories to the per-year total first (matching the chart), then average
+    # over years — so the figures match the chart and a level with more years of
+    # data isn't favored over one with fewer.
+    totals = df.groupby(["func_sub", "year"], as_index=False)[
+        "per_capita_real_expenditure"
+    ].sum()
+    means = totals.groupby("func_sub")["per_capita_real_expenditure"].mean()
+    start_year, end_year = int(totals["year"].min()), int(totals["year"].max())
     most_key = means.idxmax()
     most_label = t(f"level.{_FUNC_SUB_TO_LEVEL[most_key]}.long", lang)
 
@@ -422,14 +422,7 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
     fig.update_yaxes(fixedrange=True, title_text=t(cfg["axis_key"], lang))
     if cfg["y_range"]:
         fig.update_yaxes(range=cfg["y_range"])
-    fig.update_layout(
-        hovermode="x unified",
-        title=t(cfg["title_key"], lang),
-        plot_bgcolor="white",
-        legend=_LEGEND_STYLE,
-        margin=_CHART_MARGIN,
-    )
-    return apply_locale(fig, lang)
+    return _finalize(fig, t(cfg["title_key"], lang), lang)
 
 
 def _apply_shared_xaxis(fig, country, econ_filter):
@@ -443,6 +436,18 @@ def _apply_shared_xaxis(fig, country, econ_filter):
         )
     else:
         fig.update_xaxes(tickformat="d")
+
+
+def _finalize(fig, title, lang):
+    """Shared layout (hover, legend, margin) + locale, common to both charts."""
+    fig.update_layout(
+        hovermode="x unified",
+        title=title,
+        plot_bgcolor="white",
+        legend=_LEGEND_STYLE,
+        margin=_CHART_MARGIN,
+    )
+    return apply_locale(fig, lang)
 
 
 # ---------------------------------------------------------------------------
