@@ -1,5 +1,7 @@
 from dash import dcc, html
 
+from translations import t
+
 
 def slider(id, container_id):
     return html.Div(
@@ -12,8 +14,6 @@ def slider(id, container_id):
                 value=None,
                 step=None,
                 included=False,
-                persistence=True,
-                persistence_type="memory",
             ),
         ],
     )
@@ -24,21 +24,7 @@ YEAR_PARTIAL_STYLE = {"color": "#888888", "fontWeight": "400"}
 YEAR_DEFAULT_STYLE = {"color": "#888888"}
 
 
-def _valid_selected_year(selected_year, available_years):
-    try:
-        selected_year = int(selected_year)
-    except (TypeError, ValueError):
-        return None
-    return selected_year if selected_year in available_years else None
-
-
-def stored_year_for_country(selection, country):
-    if not isinstance(selection, dict) or selection.get("country") != country:
-        return None
-    return selection.get("year")
-
-
-def get_slider_config(expenditure_years, outcome_years, selected_year=None):
+def get_slider_config(expenditure_years, outcome_years, lang="en"):
     """
     Helper function to create the slider configuration.
 
@@ -61,7 +47,7 @@ def get_slider_config(expenditure_years, outcome_years, selected_year=None):
             2015,
             2010,
             2021,
-            {},
+            {"template": t("error.data_not_available", lang), "always_visible": True},
         )
 
     common_years = [year for year in expenditure_years if year in outcome_years]
@@ -74,8 +60,7 @@ def get_slider_config(expenditure_years, outcome_years, selected_year=None):
         else:
             marks[str(year)] = {"label": str(year), "style": YEAR_PARTIAL_STYLE}
 
-    default_year = max(common_years) if common_years else max_year
-    selected_year = _valid_selected_year(selected_year, expenditure_years) or default_year
+    selected_year = max(common_years) if common_years else max_year
     return (
         {"display": "block"},
         marks,
