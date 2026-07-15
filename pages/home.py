@@ -161,7 +161,16 @@ def render_overview_content(tab, lang):
                         ),
                     ],
                 ),
-                dbc.Row(style={"height": "40px"}),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.who_funds_budget", lang))
+                    )
+                ),
                 # How is the budget financed by domestic vs foreign sources?
                 dbc.Row(
                     [

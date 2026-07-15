@@ -29,6 +29,7 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Solde budgétaire",
     "heading.regional_expenditure": "Dépenses régionales",
     "heading.country_regional_expenditure": "Dépenses régionales {country_gen}",
+    "heading.who_funds_budget": "Qui finance le budget ?",
     "heading.who_pays_education": "Qui finance l'éducation ?",
     "heading.who_pays_health": "Qui finance la santé ?",
     "heading.public_spending_education_outcome": "Dépenses publiques et résultats en matière d’éducation",
@@ -63,7 +64,7 @@ TRANSLATIONS = {
     # without requiring gendered adjective agreement ("infranational(e)").
     "chart.subnational_outcome": "{outcome_name} au niveau infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
-    "chart.budget_by_funding_source": "Comment le budget est financé : sources intérieures et extérieures",
+    "chart.budget_by_funding_source": "Comment le budget est-il financé ?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajusté à l'inflation",
@@ -265,7 +266,7 @@ TRANSLATIONS = {
         "feminine": False,
     },
     "metric.domestic_funded_share": {
-        "name": "la part du budget financée par des sources intérieures (en points de pourcentage)",
+        "name": "la part du budget financée par des sources intérieures",
         "plural": False,
         "feminine": True,
     },

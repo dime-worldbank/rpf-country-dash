@@ -29,6 +29,7 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Fiscal Balance",
     "heading.regional_expenditure": "Regional Expenditure",
     "heading.country_regional_expenditure": "{country} Regional Expenditure",
+    "heading.who_funds_budget": "Who Funds the Budget?",
     "heading.who_pays_education": "Who Pays for Education?",
     "heading.who_pays_health": "Who Pays for Healthcare?",
     "heading.public_spending_education_outcome": "Public Spending & Education Outcome",
@@ -60,7 +61,7 @@ TRANSLATIONS = {
     "chart.subnational_func_spending": "Subnational {func} Spending",
     "chart.subnational_outcome": "Subnational {outcome_name}",
     "chart.budget_func_fluctuation": "How do budgets for functional categories fluctuate over time?",
-    "chart.budget_by_funding_source": "How the Budget Is Financed: Domestic vs. Foreign Sources",
+    "chart.budget_by_funding_source": "How is the budget financed?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Inflation Adjusted",
@@ -220,7 +221,7 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": "per capita education spending",
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
-    "metric.domestic_funded_share": "domestically financed budget share (in percentage points)",
+    "metric.domestic_funded_share": "domestically financed budget share",
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",

@@ -22,6 +22,10 @@ def _prepare_funding_df(country):
 
     Source ``expenditure_w_poverty`` is one row per country-year; domestic =
     ``budget - foreign_funded_budget`` so the two bars sum to the total.
+
+    Deliberately budget-based, not expenditure-based: foreign-sourced
+    execution is not tracked for Togo (``foreign_funded_expenditure`` is 0
+    for most years), which would render the split as a flat 100% domestic.
     """
     df = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(df, country)
