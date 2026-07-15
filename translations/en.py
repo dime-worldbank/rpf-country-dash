@@ -24,7 +24,6 @@ TRANSLATIONS = {
     # --- Section headings ---
     "heading.total_expenditure": "Total Expenditure",
     "heading.spending_by_func": "Spending by Functional Categories",
-    "heading.budget": "Government Budget",
     "heading.spending_by_econ": "Spending by Economic Categories",
     "heading.quality_budget": "Quality of Budget Institutions",
     "heading.fiscal_balance": "Fiscal Balance",

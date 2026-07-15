@@ -161,6 +161,29 @@ def render_overview_content(tab, lang):
                         ),
                     ],
                 ),
+                dbc.Row(style={"height": "40px"}),
+                # How is the budget financed by domestic vs foreign sources?
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            chart_container("funding-source"),
+                            xs={"size": 12, "offset": 0},
+                            sm={"size": 12, "offset": 0},
+                            md={"size": 12, "offset": 0},
+                            lg={"size": 8, "offset": 0},
+                        ),
+                        dbc.Col(
+                            html.P(
+                                id="funding-source-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs={"size": 12, "offset": 0},
+                            sm={"size": 12, "offset": 0},
+                            md={"size": 12, "offset": 0},
+                            lg={"size": 4, "offset": 0},
+                        ),
+                    ],
+                ),
                 dbc.Row(
                     dbc.Col(
                         html.Hr(),
@@ -184,38 +207,6 @@ def render_overview_content(tab, lang):
                         dbc.Col(
                             html.P(
                                 id="functional-narrative",
-                                children=t("loading", lang),
-                            ),
-                            xs={"size": 12, "offset": 0},
-                            sm={"size": 12, "offset": 0},
-                            md={"size": 12, "offset": 0},
-                            lg={"size": 4, "offset": 0},
-                        ),
-                    ],
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        html.Hr(),
-                    )
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        html.H3(children=t("heading.budget", lang))
-                    )
-                ),
-                # How is the budget financed by domestic vs foreign sources?
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            chart_container("funding-source"),
-                            xs={"size": 12, "offset": 0},
-                            sm={"size": 12, "offset": 0},
-                            md={"size": 12, "offset": 0},
-                            lg={"size": 8, "offset": 0},
-                        ),
-                        dbc.Col(
-                            html.P(
-                                id="funding-source-narrative",
                                 children=t("loading", lang),
                             ),
                             xs={"size": 12, "offset": 0},

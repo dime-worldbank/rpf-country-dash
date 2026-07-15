@@ -24,7 +24,6 @@ TRANSLATIONS = {
     # --- Section headings ---
     "heading.total_expenditure": "Dépenses totales",
     "heading.spending_by_func": "Dépenses par catégories fonctionnelles",
-    "heading.budget": "Budget de l'État",
     "heading.spending_by_econ": "Dépenses par catégories économiques",
     "heading.quality_budget": "Qualité des institutions budgétaires",
     "heading.fiscal_balance": "Solde budgétaire",
