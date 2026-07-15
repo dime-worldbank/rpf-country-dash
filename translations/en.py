@@ -221,7 +221,7 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": "per capita education spending",
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
-    "metric.foreign_funded_share": "foreign-financed budget share (in percentage points)",
+    "metric.domestic_funded_share": "domestically financed budget share (in percentage points)",
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",
@@ -488,7 +488,7 @@ TRANSLATIONS = {
     "narrative.grew_modest": "grew at a modest rate of {rate:.1f}%",
     "narrative.external_financing_included": "This analysis currently includes external financing as the budget data used has limited granularity. It would ideally exclude external financing due to its volatility.",
     "narrative.external_financing_excluded": "This analysis excludes external financing as it tends to be volatile.",
-    "narrative.funding_source_average": "On average over this period, foreign sources financed {foreign_share:.1f}% of {country}'s budget, with the remaining {domestic_share:.1f}% funded domestically.",
+    "narrative.funding_source_average": "On average over this period, domestic sources financed {domestic_share:.1f}% of {country}'s budget, with the remaining {foreign_share:.1f}% funded by foreign sources.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "By default, only Overall Budget, Health, Education, and General Public Services are shown in the chart. Click on the legend to view the year-on-year budget growth rate for other functional categories.",

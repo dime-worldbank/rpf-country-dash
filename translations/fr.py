@@ -265,8 +265,8 @@ TRANSLATIONS = {
         "plural": False,
         "feminine": False,
     },
-    "metric.foreign_funded_share": {
-        "name": "la part du budget financée par des sources extérieures (en points de pourcentage)",
+    "metric.domestic_funded_share": {
+        "name": "la part du budget financée par des sources intérieures (en points de pourcentage)",
         "plural": False,
         "feminine": True,
     },
@@ -570,7 +570,7 @@ TRANSLATIONS = {
     "narrative.grew_modest": "a augmenté à un rythme modeste de {rate:.1f} %",
     "narrative.external_financing_included": "Cette analyse inclut actuellement le financement externe car les données budgétaires utilisées ont une granularité limitée. Idéalement, elle exclurait le financement externe en raison de sa volatilité.",
     "narrative.external_financing_excluded": "Cette analyse exclut le financement externe en raison de sa tendance à la volatilité.",
-    "narrative.funding_source_average": "En moyenne sur cette période, les sources extérieures ont financé {foreign_share:.1f} % du budget {country_gen}, les {domestic_share:.1f} % restants étant financés par des sources intérieures.",
+    "narrative.funding_source_average": "En moyenne sur cette période, les sources intérieures ont financé {domestic_share:.1f} % du budget {country_gen}, les {foreign_share:.1f} % restants étant financés par des sources extérieures.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "Par défaut, seuls le budget global, la santé, l'éducation et les services publics généraux sont affichés dans le graphique. Cliquez sur la légende pour voir le taux de croissance budgétaire annuel des autres catégories fonctionnelles.",

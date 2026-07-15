@@ -1,5 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
+from dash import html
 
 from translations import t, genitive
 from trend_narrative import get_segment_narrative, InsightExtractor, TrendDetector
@@ -39,7 +40,7 @@ def _prepare_funding_df(country):
         return df
 
     df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
-    df["foreign_share"] = df["foreign_funded_budget"] / df["budget"] * 100
+    df["domestic_share"] = df["domestic_funded_budget"] / df["budget"] * 100
     return df.sort_values("year")
 
 
@@ -102,33 +103,37 @@ def create_funding_source_figure(df, currency_code, lang="en"):
 
 def format_funding_source_narrative(df, country, lang="en"):
     country_label = t(f"country.{country}", lang)
+    country_gen = genitive(lang, country_label)
 
-    plot_df = df.dropna(subset=["foreign_share"]).sort_values("year")
-    mean_foreign = plot_df["foreign_share"].mean()
+    plot_df = df.dropna(subset=["domestic_share"]).sort_values("year")
+    mean_domestic = plot_df["domestic_share"].mean()
     average_text = t(
         "narrative.funding_source_average",
         lang,
         country=country_label,
-        country_gen=genitive(lang, country_label),
-        foreign_share=mean_foreign,
-        domestic_share=100 - mean_foreign,
+        country_gen=country_gen,
+        domestic_share=mean_domestic,
+        foreign_share=100 - mean_domestic,
     )
 
-    # Prepend a single-segment trend (one overall direction) of the share.
+    # Lead with a trend on the domestic share, so the whole narrative reads
+    # from one side of the split. Fitting one needs at least two points.
     if len(plot_df) < 2:
         return average_text
 
     extractor = InsightExtractor(
         plot_df["year"].values,
-        plot_df["foreign_share"].values,
-        detector=TrendDetector(max_segments=1),
+        plot_df["domestic_share"].values,
+        detector=TrendDetector(),
     )
     trend = get_segment_narrative(
         extractor=extractor,
-        metric=t("metric.foreign_funded_share", lang),
+        metric=t("metric.domestic_funded_share", lang),
         lang=lang,
     )
     if trend:
         trend = trend[0].upper() + trend[1:]
-        return f"{trend} {average_text}"
+        # Children list rather than "\n": the narrative renders inside an
+        # html.P, where a newline character would collapse to a space.
+        return [trend, html.Br(), average_text]
     return average_text
