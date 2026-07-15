@@ -6,7 +6,7 @@ from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
 
-from constants import IMF_GOVERNMENT_BUDGET_SOURCES
+from constants import IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES
 from query_cache import PersistentQueryCache
 
 
@@ -246,9 +246,9 @@ class QueryService:
         """
         return self.fetch_data(query)
 
-    def get_government_budget_data(self):
+    def get_government_revenue_expenditure_data(self):
         source_filter = ",\n                ".join(
-            f"'{src}'" for src in IMF_GOVERNMENT_BUDGET_SOURCES
+            f"'{src}'" for src in IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES
         )
         query = f"""
             SELECT
@@ -259,7 +259,7 @@ class QueryService:
                 expenditure_current_lcu AS expenditure,
                 data_source AS source,
                 is_forecast
-            FROM prd_mega.{INDICATOR_SCHEMA}.government_budget
+            FROM prd_mega.{INDICATOR_SCHEMA}.government_revenue_expenditure
             WHERE data_source IN (
                 {source_filter}
             )

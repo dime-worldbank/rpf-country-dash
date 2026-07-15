@@ -207,7 +207,7 @@ function_data_mapping = {
     "hd_index": lambda: _db().get_hd_index(_countries()),
     "edu_private_expenditure": lambda: _db().get_edu_private_expenditure(),
     "togo_revenue_budget": lambda: _db().get_togo_revenue_budget_data(),
-    "government_budget": lambda: _db().get_government_budget_data(),
+    "government_revenue_expenditure": lambda: _db().get_government_revenue_expenditure_data(),
     # Transformation loaders
     "func_econ_raw": load_func_econ_raw,
     "func_by_country_year": load_func_by_country_year,
