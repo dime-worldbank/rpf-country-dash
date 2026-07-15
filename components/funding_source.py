@@ -32,7 +32,7 @@ def _prepare_funding_df(country):
     # data means no breakdown, so show nothing rather than imply all-domestic.
     df = df[
         df["budget"].notna()
-        & (round(df["budget"]) != 0)
+        & (df["budget"].round(0) != 0)
         & df["foreign_funded_budget"].notna()
     ]
     if df.empty:
@@ -115,6 +115,9 @@ def format_funding_source_narrative(df, country, lang="en"):
     )
 
     # Prepend a single-segment trend (one overall direction) of the share.
+    if len(plot_df) < 2:
+        return average_text
+
     extractor = InsightExtractor(
         plot_df["year"].values,
         plot_df["foreign_share"].values,
