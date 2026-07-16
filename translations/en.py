@@ -554,6 +554,7 @@ TRANSLATIONS = {
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---
+    "deficit.view.label": "Data source:",
     "deficit.view.composite": "Composite",
     "deficit.view.official": "Official Report",
     "deficit.view.gfs": "GFS",

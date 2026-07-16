@@ -484,6 +484,7 @@ TRANSLATIONS = {
     "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
 
     # --- Déficit / fiscal balance ---
+    "deficit.view.label": "Fonte de dados:",
     "deficit.view.composite": "Composto",
     "deficit.view.official": "Relatório oficial",
     "deficit.view.gfs": "GFS",

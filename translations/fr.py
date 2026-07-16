@@ -636,6 +636,7 @@ TRANSLATIONS = {
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---
+    "deficit.view.label": "Source des données :",
     "deficit.view.composite": "Composite",
     "deficit.view.official": "Rapport officiel",
     "deficit.view.gfs": "SFP",

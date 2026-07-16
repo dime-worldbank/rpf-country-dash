@@ -318,10 +318,9 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     fig.update_layout(
         plot_bgcolor="white",
         hovermode="x unified",
-        height=650,
         legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0),
         barmode="overlay",
-        margin=dict(t=80, b=40, l=100, r=40),
+        margin=dict(t=0, b=40, l=100, r=40),
     )
 
     return apply_locale(fig, lang=lang)

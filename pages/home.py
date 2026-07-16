@@ -276,37 +276,43 @@ def render_overview_content(tab, lang):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        dbc.RadioItems(
-                            id="revenue-expenditure-view",
-                            options=[
-                                {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
-                                {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
-                                {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-                                {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                        html.Div(
+                            [
+                                dbc.Label(
+                                    t("deficit.view.label", lang),
+                                    html_for="revenue-expenditure-view",
+                                    className="mb-0",
+                                ),
+                                dbc.RadioItems(
+                                    id="revenue-expenditure-view",
+                                    options=[
+                                        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                                    ],
+                                    value=DEFAULT_FISCAL_VIEW,
+                                    inline=True,
+                                ),
                             ],
-                            value=DEFAULT_FISCAL_VIEW,
-                            inline=True,
-                            style={"padding": "10px"},
-                            labelStyle={"margin-right": "20px"},
+                            className="d-flex align-items-center flex-wrap gap-2 pb-2",
                         )
                     )
                 ),
                 dbc.Row(
-                    dbc.Col(
-                        html.P(
-                            id="revenue-expenditure-narrative",
-                            children=t("loading", lang),
-                        )
-                    )
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        chart_container("revenue-expenditure-combined"),
-                        xs={"size": 12, "offset": 0},
-                        sm={"size": 12, "offset": 0},
-                        md={"size": 12, "offset": 0},
-                        lg={"size": 12, "offset": 0},
-                    )
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="revenue-expenditure-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=3,
+                        ),
+                        dbc.Col(
+                            chart_container("revenue-expenditure-combined"),
+                            xs=12, lg=9,
+                        ),
+                    ]
                 ),
                 dbc.Row(
                     dbc.Col(
