@@ -12,7 +12,6 @@ import json
 import pandas as pd
 from queries import QueryService
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
-from components.edu_spending_by_level import add_secondary_average
 import server_store
 
 
@@ -187,6 +186,22 @@ def load_health_public_expenditure():
 def load_edu_public_expenditure():
     exp_by_func = server_store.lookup("func_by_country_year")
     return exp_by_func[exp_by_func.func == "Education"]
+
+
+def add_secondary_average(df, prefix):
+    """Derive ``{prefix}_secondary`` as the mean of the lower- and upper-secondary
+    columns.
+
+    The UNESCO indicator tables report the two sub-levels separately, but BOOST
+    reports a single combined "Secondary Education" func_sub. Averaging them here
+    gives the indicators the same shape as the spending data, so the education
+    section's two charts can share a set of levels. Skip-NaN, so a year reporting
+    only one sub-level still yields a value.
+    """
+    df[f"{prefix}_secondary"] = df[
+        [f"{prefix}_lower_secondary", f"{prefix}_upper_secondary"]
+    ].mean(axis=1)
+    return df
 
 
 def load_completion_rates():

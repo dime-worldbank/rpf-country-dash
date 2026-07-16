@@ -38,13 +38,20 @@ NARRATIVE_ID = "education-func-sub-narrative"
 
 _STORE_KEY = "edu_func_sub_econ_expenditure"
 
-# Canonical education levels — both charts label and color their legend entries
-# from this single model. QUALITATIVE (ColorBrewer Paired): blue family for
-# primary-and-earlier, green for secondary, orange for post-secondary/tertiary.
+# Canonical education levels, in pedagogical order. The outcome chart walks this
+# and plots whichever levels the selected indicator reports, so a level with no
+# column today (tertiary completion rates, say) starts rendering in the right
+# place as soon as one is added to _OUTCOMES. The spending chart takes its own
+# order from _FUNC_SUB_TO_LEVEL below; the two models share the colors and the
+# level.* labels, not the ordering.
 _LEVEL_ORDER = (
     "pre_primary", "primary", "primary_secondary",
     "secondary", "post_secondary", "tertiary",
 )
+# ColorBrewer Paired, one light/dark pair per family: blue for the primary
+# family, green for the secondary family (primary_secondary spans into it, so it
+# reads as secondary here), orange for the tertiary family. The red pair,
+# QUALITATIVE[4:6], is skipped to keep the three families far apart.
 _LEVEL_COLORS = {
     "pre_primary":       QUALITATIVE[0],  # light blue
     "primary":           QUALITATIVE[1],  # blue
@@ -62,21 +69,11 @@ _FUNC_SUB_TO_LEVEL = {
     "Tertiary Education": "tertiary",
 }
 
-def add_secondary_average(df, prefix):
-    """Derive ``{prefix}_secondary`` as the mean of the lower- and upper-secondary
-    columns. The indicator tables report the two separately, but BOOST reports a
-    single combined "Secondary Education" func_sub, so the indicators need the
-    same shape to sit beside the spending chart. Skip-NaN, so a year reporting
-    only one sub-level still yields a value. Composed into the store by
-    data_mapping.py, which is why it isn't applied here.
-    """
-    df[f"{prefix}_secondary"] = df[
-        [f"{prefix}_lower_secondary", f"{prefix}_upper_secondary"]
-    ].mean(axis=1)
-    return df
-
-
-# Service-delivery indicators, in dropdown order.
+# Service-delivery indicators, in dropdown order. The ``_secondary`` columns are
+# derived at load time by data_mapping.add_secondary_average: BOOST reports a
+# single combined "Secondary Education" func_sub, so the indicator tables — which
+# report lower and upper secondary separately — are averaged into that shape to
+# sit beside the spending chart.
 _OUTCOMES = {
     "completion_rate": {
         "store_key": "completion_rates",
@@ -162,6 +159,34 @@ def _filtered_spending(country, econ_filter):
     return df
 
 
+def _reported(df, value_col):
+    """Rows whose value was actually reported. 0 and NaN both mean "not
+    reported" (unreported spending, or no population to divide by) rather than a
+    real zero, so both drop out.
+
+    The one place that rule lives: the charts, the narrative's averages and the
+    shared x-axis all filter through here, so they cannot disagree about which
+    years count.
+    """
+    return df[df[value_col].notna() & (df[value_col] != 0)]
+
+
+def _level_totals(df):
+    """Per-level, per-year spending totals over the reported years only.
+
+    Sums across economic categories *before* applying the reported-value rule —
+    a year counts when its total is reported, so categories that net to zero
+    drop out of the chart, the averages and the axis alike.
+    """
+    totals = (
+        df.groupby(["func_sub", "year"], as_index=False)["per_capita_real_expenditure"]
+        .sum()
+        .rename(columns={"per_capita_real_expenditure": "value"})
+        .sort_values("year")
+    )
+    return _reported(totals, "value")
+
+
 def _year_range(years):
     """[min, max] of ``years``; None if empty."""
     years = [int(y) for y in years]
@@ -171,7 +196,7 @@ def _year_range(years):
 def _spending_years(country, econ_filter):
     """The spending chart's year range. The outcome indicator deliberately does
     not feed this, so switching indicators never moves either x-axis."""
-    return _year_range(_filtered_spending(country, econ_filter)["year"])
+    return _year_range(_level_totals(_filtered_spending(country, econ_filter))["year"])
 
 
 def _apply_shared_xaxis(fig, year_range):
@@ -222,29 +247,16 @@ def spending_figure(country, econ_filter, lang="en"):
     if not country:
         return empty_plot(t("loading", lang))
 
-    df = _filtered_spending(country, econ_filter)
-    if df.empty:
+    totals = _level_totals(_filtered_spending(country, econ_filter))
+    if totals.empty:
         return empty_plot(t("error.no_data_period", lang))
-
-    grouped = (
-        df.groupby(["func_sub", "year"], as_index=False)["per_capita_real_expenditure"]
-        .sum()
-        .sort_values("year")
-        .rename(columns={"per_capita_real_expenditure": "value"})
-    )
 
     currency_code = get_currency_code(country)
     spending_fmt = lambda x: format_currency(x, currency_code, lang=lang)
 
     fig = go.Figure()
     for func_sub, level in _FUNC_SUB_TO_LEVEL.items():
-        # Drop 0/missing values — they mean unreported spending (or no
-        # population), not a real zero, so the line skips those years.
-        sub = grouped[
-            (grouped["func_sub"] == func_sub)
-            & grouped["value"].notna()
-            & (grouped["value"] != 0)
-        ]
+        sub = totals[totals["func_sub"] == func_sub]
         if sub.empty:
             continue
         label = t(f"level.{level}", lang)
@@ -262,7 +274,7 @@ def spending_figure(country, econ_filter, lang="en"):
             )
         )
 
-    _apply_shared_xaxis(fig, _year_range(grouped["year"]))
+    _apply_shared_xaxis(fig, _year_range(totals["year"]))
     if econ_filter and econ_filter != ALL_ECON:
         scope = translate_econ(econ_filter, lang)
     else:
@@ -275,7 +287,7 @@ def spending_figure(country, econ_filter, lang="en"):
 
 
 def _relationship_sentence(
-    country, econ_filter, indicator, most_key, totals, currency_code, lang,
+    country, indicator, most_key, totals, currency_code, lang,
 ):
     """Detected relationship between the best-funded level's spending and the
     selected indicator for that same level. "" when the level isn't in the
@@ -290,10 +302,11 @@ def _relationship_sentence(
     outcome = server_store.get(cfg["store_key"])
     if col not in outcome.columns:
         return ""
-    outcome = filter_country_sort_year(outcome, country)[["year", col]].dropna()
-    outcome = outcome[outcome[col] != 0]
-    # Restrict the outcome to the shared x-axis window.
-    year_range = _spending_years(country, econ_filter)
+    outcome = _reported(filter_country_sort_year(outcome, country)[["year", col]], col)
+    # Restrict the outcome to the shared x-axis window. Taken from the totals we
+    # were handed, which are the rows the chart drew — recomputing it here could
+    # only drift from them.
+    year_range = _year_range(totals["year"])
     if year_range:
         lo, hi = year_range
         outcome = outcome[(outcome["year"] >= lo) & (outcome["year"] <= hi)]
@@ -303,7 +316,7 @@ def _relationship_sentence(
 
     result = get_relationship_narrative(
         reference_years=spend["year"].values,
-        reference_values=spend["per_capita_real_expenditure"].values,
+        reference_values=spend["value"].values,
         comparison_years=outcome["year"].values,
         comparison_values=outcome[col].values,
         reference_name=t(
@@ -331,12 +344,8 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     if not country:
         return t("loading", lang)
 
-    df = _filtered_spending(country, econ_filter)
-    df = df[
-        df["per_capita_real_expenditure"].notna()
-        & (df["per_capita_real_expenditure"] != 0)
-    ]
-    if df.empty:
+    totals = _level_totals(_filtered_spending(country, econ_filter))
+    if totals.empty:
         return t("error.no_data_period", lang)
 
     currency_code = get_currency_code(country)
@@ -350,12 +359,9 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     else:
         scope = t("narrative.econ_scope_all", lang)
 
-    # Sum across econ categories to the per-year total before averaging, so the
-    # figures match the chart and a level with more years isn't favored.
-    totals = df.groupby(["func_sub", "year"], as_index=False)[
-        "per_capita_real_expenditure"
-    ].sum()
-    means = totals.groupby("func_sub")["per_capita_real_expenditure"].mean()
+    # Averaged over the same per-year totals the chart plots, so the figures
+    # agree with it and a level with more reported years isn't favored.
+    means = totals.groupby("func_sub")["value"].mean()
     start_year, end_year = int(totals["year"].min()), int(totals["year"].max())
     most_key = means.idxmax()
     most_label = t(f"level.{_FUNC_SUB_TO_LEVEL[most_key]}.long", lang)
@@ -377,13 +383,18 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
         )
 
     relationship = _relationship_sentence(
-        country, econ_filter, indicator, most_key, totals, currency_code, lang,
+        country, indicator, most_key, totals, currency_code, lang,
     )
     return " ".join(p for p in (base, relationship) if p)
 
 
 def outcome_figure(country, econ_filter, indicator, lang="en"):
-    """Service-delivery indicator by level; shares the spending chart's x-axis."""
+    """Service-delivery indicator by level.
+
+    Shares the spending chart's x-axis so the pair reads as one view, but stands
+    on its own: when the economic filter leaves no spending to plot, this chart
+    still renders over its own years.
+    """
     lang = lang or "en"
     if not country:
         return empty_plot(t("loading", lang))
@@ -393,15 +404,15 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
     df = df.sort_values("year")
 
     fig = go.Figure()
+    plotted_years = []
     for level in _LEVEL_ORDER:
         col = cfg["columns"].get(level)
         if not col or col not in df.columns:
             continue
-        # Drop missing and 0 values (0 = not reported, not a real zero).
-        series = df[["year", col]].dropna()
-        series = series[series[col] != 0]
+        series = _reported(df[["year", col]], col)
         if series.empty:
             continue
+        plotted_years.extend(series["year"])
         label = t(f"level.{level}", lang)
         color = _LEVEL_COLORS.get(level)
         fig.add_trace(
@@ -419,7 +430,12 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
     if not fig.data:
         return empty_plot(t("error.no_data_period", lang))
 
-    _apply_shared_xaxis(fig, _spending_years(country, econ_filter))
+    # Fall back to this chart's own years when there's no spending to align to,
+    # rather than letting Plotly auto-range: the indicator is still worth
+    # reading, and it keeps the whole-year ticks the shared axis would give it.
+    _apply_shared_xaxis(
+        fig, _spending_years(country, econ_filter) or _year_range(plotted_years)
+    )
     fig.update_yaxes(fixedrange=True, title_text=t(cfg["title_key"], lang))
     if cfg["y_range"]:
         fig.update_yaxes(range=cfg["y_range"])
