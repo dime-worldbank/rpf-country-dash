@@ -2,6 +2,43 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **AS-BUILT (2026-07-16, commits d01797f, 7579b8b).** Executed inline; the design
+> evolved during execution — this header records what actually shipped; task
+> bodies below are the original plan, kept for provenance.
+>
+> - **Slot model, not a flat source_id list.** A chart's source entry is a bare
+>   `source_id` string *or* a slot dict `{"source_id", label_key?, coverage_key?,
+>   publisher_key?, name_key?}`. Reason discovered in execution: one `source_id`
+>   needs different *headings* per chart (boost → "Public Education Expenditure"
+>   vs "Public Health Expenditure") and different *coverage* per chart when a
+>   source feeds several indicators (world_bank_pip → poverty_rate vs
+>   learning_poverty_rate). Collapsing onto source_id regressed both.
+> - **Coverage stays keyed by `indicator_key`** (original `get_coverage_years`,
+>   unchanged) via the slot's `coverage_key`. The **popover does NOT consume the
+>   `indicator_source` bridge** — the bridge is pipeline-only metadata. The
+>   dashboard reads only `source_registry` (facts) + keeps `indicator_availability`
+>   (coverage) + `boost_source_urls` (boost coverage/url).
+> - **Source line = localized `publisher — name`** via decomposed
+>   `source.publisher.*` (shared) + `source.name.*` (per source) keys; registry
+>   `publisher`/`name` are the fallback. `name_key: ""` on a slot suppresses the
+>   name (publisher-only line, used for learning poverty).
+> - **URL:** `registry.url` only (no config fallback); boost keeps per-country url.
+>
+> **LOCKED CONTRACT — what the pipeline `source_registry` must emit:**
+> record `{"source_id": str, "name": str, "publisher": str, "url": str | None}`.
+> (The `indicator_source` bridge is still built pipeline-side for authoritative
+> attribution + validation, but the dashboard does not read it.)
+>
+> **Known gaps flagged for review (Task 5 render check / follow-up):**
+> - **Learning poverty** (education-outcome) is modelled as `world_bank_pip` with
+>   the name suppressed → Source line "World Bank"; its link resolves to the PIP
+>   url, whereas the old UI linked to the data360 WB_LPGD dataset. Minor url
+>   regression — revisit if a dedicated learning-poverty registry source is added.
+> - **fr/pt name coverage:** `source.name.pip_spid`, `source.name.pip_gsap`,
+>   `source.name.unesco_uis`, `source.name.who_gho`, `source.name.global_data_lab`
+>   have English only (no confident fr/pt) → they fall back to English via `t()`.
+>   Native-speaker translations welcome.
+
 **Goal:** Refactor the source-metadata popover to consume two normalized inputs — a `source_registry` (source facts) and an `indicator_source` bridge — instead of hardcoded per-source dicts, driving the whole thing from **fixtures** so the exact table contract the pipeline must produce is proven before any pipeline work.
 
 **Architecture:** The popover keeps three concerns cleanly separated: **facts** (`source_registry`: id → name/publisher/url) come from the pipeline; **presentation** (i18n label/description keys, per-source country scoping) stays dashboard-side in a new `SOURCE_DISPLAY` map keyed by `source_id`; **wiring** (`CHART_METADATA`: chart → list of `source_id`) stays dashboard-side. Coverage years resolve `source_id → indicator_key(s)` through the `indicator_source` bridge. All new logic is exercised against in-memory fixtures via `unittest`; **no Databricks is required** to complete this plan. The real query loaders are authored but their DB round-trip is validated later, when the pipeline tables exist.
