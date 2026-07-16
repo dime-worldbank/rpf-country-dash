@@ -1,12 +1,10 @@
-"""Reusable "spending by func-sub level + service-delivery indicator" section.
+"""Education spending by level, beside a service-delivery indicator.
 
-Per-capita real spending by sub-functional level (filterable by economic
-category) beside a service-delivery indicator chart, plus a narrative. Every
-sector-specific piece lives in a :class:`SectionConfig`; ``EDU_CONFIG`` is the
-Education instance.
+Per-capita real spending by education level (filterable by economic category)
+next to an indicator chart the user picks, plus a narrative. This module holds
+the layout builder and pure helpers; the ``@callback`` wrappers live in
+pages/education.py and delegate here.
 """
-from dataclasses import dataclass
-
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash import html
@@ -19,40 +17,107 @@ from viz_theme import QUALITATIVE
 from trend_narrative import get_relationship_narrative
 from components import econ_outcome_filter
 from components.econ_outcome_filter import ALL_ECON
-from components.source_metadata_popover import CHART_METADATA, chart_container
-
-
-@dataclass
 class SectionConfig:
-    """Everything sector-specific the engine needs (Education, Health, ...)."""
-    # Component ids (shared between layout() and the page callbacks).
-    econ_filter_id: str
-    outcome_filter_id: str
-    spending_chart_id: str
-    outcome_chart_id: str
-    narrative_id: str
-    # Data
-    store_key: str                 # spending frame: country_name, year, func_sub, econ, per_capita_real_expenditure
-    func_sub_to_level: dict        # func_sub value -> canonical level key, in display order
-    level_order: tuple             # canonical levels in display order (outcome chart)
-    level_colors: dict             # canonical level -> color
-    # Service-delivery indicators
-    outcome_by_key: dict           # indicator key -> outcome column config, in dropdown order
-    default_outcome_key: str
-    econ_default_outcome: dict     # econ value -> indicator key (category → default)
-    # Translation keys
-    heading_key: str
-    chart_title_key: str
+from components.source_metadata_popover import chart_container
 
-    def __post_init__(self):
-        # The chart ids double as CHART_METADATA keys, which is only a lookup —
-        # drift there silently empties the ⓘ source modal, so fail at import.
-        for chart_id in (self.spending_chart_id, self.outcome_chart_id):
-            if chart_id not in CHART_METADATA:
-                raise KeyError(
-                    f"{chart_id!r} is missing from source_metadata_popover.CHART_METADATA"
-                )
+# Component ids. The two chart ids double as CHART_METADATA keys in
+# components/source_metadata_popover.py — rename one and its ⓘ modal loses its
+# sources.
+ECON_FILTER_ID = "education-func-sub-econ-filter"
+OUTCOME_FILTER_ID = "education-outcome-indicator"
+SPENDING_CHART_ID = "education-func-sub-econ"
+OUTCOME_CHART_ID = "education-level-outcome"
+NARRATIVE_ID = "education-func-sub-narrative"
 
+_STORE_KEY = "edu_func_sub_econ_expenditure"
+
+# Canonical education levels — both charts label and color their legend entries
+# from this single model. QUALITATIVE (ColorBrewer Paired): blue family for
+# primary-and-earlier, green for secondary, orange for post-secondary/tertiary.
+_LEVEL_ORDER = (
+    "pre_primary", "primary", "primary_secondary",
+    "secondary", "post_secondary", "tertiary",
+)
+_LEVEL_COLORS = {
+    "pre_primary":       QUALITATIVE[0],  # light blue
+    "primary":           QUALITATIVE[1],  # blue
+    "primary_secondary": QUALITATIVE[2],  # light green
+    "secondary":         QUALITATIVE[3],  # green
+    "post_secondary":    QUALITATIVE[6],  # light orange
+    "tertiary":          QUALITATIVE[7],  # orange
+}
+# func_sub value -> canonical level, in spending-chart display order.
+_FUNC_SUB_TO_LEVEL = {
+    "Primary Education": "primary",
+    "Primary and Secondary education": "primary_secondary",
+    "Secondary Education": "secondary",
+    "Post-Secondary Non-Tertiary Education": "post_secondary",
+    "Tertiary Education": "tertiary",
+}
+
+# Service-delivery indicators, in dropdown order.
+_OUTCOMES = {
+    "completion_rate": {
+        "store_key": "completion_rates",
+        "label_key": "outcome.completion_rate",
+        "title_key": "chart.completion_rate",
+        "metric_key": "metric.completion_rate",
+        "value_fmt": ".1f",
+        "suffix": "%",
+        "y_range": [0, 100],
+        "columns": {
+            "primary": "completion_rate_primary",
+            "secondary": "completion_rate_secondary",
+        },
+    },
+    "teacher_salary": {
+        "store_key": "teacher_salaries",
+        "label_key": "outcome.teacher_salary",
+        "title_key": "chart.teacher_salary",
+        "metric_key": "metric.teacher_salary",
+        "value_fmt": ".2f",
+        "suffix": "",
+        "y_range": None,
+        "columns": {
+            "pre_primary": "teacher_salary_pre_primary",
+            "primary": "teacher_salary_primary",
+            "secondary": "teacher_salary_secondary",
+        },
+    },
+    "electricity": {
+        "store_key": "school_basic_services",
+        "label_key": "outcome.electricity",
+        "title_key": "chart.schools_electricity",
+        "metric_key": "metric.electricity",
+        "value_fmt": ".1f",
+        "suffix": "%",
+        "y_range": [0, 100],
+        "columns": {
+            "primary": "schools_with_electricity_primary",
+            "secondary": "schools_with_electricity_secondary",
+        },
+    },
+    "internet": {
+        "store_key": "school_basic_services",
+        "label_key": "outcome.internet",
+        "title_key": "chart.schools_internet",
+        "metric_key": "metric.internet",
+        "value_fmt": ".1f",
+        "suffix": "%",
+        "y_range": [0, 100],
+        "columns": {
+            "primary": "schools_with_internet_primary",
+            "secondary": "schools_with_internet_secondary",
+        },
+    },
+}
+DEFAULT_OUTCOME = "completion_rate"
+# Economic category -> the indicator it makes most sense to look at next to it.
+_ECON_DEFAULT_OUTCOME = {
+    "Wage bill": "teacher_salary",
+    "Capital expenditures": "electricity",
+    "Goods and services": "internet",
+}
 
 # Shared legend/margin so both charts' legend boxes match in placement & style.
 _LEGEND_STYLE = dict(
@@ -62,9 +127,6 @@ _LEGEND_STYLE = dict(
 _CHART_MARGIN = dict(l=20, r=20, t=20, b=80)
 
 
-# ---------------------------------------------------------------------------
-# Helpers (sector-agnostic)
-# ---------------------------------------------------------------------------
 def _year_range(years):
     """[min, max] of ``years``, floored at START_YEAR; None if empty."""
     years = [int(y) for y in years]
@@ -74,13 +136,13 @@ def _year_range(years):
     return (lo, hi) if lo <= hi else None
 
 
-def _spending_years(config, country, econ_filter):
+def _spending_years(country, econ_filter):
     """The spending chart's year range. The outcome indicator deliberately does
     not feed this, so switching indicators never moves either x-axis."""
-    df = server_store.get(config.store_key)
+    df = server_store.get(_STORE_KEY)
     df = df[
         (df["country_name"] == country)
-        & (df["func_sub"].isin(list(config.func_sub_to_level)))
+        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
     ]
     if econ_filter and econ_filter != ALL_ECON:
         df = df[df["econ"] == econ_filter]
@@ -111,10 +173,8 @@ def _currency_code(country):
     )
 
 
-def _outcome_cfg(config, indicator):
-    return config.outcome_by_key.get(indicator) or config.outcome_by_key[
-        config.default_outcome_key
-    ]
+def _outcome(indicator):
+    return _OUTCOMES.get(indicator) or _OUTCOMES[DEFAULT_OUTCOME]
 
 
 def _finalize(fig, lang):
@@ -132,28 +192,26 @@ def _finalize(fig, lang):
 # ---------------------------------------------------------------------------
 # Callback delegates (pure functions; the @callbacks live in the page module)
 # ---------------------------------------------------------------------------
-def econ_filter_options(config, country, lang, current_value):
+def econ_filter_options(country, lang, current_value):
     """(options, value) for the economic-category dropdown, per country."""
-    return econ_outcome_filter.econ_options(
-        config.store_key, country, lang, current_value
-    )
+    return econ_outcome_filter.econ_options(_STORE_KEY, country, lang, current_value)
 
 
-def default_outcome_indicator(config, econ_filter):
+def default_outcome_indicator(econ_filter):
     """The natural service-delivery indicator for a selected economic category."""
-    return config.econ_default_outcome.get(econ_filter, config.default_outcome_key)
+    return _ECON_DEFAULT_OUTCOME.get(econ_filter, DEFAULT_OUTCOME)
 
 
-def spending_figure(config, country, econ_filter, lang="en"):
+def spending_figure(country, econ_filter, lang="en"):
     """Per-capita real spending by level, filtered by economic category."""
     lang = lang or "en"
     if not country:
         return empty_plot(t("loading", lang))
 
-    df = server_store.get(config.store_key)
+    df = server_store.get(_STORE_KEY)
     df = df[
         (df["country_name"] == country)
-        & (df["func_sub"].isin(list(config.func_sub_to_level)))
+        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
     ]
     if econ_filter and econ_filter != ALL_ECON:
         df = df[df["econ"] == econ_filter]
@@ -170,7 +228,7 @@ def spending_figure(config, country, econ_filter, lang="en"):
     currency_code = _currency_code(country)
 
     fig = go.Figure()
-    for func_sub, level in config.func_sub_to_level.items():
+    for func_sub, level in _FUNC_SUB_TO_LEVEL.items():
         # Drop 0/missing values — they mean unreported spending (or no
         # population), not a real zero, so the line skips those years.
         sub = grouped[
@@ -181,7 +239,7 @@ def spending_figure(config, country, econ_filter, lang="en"):
         if sub.empty:
             continue
         label = t(f"level.{level}", lang)
-        color = config.level_colors.get(level)
+        color = _LEVEL_COLORS.get(level)
         if currency_code:
             customdata = sub["value"].apply(_money_fmt(currency_code, lang))
             hovertemplate = f"<b>{label}</b>: %{{customdata}}<extra></extra>"
@@ -208,19 +266,19 @@ def spending_figure(config, country, econ_filter, lang="en"):
         scope = t("dropdown.all_econ_categories", lang)
     fig.update_yaxes(
         fixedrange=True,
-        title_text=f"{t(config.chart_title_key, lang)}<br>({scope})",
+        title_text=f"{t('chart.edu_func_sub_econ', lang)}<br>({scope})",
     )
     return _finalize(fig, lang)
 
 
 def _relationship_sentence(
-    config, country, econ_filter, indicator, most_key, totals, currency_code, lang,
+    country, econ_filter, indicator, most_key, totals, currency_code, lang,
 ):
     """Detected relationship between the best-funded level's spending and the
     selected indicator for that same level. "" when the level isn't in the
     indicator or there's too little overlapping data."""
-    cfg = _outcome_cfg(config, indicator)
-    level = config.func_sub_to_level[most_key]
+    cfg = _outcome(indicator)
+    level = _FUNC_SUB_TO_LEVEL[most_key]
     col = cfg["columns"].get(level)
     if not col:
         return ""
@@ -230,7 +288,7 @@ def _relationship_sentence(
     outcome = outcome[outcome["country_name"] == country][["year", col]].dropna()
     outcome = outcome[outcome[col] != 0]
     # Restrict the outcome to the shared x-axis window.
-    year_range = _spending_years(config, country, econ_filter)
+    year_range = _spending_years(country, econ_filter)
     if year_range:
         lo, hi = year_range
         outcome = outcome[(outcome["year"] >= lo) & (outcome["year"] <= hi)]
@@ -260,7 +318,7 @@ def _relationship_sentence(
     return result.get("narrative", "")
 
 
-def spending_narrative(config, country, econ_filter, indicator, lang="en"):
+def spending_narrative(country, econ_filter, indicator, lang="en"):
     """Most/least funded level with averages, plus the detected relationship
     between the best-funded level's spending and the selected indicator (when
     that level is reported by the indicator)."""
@@ -268,10 +326,10 @@ def spending_narrative(config, country, econ_filter, indicator, lang="en"):
     if not country:
         return t("loading", lang)
 
-    df = server_store.get(config.store_key)
+    df = server_store.get(_STORE_KEY)
     df = df[
         (df["country_name"] == country)
-        & (df["func_sub"].isin(list(config.func_sub_to_level)))
+        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
         & df["per_capita_real_expenditure"].notna()
         & (df["per_capita_real_expenditure"] != 0)
     ]
@@ -299,7 +357,7 @@ def spending_narrative(config, country, econ_filter, indicator, lang="en"):
     means = totals.groupby("func_sub")["per_capita_real_expenditure"].mean()
     start_year, end_year = int(totals["year"].min()), int(totals["year"].max())
     most_key = means.idxmax()
-    most_label = t(f"level.{config.func_sub_to_level[most_key]}.long", lang)
+    most_label = t(f"level.{_FUNC_SUB_TO_LEVEL[most_key]}.long", lang)
 
     if len(means) == 1:
         base = t(
@@ -309,7 +367,7 @@ def spending_narrative(config, country, econ_filter, indicator, lang="en"):
         )
     else:
         least_key = means.idxmin()
-        least_label = t(f"level.{config.func_sub_to_level[least_key]}.long", lang)
+        least_label = t(f"level.{_FUNC_SUB_TO_LEVEL[least_key]}.long", lang)
         base = t(
             "narrative.func_sub_most_least", lang,
             scope=scope, most=most_label, least=least_label,
@@ -318,23 +376,23 @@ def spending_narrative(config, country, econ_filter, indicator, lang="en"):
         )
 
     relationship = _relationship_sentence(
-        config, country, econ_filter, indicator, most_key, totals, currency_code, lang,
+        country, econ_filter, indicator, most_key, totals, currency_code, lang,
     )
     return " ".join(p for p in (base, relationship) if p)
 
 
-def outcome_figure(config, country, econ_filter, indicator, lang="en"):
+def outcome_figure(country, econ_filter, indicator, lang="en"):
     """Service-delivery indicator by level; shares the spending chart's x-axis."""
     lang = lang or "en"
     if not country:
         return empty_plot(t("loading", lang))
 
-    cfg = _outcome_cfg(config, indicator)
+    cfg = _outcome(indicator)
     df = server_store.get(cfg["store_key"])
     df = df[df["country_name"] == country].sort_values("year")
 
     fig = go.Figure()
-    for level in config.level_order:
+    for level in _LEVEL_ORDER:
         col = cfg["columns"].get(level)
         if not col or col not in df.columns:
             continue
@@ -344,7 +402,7 @@ def outcome_figure(config, country, econ_filter, indicator, lang="en"):
         if series.empty:
             continue
         label = t(f"level.{level}", lang)
-        color = config.level_colors.get(level)
+        color = _LEVEL_COLORS.get(level)
         fig.add_trace(
             go.Scatter(
                 name=label,
@@ -360,150 +418,33 @@ def outcome_figure(config, country, econ_filter, indicator, lang="en"):
     if not fig.data:
         return empty_plot(t("error.no_data_period", lang))
 
-    _apply_shared_xaxis(fig, _spending_years(config, country, econ_filter))
+    _apply_shared_xaxis(fig, _spending_years(country, econ_filter))
     fig.update_yaxes(fixedrange=True, title_text=t(cfg["title_key"], lang))
     if cfg["y_range"]:
         fig.update_yaxes(range=cfg["y_range"])
     return _finalize(fig, lang)
 
 
-# ---------------------------------------------------------------------------
-# Layout
-# ---------------------------------------------------------------------------
-def layout(config, lang="en"):
+def layout(lang="en"):
     """The full section: divider, heading, filter bar, both charts, narrative."""
     lang = lang or "en"
     outcome_options = [
         {"label": t(cfg["label_key"], lang), "value": key}
-        for key, cfg in config.outcome_by_key.items()
+        for key, cfg in _OUTCOMES.items()
     ]
     return html.Div(
         [
             dbc.Row(dbc.Col(html.Hr())),
-            dbc.Row(dbc.Col(html.H3(children=t(config.heading_key, lang)))),
+            dbc.Row(dbc.Col(html.H3(children=t("heading.edu_func_sub_econ", lang)))),
             econ_outcome_filter.filter_bar(
-                config.econ_filter_id,
-                config.outcome_filter_id,
-                outcome_options,
-                config.default_outcome_key,
-                lang,
+                ECON_FILTER_ID, OUTCOME_FILTER_ID, outcome_options, DEFAULT_OUTCOME, lang,
             ),
-            dbc.Row(
-                dbc.Col(html.P(id=config.narrative_id, children=t("loading", lang)))
-            ),
+            dbc.Row(dbc.Col(html.P(id=NARRATIVE_ID, children=t("loading", lang)))),
             dbc.Row(
                 [
-                    dbc.Col(chart_container(config.spending_chart_id), xs=12, lg=6),
-                    dbc.Col(chart_container(config.outcome_chart_id), xs=12, lg=6),
+                    dbc.Col(chart_container(SPENDING_CHART_ID), xs=12, lg=6),
+                    dbc.Col(chart_container(OUTCOME_CHART_ID), xs=12, lg=6),
                 ]
             ),
         ]
     )
-
-
-# ===========================================================================
-# Education instance
-# ===========================================================================
-# Canonical education levels — both charts label and color their legend entries
-# from this single model. QUALITATIVE (ColorBrewer Paired): blue family for
-# primary-and-earlier, green for secondary, orange for post-secondary/tertiary.
-_EDU_LEVEL_ORDER = (
-    "pre_primary", "primary", "primary_secondary",
-    "secondary", "post_secondary", "tertiary",
-)
-_EDU_LEVEL_COLORS = {
-    "pre_primary":       QUALITATIVE[0],  # light blue
-    "primary":           QUALITATIVE[1],  # blue
-    "primary_secondary": QUALITATIVE[2],  # light green
-    "secondary":         QUALITATIVE[3],  # green
-    "post_secondary":    QUALITATIVE[6],  # light orange
-    "tertiary":          QUALITATIVE[7],  # orange
-}
-# Also the func_sub display order for the spending chart.
-_EDU_FUNC_SUB_TO_LEVEL = {
-    "Primary Education": "primary",
-    "Primary and Secondary education": "primary_secondary",
-    "Secondary Education": "secondary",
-    "Post-Secondary Non-Tertiary Education": "post_secondary",
-    "Tertiary Education": "tertiary",
-}
-
-_TEACHER_SALARY_OUTCOME = {
-    "store_key": "teacher_salaries",
-    "label_key": "outcome.teacher_salary",
-    "title_key": "chart.teacher_salary",
-    "metric_key": "metric.teacher_salary",
-    "value_fmt": ".2f",
-    "suffix": "",
-    "y_range": None,
-    "columns": {
-        "pre_primary": "teacher_salary_pre_primary",
-        "primary": "teacher_salary_primary",
-        "secondary": "teacher_salary_secondary",
-    },
-}
-_ELECTRICITY_OUTCOME = {
-    "store_key": "school_basic_services",
-    "label_key": "outcome.electricity",
-    "title_key": "chart.schools_electricity",
-    "metric_key": "metric.electricity",
-    "value_fmt": ".1f",
-    "suffix": "%",
-    "y_range": [0, 100],
-    "columns": {
-        "primary": "schools_with_electricity_primary",
-        "secondary": "schools_with_electricity_secondary",
-    },
-}
-_INTERNET_OUTCOME = {
-    "store_key": "school_basic_services",
-    "label_key": "outcome.internet",
-    "title_key": "chart.schools_internet",
-    "metric_key": "metric.internet",
-    "value_fmt": ".1f",
-    "suffix": "%",
-    "y_range": [0, 100],
-    "columns": {
-        "primary": "schools_with_internet_primary",
-        "secondary": "schools_with_internet_secondary",
-    },
-}
-_COMPLETION_RATE_OUTCOME = {
-    "store_key": "completion_rates",
-    "label_key": "outcome.completion_rate",
-    "title_key": "chart.completion_rate",
-    "metric_key": "metric.completion_rate",
-    "value_fmt": ".1f",
-    "suffix": "%",
-    "y_range": [0, 100],
-    "columns": {
-        "primary": "completion_rate_primary",
-        "secondary": "completion_rate_secondary",
-    },
-}
-
-EDU_CONFIG = SectionConfig(
-    econ_filter_id="education-func-sub-econ-filter",
-    outcome_filter_id="education-outcome-indicator",
-    spending_chart_id="education-func-sub-econ",
-    outcome_chart_id="education-level-outcome",
-    narrative_id="education-func-sub-narrative",
-    store_key="edu_func_sub_econ_expenditure",
-    func_sub_to_level=_EDU_FUNC_SUB_TO_LEVEL,
-    level_order=_EDU_LEVEL_ORDER,
-    level_colors=_EDU_LEVEL_COLORS,
-    outcome_by_key={
-        "completion_rate": _COMPLETION_RATE_OUTCOME,
-        "teacher_salary": _TEACHER_SALARY_OUTCOME,
-        "electricity": _ELECTRICITY_OUTCOME,
-        "internet": _INTERNET_OUTCOME,
-    },
-    default_outcome_key="completion_rate",
-    econ_default_outcome={
-        "Wage bill": "teacher_salary",
-        "Capital expenditures": "electricity",
-        "Goods and services": "internet",
-    },
-    heading_key="heading.edu_func_sub_econ",
-    chart_title_key="chart.edu_func_sub_econ",
-)
