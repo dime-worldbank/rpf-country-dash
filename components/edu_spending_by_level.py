@@ -13,11 +13,16 @@ import server_store
 from constants import (
     EDU_OUTCOME_CHART_ID as OUTCOME_CHART_ID,
     EDU_SPENDING_CHART_ID as SPENDING_CHART_ID,
-    START_YEAR,
     translate_econ,
 )
 from translations import t
-from utils import apply_locale, empty_plot, format_currency, get_currency_code
+from utils import (
+    apply_locale,
+    empty_plot,
+    filter_country_sort_year,
+    format_currency,
+    get_currency_code,
+)
 from viz_theme import QUALITATIVE
 from trend_narrative import get_relationship_narrative
 from components import econ_outcome_filter
@@ -143,26 +148,30 @@ _LEGEND_STYLE = dict(
 _CHART_MARGIN = dict(l=20, r=20, t=20, b=80)
 
 
+def _filtered_spending(country, econ_filter):
+    """This section's spending rows: country, the levels we plot, econ filter.
+
+    filter_country_sort_year applies the START_YEAR floor every other chart in
+    the app uses. Filtering the rows (not just the axis range) is what keeps the
+    narrative's averages to the years the chart actually shows.
+    """
+    df = filter_country_sort_year(server_store.get(_STORE_KEY), country)
+    df = df[df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL))]
+    if econ_filter and econ_filter != ALL_ECON:
+        df = df[df["econ"] == econ_filter]
+    return df
+
+
 def _year_range(years):
-    """[min, max] of ``years``, floored at START_YEAR; None if empty."""
+    """[min, max] of ``years``; None if empty."""
     years = [int(y) for y in years]
-    if not years:
-        return None
-    lo, hi = max(min(years), START_YEAR), max(years)
-    return (lo, hi) if lo <= hi else None
+    return (min(years), max(years)) if years else None
 
 
 def _spending_years(country, econ_filter):
     """The spending chart's year range. The outcome indicator deliberately does
     not feed this, so switching indicators never moves either x-axis."""
-    df = server_store.get(_STORE_KEY)
-    df = df[
-        (df["country_name"] == country)
-        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
-    ]
-    if econ_filter and econ_filter != ALL_ECON:
-        df = df[df["econ"] == econ_filter]
-    return _year_range(df["year"])
+    return _year_range(_filtered_spending(country, econ_filter)["year"])
 
 
 def _apply_shared_xaxis(fig, year_range):
@@ -213,13 +222,7 @@ def spending_figure(country, econ_filter, lang="en"):
     if not country:
         return empty_plot(t("loading", lang))
 
-    df = server_store.get(_STORE_KEY)
-    df = df[
-        (df["country_name"] == country)
-        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
-    ]
-    if econ_filter and econ_filter != ALL_ECON:
-        df = df[df["econ"] == econ_filter]
+    df = _filtered_spending(country, econ_filter)
     if df.empty:
         return empty_plot(t("error.no_data_period", lang))
 
@@ -285,7 +288,9 @@ def _relationship_sentence(
 
     spend = totals[totals["func_sub"] == most_key].sort_values("year")
     outcome = server_store.get(cfg["store_key"])
-    outcome = outcome[outcome["country_name"] == country][["year", col]].dropna()
+    if col not in outcome.columns:
+        return ""
+    outcome = filter_country_sort_year(outcome, country)[["year", col]].dropna()
     outcome = outcome[outcome[col] != 0]
     # Restrict the outcome to the shared x-axis window.
     year_range = _spending_years(country, econ_filter)
@@ -326,15 +331,11 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     if not country:
         return t("loading", lang)
 
-    df = server_store.get(_STORE_KEY)
+    df = _filtered_spending(country, econ_filter)
     df = df[
-        (df["country_name"] == country)
-        & (df["func_sub"].isin(list(_FUNC_SUB_TO_LEVEL)))
-        & df["per_capita_real_expenditure"].notna()
+        df["per_capita_real_expenditure"].notna()
         & (df["per_capita_real_expenditure"] != 0)
     ]
-    if econ_filter and econ_filter != ALL_ECON:
-        df = df[df["econ"] == econ_filter]
     if df.empty:
         return t("error.no_data_period", lang)
 
@@ -388,8 +389,8 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
         return empty_plot(t("loading", lang))
 
     cfg = _outcome(indicator)
-    df = server_store.get(cfg["store_key"])
-    df = df[df["country_name"] == country].sort_values("year")
+    df = filter_country_sort_year(server_store.get(cfg["store_key"]), country)
+    df = df.sort_values("year")
 
     fig = go.Figure()
     for level in _LEVEL_ORDER:

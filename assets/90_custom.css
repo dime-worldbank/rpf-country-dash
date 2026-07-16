@@ -28,7 +28,6 @@ body.theme-wbg .form-select.econ-filter-select:focus {
 .edu-filter-label-row {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
     white-space: nowrap;
     margin-bottom: 0.2rem;
 }

@@ -5,8 +5,6 @@ data store) and service-delivery indicator (a fixed list the caller supplies).
 Selecting a category sets the indicator to its natural default; the reverse is
 deliberately not wired.
 """
-import urllib.parse
-
 import dash_bootstrap_components as dbc
 from dash import html
 
