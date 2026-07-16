@@ -30,6 +30,8 @@ from viz_theme import SOLID_BLUE, WARM_BRIGHTER
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
 BALANCE_BAR_OPACITY = 0.4
+# Pinned so a sparse surplus/deficit trace isn't auto-sized into overly wide bars.
+BALANCE_BAR_WIDTH = 0.7
 
 
 def split_imf_sources(gov_df):
@@ -230,6 +232,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
                     legendgroup=seg_key,
                     showlegend=_show_once(seg_key),
                     x=seg_df.year, y=seg_df.balance,
+                    width=BALANCE_BAR_WIDTH,
                     marker_color=seg_color,
                     opacity=BALANCE_BAR_OPACITY,
                     customdata=seg_df["balance_formatted"],
