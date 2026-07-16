@@ -461,33 +461,12 @@ def fetch_source_metadata_once(data):
     if data is None:
         indicator_df = db.get_indicator_data_availability()
         boost_urls_df = db.get_boost_source_urls()
-
-        # Pre-build source URL maps indexed by country for efficient lookup
-        source_urls_by_country = {}
-
-        # Add BOOST URLs
-        for _, row in boost_urls_df.iterrows():
-            country = row["country_name"]
-            if country not in source_urls_by_country:
-                source_urls_by_country[country] = {}
-            url = row.get("source_url")
-            if url:
-                source_urls_by_country[country]["boost"] = url
-
-        # Add indicator URLs
-        for _, row in indicator_df.iterrows():
-            country = row["country_name"]
-            if country not in source_urls_by_country:
-                source_urls_by_country[country] = {}
-            url = row.get("source_url")
-            if url:
-                key = row["indicator_key"]
-                source_urls_by_country[country][key] = url
+        registry_df = db.get_source_registry()
 
         return {
             "indicator_availability": indicator_df.to_dict("records"),
             "boost_source_urls": boost_urls_df.to_dict("records"),
-            "source_urls_by_country": source_urls_by_country,
+            "source_registry": registry_df.to_dict("records"),
         }
     return no_update
 

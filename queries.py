@@ -220,6 +220,13 @@ class QueryService:
         """
         return self.fetch_data(query)
 
+    def get_source_registry(self):
+        query = f"""
+            SELECT source_id, name, publisher, url
+            FROM prd_mega.{INDICATOR_SCHEMA}.source_registry
+        """
+        return self.fetch_data(query)
+
     def get_boost_source_urls(self):
         query = f"""
             SELECT

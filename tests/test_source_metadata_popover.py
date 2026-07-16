@@ -2,8 +2,24 @@ import unittest
 from components.source_metadata_popover import (
     build_modal_info,
     get_coverage_years,
+    _resolve_source_section,
     CHART_METADATA,
 )
+
+
+class TestSourceMetaContract(unittest.TestCase):
+    """The fixture record shapes ARE the contract the pipeline must emit."""
+
+    def test_registry_record_shape_and_url_resolution(self):
+        registry = [{"source_id": "imf_weo", "name": "WEO", "publisher": "IMF",
+                     "url": "https://imf.org/weo"}]
+        self.assertEqual(set(registry[0]), {"source_id", "name", "publisher", "url"})
+
+        meta = {"source_registry": registry, "indicator_availability": [], "boost_source_urls": []}
+        section = _resolve_source_section({"source_id": "imf_weo"}, "Togo", meta, "en")
+        # Facts (url) come from the registry; the labelled name comes from i18n.
+        self.assertEqual(section["source_url"], "https://imf.org/weo")
+        self.assertEqual(section["source_name"], "IMF — World Economic Outlook")
 
 
 class TestGetCoverageYears(unittest.TestCase):
