@@ -70,7 +70,7 @@ def layout():
             ),
             dcc.Store(id="stored-data-pefa"),
             dcc.Store(id="stored-data-revenue-budget"),
-            dcc.Store(id="stored-data-government-budget"),
+            dcc.Store(id="stored-data-government-revenue-expenditure"),
         ]
     )
 
@@ -109,13 +109,13 @@ def fetch_revenue_budget_data_once(revenue_data, shared_data):
     return dash.no_update
 
 @callback(
-    Output("stored-data-government-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Output("stored-data-government-revenue-expenditure", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("stored-data", "data"),
 )
-def fetch_government_budget_data_once(gov_data, shared_data):
+def fetch_government_revenue_expenditure_data_once(gov_data, shared_data):
     if gov_data is None and shared_data:
-        server_store.get("government_budget")
+        server_store.get("government_revenue_expenditure")
         return {"ready": True}
     return dash.no_update
 
@@ -1436,7 +1436,7 @@ def render_budget_func_changes(data, country, exp_type, lang):
 def _get_revenue_budget_context(country):
     """Load country-scoped fiscal-balance inputs from server store."""
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_revenue_expenditure"), country)
     gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
     basic_info = server_store.get("basic_country_info")[country]
     return national_df, gfs_df, weo_df, basic_info
@@ -1487,7 +1487,7 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
 @callback(
     Output("revenue-expenditure-combined", "figure"),
     Input("stored-data-revenue-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),
@@ -1514,7 +1514,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
 @callback(
     Output("revenue-expenditure-narrative", "children"),
     Input("stored-data-revenue-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),

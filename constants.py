@@ -9,7 +9,7 @@ TREND_THRESHOLDS = 0.4
 
 WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
 GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
-IMF_GOVERNMENT_BUDGET_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
+IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
 
 # Fiscal-balance view modes — shared by the deficit chart component
 # (components/fiscal_balance.py) and the home page's view selector.
