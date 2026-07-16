@@ -40,6 +40,7 @@ TRANSLATIONS = {
     "heading.public_spending_health_regions": "Dépenses publiques vs. résultats sanitaires par région",
 
     # --- Chart titles ---
+    "chart.fiscal_balance_over_time": "Comment le solde budgétaire a-t-il évolué au fil du temps ?",
     "chart.total_expenditure_over_time": "Comment les dépenses totales ont-elles évolué au fil du temps ?",
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
@@ -642,11 +643,10 @@ TRANSLATIONS = {
     "deficit.view.gfs": "SFP",
     "deficit.view.weo": "PEM",
 
-    "deficit.chart.subplot_revenue_expenditure": "Recettes et dépenses",
-    "deficit.chart.subplot_balance": "Déficit (Recettes − Dépenses)",
     "deficit.chart.revenue": "Recettes",
     "deficit.chart.expenditure": "Dépenses",
-    "deficit.chart.balance": "Excédent / Déficit",
+    "deficit.chart.surplus": "Excédent",
+    "deficit.chart.deficit": "Déficit",
     "deficit.chart.forecast_suffix": " (prévision)",
     "deficit.chart.actual": "réel",
     "deficit.chart.forecast": "prévision",
