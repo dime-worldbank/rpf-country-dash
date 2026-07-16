@@ -25,12 +25,10 @@ from constants import (
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
-from viz_theme import SOLID_BLUE, WARM_BRIGHTER, lighten_color
+from viz_theme import SOLID_BLUE, WARM_BRIGHTER
 
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
-FORECAST_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
-FORECAST_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
 DEFICIT_BAR_OPACITY = 0.4
 
 
@@ -169,8 +167,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             cat = "forecast"
             label_suffix = forecast_suffix
             kind_label = forecast_kind
-            rev_color = FORECAST_REVENUE_COLOR
-            exp_color = FORECAST_EXPENDITURE_COLOR
+            rev_color = REVENUE_COLOR
+            exp_color = EXPENDITURE_COLOR
             rev_line = dict(color=rev_color, dash="dash", width=2)
             exp_line = dict(color=exp_color, dash="dash", width=2)
             rev_marker = exp_marker = None
@@ -265,8 +263,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         if not actual.empty and not forecast.empty:
             bridge = pd.concat([actual.tail(1), forecast.head(1)], ignore_index=True)
             for col, color in (
-                ("revenue", FORECAST_REVENUE_COLOR),
-                ("expenditure", FORECAST_EXPENDITURE_COLOR),
+                ("revenue", REVENUE_COLOR),
+                ("expenditure", EXPENDITURE_COLOR),
             ):
                 fig.add_trace(
                     go.Scatter(
