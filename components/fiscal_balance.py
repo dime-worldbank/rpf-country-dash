@@ -25,12 +25,10 @@ from constants import (
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
-from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
+from viz_theme import SOLID_BLUE, WARM_BRIGHTER, lighten_color
 
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
-SURPLUS_COLOR = BRIGHT_BLUE
-DEFICIT_COLOR = WARM_BRIGHTER[2]
 FORECAST_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
 FORECAST_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
 DEFICIT_BAR_OPACITY = 0.4
@@ -225,10 +223,11 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         # Split the balance bar into surplus/deficit traces so each gets its own
         # correctly-colored legend entry. Both share a legendgroup across every
         # source and across actual/forecast, so surplus and deficit each appear
-        # once regardless of how the timeline is stitched together.
+        # once regardless of how the timeline is stitched together. Each reuses
+        # its revenue/expenditure line hue, kept distinct by the bar opacity.
         for seg_df, seg_color, seg_key, seg_label in (
-            (bar_df[bar_df.balance >= 0], SURPLUS_COLOR, "surplus", surplus_label),
-            (bar_df[bar_df.balance < 0], DEFICIT_COLOR, "deficit", deficit_label),
+            (bar_df[bar_df.balance >= 0], REVENUE_COLOR, "surplus", surplus_label),
+            (bar_df[bar_df.balance < 0], EXPENDITURE_COLOR, "deficit", deficit_label),
         ):
             if seg_df.empty:
                 continue
