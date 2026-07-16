@@ -621,6 +621,22 @@ TRANSLATIONS = {
     "source_name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
     "source_name.imf_weo": "Perspectives de l'économie mondiale du FMI",
     "source_name.togo_dgb": "Direction Générale du Budget du Togo — Rapport d'exécution du budget de l'État",
+    # Decomposed source attribution — "publisher — name". Names without a
+    # confident French translation are omitted and fall back to English via t().
+    "source.publisher.world_bank": "Banque mondiale",
+    "source.publisher.imf": "FMI",
+    "source.publisher.who": "OMS",
+    "source.publisher.unesco": "UNESCO",
+    "source.publisher.pefa_secretariat": "Secrétariat PEFA",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Direction Générale du Budget du Togo",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "Perspectives de l'économie mondiale",
+    "source.name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
+    "source.name.world_bank_pip": "Plateforme sur la pauvreté et les inégalités",
+    "source.name.world_bank_icp": "Programme de comparaison internationale (ICP)",
+    "source.name.who_nha": "Base de données mondiale des dépenses de santé",
+    "source.name.togo_dgb": "Rapport d'exécution du budget de l'État",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé.",

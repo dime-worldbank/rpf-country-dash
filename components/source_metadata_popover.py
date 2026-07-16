@@ -7,172 +7,173 @@ from translations import t
 
 
 # ---------------------------------------------------------------------------
-# Shared source definitions – define once, reuse across charts.
-#
-# Each source has three i18n reference fields:
-#   - label_key        : per-source label (e.g. "source.boost_edu.label")
-#   - source_name_key  : shared across sources (e.g. "source_name.world_bank_boost")
-#   - description_key  : per-source methodology text (optional)
-#
-# The "key" field is the coverage/data-lookup key used to fetch coverage years
-# and source URLs from the pipeline.
+# Source presentation, keyed by source_id. Facts (name/publisher/url) come from
+# the pipeline's source_registry; only i18n keys and per-source country scoping
+# live here. Each source has defaults that a chart slot may override:
+#   - label_key       : section heading (a chart slot often overrides this to a
+#                       chart-specific metric label, e.g. "Public Health Expenditure")
+#   - publisher_key   : shared org key (e.g. source.publisher.world_bank)
+#   - name_key        : per-source dataset name key ("" suppresses → publisher only)
+#   - description_key : methodology text (optional)
+#   - coverage_key    : the indicator_key (or "boost") whose year span this source
+#                       shows; a slot overrides it when a source feeds >1 indicator
+#   - countries       : whitelist; the source is hidden for other countries
+# The "Source:" line renders as "publisher — name" (both localized).
 # ---------------------------------------------------------------------------
 
-_BOOST = {
-    "key": "boost",
-    "label_key": "source.boost.label",
-    "source_name_key": "source_name.world_bank_boost",
-    "source_url": "https://www.worldbank.org/en/programs/boost-portal/country-data",
-}
-_BOOST_EDU = {**_BOOST, "label_key": "source.boost_edu.label"}
-_BOOST_HEALTH = {**_BOOST, "label_key": "source.boost_health.label"}
-
-_POVERTY_RATE = {
-    "key": "poverty_rate",
-    "label_key": "source.poverty_rate.label",
-    "source_name_key": "source_name.world_bank_pip",
-    "description_key": "source.poverty_rate.description",
-}
-
-_SUBNATIONAL_POVERTY = {
-    "key": "subnational_poverty_rate",
-    "label_key": "source.subnational_poverty.label",
-    "source_name_key": "source_name.world_bank",
-    "description_key": "source.subnational_poverty.description",
+SOURCE_DISPLAY = {
+    "boost":           {"label_key": "source.boost.label",               "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.boost",           "description_key": None,                              "coverage_key": "boost",                                 "countries": None},
+    "imf_weo":         {"label_key": "source.imf_weo.label",             "publisher_key": "source.publisher.imf",              "name_key": "source.name.imf_weo",         "description_key": "source.imf_weo.description",      "coverage_key": "government_revenue_expenditure",        "countries": None},
+    "imf_gfs":         {"label_key": "source.imf_gfs.label",             "publisher_key": "source.publisher.imf",              "name_key": "source.name.imf_gfs",         "description_key": "source.imf_gfs.description",      "coverage_key": "government_revenue_expenditure",        "countries": None},
+    "togo_dgb":        {"label_key": "source.togo_dgb.label",            "publisher_key": "source.publisher.togo_dgb",         "name_key": "source.name.togo_dgb",        "description_key": "source.togo_dgb.description",     "coverage_key": "togo_revenue_budget",                   "countries": ["Togo"]},
+    "world_bank_pip":  {"label_key": "source.poverty_rate.label",        "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.world_bank_pip",  "description_key": "source.poverty_rate.description", "coverage_key": "poverty_rate",                          "countries": None},
+    "pip_spid":        {"label_key": "source.subnational_poverty.label", "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.pip_spid",        "description_key": "source.subnational_poverty.description", "coverage_key": "subnational_poverty_rate",       "countries": None},
+    "pip_gsap":        {"label_key": "source.subnational_poverty.label", "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.pip_gsap",        "description_key": "source.subnational_poverty.description", "coverage_key": "subnational_poverty_rate",       "countries": None},
+    "world_bank_icp":  {"label_key": "source.edu_private.label",         "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.world_bank_icp",  "description_key": "source.edu_private.description",  "coverage_key": "edu_private_expenditure",               "countries": None},
+    "unesco_uis":      {"label_key": "source.learning_poverty.label",    "publisher_key": "source.publisher.unesco",           "name_key": "source.name.unesco_uis",      "description_key": None,                              "coverage_key": "learning_poverty_rate",                 "countries": None},
+    "who_gho":         {"label_key": "source.uhc.label",                 "publisher_key": "source.publisher.who",              "name_key": "source.name.who_gho",         "description_key": None,                              "coverage_key": "universal_health_coverage_index_gho",   "countries": None},
+    "who_nha":         {"label_key": "source.health_private.label",      "publisher_key": "source.publisher.who",              "name_key": "source.name.who_nha",         "description_key": "source.health_private.description", "coverage_key": "health_private_expenditure",          "countries": None},
+    "pefa":            {"label_key": "source.pefa.label",                "publisher_key": "source.publisher.pefa_secretariat", "name_key": "source.name.pefa",            "description_key": "source.pefa.description",         "coverage_key": "pefa_by_pillar",                        "countries": None},
+    "global_data_lab": {"label_key": "source.hd_index.label",            "publisher_key": "source.publisher.global_data_lab",  "name_key": "source.name.global_data_lab", "description_key": None,                              "coverage_key": "global_data_lab_hd_index",              "countries": None},
 }
 
-_LEARNING_POVERTY = {
-    "key": "learning_poverty_rate",
-    "label_key": "source.learning_poverty.label",
-    "source_name_key": "source_name.world_bank",
-}
+# Sentinel so a slot can distinguish "not overridden" from "overridden to None".
+_UNSET = object()
 
-_HD_INDEX = {
-    "key": "global_data_lab_hd_index",
-    "label_key": "source.hd_index.label",
-    "source_name_key": "source_name.global_data_lab",
-}
 
-_ATTENDANCE = {
-    "key": "global_data_lab_attendance",
-    "label_key": "source.attendance.label",
-    "source_name_key": "source_name.global_data_lab",
-}
+def _registry_lookup(source_id, source_meta):
+    """Return the source_registry record for source_id, or an empty dict."""
+    for row in (source_meta or {}).get("source_registry", []):
+        if row.get("source_id") == source_id:
+            return row
+    return {}
 
-_UHC = {
-    "key": "universal_health_coverage_index_gho",
-    "label_key": "source.uhc.label",
-    "source_name_key": "source_name.who_gho",
-}
 
-_PEFA = {
-    "key": "pefa_by_pillar",
-    "label_key": "source.pefa.label",
-    "source_name_key": "source_name.pefa_secretariat",
-    "description_key": "source.pefa.description",
-}
+def _resolve_url(source_id, country, source_meta, registry):
+    """boost keeps its per-country URL; every other source uses registry.url."""
+    if source_id == "boost":
+        for row in (source_meta or {}).get("boost_source_urls", []):
+            if row.get("country_name") == country and row.get("source_url"):
+                return row["source_url"]
+    return registry.get("url")
 
-_EDU_PRIVATE = {
-    "key": "edu_private_expenditure",
-    "label_key": "source.edu_private.label",
-    "source_name_key": "source_name.world_bank_icp",
-    "description_key": "source.edu_private.description",
-    "source_url": "https://www.worldbank.org/en/programs/icp/data",
-}
 
-_HEALTH_PRIVATE = {
-    "key": "health_private_expenditure",
-    "label_key": "source.health_private.label",
-    "source_name_key": "source_name.who_health_db",
-    "description_key": "source.health_private.description",
-    "source_url": "https://apps.who.int/nha/database/",
-}
+def _resolve_source_section(slot, country, source_meta, lang="en"):
+    """Build a source section dict from a chart slot, or None when the source is
+    scoped to other countries.
 
-_IMF_GFS = {
-    "key": "imf_gfs",
-    "label_key": "source.imf_gfs.label",
-    "source_name_key": "source_name.imf_gfs",
-    "description_key": "source.imf_gfs.description",
-    "source_url": "https://data.imf.org/en/datasets/IMF.STA:GFS_SOO",
-}
+    ``slot`` is ``{"source_id": ..., **overrides}``. Overrides (label_key,
+    publisher_key, name_key, description_key, coverage_key) fall back to
+    SOURCE_DISPLAY defaults, then to source_registry facts. ``name_key: ""``
+    suppresses the dataset name so the Source line is the publisher alone.
+    """
+    source_id = slot["source_id"]
+    display = SOURCE_DISPLAY.get(source_id, {})
 
-_IMF_WEO = {
-    "key": "imf_weo",
-    "label_key": "source.imf_weo.label",
-    "source_name_key": "source_name.imf_weo",
-    "description_key": "source.imf_weo.description",
-    "source_url": "https://www.imf.org/en/Publications/WEO",
-}
+    scoped = display.get("countries")
+    if scoped and country not in scoped:
+        return None
 
-_TOGO_DGB = {
-    "key": "togo_dgb",
-    "label_key": "source.togo_dgb.label",
-    "source_name_key": "source_name.togo_dgb",
-    "description_key": "source.togo_dgb.description",
-    "countries": ["Togo"],
-}
+    registry = _registry_lookup(source_id, source_meta)
+
+    label_key = slot.get("label_key", display.get("label_key"))
+    publisher_key = slot.get("publisher_key", display.get("publisher_key"))
+    name_key = slot.get("name_key", display.get("name_key", _UNSET))
+    description_key = slot.get("description_key", display.get("description_key"))
+    coverage_key = slot.get("coverage_key", display.get("coverage_key"))
+
+    publisher = t(publisher_key, lang) if publisher_key else registry.get("publisher", "")
+    if name_key == "":
+        name = ""  # explicit suppression → publisher-only Source line
+    elif name_key and name_key is not _UNSET:
+        name = t(name_key, lang)
+    else:
+        name = registry.get("name", "")
+    source_name = f"{publisher} — {name}" if publisher and name else (publisher or name)
+
+    section = {
+        "label": t(label_key, lang) if label_key else name,
+        "source_name": source_name,
+        "description": t(description_key, lang) if description_key else None,
+        "source_url": _resolve_url(source_id, country, source_meta, registry),
+    }
+    start, end = get_coverage_years(coverage_key, country, source_meta) if coverage_key else (None, None)
+    if start and end:
+        section["coverage"] = f"{start}–{end}"
+    return section
 
 
 # ---------------------------------------------------------------------------
 # Chart-level metadata for the ⓘ info buttons.
 # Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
-# Dynamic per-country coverage years and source URLs are merged at runtime.
-# Optional fields:
-#   - ``info_key`` : translation key for a chart-level intro paragraph
-#     rendered above the per-source sections.
-# Per-source ``countries`` whitelists filter out sources that don't apply to
-# the selected country.
+# Each source is a slot: a bare ``source_id`` string (uses SOURCE_DISPLAY
+# defaults) or a dict ``{"source_id": ..., **overrides}`` when a chart needs a
+# specific heading (``label_key``) or, for a source feeding several indicators,
+# a specific ``coverage_key``. Dynamic per-country coverage years are merged at
+# runtime. ``info_key`` adds a chart-level intro paragraph above the sections.
 # ---------------------------------------------------------------------------
+# Chart-specific boost headings (same boost source, different metric label).
+_BOOST_EDU = {"source_id": "boost", "label_key": "source.boost_edu.label"}
+_BOOST_HEALTH = {"source_id": "boost", "label_key": "source.boost_health.label"}
+
 CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Over Time
     # ------------------------------------------------------------------
-    "overview-total": {"sources": [_BOOST]},
-    "overview-per-capita": {"sources": [_BOOST, _POVERTY_RATE]},
-    "functional-breakdown": {"sources": [_BOOST]},
-    "func-growth": {"sources": [_BOOST]},
-    "economic-breakdown": {"sources": [_BOOST]},
-    "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
-    "pefa-by-pillar": {"sources": [_PEFA]},
+    "overview-total": {"sources": ["boost"]},
+    "overview-per-capita": {"sources": ["boost", "world_bank_pip"]},
+    "functional-breakdown": {"sources": ["boost"]},
+    "func-growth": {"sources": ["boost"]},
+    "economic-breakdown": {"sources": ["boost"]},
+    "pefa-overall": {"sources": ["pefa", "world_bank_pip"]},
+    "pefa-by-pillar": {"sources": ["pefa"]},
     "revenue-expenditure-combined": {
         "info_key": "chart.revenue_expenditure_combined.info",
-        "sources": [_TOGO_DGB, _IMF_GFS, _IMF_WEO],
+        "sources": ["togo_dgb", "imf_gfs", "imf_weo"],
     },
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
-    "subnational-spending": {"sources": [_BOOST]},
-    "subnational-poverty": {"sources": [_SUBNATIONAL_POVERTY]},
+    "subnational-spending": {"sources": ["boost"]},
+    "subnational-poverty": {"sources": ["pip_spid", "pip_gsap"]},
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
-    "education-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
-    "education-total": {"sources": [_BOOST]},
-    "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
-    "econ-breakdown-func-edu": {"sources": [_BOOST]},
+    "education-public-private": {"sources": [_BOOST_EDU, "world_bank_icp"]},
+    "education-total": {"sources": ["boost"]},
+    "education-outcome": {"sources": [
+        _BOOST_EDU,
+        # Learning poverty is attributed to World Bank alone (name suppressed);
+        # coverage tracks the learning_poverty_rate indicator.
+        {"source_id": "world_bank_pip", "label_key": "source.learning_poverty.label",
+         "coverage_key": "learning_poverty_rate", "name_key": ""},
+        {"source_id": "global_data_lab", "label_key": "source.attendance.label",
+         "coverage_key": "global_data_lab_attendance"},
+    ]},
+    "econ-breakdown-func-edu": {"sources": ["boost"]},
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------
-    "education-central-vs-regional": {"sources": [_BOOST]},
-    "education-sub-func": {"sources": [_BOOST]},
-    "education-expenditure-map": {"sources": [_BOOST]},
-    "education-outcome-map": {"sources": [_HD_INDEX]},
-    "education-subnational": {"sources": [_BOOST_EDU, _HD_INDEX]},
+    "education-central-vs-regional": {"sources": ["boost"]},
+    "education-sub-func": {"sources": ["boost"]},
+    "education-expenditure-map": {"sources": ["boost"]},
+    "education-outcome-map": {"sources": ["global_data_lab"]},
+    "education-subnational": {"sources": [_BOOST_EDU, "global_data_lab"]},
     # ------------------------------------------------------------------
     # Health – Over Time
     # ------------------------------------------------------------------
-    "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
-    "health-total": {"sources": [_BOOST]},
-    "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
-    "econ-breakdown-func-health": {"sources": [_BOOST]},
+    "health-public-private": {"sources": [_BOOST_HEALTH, "who_nha"]},
+    "health-total": {"sources": ["boost"]},
+    "health-outcome": {"sources": [_BOOST_HEALTH, "who_gho"]},
+    "econ-breakdown-func-health": {"sources": ["boost"]},
     # ------------------------------------------------------------------
     # Health – Across Space
     # ------------------------------------------------------------------
-    "health-central-vs-regional": {"sources": [_BOOST]},
-    "health-sub-func": {"sources": [_BOOST]},
-    "health-expenditure-map": {"sources": [_BOOST]},
-    "health-outcome-map": {"sources": [_UHC]},
-    "health-subnational": {"sources": [_BOOST_HEALTH, _UHC]},
+    "health-central-vs-regional": {"sources": ["boost"]},
+    "health-sub-func": {"sources": ["boost"]},
+    "health-expenditure-map": {"sources": ["boost"]},
+    "health-outcome-map": {"sources": ["who_gho"]},
+    "health-subnational": {"sources": [_BOOST_HEALTH, "who_gho"]},
 }
 
 
@@ -329,12 +330,14 @@ def empty_modal(index):
 # Coverage-year helpers — extract year ranges from pipeline query results.
 # ---------------------------------------------------------------------------
 
-def get_coverage_years(key, country, source_meta):
+def get_coverage_years(coverage_key, country, source_meta):
     """
     Return ``(earliest_year, latest_year)`` for a coverage key and country.
 
-    *key* is either ``"boost"`` (looks up from boost_source_urls) or an
+    *coverage_key* is either ``"boost"`` (looks up from boost_source_urls) or an
     indicator_key such as ``"pefa_by_pillar"`` (looks up from indicator_availability).
+    Keyed by indicator (not source) so a source feeding several indicators still
+    resolves to the precise span of the indicator shown in this chart slot.
     """
     if not country or not source_meta:
         return None, None
@@ -342,14 +345,14 @@ def get_coverage_years(key, country, source_meta):
     # Select the appropriate data source
     rows = (
         source_meta.get("boost_source_urls", [])
-        if key == "boost"
+        if coverage_key == "boost"
         else source_meta.get("indicator_availability", [])
     )
 
     # Find matching row
     for row in rows:
         if row.get("country_name") == country and (
-            key == "boost" or row.get("indicator_key") == key
+            coverage_key == "boost" or row.get("indicator_key") == coverage_key
         ):
             start = row.get("earliest_year")
             end = row.get("latest_year")
@@ -371,43 +374,21 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
     Args:
         chart_id: Chart key from CHART_METADATA
         country: Selected country name
-        source_meta: Dict with "boost_source_urls", "indicator_availability",
-                     and "source_urls_by_country" from stored data
-        lang: Language code ("en", "fr") for translated labels/descriptions
+        source_meta: Dict with "source_registry", "boost_source_urls", and
+                     "indicator_availability" from stored data
+        lang: Language code ("en", "fr", "pt") for translated labels/descriptions
 
     Returns:
         Dict with chart metadata, index, country, and source sections
     """
     chart_meta = CHART_METADATA.get(chart_id, {})
 
-    # Get pre-computed source URL map for this country
-    source_url_map = (source_meta or {}).get("source_urls_by_country", {}).get(country, {})
-
-    # Build per-source sections
     source_sections = []
-    for src in chart_meta.get("sources", []):
-        # Skip sources scoped to specific countries when the current country
-        # isn't in the whitelist (e.g. a pilot dataset that only exists for one country).
-        scoped_countries = src.get("countries")
-        if scoped_countries and country not in scoped_countries:
-            continue
-        key = src["key"]
-        description_key = src.get("description_key")
-        section = {
-            "label": t(src["label_key"], lang),
-            "source_name": t(src["source_name_key"], lang),
-            "description": t(description_key, lang) if description_key else None,
-        }
-
-        # Coverage years
-        start, end = get_coverage_years(key, country, source_meta)
-        if start and end:
-            section["coverage"] = f"{start}–{end}"
-
-        # Source URL: pipeline first, then fall back to config
-        section["source_url"] = source_url_map.get(key) or src.get("source_url")
-
-        source_sections.append(section)
+    for entry in chart_meta.get("sources", []):
+        slot = {"source_id": entry} if isinstance(entry, str) else entry
+        section = _resolve_source_section(slot, country, source_meta, lang)
+        if section is not None:
+            source_sections.append(section)
 
     info_key = chart_meta.get("info_key")
     return {

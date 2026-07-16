@@ -1,5 +1,9 @@
 import unittest
-from components.source_metadata_popover import build_modal_info, get_coverage_years, CHART_METADATA
+from components.source_metadata_popover import (
+    build_modal_info,
+    get_coverage_years,
+    CHART_METADATA,
+)
 
 
 class TestGetCoverageYears(unittest.TestCase):
@@ -171,6 +175,18 @@ class TestBuildModalInfo(unittest.TestCase):
     def setUp(self):
         """Create mock source_meta for testing."""
         self.source_meta = {
+            "source_registry": [
+                {"source_id": "boost", "name": "BOOST", "publisher": "World Bank",
+                 "url": "https://www.worldbank.org/en/programs/boost-portal/country-data"},
+                {"source_id": "world_bank_pip", "name": "Poverty and Inequality Platform",
+                 "publisher": "World Bank", "url": "https://pip.worldbank.org"},
+                {"source_id": "imf_weo", "name": "World Economic Outlook", "publisher": "IMF",
+                 "url": "https://www.imf.org/en/Publications/WEO"},
+                {"source_id": "imf_gfs", "name": "Government Finance Statistics", "publisher": "IMF",
+                 "url": "https://data.imf.org/en/datasets/IMF.STA:GFS_SOO"},
+                {"source_id": "togo_dgb", "name": "Budget Execution Report", "publisher": "Togo DGB",
+                 "url": None},
+            ],
             "boost_source_urls": [
                 {
                     "country_name": "Kenya",
@@ -187,12 +203,6 @@ class TestBuildModalInfo(unittest.TestCase):
                     "latest_year": 2019,
                 }
             ],
-            "source_urls_by_country": {
-                "Kenya": {
-                    "boost": "https://boost.worldbank.org/kenya",
-                    "poverty_rate": "https://pip.worldbank.org",
-                }
-            },
         }
 
     def test_build_modal_info_single_source(self):
@@ -208,10 +218,10 @@ class TestBuildModalInfo(unittest.TestCase):
         self.assertIn("source_sections", info)
         self.assertEqual(len(info["source_sections"]), 1)
 
-        # Verify section content
+        # Verify section content — source line is now "publisher — name"
         section = info["source_sections"][0]
         self.assertEqual(section["label"], "BOOST Expenditure Data")
-        self.assertEqual(section["source_name"], "World Bank BOOST")
+        self.assertEqual(section["source_name"], "World Bank — BOOST")
         self.assertEqual(section["source_url"], "https://boost.worldbank.org/kenya")
         self.assertEqual(section["coverage"], "2010–2020")
 
@@ -260,30 +270,27 @@ class TestBuildModalInfo(unittest.TestCase):
         section = info["source_sections"][0]
         self.assertNotIn("coverage", section)
 
-    def test_build_modal_info_fallback_to_config_url(self):
-        """Test that config source_url is used when not in pipeline."""
+    def test_build_modal_info_boost_url_falls_back_to_registry(self):
+        """When no per-country BOOST url exists, the registry url is used (no config fallback)."""
         chart_id = "education-total"
         country = "UnknownCountry"
 
         info = build_modal_info(chart_id, country, self.source_meta)
 
-        # Should fall back to configured source_url
         section = info["source_sections"][0]
-        self.assertIn("source_url", section)
-        # BOOST has a configured source_url in CHART_METADATA
         self.assertEqual(
             section["source_url"],
             "https://www.worldbank.org/en/programs/boost-portal/country-data"
         )
 
     def test_build_modal_info_french(self):
-        """Labels, source names and descriptions should be translated for lang='fr'."""
+        """Labels + descriptions are localized; the source line is localized publisher — name."""
         info = build_modal_info("overview-per-capita", "Kenya", self.source_meta, lang="fr")
 
         # BOOST section - French
         boost_section = info["source_sections"][0]
         self.assertEqual(boost_section["label"], "Données de dépenses BOOST")
-        self.assertEqual(boost_section["source_name"], "BOOST de la Banque mondiale")
+        self.assertEqual(boost_section["source_name"], "Banque mondiale — BOOST")
 
         # Poverty rate section - French with description
         poverty_section = info["source_sections"][1]
@@ -297,24 +304,24 @@ class TestBuildModalInfo(unittest.TestCase):
         info = build_modal_info("overview-total", "Kenya", self.source_meta)
         section = info["source_sections"][0]
         self.assertEqual(section["label"], "BOOST Expenditure Data")
-        self.assertEqual(section["source_name"], "World Bank BOOST")
+        self.assertEqual(section["source_name"], "World Bank — BOOST")
 
     def test_build_modal_info_country_scoped_source_included(self):
         """A source with a ``countries`` whitelist shows when the current country is in it."""
         info = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta)
-        labels = [s["label"] for s in info["source_sections"]]
-        # Togo Official Report has countries=["Togo"]; should be present for Togo.
-        self.assertIn("Togo Official Report", labels)
+        source_names = [s["source_name"] for s in info["source_sections"]]
+        # togo_dgb has countries=["Togo"]; its localized publisher shows for Togo.
+        self.assertEqual(len(info["source_sections"]), 3)
+        self.assertTrue(any("Togo" in n for n in source_names))
 
     def test_build_modal_info_country_scoped_source_excluded(self):
         """A source with a ``countries`` whitelist is filtered out for other countries."""
         info = build_modal_info("revenue-expenditure-combined", "Kenya", self.source_meta)
-        labels = [s["label"] for s in info["source_sections"]]
-        # Togo Official Report has countries=["Togo"]; should NOT appear for Kenya.
-        self.assertNotIn("Togo Official Report", labels)
-        # Un-scoped sources (no ``countries`` field) still appear.
-        self.assertIn("GFS", labels)
-        self.assertIn("WEO", labels)
+        source_names = [s["source_name"] for s in info["source_sections"]]
+        # togo_dgb has countries=["Togo"]; should NOT appear for Kenya.
+        self.assertFalse(any("Togo" in n for n in source_names))
+        # Un-scoped IMF sources still appear (both WEO and GFS).
+        self.assertEqual(len(info["source_sections"]), 2)
 
     def test_build_modal_info_chart_level_info(self):
         """Charts with ``info_key`` produce a translated chart-level ``info`` string."""

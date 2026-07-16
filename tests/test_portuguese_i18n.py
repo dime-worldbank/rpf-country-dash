@@ -68,6 +68,12 @@ class TestPortugueseTranslations(unittest.TestCase):
 class TestPortugueseSourceMetadata(unittest.TestCase):
     def setUp(self):
         self.source_meta = {
+            "source_registry": [
+                {"source_id": "boost", "name": "BOOST", "publisher": "World Bank",
+                 "url": "https://www.worldbank.org/en/programs/boost-portal/country-data"},
+                {"source_id": "world_bank_pip", "name": "Poverty and Inequality Platform",
+                 "publisher": "World Bank", "url": "https://pip.worldbank.org"},
+            ],
             "boost_source_urls": [
                 {
                     "country_name": "Kenya",
@@ -84,12 +90,6 @@ class TestPortugueseSourceMetadata(unittest.TestCase):
                     "latest_year": 2019,
                 }
             ],
-            "source_urls_by_country": {
-                "Kenya": {
-                    "boost": "https://boost.worldbank.org/kenya",
-                    "poverty_rate": "https://pip.worldbank.org",
-                }
-            },
         }
 
     def test_build_modal_info_portuguese(self):
@@ -97,7 +97,8 @@ class TestPortugueseSourceMetadata(unittest.TestCase):
 
         boost_section = info["source_sections"][0]
         self.assertEqual(boost_section["label"], "Dados de despesa BOOST")
-        self.assertEqual(boost_section["source_name"], "BOOST do Banco Mundial")
+        # Source line is localized "publisher — name".
+        self.assertEqual(boost_section["source_name"], "Banco Mundial — BOOST")
 
         poverty_section = info["source_sections"][1]
         self.assertEqual(poverty_section["label"], "Taxa de pobreza")
