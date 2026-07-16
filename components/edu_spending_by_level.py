@@ -17,7 +17,6 @@ from viz_theme import QUALITATIVE
 from trend_narrative import get_relationship_narrative
 from components import econ_outcome_filter
 from components.econ_outcome_filter import ALL_ECON
-class SectionConfig:
 from components.source_metadata_popover import chart_container
 
 # Component ids. The two chart ids double as CHART_METADATA keys in
