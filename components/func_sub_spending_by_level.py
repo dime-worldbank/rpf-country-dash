@@ -305,7 +305,7 @@ def spending_narrative(config, country, econ_filter, indicator, lang="en"):
         return t("error.no_data_period", lang)
 
     currency_code = (
-        server_store.get("basic_country_info").get(country, {}).get("currency_code")
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("currency_code")
     )
 
     def _fmt(value):

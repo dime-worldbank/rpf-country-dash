@@ -137,7 +137,7 @@ class QueryService:
     def get_edu_expenditure_by_func_sub_econ(self):
         query = f"""
             SELECT country_name, year, func_sub, econ, per_capita_real_expenditure
-            FROM prd_mega.{BOOST_SCHEMA}.expenditure_by_country_admin_func_sub_econ_sub_year_test
+            FROM prd_mega.{BOOST_SCHEMA}.expenditure_by_country_admin_func_sub_econ_year
             WHERE func = 'Education' AND year <= 2024
         """
         return self.fetch_data(query)
