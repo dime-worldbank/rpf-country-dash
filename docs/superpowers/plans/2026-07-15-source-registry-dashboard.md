@@ -16,7 +16,8 @@
   - `source_registry`: `{"source_id": str, "name": str, "publisher": str, "url": str | None}`
   - `indicator_source`: `{"indicator_key": str, "source_id": str}`
 - `source_id` values are the stable slugs from the spec (`imf_weo`, `imf_gfs`, `boost`, `pip_spid`, `pip_gsap`, `unesco_uis`, `who_gho`, `who_nha`, `pefa`, `world_bank_pip`, `world_bank_icp`, `global_data_lab`, `togo_dgb`).
-- **Contract decision (URL resolution):** a source's URL is the registry's canonical `url`; `boost` keeps its per-country URL via the existing `boost_source_urls`. The old per-`indicator_key` `source_urls_by_country` map is no longer used for non-boost sources. Documented here so the pipeline doesn't preserve per-country URLs it doesn't need.
+- **Contract decision (URL resolution):** a source's URL is the registry's canonical `url`; `boost` keeps its per-country URL via the existing `boost_source_urls`. The old per-`indicator_key` `source_urls_by_country` map is no longer used for non-boost sources. Documented here so the pipeline doesn't preserve per-country URLs it doesn't need. **No config fallback** — if `registry.url` is null the source shows no link.
+- **Contract decision (source-name line, localized):** the popover's "Source:" line is `t(publisher_key) — t(name_key)` (em-dash, spaces), e.g. `World Bank — BOOST` / `Banque mondiale — BOOST`. Publisher keys are **shared** across sources (`source.publisher.world_bank` reused by boost/pip/icp/…); name keys are per-source (`source.name.boost`). This keeps en/fr/pt localization while the registry (`name`, `publisher`) remains the canonical identity + **fallback** when a translation key is absent (`t()` already falls back requested-lang → English → key). The old combined `source_name.*` keys are superseded by the decomposed `source.publisher.*` / `source.name.*` keys.
 - Spec: `../specs/` in `mega-indicators` (`2026-07-15-source-registry-design.md`).
 
 ---
@@ -152,8 +153,8 @@ Introduce `SOURCE_DISPLAY` (dashboard-owned i18n keys + country scoping, keyed b
 **Interfaces:**
 - Consumes: `source_meta["source_registry"]` (list of `{source_id, name, publisher, url}`), Task 1's `get_coverage_years`.
 - Produces:
-  - `SOURCE_DISPLAY: dict[str, dict]` — `source_id -> {"label_key": str, "description_key": str|None, "countries": list[str]|None}`.
-  - `_resolve_source_section(source_id, country, source_meta, lang) -> dict|None` — returns `{"label","source_name","description","source_url","coverage"}`, or `None` if the source is country-scoped out.
+  - `SOURCE_DISPLAY: dict[str, dict]` — `source_id -> {"label_key": str, "publisher_key": str|None, "name_key": str|None, "description_key": str|None, "countries": list[str]|None}`.
+  - `_resolve_source_section(source_id, country, source_meta, lang) -> dict|None` — returns `{"label","source_name","description","source_url","coverage"}`, or `None` if the source is country-scoped out. `source_name` is the localized `publisher — name` line.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -200,21 +201,22 @@ Add near the top of `components/source_metadata_popover.py` (replacing the old p
 ```python
 # Dashboard-owned presentation for each source, keyed by source_id. Facts
 # (name/publisher/url) come from source_registry; only i18n keys and per-source
-# country scoping live here.
+# country scoping live here. The "Source:" line is publisher_key — name_key
+# (both localized), with the registry publisher/name as fallback.
 SOURCE_DISPLAY = {
-    "boost":           {"label_key": "source.boost.label",          "description_key": None,                          "countries": None},
-    "imf_weo":         {"label_key": "source.imf_weo.label",        "description_key": "source.imf_weo.description",  "countries": None},
-    "imf_gfs":         {"label_key": "source.imf_gfs.label",        "description_key": "source.imf_gfs.description",  "countries": None},
-    "togo_dgb":        {"label_key": "source.togo_dgb.label",       "description_key": "source.togo_dgb.description", "countries": ["Togo"]},
-    "world_bank_pip":  {"label_key": "source.poverty_rate.label",   "description_key": "source.poverty_rate.description", "countries": None},
-    "pip_spid":        {"label_key": "source.subnational_poverty.label", "description_key": "source.subnational_poverty.description", "countries": None},
-    "pip_gsap":        {"label_key": "source.subnational_poverty.label", "description_key": "source.subnational_poverty.description", "countries": None},
-    "world_bank_icp":  {"label_key": "source.edu_private.label",    "description_key": "source.edu_private.description", "countries": None},
-    "unesco_uis":      {"label_key": "source.learning_poverty.label", "description_key": None,                        "countries": None},
-    "who_gho":         {"label_key": "source.uhc.label",            "description_key": None,                          "countries": None},
-    "who_nha":         {"label_key": "source.health_private.label", "description_key": "source.health_private.description", "countries": None},
-    "pefa":            {"label_key": "source.pefa.label",           "description_key": "source.pefa.description",     "countries": None},
-    "global_data_lab": {"label_key": "source.hd_index.label",       "description_key": None,                          "countries": None},
+    "boost":           {"label_key": "source.boost.label",              "publisher_key": "source.publisher.world_bank",      "name_key": "source.name.boost",          "description_key": None,                              "countries": None},
+    "imf_weo":         {"label_key": "source.imf_weo.label",            "publisher_key": "source.publisher.imf",             "name_key": "source.name.imf_weo",        "description_key": "source.imf_weo.description",      "countries": None},
+    "imf_gfs":         {"label_key": "source.imf_gfs.label",            "publisher_key": "source.publisher.imf",             "name_key": "source.name.imf_gfs",        "description_key": "source.imf_gfs.description",      "countries": None},
+    "togo_dgb":        {"label_key": "source.togo_dgb.label",           "publisher_key": "source.publisher.togo_dgb",        "name_key": "source.name.togo_dgb",       "description_key": "source.togo_dgb.description",     "countries": ["Togo"]},
+    "world_bank_pip":  {"label_key": "source.poverty_rate.label",       "publisher_key": "source.publisher.world_bank",      "name_key": "source.name.world_bank_pip", "description_key": "source.poverty_rate.description", "countries": None},
+    "pip_spid":        {"label_key": "source.subnational_poverty.label","publisher_key": "source.publisher.world_bank",      "name_key": "source.name.pip_spid",       "description_key": "source.subnational_poverty.description", "countries": None},
+    "pip_gsap":        {"label_key": "source.subnational_poverty.label","publisher_key": "source.publisher.world_bank",      "name_key": "source.name.pip_gsap",       "description_key": "source.subnational_poverty.description", "countries": None},
+    "world_bank_icp":  {"label_key": "source.edu_private.label",        "publisher_key": "source.publisher.world_bank",      "name_key": "source.name.world_bank_icp", "description_key": "source.edu_private.description",  "countries": None},
+    "unesco_uis":      {"label_key": "source.learning_poverty.label",   "publisher_key": "source.publisher.unesco",          "name_key": "source.name.unesco_uis",     "description_key": None,                              "countries": None},
+    "who_gho":         {"label_key": "source.uhc.label",                "publisher_key": "source.publisher.who",             "name_key": "source.name.who_gho",        "description_key": None,                              "countries": None},
+    "who_nha":         {"label_key": "source.health_private.label",     "publisher_key": "source.publisher.who",             "name_key": "source.name.who_nha",        "description_key": "source.health_private.description", "countries": None},
+    "pefa":            {"label_key": "source.pefa.label",               "publisher_key": "source.publisher.pefa_secretariat","name_key": "source.name.pefa",           "description_key": "source.pefa.description",         "countries": None},
+    "global_data_lab": {"label_key": "source.hd_index.label",           "publisher_key": "source.publisher.global_data_lab", "name_key": "source.name.global_data_lab","description_key": None,                              "countries": None},
 }
 
 
@@ -235,10 +237,17 @@ def _resolve_source_section(source_id, country, source_meta, lang="en"):
         return None
 
     registry = _registry_lookup(source_id, source_meta)
+    # Localized "publisher — name"; translation keys fall back to registry facts
+    # (and t() itself falls back requested-lang → English → key).
+    pub_key, name_key = display.get("publisher_key"), display.get("name_key")
+    publisher = t(pub_key, lang) if pub_key else registry.get("publisher", "")
+    name = t(name_key, lang) if name_key else registry.get("name", "")
+    source_name = f"{publisher} — {name}" if publisher and name else (publisher or name)
+
     description_key = display.get("description_key")
     section = {
-        "label": t(display.get("label_key", ""), lang) if display.get("label_key") else registry.get("name", ""),
-        "source_name": registry.get("publisher", ""),
+        "label": t(display["label_key"], lang) if display.get("label_key") else name,
+        "source_name": source_name,
         "description": t(description_key, lang) if description_key else None,
         "source_url": registry.get("url"),
     }
@@ -247,6 +256,8 @@ def _resolve_source_section(source_id, country, source_meta, lang="en"):
         section["coverage"] = f"{start}–{end}"
     return section
 ```
+
+Note: `boost`'s URL stays per-country. Handle it in `build_modal_info`/`_resolve_source_section` by special-casing `source_id == "boost"` to read `boost_source_urls` for the country, falling back to `registry.url`. Implement as a small `_resolve_url(source_id, country, source_meta, registry)` helper.
 
 - [ ] **Step 4: Run tests, verify pass**
 
@@ -258,6 +269,94 @@ Expected: PASS (2 tests).
 ```bash
 git add components/source_metadata_popover.py tests/test_source_metadata_popover.py
 git commit -m "feat: add SOURCE_DISPLAY + registry-backed source section resolver"
+```
+
+---
+
+### Task 2.5: Decomposed publisher/name translation keys
+
+Add `source.publisher.*` (shared per org) and `source.name.*` (per source) keys to `translations/{en,fr,pt}.py`. English is populated fully; fr/pt are decomposed from the existing combined `source_name.*` strings where confident, else omitted (falls back to English via `t()`).
+
+**Files:**
+- Modify: `translations/en.py`, `translations/fr.py`, `translations/pt.py`
+
+**Interfaces:**
+- Consumes: nothing.
+- Produces: translation keys referenced by `SOURCE_DISPLAY` (Task 2).
+
+- [ ] **Step 1: Add English keys** (`translations/en.py`, in the sources block near the existing `source_name.*` entries)
+
+```python
+    # Decomposed source attribution — shared publisher + per-source name.
+    "source.publisher.world_bank": "World Bank",
+    "source.publisher.imf": "IMF",
+    "source.publisher.who": "WHO",
+    "source.publisher.unesco": "UNESCO",
+    "source.publisher.pefa_secretariat": "PEFA Secretariat",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Togo Direction Générale du Budget",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "World Economic Outlook",
+    "source.name.imf_gfs": "Government Finance Statistics — Statement of Operations",
+    "source.name.world_bank_pip": "Poverty and Inequality Platform",
+    "source.name.pip_spid": "Subnational Poverty (SPID)",
+    "source.name.pip_gsap": "Global Subnational Atlas of Poverty (GSAP)",
+    "source.name.world_bank_icp": "International Comparison Program",
+    "source.name.unesco_uis": "Institute for Statistics (UIS)",
+    "source.name.who_gho": "Global Health Observatory (GHO)",
+    "source.name.who_nha": "Global Health Expenditure Database",
+    "source.name.pefa": "Public Expenditure & Financial Accountability",
+    "source.name.global_data_lab": "Subnational HDI Database",
+```
+
+- [ ] **Step 2: Add French keys** (`translations/fr.py`) — decomposed from existing combined fr strings; omit the two PIP subnational names (no confident fr → English fallback).
+
+```python
+    "source.publisher.world_bank": "Banque mondiale",
+    "source.publisher.imf": "FMI",
+    "source.publisher.who": "OMS",
+    "source.publisher.unesco": "UNESCO",
+    "source.publisher.pefa_secretariat": "Secrétariat PEFA",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Direction Générale du Budget du Togo",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "Perspectives de l'économie mondiale",
+    "source.name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
+    "source.name.world_bank_pip": "Plateforme sur la pauvreté et les inégalités",
+    "source.name.world_bank_icp": "Programme de comparaison internationale (ICP)",
+    "source.name.who_nha": "Base de données mondiale des dépenses de santé",
+    "source.name.togo_dgb": "Rapport d'exécution du budget de l'État",
+```
+
+- [ ] **Step 3: Add Portuguese keys** (`translations/pt.py`) — same decomposition from existing combined pt strings.
+
+```python
+    "source.publisher.world_bank": "Banco Mundial",
+    "source.publisher.imf": "FMI",
+    "source.publisher.who": "OMS",
+    "source.publisher.unesco": "UNESCO",
+    "source.publisher.pefa_secretariat": "Secretariado PEFA",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Direção Geral do Orçamento do Togo",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "Perspectivas da Economia Mundial",
+    "source.name.imf_gfs": "Estatísticas de Finanças Públicas — Demonstrativo de Operações",
+    "source.name.world_bank_pip": "Plataforma de Pobreza e Desigualdade",
+    "source.name.world_bank_icp": "Programa de Comparação Internacional (ICP)",
+    "source.name.who_nha": "Base de Dados Global de Despesa em Saúde",
+    "source.name.togo_dgb": "Relatório de execução do orçamento do Estado",
+```
+
+- [ ] **Step 4: Sanity-check the keys load**
+
+Run: `python -c "from translations import t; print(t('source.publisher.world_bank','fr'), '—', t('source.name.boost','fr'))"`
+Expected: `Banque mondiale — BOOST`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add translations/en.py translations/fr.py translations/pt.py
+git commit -m "feat: add decomposed source publisher/name translation keys"
 ```
 
 ---
