@@ -32,15 +32,10 @@ body.theme-wbg .form-select.econ-filter-select:focus {
     white-space: nowrap;
     margin-bottom: 0.2rem;
 }
-.edu-filter-icon {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 auto;
-    opacity: 0.75;
-}
 .edu-filter-label {
     font-size: 0.8rem;
     font-weight: 500;
+    padding-left: 0.25rem;
     color: #6c757d;  /* theme muted gray (matches .text-muted) */
 }
 

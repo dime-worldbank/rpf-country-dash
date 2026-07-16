@@ -2,7 +2,7 @@ import pandas as pd
 from dash import html
 import dash_bootstrap_components as dbc
 
-from constants import START_YEAR
+from constants import EDU_OUTCOME_CHART_ID, EDU_SPENDING_CHART_ID, START_YEAR
 from translations import t
 
 
@@ -70,6 +70,7 @@ _SCHOOL_BASIC_SERVICES = {
     "key": "school_basic_services",
     "label_key": "source.school_services.label",
     "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.school_services.description",
 }
 
 _ATTENDANCE = {
@@ -169,8 +170,8 @@ CHART_METADATA = {
     "education-total": {"sources": [_BOOST]},
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
-    "education-func-sub-econ": {"sources": [_BOOST_EDU]},
-    "education-level-outcome": {
+    EDU_SPENDING_CHART_ID: {"sources": [_BOOST_EDU]},
+    EDU_OUTCOME_CHART_ID: {
         "info_key": "chart.outcome_secondary.info",
         "sources": [_COMPLETION_RATES, _TEACHER_SALARIES, _SCHOOL_BASIC_SERVICES],
     },

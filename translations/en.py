@@ -568,6 +568,7 @@ TRANSLATIONS = {
     "source.teacher_salary.description": "The ratio of a teacher's statutory salary to the earnings of workers with comparable qualifications. A value of 1.0 means teachers are paid on par with similar professions; below 1.0 means less, above 1.0 more. Indicates how attractive and fairly compensated teaching is.",
     "source.completion_rate.label": "Education Completion Rate",
     "source.school_services.label": "School Basic Services",
+    "source.school_services.description": "Covers two service-delivery indicators, each reported for primary and secondary schools: the percentage of schools with electricity, and the percentage of schools with internet access for pedagogical purposes.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "World Bank BOOST",

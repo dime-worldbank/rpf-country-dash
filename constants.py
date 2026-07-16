@@ -11,6 +11,10 @@ WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
 GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
 IMF_GOVERNMENT_BUDGET_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
 
+# Chart ids used in the education page. These are also keys in CHART_METADATA, which is used to populate the source modal for each chart.
+EDU_SPENDING_CHART_ID = "education-func-sub-econ"
+EDU_OUTCOME_CHART_ID = "education-level-outcome"
+
 # Fiscal-balance view modes — shared by the deficit chart component
 # (components/fiscal_balance.py) and the home page's view selector.
 VIEW_COMPOSITE = "composite"

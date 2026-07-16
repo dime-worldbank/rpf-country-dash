@@ -549,7 +549,7 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     State(esl.ECON_FILTER_ID, "value"),
 )
 def update_edu_func_sub_econ_options(country, lang, current_value):
-    return esl.econ_filter_options(country, lang, current_value)
+    return esl.get_econ_category_options(country, lang, current_value)
 
 
 @callback(

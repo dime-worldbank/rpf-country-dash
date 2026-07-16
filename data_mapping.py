@@ -12,6 +12,7 @@ import json
 import pandas as pd
 from queries import QueryService
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
+from components.edu_spending_by_level import add_secondary_average
 import server_store
 
 
@@ -188,6 +189,20 @@ def load_edu_public_expenditure():
     return exp_by_func[exp_by_func.func == "Education"]
 
 
+def load_completion_rates():
+    return add_secondary_average(_db().get_completion_rates(), "completion_rate")
+
+
+def load_teacher_salaries():
+    return add_secondary_average(_db().get_teacher_salaries(), "teacher_salary")
+
+
+def load_school_basic_services():
+    df = _db().get_school_basic_services()
+    df = add_secondary_average(df, "schools_with_electricity")
+    return add_secondary_average(df, "schools_with_internet")
+
+
 # ---------------------------------------------------------------------------
 # Mapping of cache keys to the function that produces the data.
 # server_store uses this to auto-populate a key on cache miss.
@@ -201,9 +216,6 @@ function_data_mapping = {
     "geo1_func_expenditure": lambda: _db().expenditure_and_outcome_by_country_geo1_func_year(),
     "sub_func_expenditure": lambda: _db().get_expenditure_by_country_sub_func_year(),
     "edu_func_sub_econ_expenditure": lambda: _db().get_edu_expenditure_by_func_sub_econ(),
-    "teacher_salaries": lambda: _db().get_teacher_salaries(),
-    "completion_rates": lambda: _db().get_completion_rates(),
-    "school_basic_services": lambda: _db().get_school_basic_services(),
     "pefa": lambda: _db().get_pefa(_countries()),
     "uhc_index": lambda: _db().get_universal_health_coverage_index(),
     "health_private_expenditure": lambda: _db().get_health_private_expenditure(),
@@ -222,4 +234,7 @@ function_data_mapping = {
     "basic_country_info": load_basic_country_info,
     "health_public_expenditure": load_health_public_expenditure,
     "edu_public_expenditure": load_edu_public_expenditure,
+    "completion_rates": load_completion_rates,
+    "teacher_salaries": load_teacher_salaries,
+    "school_basic_services": load_school_basic_services,
 }

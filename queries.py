@@ -142,17 +142,6 @@ class QueryService:
         """
         return self.fetch_data(query)
 
-    @staticmethod
-    def _add_secondary_average(df, prefix):
-        """Derive ``{prefix}_secondary`` as the mean of the lower- and upper-
-        secondary columns, matching the combined "Secondary" spending level.
-        Skip-NaN, so a year reporting only one sub-level still yields a value.
-        """
-        df[f"{prefix}_secondary"] = df[
-            [f"{prefix}_lower_secondary", f"{prefix}_upper_secondary"]
-        ].mean(axis=1)
-        return df
-
     def get_completion_rates(self):
         query = f"""
             SELECT country_name, year,
@@ -161,7 +150,7 @@ class QueryService:
                    completion_rate_upper_secondary
             FROM prd_mega.{INDICATOR_SCHEMA}.completion_rates
         """
-        return self._add_secondary_average(self.fetch_data(query), "completion_rate")
+        return self.fetch_data(query)
 
     def get_teacher_salaries(self):
         query = f"""
@@ -172,7 +161,7 @@ class QueryService:
                    teacher_salary_upper_secondary
             FROM prd_mega.{INDICATOR_SCHEMA}.teacher_salaries
         """
-        return self._add_secondary_average(self.fetch_data(query), "teacher_salary")
+        return self.fetch_data(query)
 
     def get_school_basic_services(self):
         query = f"""
@@ -185,10 +174,7 @@ class QueryService:
                    schools_with_internet_upper_secondary
             FROM prd_mega.{INDICATOR_SCHEMA}.school_basic_services
         """
-        df = self.fetch_data(query)
-        df = self._add_secondary_average(df, "schools_with_electricity")
-        df = self._add_secondary_average(df, "schools_with_internet")
-        return df
+        return self.fetch_data(query)
 
     def get_basic_country_data(self, countries):
         country_list = "', '".join(countries)

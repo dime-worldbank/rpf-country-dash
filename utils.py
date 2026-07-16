@@ -10,6 +10,7 @@ from scipy import stats
 from colormath.color_objects import sRGBColor, CMYKColor
 from colormath.color_conversions import convert_color
 from auth import AUTH_ENABLED
+import server_store
 from collections import OrderedDict
 from constants import (
     START_YEAR,
@@ -529,8 +530,26 @@ def apply_locale(fig, lang="en"):
     return fig
 
 
+def get_currency_code(country):
+    """The country's currency code, or None if country metadata isn't available.
+
+    Pair with :func:`format_currency`, which degrades to a bare magnitude on a
+    None code — so a missing basic_country_info costs a currency suffix rather
+    than the whole chart.
+    """
+    return (
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("currency_code")
+    )
+
+
 def format_currency(value, currency_code, lang="en"):
-    """Format a number as currency with the given currency code."""
+    """Format a number as currency with the given currency code.
+
+    Falls back to a bare magnitude string when ``currency_code`` is missing —
+    country metadata isn't always available, and " 1.50 M None" helps nobody.
+    """
+    if not currency_code:
+        return millify(value, lang=lang)
     return f"{millify(value, lang=lang)} {currency_code}"
 
 

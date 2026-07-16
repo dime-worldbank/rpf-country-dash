@@ -10,22 +10,25 @@ import dash_bootstrap_components as dbc
 from dash import html
 
 import server_store
-from constants import START_YEAR, translate_econ
+from constants import (
+    EDU_OUTCOME_CHART_ID as OUTCOME_CHART_ID,
+    EDU_SPENDING_CHART_ID as SPENDING_CHART_ID,
+    START_YEAR,
+    translate_econ,
+)
 from translations import t
-from utils import apply_locale, empty_plot, format_currency, millify
+from utils import apply_locale, empty_plot, format_currency, get_currency_code
 from viz_theme import QUALITATIVE
 from trend_narrative import get_relationship_narrative
 from components import econ_outcome_filter
 from components.econ_outcome_filter import ALL_ECON
 from components.source_metadata_popover import chart_container
 
-# Component ids. The two chart ids double as CHART_METADATA keys in
-# components/source_metadata_popover.py — rename one and its ⓘ modal loses its
-# sources.
+# Component ids. The two chart ids come from constants.py because they double as
+# CHART_METADATA keys; the rest are local. All are re-exported here so the page
+# has one place to import section ids from.
 ECON_FILTER_ID = "education-func-sub-econ-filter"
 OUTCOME_FILTER_ID = "education-outcome-indicator"
-SPENDING_CHART_ID = "education-func-sub-econ"
-OUTCOME_CHART_ID = "education-level-outcome"
 NARRATIVE_ID = "education-func-sub-narrative"
 
 _STORE_KEY = "edu_func_sub_econ_expenditure"
@@ -53,6 +56,20 @@ _FUNC_SUB_TO_LEVEL = {
     "Post-Secondary Non-Tertiary Education": "post_secondary",
     "Tertiary Education": "tertiary",
 }
+
+def add_secondary_average(df, prefix):
+    """Derive ``{prefix}_secondary`` as the mean of the lower- and upper-secondary
+    columns. The indicator tables report the two separately, but BOOST reports a
+    single combined "Secondary Education" func_sub, so the indicators need the
+    same shape to sit beside the spending chart. Skip-NaN, so a year reporting
+    only one sub-level still yields a value. Composed into the store by
+    data_mapping.py, which is why it isn't applied here.
+    """
+    df[f"{prefix}_secondary"] = df[
+        [f"{prefix}_lower_secondary", f"{prefix}_upper_secondary"]
+    ].mean(axis=1)
+    return df
+
 
 # Service-delivery indicators, in dropdown order.
 _OUTCOMES = {
@@ -159,19 +176,6 @@ def _apply_shared_xaxis(fig, year_range):
         )
 
 
-def _money_fmt(currency_code, lang):
-    """Formatter for spending values; falls back to millify without a currency."""
-    if currency_code:
-        return lambda v: format_currency(v, currency_code, lang=lang)
-    return lambda v: millify(v, lang=lang)
-
-
-def _currency_code(country):
-    return (
-        server_store.lookup("basic_country_info", {}).get(country, {}).get("currency_code")
-    )
-
-
 def _outcome(indicator):
     return _OUTCOMES.get(indicator) or _OUTCOMES[DEFAULT_OUTCOME]
 
@@ -191,9 +195,11 @@ def _finalize(fig, lang):
 # ---------------------------------------------------------------------------
 # Callback delegates (pure functions; the @callbacks live in the page module)
 # ---------------------------------------------------------------------------
-def econ_filter_options(country, lang, current_value):
+def get_econ_category_options(country, lang, current_value):
     """(options, value) for the economic-category dropdown, per country."""
-    return econ_outcome_filter.econ_options(_STORE_KEY, country, lang, current_value)
+    return econ_outcome_filter.get_econ_category_options(
+        _STORE_KEY, country, lang, current_value
+    )
 
 
 def default_outcome_indicator(econ_filter):
@@ -224,7 +230,8 @@ def spending_figure(country, econ_filter, lang="en"):
         .rename(columns={"per_capita_real_expenditure": "value"})
     )
 
-    currency_code = _currency_code(country)
+    currency_code = get_currency_code(country)
+    spending_fmt = lambda x: format_currency(x, currency_code, lang=lang)
 
     fig = go.Figure()
     for func_sub, level in _FUNC_SUB_TO_LEVEL.items():
@@ -239,12 +246,6 @@ def spending_figure(country, econ_filter, lang="en"):
             continue
         label = t(f"level.{level}", lang)
         color = _LEVEL_COLORS.get(level)
-        if currency_code:
-            customdata = sub["value"].apply(_money_fmt(currency_code, lang))
-            hovertemplate = f"<b>{label}</b>: %{{customdata}}<extra></extra>"
-        else:
-            customdata = None
-            hovertemplate = f"<b>{label}</b>: %{{y}}<extra></extra>"
         fig.add_trace(
             go.Scatter(
                 name=label,
@@ -253,8 +254,8 @@ def spending_figure(country, econ_filter, lang="en"):
                 mode="lines+markers",
                 line=dict(color=color),
                 marker=dict(color=color),
-                customdata=customdata,
-                hovertemplate=hovertemplate,
+                customdata=sub["value"].apply(spending_fmt),
+                hovertemplate=f"<b>{label}</b>: %{{customdata}}<extra></extra>",
             )
         )
 
@@ -308,7 +309,7 @@ def _relationship_sentence(
             level=t(f"level.{level}", lang).lower(),
             indicator=t(cfg["metric_key"], lang),
         ),
-        reference_format=_money_fmt(currency_code, lang),
+        reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=cfg["value_fmt"],
         lang=lang,
     )
@@ -337,8 +338,8 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     if df.empty:
         return t("error.no_data_period", lang)
 
-    currency_code = _currency_code(country)
-    _fmt = _money_fmt(currency_code, lang)
+    currency_code = get_currency_code(country)
+    _fmt = lambda x: format_currency(x, currency_code, lang=lang)
 
     if econ_filter and econ_filter != ALL_ECON:
         scope = t(

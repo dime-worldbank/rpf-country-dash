@@ -652,6 +652,7 @@ TRANSLATIONS = {
     "source.teacher_salary.description": "Le rapport entre le salaire statutaire d'un enseignant et la rémunération des travailleurs ayant des qualifications comparables. Une valeur de 1,0 signifie que les enseignants sont rémunérés au même niveau que des professions similaires ; en dessous de 1,0, moins ; au-dessus, davantage. Indique l'attractivité et l'équité de la rémunération de l'enseignement.",
     "source.completion_rate.label": "Taux d'achèvement scolaire",
     "source.school_services.label": "Services de base des écoles",
+    "source.school_services.description": "Couvre deux indicateurs de prestation de services, chacun rapporté pour les écoles primaires et secondaires : le pourcentage d'écoles disposant de l'électricité et le pourcentage d'écoles disposant d'un accès à Internet à des fins pédagogiques.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "BOOST de la Banque mondiale",
