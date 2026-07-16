@@ -1467,12 +1467,13 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     if official_available:
         available.add(VIEW_OFFICIAL)
 
-    options = [
-        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE, "disabled": not composite_available},
-        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
-        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
-    ]
+    options = []
+    if composite_available:
+        options.append({"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE})
+    if official_available:
+        options.append({"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL})
+    options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
+    options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
 
     # Reset on country switch; otherwise keep the current view if still valid.
     default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
