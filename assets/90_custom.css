@@ -8,17 +8,12 @@ body.theme-wbg .form-select.econ-filter-select:focus {
     box-shadow: none;
 }
 
-/* Row holding the section title + econ filter on one line. */
-.edu-func-sub-header {
-    margin-bottom: 1rem;
-}
-
 /* Shared bar holding both filters (each: label on top of its dropdown). */
 .edu-filter-bar {
     display: flex;
     gap: 1.5rem;
     background-color: rgba(108, 117, 125, 0.1);  /* theme muted grey, light tint */
-    padding: 0.9rem 0.9rem;
+    padding: 0.9rem;
     border-radius: 0.375rem;
     margin-bottom: 0.75rem;
 }

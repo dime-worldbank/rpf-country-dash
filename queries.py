@@ -144,10 +144,9 @@ class QueryService:
 
     @staticmethod
     def _add_secondary_average(df, prefix):
-        """Derive ``{prefix}_secondary`` as the mean of the lower- and
-        upper-secondary columns, so these indicators are comparable with the
-        combined "Secondary" level used on the spending side. Uses skip-NaN
-        mean, so a year reporting only one sub-level still yields a value.
+        """Derive ``{prefix}_secondary`` as the mean of the lower- and upper-
+        secondary columns, matching the combined "Secondary" spending level.
+        Skip-NaN, so a year reporting only one sub-level still yields a value.
         """
         df[f"{prefix}_secondary"] = df[
             [f"{prefix}_lower_secondary", f"{prefix}_upper_secondary"]

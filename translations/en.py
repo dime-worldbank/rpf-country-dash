@@ -108,9 +108,6 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Poverty Rate (%)",
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
-    "axis.teacher_salary": "Teacher salary competitiveness",
-    "axis.completion_rate": "Completion rate (%)",
-    "axis.pct_schools": "% of schools",
 
     # --- Education level labels ---
     "level.pre_primary": "Pre-primary",
@@ -118,17 +115,12 @@ TRANSLATIONS = {
     "level.primary_secondary": "Primary & secondary",
     "level.post_secondary": "Post-secondary non-tertiary",
     # Longer, mid-sentence forms used in narratives ("secondary education").
-    "level.pre_primary.long": "pre-primary education",
     "level.primary.long": "primary education",
     "level.primary_secondary.long": "primary & secondary education",
-    "level.lower_secondary.long": "lower secondary education",
     "level.secondary.long": "secondary education",
-    "level.upper_secondary.long": "upper secondary education",
     "level.post_secondary.long": "post-secondary non-tertiary education",
     "level.tertiary.long": "tertiary education",
     "level.secondary": "Secondary",
-    "level.lower_secondary": "Lower secondary",
-    "level.upper_secondary": "Upper secondary",
     "level.tertiary": "Tertiary",
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
 
@@ -141,7 +133,6 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
 
     # --- Dropdown / filter labels ---
-    "label.filter_by_econ": "Filter by economic category",
     "label.economic_category": "Economic category",
     "label.outcome_indicator": "Outcome indicator",
     "outcome.completion_rate": "Completion rate",
@@ -285,7 +276,6 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
-    "narrative.edu_func_sub_econ": "This chart shows how inflation-adjusted public spending per capita has changed over time across education levels like primary, secondary, and tertiary. Use the dropdown to focus on a single type of spending, such as wage bill or capital expenditure.",
     "narrative.func_sub_most_least": "{scope}, between {start} and {end}, {most} received the most inflation-adjusted per-capita spending, averaging {most_val} per year, while {least} received the least, at {least_val}.",
     "narrative.func_sub_single": "{scope}, between {start} and {end}, {level} was the only level with reported spending, averaging {level_val} per capita per year.",
     "narrative.econ_scope_all": "Across all economic categories",

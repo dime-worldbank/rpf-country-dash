@@ -111,9 +111,6 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
-    "axis.teacher_salary": "Compétitivité salariale des enseignants",
-    "axis.completion_rate": "Taux d'achèvement (%)",
-    "axis.pct_schools": "% des écoles",
 
     # --- Niveaux d'enseignement ---
     "level.pre_primary": "Préprimaire",
@@ -121,17 +118,12 @@ TRANSLATIONS = {
     "level.primary_secondary": "Primaire et secondaire",
     "level.post_secondary": "Post-secondaire non supérieur",
     # Formes longues pour les narratifs ("l'enseignement secondaire").
-    "level.pre_primary.long": "l'enseignement préprimaire",
     "level.primary.long": "l'enseignement primaire",
     "level.primary_secondary.long": "l'enseignement primaire et secondaire",
-    "level.lower_secondary.long": "le premier cycle du secondaire",
     "level.secondary.long": "l'enseignement secondaire",
-    "level.upper_secondary.long": "le deuxième cycle du secondaire",
     "level.post_secondary.long": "l'enseignement post-secondaire non supérieur",
     "level.tertiary.long": "l'enseignement supérieur",
     "level.secondary": "Secondaire",
-    "level.lower_secondary": "Premier cycle du secondaire",
-    "level.upper_secondary": "Deuxième cycle du secondaire",
     "level.tertiary": "Supérieur",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
 
@@ -144,7 +136,6 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
 
     # --- Étiquettes de menu déroulant / filtre ---
-    "label.filter_by_econ": "Filtrer par catégorie économique",
     "label.economic_category": "Catégorie économique",
     "label.outcome_indicator": "Indicateur de résultat",
     "outcome.completion_rate": "Taux d'achèvement",
@@ -334,7 +325,6 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
-    "narrative.edu_func_sub_econ": "Ce graphique montre l'évolution des dépenses publiques par habitant, ajustées à l'inflation, au fil du temps selon les niveaux d'enseignement, tels que l'enseignement primaire, secondaire et supérieur. Utilisez le menu déroulant pour vous concentrer sur un seul type de dépense, comme la masse salariale ou les dépenses d'investissement.",
     "narrative.func_sub_most_least": "{scope}, entre {start} et {end}, {most} a reçu le plus de dépenses par habitant ajustées à l'inflation, avec une moyenne de {most_val} par an, tandis que {least} en a reçu le moins, à {least_val}.",
     "narrative.func_sub_single": "{scope}, entre {start} et {end}, {level} était le seul niveau avec des dépenses déclarées, avec une moyenne de {level_val} par habitant et par an.",
     "narrative.econ_scope_all": "Toutes catégories économiques confondues",

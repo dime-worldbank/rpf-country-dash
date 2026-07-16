@@ -36,7 +36,6 @@ from trend_narrative import get_relationship_narrative, get_segment_narrative, I
 
 db = QueryService.get_instance()
 
-# Sector config for the reusable "spending by func-sub level" section.
 _EDU = fss.EDU_CONFIG
 
 dash.register_page(__name__)
@@ -567,11 +566,10 @@ def default_outcome_for_econ(econ_filter):
     Output(_EDU.spending_chart_id, "figure"),
     Input("country-select", "value"),
     Input(_EDU.econ_filter_id, "value"),
-    Input("stored-basic-country-data", "data"),
     Input("stored-language", "data"),
 )
-def render_edu_func_sub_econ(country, econ_filter, basic_country_data, lang):
-    return fss.spending_figure(_EDU, country, econ_filter, basic_country_data, lang)
+def render_edu_func_sub_econ(country, econ_filter, lang):
+    return fss.spending_figure(_EDU, country, econ_filter, lang)
 
 
 @callback(

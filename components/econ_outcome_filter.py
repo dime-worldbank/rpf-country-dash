@@ -1,15 +1,9 @@
 """Reusable "economic category + service-delivery indicator" filter bar.
 
-Two labeled dropdowns on a shared background:
-  * economic category — options populated per country from a data store
-  * service-delivery indicator — a fixed list the caller supplies
-
-Selecting a category sets the indicator to its natural default (via a
-caller-supplied mapping); the reverse is deliberately not wired. Shared by the
-Education (and, later, Health) "spending by level" sections.
-
-Following the dashboard convention this module holds the layout builder and the
-pure helpers; the ``@callback`` wrappers live in the page and delegate here.
+Two labeled dropdowns: economic category (options populated per country from a
+data store) and service-delivery indicator (a fixed list the caller supplies).
+Selecting a category sets the indicator to its natural default; the reverse is
+deliberately not wired.
 """
 import urllib.parse
 
@@ -63,17 +57,14 @@ def _filter_item(label_key, select_id, value, options, lang):
     )
 
 
-def filter_bar(econ_id, outcome_id, outcome_options, lang="en", outcome_value=None):
+def filter_bar(econ_id, outcome_id, outcome_options, outcome_value, lang="en"):
     """The two-dropdown filter bar (economic category + indicator).
 
     ``outcome_options`` is a list of ``{"label", "value"}`` dicts; the economic
     category options are populated per country by :func:`econ_options` via the
-    page callback. ``outcome_value`` is the initial indicator (defaults to the
-    first option).
+    page callback.
     """
     lang = lang or "en"
-    if outcome_value is None and outcome_options:
-        outcome_value = outcome_options[0]["value"]
     return html.Div(
         [
             _filter_item(
@@ -114,8 +105,3 @@ def econ_options(store_key, country, lang, current_value):
     valid_values = {opt["value"] for opt in options}
     value = current_value if current_value in valid_values else ALL_ECON
     return options, value
-
-
-def default_indicator(econ_filter, mapping, default):
-    """The natural service-delivery indicator for a selected economic category."""
-    return mapping.get(econ_filter, default)
