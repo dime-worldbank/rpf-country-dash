@@ -29,7 +29,7 @@ from viz_theme import SOLID_BLUE, WARM_BRIGHTER
 
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
-DEFICIT_BAR_OPACITY = 0.4
+BALANCE_BAR_OPACITY = 0.4
 
 
 def split_imf_sources(gov_df):
@@ -161,28 +161,23 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         """Emit revenue/expenditure lines and a balance bar for one source."""
         if df is None or df.empty:
             return
-        bar_df = df
 
         if is_forecast:
             cat = "forecast"
             label_suffix = forecast_suffix
             kind_label = forecast_kind
-            rev_color = REVENUE_COLOR
-            exp_color = EXPENDITURE_COLOR
-            rev_line = dict(color=rev_color, dash="dash", width=2)
-            exp_line = dict(color=exp_color, dash="dash", width=2)
+            rev_line = dict(color=REVENUE_COLOR, dash="dash", width=2)
+            exp_line = dict(color=EXPENDITURE_COLOR, dash="dash", width=2)
             rev_marker = exp_marker = None
             scatter_mode = "lines"
         else:
             cat = "actual"
             label_suffix = ""
             kind_label = actual_kind
-            rev_color = REVENUE_COLOR
-            exp_color = EXPENDITURE_COLOR
-            rev_line = dict(color=rev_color, width=2.5)
-            exp_line = dict(color=exp_color, width=2.5)
-            rev_marker = dict(color=rev_color, size=7)
-            exp_marker = dict(color=exp_color, size=7)
+            rev_line = dict(color=REVENUE_COLOR, width=2.5)
+            exp_line = dict(color=EXPENDITURE_COLOR, width=2.5)
+            rev_marker = dict(color=REVENUE_COLOR, size=7)
+            exp_marker = dict(color=EXPENDITURE_COLOR, size=7)
             scatter_mode = "lines+markers"
 
         def _show_once(key):
@@ -224,8 +219,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         # once regardless of how the timeline is stitched together. Each reuses
         # its revenue/expenditure line hue, kept distinct by the bar opacity.
         for seg_df, seg_color, seg_key, seg_label in (
-            (bar_df[bar_df.balance >= 0], REVENUE_COLOR, "surplus", surplus_label),
-            (bar_df[bar_df.balance < 0], EXPENDITURE_COLOR, "deficit", deficit_label),
+            (df[df.balance >= 0], REVENUE_COLOR, "surplus", surplus_label),
+            (df[df.balance < 0], EXPENDITURE_COLOR, "deficit", deficit_label),
         ):
             if seg_df.empty:
                 continue
@@ -236,7 +231,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
                     showlegend=_show_once(seg_key),
                     x=seg_df.year, y=seg_df.balance,
                     marker_color=seg_color,
-                    opacity=DEFICIT_BAR_OPACITY,
+                    opacity=BALANCE_BAR_OPACITY,
                     customdata=seg_df["balance_formatted"],
                     hovertemplate=f"<b>{seg_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
                 ),
