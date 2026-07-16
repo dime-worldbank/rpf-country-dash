@@ -1481,8 +1481,15 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
     options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
 
+    # Default to the richest available view: composite, else official, else GFS.
+    if composite_available:
+        default_view = DEFAULT_FISCAL_VIEW
+    elif official_available:
+        default_view = VIEW_OFFICIAL
+    else:
+        default_view = VIEW_GFS
+
     # Reset on country switch; otherwise keep the current view if still valid.
-    default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
     if ctx.triggered_id == "country-select" or current_view not in available:
         new_view = default_view
     else:
