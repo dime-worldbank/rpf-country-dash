@@ -33,6 +33,7 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Resultado fiscal",
     "heading.regional_expenditure": "Despesa regional",
     "heading.country_regional_expenditure": "Despesa regional {country_gen}",
+    "heading.who_funds_budget": "Quem financia o orçamento?",
     "heading.who_pays_education": "Quem paga pela educação?",
     "heading.who_pays_health": "Quem paga pela saúde?",
     "heading.public_spending_education_outcome": "Despesa pública e resultados educacionais",
@@ -64,6 +65,7 @@ TRANSLATIONS = {
     "chart.subnational_func_spending": "Despesa subnacional {func_gen}",
     "chart.subnational_outcome": "{outcome_name} subnacional",
     "chart.budget_func_fluctuation": "Como os orçamentos por categorias funcionais oscilam ao longo do tempo?",
+    "chart.budget_by_funding_source": "Como o orçamento é financiado?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajustado pela inflação",
@@ -72,6 +74,8 @@ TRANSLATIONS = {
     "trace.public_expenditure": "Despesa pública",
     "trace.private_expenditure": "Despesa privada",
     "trace.poverty_rate": "Taxa de pobreza",
+    "trace.domestic_funded": "Financiamento interno",
+    "trace.foreign_funded": "Financiamento externo",
     "trace.per_capita": "Per capita",
     "trace.pefa_score": "Pontuação PEFA",
     "trace.uhc_index": "Índice de cobertura universal de saúde",
@@ -108,6 +112,7 @@ TRANSLATIONS = {
     "axis.quality_budget_institutions": "Qualidade das instituições orçamentárias",
     "axis.pct_total_func_expenditure": "Percentual da despesa total {func_gen}",
     "axis.yoy_growth_rate": "Taxa de crescimento anual (%)",
+    "axis.budget_share": "Parcela do orçamento (%)",
     "radio.per_capita_expenditure": "Despesa per capita {sector_prep}",
     "radio.total_expenditure": "Despesa total {sector_prep}",
     "radio.per_capita_expenditure_plain": "  Despesa per capita",
@@ -212,6 +217,7 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": {"name": "a despesa em educação per capita", "plural": False, "feminine": True, "article": "a"},
     "metric.school_attendance": {"name": "a taxa de frequência escolar (6 a 17 anos)", "plural": False, "feminine": True, "article": "a"},
     "metric.learning_poverty_rate": {"name": "a taxa de pobreza de aprendizagem", "plural": False, "feminine": True, "article": "a"},
+    "metric.domestic_funded_share": {"name": "a parcela do orçamento financiada por fontes internas", "plural": False, "feminine": True, "article": "a"},
     "label.per_capita_spending_lower": "a despesa per capita",
     "label.poverty_rates_lower": "as taxas de pobreza",
 
@@ -427,6 +433,7 @@ TRANSLATIONS = {
     "narrative.grew_modest": "cresceu a uma taxa modesta de {rate:.1f}%",
     "narrative.external_financing_included": "Esta análise atualmente inclui financiamento externo porque os dados orçamentários usados têm granularidade limitada. Idealmente, ele seria excluído devido à sua volatilidade.",
     "narrative.external_financing_excluded": "Esta análise exclui financiamento externo, pois ele tende a ser volátil.",
+    "narrative.funding_source_average": "Em média, ao longo deste período, fontes internas financiaram {domestic_share:.1f}% do orçamento {country_gen}, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
     "instruction.budget_legend": "Por padrão, apenas Orçamento geral, Saúde, Educação e Serviços públicos gerais aparecem no gráfico. Clique na legenda para ver a taxa anual de crescimento do orçamento das outras categorias funcionais.",
 
     # --- Outcome names / ranks ---

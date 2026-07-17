@@ -3,7 +3,8 @@ import plotly.graph_objects as go
 from dash import html
 
 from translations import t, genitive
-from trend_narrative import get_segment_narrative, InsightExtractor, TrendDetector
+from trend_narrative import InsightExtractor, TrendDetector
+from trend_narrative_i18n import get_segment_narrative_i18n
 from utils import (
     apply_locale,
     empty_plot,
@@ -130,7 +131,7 @@ def format_funding_source_narrative(df, country, lang="en"):
         plot_df["domestic_share"].values,
         detector=TrendDetector(),
     )
-    trend = get_segment_narrative(
+    trend = get_segment_narrative_i18n(
         extractor=extractor,
         metric=t("metric.domestic_funded_share", lang),
         lang=lang,
