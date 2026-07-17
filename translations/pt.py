@@ -217,7 +217,7 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": {"name": "a despesa em educação per capita", "plural": False, "feminine": True, "article": "a"},
     "metric.school_attendance": {"name": "a taxa de frequência escolar (6 a 17 anos)", "plural": False, "feminine": True, "article": "a"},
     "metric.learning_poverty_rate": {"name": "a taxa de pobreza de aprendizagem", "plural": False, "feminine": True, "article": "a"},
-    "metric.domestic_funded_share": {"name": "a parcela do orçamento financiada por fontes internas", "plural": False, "feminine": True, "article": "a"},
+    "metric.domestic_funded_share": {"name": "a parcela do orçamento domesticamente financiada", "plural": False, "feminine": True, "article": "a"},
     "label.per_capita_spending_lower": "a despesa per capita",
     "label.poverty_rates_lower": "as taxas de pobreza",
 
@@ -433,7 +433,7 @@ TRANSLATIONS = {
     "narrative.grew_modest": "cresceu a uma taxa modesta de {rate:.1f}%",
     "narrative.external_financing_included": "Esta análise atualmente inclui financiamento externo porque os dados orçamentários usados têm granularidade limitada. Idealmente, ele seria excluído devido à sua volatilidade.",
     "narrative.external_financing_excluded": "Esta análise exclui financiamento externo, pois ele tende a ser volátil.",
-    "narrative.funding_source_average": "Em média, ao longo deste período, fontes internas financiaram {domestic_share:.1f}% do orçamento {country_gen}, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
+    "narrative.funding_source_average": "Em média, ao longo deste período, {domestic_share:.1f}% do orçamento {country_gen} foi financiado domesticamente, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
     "instruction.budget_legend": "Por padrão, apenas Orçamento geral, Saúde, Educação e Serviços públicos gerais aparecem no gráfico. Clique na legenda para ver a taxa anual de crescimento do orçamento das outras categorias funcionais.",
 
     # --- Outcome names / ranks ---
