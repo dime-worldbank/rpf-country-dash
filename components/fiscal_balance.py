@@ -33,6 +33,17 @@ BALANCE_BAR_OPACITY = 0.4
 # Pinned so a sparse surplus/deficit trace isn't auto-sized into overly wide bars.
 BALANCE_BAR_WIDTH = 0.7
 
+# Fixed legend order keyed by legendgroup: each line sits next to its forecast
+# (they share a hue, differing only by dash), balance bars last.
+LEGEND_RANK = {
+    "actual_rev": 1,
+    "forecast_rev": 2,
+    "actual_exp": 3,
+    "forecast_exp": 4,
+    "surplus": 5,
+    "deficit": 6,
+}
+
 
 def split_imf_sources(gov_df):
     """Split an IMF government revenue/expenditure frame into ``(gfs_df, weo_df)`` by data source."""
@@ -191,6 +202,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             go.Scatter(
                 name=f"{revenue_label}{label_suffix}",
                 legendgroup=f"{cat}_rev",
+                legendrank=LEGEND_RANK[f"{cat}_rev"],
                 showlegend=_show_once(f"{cat}_rev"),
                 x=df.year, y=df.revenue,
                 mode=scatter_mode,
@@ -205,6 +217,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             go.Scatter(
                 name=f"{expenditure_label}{label_suffix}",
                 legendgroup=f"{cat}_exp",
+                legendrank=LEGEND_RANK[f"{cat}_exp"],
                 showlegend=_show_once(f"{cat}_exp"),
                 x=df.year, y=df.expenditure,
                 mode=scatter_mode,
@@ -230,6 +243,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
                 go.Bar(
                     name=seg_label,
                     legendgroup=seg_key,
+                    legendrank=LEGEND_RANK[seg_key],
                     showlegend=_show_once(seg_key),
                     x=seg_df.year, y=seg_df.balance,
                     width=BALANCE_BAR_WIDTH,

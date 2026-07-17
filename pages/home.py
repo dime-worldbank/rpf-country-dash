@@ -38,7 +38,6 @@ from constants import (
     VIEW_OFFICIAL,
     VIEW_GFS,
     VIEW_WEO,
-    DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
 from translations import t, genitive, localize_currency_name
@@ -291,7 +290,7 @@ def render_overview_content(tab, lang):
                                         {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
                                         {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
                                     ],
-                                    value=DEFAULT_FISCAL_VIEW,
+                                    value=VIEW_COMPOSITE,
                                     inline=True,
                                 ),
                             ],
@@ -1481,13 +1480,14 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
     options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
 
-    # Default to the richest available view: composite, else official, else GFS.
+    # Default to the richest available view: composite, else official, else WEO
+    # (WEO has broader year coverage than GFS).
     if composite_available:
-        default_view = DEFAULT_FISCAL_VIEW
+        default_view = VIEW_COMPOSITE
     elif official_available:
         default_view = VIEW_OFFICIAL
     else:
-        default_view = VIEW_GFS
+        default_view = VIEW_WEO
 
     # Reset on country switch; otherwise keep the current view if still valid.
     if ctx.triggered_id == "country-select" or current_view not in available:
@@ -1520,7 +1520,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
             lang=lang or "en",
             currency_code=basic_info["currency_code"],
         ),
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
 
@@ -1541,6 +1541,6 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.narrative(
         national_df, gfs_df, weo_df, basic_info["currency_code"],
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
