@@ -114,19 +114,9 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
 
     # --- Source annotations ---
-    "source.boost_cpi": "Source: BOOST & CPI: World Bank",
     "source.boost": "Source: BOOST: World Bank",
     "source.boost_database": "Source: BOOST Database, World Bank",
-    "source.boost_cpi_poverty": "Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
-    "source.cofog_boost": "Expenditure % by COFOG categories. Source: BOOST",
-    "source.econ_boost": "Expenditure % by economic categories. Source: BOOST",
     "source.pefa_poverty": "Source: PEFA & Poverty Rate: World Bank",
-    "source.regional_boost": "Regional Spending. Source: BOOST",
-    "source.regional_boost_space": " Regional Spending. Source: BOOST",
-    "source.spid_gsap": "Source: SPID and GSAP, World Bank.",
-    "source.education_outcome": "Source: Education index measured by years of education: UNDP through GDL. <br>BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
-    "source.health_household": "Source: Household exp: WHO, Public exp from BOOST: World Bank",
-    "source.health_outcome": "Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
     "source.undp_gdl": "Source: UNDP through Global Data Lab",
     "source.boost_wb": "Source: BOOST, World Bank",
     "footer.supported_by": "Supported by",
@@ -528,17 +518,6 @@ TRANSLATIONS = {
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
 
     # --- Source metadata modal (source names) — shared across sources ---
-    "source_name.world_bank_boost": "World Bank BOOST",
-    "source_name.world_bank_pip": "World Bank Poverty and Inequality Platform",
-    "source_name.world_bank": "World Bank",
-    "source_name.world_bank_icp": "World Bank ICP",
-    "source_name.global_data_lab": "Global Data Lab",
-    "source_name.who_gho": "WHO (GHO)",
-    "source_name.who_health_db": "WHO Global Health Expenditure Database",
-    "source_name.pefa_secretariat": "PEFA Secretariat",
-    "source_name.imf_gfs": "Government Finance Statistics — Statement of Operations",
-    "source_name.imf_weo": "IMF World Economic Outlook",
-    "source_name.togo_dgb": "Togo Direction Générale du Budget — Rapport d'exécution du budget de l'État",
     # Decomposed source attribution — shared publisher + per-source name,
     # rendered as "publisher — name". Supersedes the combined source_name.* above.
     "source.publisher.world_bank": "World Bank",

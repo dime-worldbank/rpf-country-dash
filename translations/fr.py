@@ -117,19 +117,9 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
 
     # --- Source annotations ---
-    "source.boost_cpi": "Source : BOOST & IPC : World Bank",
     "source.boost": "Source : BOOST : World Bank",
     "source.boost_database": "Source : base de données BOOST, World Bank",
-    "source.boost_cpi_poverty": "Source : BOOST, IPC, taux de pauvreté : World Bank ; <br>Population : ONU, Eurostat",
-    "source.cofog_boost": "% des dépenses par catégories COFOG. Source : BOOST",
-    "source.econ_boost": "% des dépenses par catégories économiques. Source : BOOST",
     "source.pefa_poverty": "Source : PEFA & taux de pauvreté : World Bank",
-    "source.regional_boost": "Dépenses régionales. Source : BOOST",
-    "source.regional_boost_space": " Dépenses régionales. Source : BOOST",
-    "source.spid_gsap": "Source : SPID et GSAP, World Bank.",
-    "source.education_outcome": "Source : Indice d'éducation mesuré par les années de scolarisation : UNDP via GDL. <br>BOOST, IPC, pauvreté des apprentissages : World Bank ; Population : ONU, Eurostat",
-    "source.health_household": "Source : Dép. des ménages : WHO, dép. publiques provenant de BOOST : World Bank",
-    "source.health_outcome": "Source : UHC : WHO ; BOOST : World Bank ; <br> Population : ONU, Eurostat",
     "source.undp_gdl": "Source : UNDP via Global Data Lab",
     "source.boost_wb": "Source : BOOST, World Bank",
     "footer.supported_by": "Soutenu par",
@@ -610,17 +600,6 @@ TRANSLATIONS = {
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
 
     # --- Source metadata modal (source names) — shared across sources ---
-    "source_name.world_bank_boost": "BOOST de la Banque mondiale",
-    "source_name.world_bank_pip": "Plateforme de la Banque mondiale sur la pauvreté et les inégalités",
-    "source_name.world_bank": "Banque mondiale",
-    "source_name.world_bank_icp": "ICP de la Banque mondiale",
-    "source_name.global_data_lab": "Global Data Lab",
-    "source_name.who_gho": "OMS (GHO)",
-    "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
-    "source_name.pefa_secretariat": "Secrétariat PEFA",
-    "source_name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
-    "source_name.imf_weo": "Perspectives de l'économie mondiale du FMI",
-    "source_name.togo_dgb": "Direction Générale du Budget du Togo — Rapport d'exécution du budget de l'État",
     # Decomposed source attribution — "publisher — name". Names without a
     # confident French translation are omitted and fall back to English via t().
     "source.publisher.world_bank": "Banque mondiale",
