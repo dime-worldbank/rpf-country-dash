@@ -531,23 +531,13 @@ def apply_locale(fig, lang="en"):
 
 
 def get_currency_code(country):
-    """The country's currency code, or None if country metadata isn't available.
-
-    Pair with :func:`format_currency`, which degrades to a bare magnitude on a
-    None code — so a missing basic_country_info costs a currency suffix rather
-    than the whole chart.
-    """
     return (
         server_store.lookup("basic_country_info", {}).get(country, {}).get("currency_code")
     )
 
 
 def format_currency(value, currency_code, lang="en"):
-    """Format a number as currency with the given currency code.
-
-    Falls back to a bare magnitude string when ``currency_code`` is missing —
-    country metadata isn't always available, and " 1.50 M None" helps nobody.
-    """
+    """Format a number as currency with the given currency code."""
     if not currency_code:
         return millify(value, lang=lang)
     return f"{millify(value, lang=lang)} {currency_code}"

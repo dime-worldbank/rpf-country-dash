@@ -28,7 +28,7 @@ class TestReportedYearsAreConsistent(unittest.TestCase):
         server_store.set(
             "basic_country_info", {"Testland": {"currency_code": "USD"}}
         )
-        # A single-row outcome frame keeps _relationship_sentence out of the
+        # A single-row outcome frame keeps build_relationship_sentence out of the
         # narrative (it needs 2+ overlapping points), so these assertions are
         # about the spending sentence alone.
         server_store.set(
@@ -104,8 +104,8 @@ class TestReportedYearsAreConsistent(unittest.TestCase):
         )
 
         fig = esl.spending_figure("Testland", esl.ALL_ECON, "en")
+        # Range 2020.5–2022.5 = reported bounds (2021, 2022); the 0-value 2020 is excluded.
         self.assertEqual(tuple(fig.layout.xaxis.range), (2020.5, 2022.5))
-        self.assertEqual(esl._spending_years("Testland", esl.ALL_ECON), (2021, 2022))
 
     def test_outcome_chart_stands_alone_when_the_filter_leaves_no_spending(self):
         # Education spending is reported only under 'Wage bill'.
