@@ -295,12 +295,11 @@ TRANSLATIONS = {
 
     # Dynamic metrics for the func-sub spending section's trend narrative.
     # Include the article (get_segment_narrative uses the name as-is in FR).
-    "metric.level_spending": "les dépenses pour {level}",
-    "metric.level_outcome": "{indicator} pour {level}",
-    "metric.completion_rate": "le taux d'achèvement",
-    "metric.teacher_salary": "le salaire des enseignants par rapport aux professions comparables",
-    "metric.electricity": "l'accès à l'électricité",
-    "metric.internet": "l'accès à Internet",
+    "metric.level_spending": {"name": "les dépenses pour {level}", "plural": True, "feminine": True},
+    "metric.completion_rate": {"name": "le taux d'achèvement", "plural": False, "feminine": False},
+    "metric.teacher_salary": {"name": "le salaire des enseignants par rapport aux professions comparables", "plural": False, "feminine": False},
+    "metric.electricity": {"name": "l'accès à l'électricité", "plural": False, "feminine": False},
+    "metric.internet": {"name": "l'accès à Internet", "plural": False, "feminine": False},
 
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Include the definite article so the

@@ -15,7 +15,7 @@ from constants import (
     EDU_SPENDING_CHART_ID as SPENDING_CHART_ID,
     translate_econ,
 )
-from translations import t
+from translations import t, get_metric_meta
 from utils import (
     apply_locale,
     empty_plot,
@@ -272,19 +272,16 @@ def build_relationship_sentence(
     if len(spend) < 2 or len(outcome) < 2:
         return ""
 
+    # Metric entries carry their language's grammar (plural/feminine) so
+    # trend-narrative inflects French/Portuguese verbs; ignored for English. The
+    # reference interpolates the funded level into its name.
     result = get_relationship_narrative(
         reference_years=spend["year"].values,
         reference_values=spend["value"].values,
         comparison_years=outcome["year"].values,
         comparison_values=outcome[col].values,
-        reference_name=t(
-            "metric.level_spending", lang, level=t(f"level.{level}.long", lang)
-        ),
-        comparison_name=t(
-            "metric.level_outcome", lang,
-            level=t(f"level.{level}.long", lang),
-            indicator=t(cfg["metric_key"], lang),
-        ),
+        reference_name=get_metric_meta(lang, "metric.level_spending", level=t(f"level.{level}.long")),
+        comparison_name=get_metric_meta(lang, cfg["metric_key"], level=t(f"level.{level}.long")),
         reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=cfg["value_fmt"],
         lang=lang,

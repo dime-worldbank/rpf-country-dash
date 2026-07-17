@@ -249,12 +249,11 @@ TRANSLATIONS = {
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
     # Dynamic metrics for the func-sub spending section's trend narrative.
-    "metric.level_spending": "{level} spending",
-    "metric.level_outcome": "{level} {indicator}",
-    "metric.completion_rate": "completion rate",
-    "metric.teacher_salary": "teacher salary relative to comparable professions",
-    "metric.electricity": "electricity access",
-    "metric.internet": "internet access",
+    "metric.level_spending": {"name": "{level} spending", "plural": False, "feminine": False},
+    "metric.completion_rate": {"name": "completion rate", "plural": False, "feminine": False},
+    "metric.teacher_salary": {"name": "teacher salary relative to comparable professions", "plural": False, "feminine": False},
+    "metric.electricity": {"name": "electricity access", "plural": False, "feminine": False},
+    "metric.internet": {"name": "internet access", "plural": False, "feminine": False},
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",

@@ -89,6 +89,26 @@ def get_available_languages():
     return list(_LANGUAGES.keys())
 
 
+def get_metric_meta(lang, key, **kwargs):
+    """A metric's translation entry as a ``{"name", ...}`` dict for *lang*.
+
+    Pass it straight to trend-narrative's ``reference_name``/``comparison_name``:
+    a dict entry carries the ``plural``/``feminine`` grammar its French and
+    Portuguese templates need to inflect verbs (English ignores the flags).
+    Unlike :func:`t`, which collapses the entry to its display string, this keeps
+    the grammar. Any ``**kwargs`` interpolate into the name (via :func:`t`), so a
+    templated metric like ``"les dépenses pour {level}"`` keeps its grammar while
+    filling the placeholder. Falls back to English, then wraps a bare string.
+    """
+    entry = _LANGUAGES.get(lang, {}).get(key)
+    if entry is None:
+        entry = _LANGUAGES[DEFAULT_LANGUAGE].get(key, key)
+    meta = entry if isinstance(entry, dict) else {"name": entry}
+    if kwargs:
+        meta = {**meta, "name": t(key, lang, **kwargs)}
+    return meta
+
+
 # ---------------------------------------------------------------------------
 # Grammar helpers — language-specific utilities for interpolated values
 # ---------------------------------------------------------------------------
