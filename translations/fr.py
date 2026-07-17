@@ -136,6 +136,7 @@ TRANSLATIONS = {
     "source.health_outcome": "Source : UHC : WHO ; BOOST : World Bank ; <br> Population : ONU, Eurostat",
     "source.undp_gdl": "Source : UNDP via Global Data Lab",
     "source.boost_wb": "Source : BOOST, World Bank",
+    "footer.supported_by": "Soutenu par",
 
     # --- Disclaimer ---
     "disclaimer.label": "avertissement",

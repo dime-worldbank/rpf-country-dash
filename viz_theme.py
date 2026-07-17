@@ -24,7 +24,6 @@ DEFAULT_THEME = _env_theme if _env_theme in VALID_THEMES else "wbg"
 # =============================================================================
 
 SHOW_FOOTER = os.getenv("SHOW_FOOTER", "1").lower() in ("1", "true", "yes")
-FOOTER_ACKNOWLEDGMENT_TEXT = "Supported by"
 
 # =============================================================================
 # COLOR MANIPULATION UTILITIES

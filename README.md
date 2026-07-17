@@ -40,7 +40,7 @@ Make sure all tests pass locally before sending a PR.
 
 ## Internationalization (i18n)
 
-This application supports **English** and **French** with full internationalization:
+This application supports **English**, **French**, and **Brazilian Portuguese** with full internationalization:
 
 - **UI:** Language selector in the application header
 - **Narratives:** Automated spending and outcome narratives generated in both languages
@@ -52,6 +52,7 @@ This application supports **English** and **French** with full internationalizat
 |------|----------|
 | `en` | English |
 | `fr` | Français |
+| `pt` | Português (Brasil) |
 
 ### Using Different Languages
 
@@ -60,26 +61,28 @@ Select your preferred language from the language dropdown in the application hea
 ### For Developers: Working with Translations
 
 **Translation Files:**
-- `translations/__init__.py` - Translation system and French grammar helpers (genitive, locative, elision)
+- `translations/__init__.py` - Translation system and grammar helpers (genitive, preposition, elision, article stripping)
 - `translations/en.py` - English translations (40KB)
 - `translations/fr.py` - French translations with grammatical properties (50KB)
+- `translations/pt.py` - Brazilian Portuguese translations with grammatical properties
 
-**Grammar Helpers for French:**
+**Grammar Helpers for French and Portuguese:**
 
-The `translations/__init__.py` module provides French-specific grammar functions:
-- `genitive(lang, name)` - Handles French "de X" contractions (du, de la, des, d', etc.)
-- `locative(lang, name)` - Handles French location expressions (au, en, à, etc.)
-- `elide_que(lang, name)` - Handles French "que" vs "qu'" elision before vowels
+The `translations/__init__.py` module provides language-specific grammar functions:
+- `genitive(lang, name)` - Handles "of X" constructions, including French `de/du/des` and Portuguese `de/da/do/das/dos`
+- `preposition(lang, noun_or_meta)` - Handles location expressions such as French `en/au/aux` and Portuguese `em/na/no/nas/nos`
+- `elide_que(lang, name)` - Handles French `que` vs `qu'` elision before vowels
 - `strip_article(lang, name)` - Removes leading articles for dropdown labels
 
 **Adding Translations:**
 
 1. Add English key-value pair to `translations/en.py`
-2. Add French translation to `translations/fr.py`
-   - **All `sector.*` and `func.*` entries MUST use dict format with grammatical properties** to support dynamic prepositions:
+2. Add French translation to `translations/fr.py` and Brazilian Portuguese translation to `translations/pt.py`
+   - **All `sector.*`, `country.*`, and `func.*` entries that need grammar MUST use dict format with grammatical properties** to support dynamic prepositions:
      ```python
      "sector.health": {"name": "santé", "plural": False, "feminine": True},
      "func.example": {"name": "exemple", "plural": False, "feminine": False},
+     "country.Kenya": {"name": "o Quênia", "plural": False, "feminine": False, "article": "o"},
      ```
    - **For metrics used in trend-narrative**, use dict format with grammatical properties:
      ```python
@@ -91,22 +94,22 @@ The `translations/__init__.py` module provides French-specific grammar functions
      ```
    - Plain string values are acceptable for other content that doesn't need grammatical agreement
 3. Use `t("key.name", lang)` to access translations in code
-4. For French nouns used after "de", wrap with `genitive(lang, name)`
-5. For French prepositions (au/en/aux), use `preposition(lang, noun_or_meta)` with sector/func metadata
+4. For nouns used after "de/of", wrap with `genitive(lang, name)`
+5. For language-specific prepositions, use `preposition(lang, noun_or_meta)` with sector/func/country metadata
 
 **Testing Translations:**
 
-All narratives are generated in both languages via the `trend-narrative` package. To test:
-1. Set language to French in the UI
+Narratives are generated via the `trend-narrative` package. To test:
+1. Set language to French or Portuguese in the UI
 2. Verify narrative text renders correctly with proper:
    - Verb agreement (singular/plural)
-   - Decimal separators (comma in French: 0,52; period in English: 0.52)
-   - Article contractions (du, de, des, d', de la, de l')
+   - Decimal separators (comma in French and Portuguese: 0,52; period in English: 0.52)
+   - Article contractions (for example, French `du/de/des`, Portuguese `do/da/dos/das`)
    - Genitive constructions
 
 ### Narrative Generation
 
-This app generates automated narratives about government spending using the `trend-narrative` package. All narratives are fully internationalized.
+This app generates automated narratives about government spending using the `trend-narrative` package. English and French are generated directly by that package. For Portuguese, the app first tries `trend-narrative` with `pt`, then `ptbr`; only if those language codes are unsupported does it fall back to English for the package-generated narrative fragment while the surrounding dashboard text remains Portuguese.
 
 #### Segment Narratives
 
@@ -132,7 +135,7 @@ Après prise en compte de l'inflation, entre 2015 et 2020, les dépenses
 réelles ont augmenté de 50,00 (+50,00 %), maintenant une trajectoire constante.
 ```
 
-All narratives respect language-specific formatting (decimal separators, number formats, verb agreement, article contractions).
+Narratives respect language-specific formatting where package support is available. Portuguese dashboard templates and app-generated numbers use comma decimals and Portuguese article/preposition helpers; package-generated trend fragments use Portuguese output if `trend-narrative` accepts `pt` or `ptbr`, otherwise English fallback.
 
 ## Development within docker container
 1. Edit .env to update your environment variables after copying the sample env file. (Do not use quotations around the values)

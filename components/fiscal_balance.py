@@ -37,7 +37,7 @@ DEFICIT_BAR_OPACITY = 0.4
 
 
 def split_imf_sources(gov_df):
-    """Split an IMF government-budget frame into ``(gfs_df, weo_df)`` by data source."""
+    """Split an IMF government revenue/expenditure frame into ``(gfs_df, weo_df)`` by data source."""
     if gov_df is None or gov_df.empty:
         return None, None
     return (
