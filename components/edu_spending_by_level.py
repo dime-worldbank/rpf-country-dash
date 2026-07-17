@@ -56,11 +56,7 @@ _LEVEL_BY_FUNC_SUB = {
     m["func_sub"]: level for level, m in EDUCATION_LEVELS.items() if m["func_sub"]
 }
 
-# Service-delivery indicators, in dropdown order. The ``_secondary`` columns are
-# derived at load time by data_mapping.add_secondary_average: BOOST reports a
-# single combined "Secondary Education" func_sub, so the indicator tables — which
-# report lower and upper secondary separately — are averaged into that shape to
-# sit beside the spending chart.
+# Service-delivery indicators, in dropdown order.
 _OUTCOMES = {
     "completion_rate": {
         "store_key": "completion_rates",
@@ -189,9 +185,18 @@ def apply_shared_layout(fig, lang):
 # ---------------------------------------------------------------------------
 def get_econ_category_options(country, lang, current_value):
     """(options, value) for the economic-category dropdown, per country."""
-    return econ_outcome_filter.get_econ_category_options(
-        _STORE_KEY, country, lang, current_value
-    )
+    options = [{"label": t("dropdown.all_econ_categories", lang), "value": ALL_ECON}]
+    if country:
+        df = server_store.get(_STORE_KEY)
+        econ_values = sorted(
+            df[df["country_name"] == country]["econ"].dropna().unique()
+        )
+        options += [
+            {"label": translate_econ(e, lang), "value": e} for e in econ_values
+        ]
+    valid_values = {opt["value"] for opt in options}
+    value = current_value if current_value in valid_values else ALL_ECON
+    return options, value
 
 
 def default_outcome_indicator(econ_filter):
@@ -201,7 +206,6 @@ def default_outcome_indicator(econ_filter):
 
 def spending_figure(country, econ_filter, lang="en"):
     """Per-capita real spending by level, filtered by economic category."""
-    lang = lang or "en"
     if not country:
         return empty_plot(t("loading", lang))
 
@@ -294,7 +298,6 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     """Most/least funded level with averages, plus the detected relationship
     between the best-funded level's spending and the selected indicator (when
     that level is reported by the indicator)."""
-    lang = lang or "en"
     if not country:
         return t("loading", lang)
 
@@ -349,7 +352,6 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
     on its own: when the economic filter leaves no spending to plot, this chart
     still renders over its own years.
     """
-    lang = lang or "en"
     if not country:
         return empty_plot(t("loading", lang))
 
@@ -399,7 +401,6 @@ def outcome_figure(country, econ_filter, indicator, lang="en"):
 
 def layout(lang="en"):
     """The full section: divider, heading, filter bar, both charts, narrative."""
-    lang = lang or "en"
     outcome_options = [
         {"label": t(cfg["label_key"], lang), "value": key}
         for key, cfg in _OUTCOMES.items()

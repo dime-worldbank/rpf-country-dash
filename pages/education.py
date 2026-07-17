@@ -549,6 +549,7 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     State(esl.ECON_FILTER_ID, "value"),
 )
 def update_edu_func_sub_econ_options(country, lang, current_value):
+    lang = lang or "en"
     return esl.get_econ_category_options(country, lang, current_value)
 
 
@@ -567,6 +568,7 @@ def default_outcome_for_econ(econ_filter):
     Input("stored-language", "data"),
 )
 def render_edu_func_sub_econ(country, econ_filter, lang):
+    lang = lang or "en"
     return esl.spending_figure(country, econ_filter, lang)
 
 
@@ -578,6 +580,7 @@ def render_edu_func_sub_econ(country, econ_filter, lang):
     Input("stored-language", "data"),
 )
 def render_edu_func_sub_narrative(country, econ_filter, indicator, lang):
+    lang = lang or "en"
     return esl.spending_narrative(country, econ_filter, indicator, lang)
 
 
@@ -589,6 +592,7 @@ def render_edu_func_sub_narrative(country, econ_filter, indicator, lang):
     Input("stored-language", "data"),
 )
 def render_edu_level_outcome(country, econ_filter, indicator, lang):
+    lang = lang or "en"
     return esl.outcome_figure(country, econ_filter, indicator, lang)
 
 
