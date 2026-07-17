@@ -282,7 +282,7 @@ def build_relationship_sentence(
         ),
         comparison_name=t(
             "metric.level_outcome", lang,
-            level=t(f"level.{level}", lang).lower(),
+            level=t(f"level.{level}.long", lang),
             indicator=t(cfg["metric_key"], lang),
         ),
         reference_format=lambda x: format_currency(x, currency_code, lang=lang),
@@ -311,7 +311,7 @@ def spending_narrative(country, econ_filter, indicator, lang="en"):
     if econ_filter and econ_filter != ALL_ECON:
         scope = t(
             "narrative.econ_scope_one", lang,
-            econ=translate_econ(econ_filter, lang).lower(),
+            econ=translate_econ(econ_filter, lang, narrative=True),
         )
     else:
         scope = t("narrative.econ_scope_all", lang)
