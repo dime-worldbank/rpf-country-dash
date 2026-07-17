@@ -64,6 +64,7 @@ _COMPLETION_RATES = {
     "key": "completion_rates",
     "label_key": "source.completion_rate.label",
     "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.completion_rate.description",
 }
 
 _SCHOOL_BASIC_SERVICES = {

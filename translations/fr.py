@@ -45,9 +45,12 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
-    "chart.edu_func_sub_econ": "Dépenses publiques par habitant ajustées à l'inflation",
-    "chart.teacher_salary": "Compétitivité salariale des enseignants par niveau d'enseignement",
-    "chart.completion_rate": "Taux d'achèvement par niveau d'enseignement (%)",
+    # Titres d'axe. Volontairement courts : la légende nomme déjà les niveaux, et
+    # un titre d'axe Y plus long que la zone de tracé (~350 px) est coupé, pas
+    # réduit. « publiques » est porté par le titre de section juste au-dessus.
+    "chart.edu_func_sub_econ": "Dépenses par habitant ajustées à l'inflation",
+    "chart.teacher_salary": "Salaire relatif des enseignants (ratio)",
+    "chart.completion_rate": "Taux d'achèvement (%)",
     "chart.schools_electricity": "Écoles disposant de l'électricité (%)",
     "chart.schools_internet": "Écoles disposant d'un accès à Internet (%)",
     "chart.health_spending_over_time": "Comment les dépenses publiques en santé ont-elles évolué au fil du temps ?",
@@ -139,7 +142,7 @@ TRANSLATIONS = {
     "label.economic_category": "Catégorie économique",
     "label.outcome_indicator": "Indicateur de résultat",
     "outcome.completion_rate": "Taux d'achèvement",
-    "outcome.teacher_salary": "Compétitivité salariale des enseignants",
+    "outcome.teacher_salary": "Salaire des enseignants vs professions comparables",
     "outcome.electricity": "Écoles avec électricité",
     "outcome.internet": "Écoles avec Internet",
     "dropdown.all_econ_categories": "Toutes les catégories économiques",
@@ -295,7 +298,7 @@ TRANSLATIONS = {
     "metric.level_spending": "les dépenses pour {level}",
     "metric.level_outcome": "{indicator} pour {level}",
     "metric.completion_rate": "le taux d'achèvement",
-    "metric.teacher_salary": "la compétitivité salariale des enseignants",
+    "metric.teacher_salary": "le salaire des enseignants par rapport aux professions comparables",
     "metric.electricity": "l'accès à l'électricité",
     "metric.internet": "l'accès à Internet",
 
@@ -648,11 +651,15 @@ TRANSLATIONS = {
     "source.pefa.label": "Évaluation PEFA",
     "source.edu_private.label": "Dépenses privées d'éducation",
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
-    "source.teacher_salary.label": "Compétitivité salariale des enseignants",
-    "source.teacher_salary.description": "Le rapport entre le salaire statutaire d'un enseignant et la rémunération des travailleurs ayant des qualifications comparables. Une valeur de 1,0 signifie que les enseignants sont rémunérés au même niveau que des professions similaires ; en dessous de 1,0, moins ; au-dessus, davantage. Indique l'attractivité et l'équité de la rémunération de l'enseignement.",
-    "source.completion_rate.label": "Taux d'achèvement scolaire",
+    # Étiquettes et descriptions de la fenêtre « sources ». Les étiquettes de
+    # l'interface sont abrégées pour tenir ; le nom officiel complet de
+    # l'indicateur ODD 4 de l'UNESCO et son code figurent ici, où la place existe.
+    "source.teacher_salary.label": "Salaire des enseignants par rapport aux professions comparables",
+    "source.teacher_salary.description": "Indicateur ODD 4.c.5 de l'UNESCO — « Salaire moyen des enseignants par rapport aux autres professions nécessitant un niveau de qualification comparable ». Le rapport entre le salaire statutaire d'un enseignant et la rémunération des travailleurs ayant des qualifications comparables. Une valeur de 1,0 signifie que les enseignants sont rémunérés au même niveau que des professions similaires ; en dessous de 1,0, moins ; au-dessus, davantage. Indique l'attractivité et l'équité de la rémunération de l'enseignement.",
+    "source.completion_rate.label": "Taux d'achèvement",
+    "source.completion_rate.description": "Indicateur ODD 4.1.2 de l'UNESCO — « Taux d'achèvement (enseignement primaire, premier et deuxième cycles de l'enseignement secondaire) ». Le pourcentage d'une cohorte qui achève un niveau d'enseignement donné.",
     "source.school_services.label": "Services de base des écoles",
-    "source.school_services.description": "Couvre deux indicateurs de prestation de services, chacun rapporté pour les écoles primaires et secondaires : le pourcentage d'écoles disposant de l'électricité et le pourcentage d'écoles disposant d'un accès à Internet à des fins pédagogiques.",
+    "source.school_services.description": "Indicateur ODD 4.a.1 de l'UNESCO — « Proportion d'établissements scolaires offrant des services essentiels, par type de service ». Couvre deux indicateurs de prestation de services, chacun rapporté pour les écoles primaires et secondaires : le pourcentage d'écoles disposant de l'électricité et le pourcentage d'écoles disposant d'un accès à Internet à des fins pédagogiques.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "BOOST de la Banque mondiale",

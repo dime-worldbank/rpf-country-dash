@@ -45,9 +45,12 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "How has per capita expenditure changed over time?",
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
-    "chart.edu_func_sub_econ": "Inflation-adjusted per capita public expenditure",
-    "chart.teacher_salary": "Teacher salary competitiveness by education level",
-    "chart.completion_rate": "Completion rate by education level (%)",
+    # Axis titles. Kept terse: the legend already names the levels, and a
+    # y-axis title longer than the plot area (~350px) is clipped, not shrunk.
+    # "public" is carried by the section heading directly above.
+    "chart.edu_func_sub_econ": "Inflation-adjusted per capita expenditure",
+    "chart.teacher_salary": "Relative teacher salary (ratio)",
+    "chart.completion_rate": "Completion rate (%)",
     "chart.schools_electricity": "Schools with electricity (%)",
     "chart.schools_internet": "Schools with internet access (%)",
     "chart.health_spending_over_time": "How has govt spending on health changed over time?",
@@ -136,7 +139,7 @@ TRANSLATIONS = {
     "label.economic_category": "Economic category",
     "label.outcome_indicator": "Outcome indicator",
     "outcome.completion_rate": "Completion rate",
-    "outcome.teacher_salary": "Teacher salary competitiveness",
+    "outcome.teacher_salary": "Teacher salary vs. comparable professions",
     "outcome.electricity": "Schools with electricity",
     "outcome.internet": "Schools with internet",
     "dropdown.all_econ_categories": "All economic categories",
@@ -249,7 +252,7 @@ TRANSLATIONS = {
     "metric.level_spending": "{level} spending",
     "metric.level_outcome": "{level} {indicator}",
     "metric.completion_rate": "completion rate",
-    "metric.teacher_salary": "teacher salary competitiveness",
+    "metric.teacher_salary": "teacher salary relative to comparable professions",
     "metric.electricity": "electricity access",
     "metric.internet": "internet access",
     # Plain-string labels used mid-sentence by get_correlation_text on the
@@ -564,11 +567,15 @@ TRANSLATIONS = {
     "source.pefa.label": "PEFA Assessment",
     "source.edu_private.label": "Private Education Expenditure",
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
-    "source.teacher_salary.label": "Teacher Salary Competitiveness",
-    "source.teacher_salary.description": "The ratio of a teacher's statutory salary to the earnings of workers with comparable qualifications. A value of 1.0 means teachers are paid on par with similar professions; below 1.0 means less, above 1.0 more. Indicates how attractive and fairly compensated teaching is.",
-    "source.completion_rate.label": "Education Completion Rate",
+    # Source-modal labels and descriptions. The UI labels above are shortened to
+    # fit; the full official UNESCO SDG 4 indicator name and code live here,
+    # where there is room for them.
+    "source.teacher_salary.label": "Teacher Salary Relative to Comparable Professions",
+    "source.teacher_salary.description": "UNESCO SDG indicator 4.c.5 — “Average teacher salary relative to other professions requiring a comparable level of qualification”. The ratio of a teacher's statutory salary to the earnings of workers with comparable qualifications. A value of 1.0 means teachers are paid on par with similar professions; below 1.0 means less, above 1.0 more. Indicates how attractive and fairly compensated teaching is.",
+    "source.completion_rate.label": "Completion Rate",
+    "source.completion_rate.description": "UNESCO SDG indicator 4.1.2 — “Completion rate (primary education, lower secondary education, upper secondary education)”. The percentage of a cohort that completes a given level of education.",
     "source.school_services.label": "School Basic Services",
-    "source.school_services.description": "Covers two service-delivery indicators, each reported for primary and secondary schools: the percentage of schools with electricity, and the percentage of schools with internet access for pedagogical purposes.",
+    "source.school_services.description": "UNESCO SDG indicator 4.a.1 — “Proportion of schools offering basic services, by type of service”. Covers two service-delivery indicators, each reported for primary and secondary schools: the percentage of schools with electricity, and the percentage of schools with internet access for pedagogical purposes.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "World Bank BOOST",
