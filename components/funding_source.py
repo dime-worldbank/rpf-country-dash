@@ -30,7 +30,7 @@ def _prepare_funding_df(country):
     """
     df = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(df, country)
-    if df.empty or "foreign_funded_budget" not in df.columns:
+    if df.empty or "budget" not in df.columns or "foreign_funded_budget" not in df.columns:
         return df.iloc[0:0]
 
     df = df.copy()
