@@ -9,7 +9,7 @@ TREND_THRESHOLDS = 0.4
 
 WEO_SOURCE = "WEO (World Economic Outlook), IMF — General Government"
 GFS_SOO_SOURCE = "GFS_SOO (Statement of Operations), IMF — Budgetary Central Government"
-IMF_GOVERNMENT_BUDGET_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
+IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES = [WEO_SOURCE, GFS_SOO_SOURCE]
 
 # Chart ids used in the education page. These are also keys in CHART_METADATA, which is used to populate the source modal for each chart.
 EDU_SPENDING_CHART_ID = "education-func-sub-econ"
@@ -21,7 +21,6 @@ VIEW_COMPOSITE = "composite"
 VIEW_OFFICIAL = "official"
 VIEW_GFS = "gfs"
 VIEW_WEO = "weo"
-DEFAULT_FISCAL_VIEW = VIEW_COMPOSITE
 
 # Countries where the composite fiscal-balance view is meaningful. Composite
 # stitches GFS (budgetary central govt) and WEO (general govt), which are only

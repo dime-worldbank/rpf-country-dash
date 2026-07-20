@@ -34,7 +34,7 @@ from translations import t, strip_article, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
-    SHOW_FOOTER, FOOTER_ACKNOWLEDGMENT_TEXT,
+    SHOW_FOOTER,
 )
 
 app = Dash(
@@ -139,7 +139,11 @@ app_footer = html.Div(
             href="https://www.worldbank.org/",
             target="_blank",
         ),
-        html.Span(FOOTER_ACKNOWLEDGMENT_TEXT, className="footer-acknowledgment"),
+        html.Span(
+            t("footer.supported_by", DEFAULT_LANGUAGE),
+            id="footer-acknowledgment",
+            className="footer-acknowledgment",
+        ),
         html.A(
             html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
             href="https://www.worldbank.org/en/programs/financial-management-umbrella-program",
@@ -221,6 +225,14 @@ def update_nav_links(lang):
         dbc.NavLink(t("nav.health", lang), href=get_relative_path("health"), active="exact"),
         dbc.NavLink(t("nav.about", lang), href=get_relative_path("about"), active="exact"),
     ]
+
+
+@app.callback(
+    Output("footer-acknowledgment", "children"),
+    Input("stored-language", "data"),
+)
+def update_footer_acknowledgment(lang):
+    return t("footer.supported_by", lang or DEFAULT_LANGUAGE)
 
 
 @app.callback(
@@ -342,7 +354,7 @@ def display_data(data, search, lang, current_country):
 
         # URL changed or language changed but we already have a country — keep it
         return get_country_select_options(countries), current_country
-    return ["No data available"], ""
+    return [t("error.no_data_available", lang)], ""
 
 
 @app.callback(

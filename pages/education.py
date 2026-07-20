@@ -32,7 +32,11 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
-from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
+from trend_narrative import InsightExtractor
+from trend_narrative_i18n import (
+    get_relationship_narrative_i18n,
+    get_segment_narrative_i18n,
+)
 
 db = QueryService.get_instance()
 
@@ -230,19 +234,7 @@ def render_education_content(tab, lang):
                 dbc.Row(
                     [
                         dbc.Col(width=1),
-                        html.Div(
-                            id="year_slider_edu_container",
-                            children=[
-                                dcc.Slider(
-                                    id="year-slider-edu",
-                                    min=0,
-                                    max=0,
-                                    value=None,
-                                    step=None,
-                                    included=False,
-                                ),
-                            ],
-                        ),
+                        slider("year-slider-edu", "year_slider_edu_container"),
                     ]
                 ),
                 dbc.Row(style={"height": "20px"}),
@@ -440,7 +432,11 @@ def education_narrative(data, country, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.real_expenditure", lang), lang=lang)
+    trend_narrative = get_segment_narrative_i18n(
+        extractor=extractor,
+        metric=t("metric.real_expenditure", lang),
+        lang=lang,
+    )
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
@@ -742,7 +738,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
 
     spending_fmt = lambda x: format_currency(x, currency_code, lang=lang)
 
-    attendance_result = get_relationship_narrative(
+    attendance_result = get_relationship_narrative_i18n(
         reference_years=exp_df["year"].values,
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=att_df["year"].values,
@@ -754,7 +750,7 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         lang=lang,
     )
 
-    poverty_result = get_relationship_narrative(
+    poverty_result = get_relationship_narrative_i18n(
         reference_years=exp_df["year"].values,
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=pov_df_clean["year"].values,
@@ -902,9 +898,10 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func, lang)
     Output("year-slider-edu", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_education_year_range(data, country):
-    return update_year_slider(data, country, 'Education')
+def update_education_year_range(data, country, lang):
+    return update_year_slider(data, country, 'Education', lang=lang or "en")
 
 
 @callback(

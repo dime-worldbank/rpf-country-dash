@@ -22,7 +22,8 @@ from utils import (
 )
 
 from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
-from trend_narrative import get_segment_narrative, InsightExtractor
+from trend_narrative import InsightExtractor
+from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
 from constants import (
@@ -37,10 +38,9 @@ from constants import (
     VIEW_OFFICIAL,
     VIEW_GFS,
     VIEW_WEO,
-    DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
-from translations import t, genitive
+from translations import t, genitive, localize_currency_name
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -69,7 +69,7 @@ def layout():
             ),
             dcc.Store(id="stored-data-pefa"),
             dcc.Store(id="stored-data-revenue-budget"),
-            dcc.Store(id="stored-data-government-budget"),
+            dcc.Store(id="stored-data-government-revenue-expenditure"),
         ]
     )
 
@@ -108,13 +108,13 @@ def fetch_revenue_budget_data_once(revenue_data, shared_data):
     return dash.no_update
 
 @callback(
-    Output("stored-data-government-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Output("stored-data-government-revenue-expenditure", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("stored-data", "data"),
 )
-def fetch_government_budget_data_once(gov_data, shared_data):
+def fetch_government_revenue_expenditure_data_once(gov_data, shared_data):
     if gov_data is None and shared_data:
-        server_store.get("government_budget")
+        server_store.get("government_revenue_expenditure")
         return {"ready": True}
     return dash.no_update
 
@@ -275,37 +275,43 @@ def render_overview_content(tab, lang):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        dbc.RadioItems(
-                            id="revenue-expenditure-view",
-                            options=[
-                                {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
-                                {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
-                                {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-                                {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                        html.Div(
+                            [
+                                dbc.Label(
+                                    t("deficit.view.label", lang),
+                                    html_for="revenue-expenditure-view",
+                                    className="mb-0",
+                                ),
+                                dbc.RadioItems(
+                                    id="revenue-expenditure-view",
+                                    options=[
+                                        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                                    ],
+                                    value=VIEW_COMPOSITE,
+                                    inline=True,
+                                ),
                             ],
-                            value=DEFAULT_FISCAL_VIEW,
-                            inline=True,
-                            style={"padding": "10px"},
-                            labelStyle={"margin-right": "20px"},
+                            className="d-flex align-items-center flex-wrap gap-2 pb-2",
                         )
                     )
                 ),
                 dbc.Row(
-                    dbc.Col(
-                        html.P(
-                            id="revenue-expenditure-narrative",
-                            children=t("loading", lang),
-                        )
-                    )
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        chart_container("revenue-expenditure-combined"),
-                        xs={"size": 12, "offset": 0},
-                        sm={"size": 12, "offset": 0},
-                        md={"size": 12, "offset": 0},
-                        lg={"size": 12, "offset": 0},
-                    )
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="revenue-expenditure-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=3,
+                        ),
+                        dbc.Col(
+                            chart_container("revenue-expenditure-combined"),
+                            xs=12, lg=9,
+                        ),
+                    ]
                 ),
                 dbc.Row(
                     dbc.Col(
@@ -557,7 +563,11 @@ def overview_narrative(df, lang="en"):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric=t("metric.total_real_expenditure", lang), lang=lang)
+    trend_narrative = get_segment_narrative_i18n(
+        extractor=extractor,
+        metric=t("metric.total_real_expenditure", lang),
+        lang=lang,
+    )
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
@@ -692,14 +702,14 @@ def _format_cat_list(df, kind, format_num, lang="en"):
 
 
 def format_percentage(num, lang="en"):
-    """Format ``num`` as ``"12.3%"`` (EN) or ``"12,3%"`` (FR).
+    """Format ``num`` as ``"12.3%"`` (EN) or comma decimals for FR/PT.
 
     Output is concatenated directly into narratives via _format_cat_list
     (it doesn't flow through t(), so the _FrenchFormatter in translations/
     doesn't see it). Handle the decimal swap here.
     """
     result = f"{num:.1f}%"
-    if lang == "fr":
+    if lang in {"fr", "pt"}:
         result = result.replace(".", ",")
     return result
 
@@ -707,7 +717,7 @@ def format_percentage(num, lang="en"):
 def format_std(num, lang="en"):
     """Format a standard-deviation value with a localized label and decimal."""
     num_str = f"{num:.1f}"
-    if lang == "fr":
+    if lang in {"fr", "pt"}:
         num_str = num_str.replace(".", ",")
     return f"{t('label.std_abbrev', lang)} = {num_str}"
 
@@ -1034,10 +1044,13 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
     all_countries = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(all_countries, country)
 
-    # Extract currency_name once at callback level
     basic_info = server_store.get("basic_country_info")[country]
-    currency_name = basic_info['currency_name']
     currency_code = basic_info['currency_code']
+    currency_name = localize_currency_name(
+        basic_info.get("currency_name"),
+        lang=lang,
+        currency_code=currency_code,
+    )
     return total_figure(df, currency_name, currency_code, lang=lang), per_capita_figure(df, currency_name, currency_code, lang=lang), overview_narrative(df, lang=lang)
 
 
@@ -1200,8 +1213,10 @@ def economic_narrative(df, lang="en"):
     Output("year-slider", "tooltip"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_year_range(data, country):
+def update_year_range(data, country, lang):
+    lang = lang or "en"
     if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
     try:
@@ -1209,7 +1224,7 @@ def update_year_range(data, country):
         expenditure_years = country_info[country].get("expenditure_years", [])
         poverty_years = country_info[country].get("poverty_years", [])
 
-        slider_configs = get_slider_config(expenditure_years, poverty_years)
+        slider_configs = get_slider_config(expenditure_years, poverty_years, lang=lang)
         return slider_configs
     except (KeyError, TypeError, ValueError):
         return {"display": "block"}, {}, 0, 0, 0, {}
@@ -1426,7 +1441,7 @@ def render_budget_func_changes(data, country, exp_type, lang):
 def _get_revenue_budget_context(country):
     """Load country-scoped fiscal-balance inputs from server store."""
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_revenue_expenditure"), country)
     gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
     basic_info = server_store.get("basic_country_info")[country]
     return national_df, gfs_df, weo_df, basic_info
@@ -1457,15 +1472,24 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     if official_available:
         available.add(VIEW_OFFICIAL)
 
-    options = [
-        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE, "disabled": not composite_available},
-        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
-        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
-    ]
+    options = []
+    if composite_available:
+        options.append({"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE})
+    if official_available:
+        options.append({"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL})
+    options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
+    options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
+
+    # Default to the richest available view: composite, else official, else WEO
+    # (WEO has broader year coverage than GFS).
+    if composite_available:
+        default_view = VIEW_COMPOSITE
+    elif official_available:
+        default_view = VIEW_OFFICIAL
+    else:
+        default_view = VIEW_WEO
 
     # Reset on country switch; otherwise keep the current view if still valid.
-    default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
     if ctx.triggered_id == "country-select" or current_view not in available:
         new_view = default_view
     else:
@@ -1477,7 +1501,7 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
 @callback(
     Output("revenue-expenditure-combined", "figure"),
     Input("stored-data-revenue-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),
@@ -1491,8 +1515,12 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
     return fiscal_balance.combined_figure(
         national_df, gfs_df, weo_df,
         currency_code=basic_info["currency_code"],
-        currency_name=basic_info.get("currency_name", basic_info["currency_code"]),
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        currency_name=localize_currency_name(
+            basic_info.get("currency_name"),
+            lang=lang or "en",
+            currency_code=basic_info["currency_code"],
+        ),
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
 
@@ -1500,7 +1528,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
 @callback(
     Output("revenue-expenditure-narrative", "children"),
     Input("stored-data-revenue-budget", "data"),
-    Input("stored-data-government-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
     Input("revenue-expenditure-view", "value"),
@@ -1513,6 +1541,6 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.narrative(
         national_df, gfs_df, weo_df, basic_info["currency_code"],
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
