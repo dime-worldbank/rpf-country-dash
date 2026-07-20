@@ -255,13 +255,28 @@ def _build_source_section(sections, country_name=None, lang="en"):
     first = sections[0]
     children = [html.H6(first.get("label", ""), className="source-section-heading")]
 
-    # Per-metric description (right under the heading)
+    # Metric-level context (shared across the metric's sources): coverage, then
+    # methodology. Methodology sits last of the shared rows so it stays adjacent
+    # to the source list it often names (e.g. subnational poverty ← SPID + GSAP).
+    coverage = first.get("coverage")
+    if coverage:
+        label = (
+            t("detail.coverage_for", lang, country=t(f"country.{country_name}", lang))
+            if country_name
+            else t("detail.coverage", lang)
+        )
+        children.append(_make_detail_row(label, html.Span(coverage)))
+
     desc = first.get("description")
     if desc:
         children.append(_make_detail_row(t("detail.methodology", lang), html.Span(desc)))
 
-    # More-info link + source name, repeated per contributing source
+    # Source name + its More-info link, repeated per contributing source
     for section in sections:
+        source_name = section.get("source_name")
+        if source_name:
+            children.append(_make_detail_row(t("detail.source", lang), html.Span(source_name)))
+
         source_url = section.get("source_url")
         if source_url:
             link = html.A(
@@ -272,20 +287,6 @@ def _build_source_section(sections, country_name=None, lang="en"):
                 className="source-info-link",
             )
             children.append(_make_detail_row(t("detail.more_info", lang), link))
-
-        source_name = section.get("source_name")
-        if source_name:
-            children.append(_make_detail_row(t("detail.source", lang), html.Span(source_name)))
-
-    # Coverage years (shared across the metric's sources)
-    coverage = first.get("coverage")
-    if coverage:
-        label = (
-            t("detail.coverage_for", lang, country=t(f"country.{country_name}", lang))
-            if country_name
-            else t("detail.coverage", lang)
-        )
-        children.append(_make_detail_row(label, html.Span(coverage)))
 
     return html.Div(children, className="rpf-source-section")
 
