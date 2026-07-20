@@ -41,6 +41,7 @@ TRANSLATIONS = {
     "heading.central_vs_geo_education": "Despesa em educação centralizada vs. alocada geograficamente",
     "heading.central_vs_geo_health": "Despesa em saúde centralizada vs. alocada geograficamente",
     "heading.public_spending_education_regions": "Despesa pública vs. resultados educacionais entre regiões",
+    "heading.edu_func_sub_econ": "Despesa pública por nível de ensino",
     "heading.public_spending_health_regions": "Despesa pública vs. resultados de saúde entre regiões",
 
     # --- Chart titles ---
@@ -49,6 +50,14 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Como a despesa per capita mudou ao longo do tempo?",
     "chart.sector_prioritization": "Como a priorização setorial mudou ao longo do tempo?",
     "chart.edu_spending_over_time": "Como a despesa pública em educação mudou ao longo do tempo?",
+    # Títulos de eixo. Propositalmente curtos: a legenda já nomeia os níveis, e
+    # um título de eixo Y mais longo que a área do gráfico (~350 px) é cortado,
+    # não reduzido. "pública" já vem do título da seção logo acima.
+    "chart.edu_func_sub_econ": "Despesa per capita ajustada pela inflação",
+    "chart.teacher_salary": "Salário relativo dos professores (razão)",
+    "chart.completion_rate": "Taxa de conclusão (%)",
+    "chart.schools_electricity": "Escolas com energia elétrica (%)",
+    "chart.schools_internet": "Escolas com acesso à internet (%)",
     "chart.health_spending_over_time": "Como a despesa pública em saúde mudou ao longo do tempo?",
     "chart.pct_govt_vs_household": "Que percentual foi gasto pelo governo vs. pelas famílias?",
     "chart.education_outcome": "Como os resultados educacionais mudaram?",
@@ -108,6 +117,20 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Taxa de pobreza (%)",
     "axis.quality_budget_institutions": "Qualidade das instituições orçamentárias",
     "axis.pct_total_func_expenditure": "Percentual da despesa total {func_gen}",
+
+    # --- Níveis de ensino ---
+    "level.pre_primary": "Pré-primário",
+    "level.primary": "Primário",
+    "level.primary_secondary": "Primário e secundário",
+    "level.post_secondary": "Pós-secundário não terciário",
+    # Formas longas usadas no meio das frases ("a educação secundária").
+    "level.primary.long": "a educação primária",
+    "level.primary_secondary.long": "a educação primária e secundária",
+    "level.secondary.long": "a educação secundária",
+    "level.post_secondary.long": "a educação pós-secundária não terciária",
+    "level.tertiary.long": "a educação terciária",
+    "level.secondary": "Secundário",
+    "level.tertiary": "Terciário",
     "axis.yoy_growth_rate": "Taxa de crescimento anual (%)",
     "radio.per_capita_expenditure": "Despesa per capita {sector_prep}",
     "radio.total_expenditure": "Despesa total {sector_prep}",
@@ -115,6 +138,15 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Despesa total",
     "radio.budget": "Orçamento",
     "radio.inflation_adjusted_budget": "Orçamento ajustado pela inflação",
+
+    # --- Rótulos de filtros / listas suspensas ---
+    "label.economic_category": "Categoria econômica",
+    "label.outcome_indicator": "Indicador de resultado",
+    "outcome.completion_rate": "Taxa de conclusão",
+    "outcome.teacher_salary": "Salário dos professores vs. profissões comparáveis",
+    "outcome.electricity": "Escolas com energia elétrica",
+    "outcome.internet": "Escolas com internet",
+    "dropdown.all_econ_categories": "Todas as categorias econômicas",
 
     # --- Source annotations / footer / disclaimer ---
     "source.boost_cpi": "Fonte: BOOST e IPC: Banco Mundial",
@@ -213,6 +245,15 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": {"name": "a despesa em educação per capita", "plural": False, "feminine": True, "article": "a"},
     "metric.school_attendance": {"name": "a taxa de frequência escolar (6 a 17 anos)", "plural": False, "feminine": True, "article": "a"},
     "metric.learning_poverty_rate": {"name": "a taxa de pobreza de aprendizagem", "plural": False, "feminine": True, "article": "a"},
+
+    # Métricas dinâmicas do narrativo da seção de despesa por nível de ensino.
+    # Incluem o artigo (get_segment_narrative usa o nome como está em PT).
+    "metric.level_spending": {"name": "a despesa com {level}", "plural": False, "feminine": True, "article": "a"},
+    "metric.completion_rate": {"name": "a taxa de conclusão", "plural": False, "feminine": True, "article": "a"},
+    "metric.teacher_salary": {"name": "o salário dos professores em relação a profissões comparáveis", "plural": False, "feminine": False, "article": "o"},
+    "metric.electricity": {"name": "o acesso à energia elétrica", "plural": False, "feminine": False, "article": "o"},
+    "metric.internet": {"name": "o acesso à internet", "plural": False, "feminine": False, "article": "o"},
+
     "label.per_capita_spending_lower": "a despesa per capita",
     "label.poverty_rates_lower": "as taxas de pobreza",
 
@@ -228,6 +269,10 @@ TRANSLATIONS = {
     "narrative.decentralization_unknown": "O grau de descentralização da despesa {sector_gen} é desconhecido devido à falta de dados de despesa pública subnacional.",
     "narrative.govt_share_trend": "{country_loc}, a parcela do governo na despesa {sector_prep} {trend} de {earliest_pct} para {latest_pct} entre {earliest_year} e {latest_year}. ",
     "narrative.household_ratio": "Para cada unidade de despesa {sector_prep} pelo governo, as famílias gastaram {ratio} unidades em {year}. ",
+    "narrative.func_sub_most_least": "{scope}, entre {start} e {end}, {most} recebeu a maior despesa per capita ajustada pela inflação, com média de {most_val} por ano, enquanto {least} recebeu a menor, com {least_val}.",
+    "narrative.func_sub_single": "{scope}, entre {start} e {end}, {level} foi o único nível com despesa reportada, com média de {level_val} per capita por ano.",
+    "narrative.econ_scope_all": "Considerando todas as categorias econômicas",
+    "narrative.econ_scope_one": "Para {econ}",
     "narrative.education_outcome_general": "Em geral, embora resultados educacionais relacionados ao acesso possam ser conceitualmente associados à disponibilidade de financiamento público, resultados ligados à qualidade têm uma cadeia causal mais complexa.",
     "narrative.education_outcome_measure": "Para verificar se esse é o caso em {country}, podemos usar a despesa pública per capita ajustada pela inflação como medida de alocação de recursos financeiros públicos por pessoa para educação, a taxa de frequência escolar de crianças de 6 a 17 anos como aproximação do acesso à educação e a taxa de pobreza de aprendizagem como indicador da qualidade da educação.",
     "narrative.health_outcome_measure": "Usamos a despesa pública per capita ajustada pela inflação como medida de alocação de recursos financeiros públicos por pessoa para saúde e o índice de cobertura universal de saúde como indicador de resultado de saúde.",
@@ -460,11 +505,21 @@ TRANSLATIONS = {
     "source.pefa.label": "Avaliação PEFA",
     "source.edu_private.label": "Despesa privada em educação",
     "source.health_private.label": "Despesa em saúde paga diretamente pelas famílias",
+    # Rótulos e descrições da janela de fontes. Os rótulos da interface acima são
+    # abreviados para caber; o nome oficial completo do indicador ODS 4 da UNESCO
+    # e seu código ficam aqui, onde há espaço.
+    "source.teacher_salary.label": "Salário dos professores em relação a profissões comparáveis",
+    "source.teacher_salary.description": "Indicador ODS 4.c.5 da UNESCO — “Salário médio dos professores em relação a outras profissões que exigem nível de qualificação comparável”. É a razão entre o salário estatutário do professor e a remuneração de trabalhadores com qualificação comparável. Um valor de 1,0 significa que os professores recebem o mesmo que profissões similares; abaixo de 1,0, menos; acima, mais. Indica o quanto a docência é atraente e remunerada de forma justa.",
+    "source.completion_rate.label": "Taxa de conclusão",
+    "source.completion_rate.description": "Indicador ODS 4.1.2 da UNESCO — “Taxa de conclusão (ensino primário, ensino secundário inferior, ensino secundário superior)”. É o percentual de uma coorte que conclui determinado nível de ensino.",
+    "source.school_services.label": "Serviços básicos das escolas",
+    "source.school_services.description": "Indicador ODS 4.a.1 da UNESCO — “Proporção de escolas que oferecem serviços básicos, por tipo de serviço”. Abrange dois indicadores de prestação de serviços, cada um reportado para escolas primárias e secundárias: o percentual de escolas com energia elétrica e o percentual de escolas com acesso à internet para fins pedagógicos.",
     "source_name.world_bank_boost": "BOOST do Banco Mundial",
     "source_name.world_bank_pip": "Plataforma de Pobreza e Desigualdade do Banco Mundial",
     "source_name.world_bank": "Banco Mundial",
     "source_name.world_bank_icp": "ICP do Banco Mundial",
     "source_name.global_data_lab": "Global Data Lab",
+    "source_name.unesco_uis": "Instituto de Estatística da UNESCO (UIS)",
     "source_name.who_gho": "OMS (GHO)",
     "source_name.who_health_db": "Base de Dados Global de Despesa em Saúde da OMS",
     "source_name.pefa_secretariat": "Secretariado PEFA",
@@ -482,6 +537,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Usa valores reportados pelo FMI para Receita (GGR) e Despesa (GGX) no nível do Governo Geral.",
     "source.togo_dgb.label": "Relatório oficial do Togo",
     "source.togo_dgb.description": "Receita e despesa realizadas a partir do Relatório anual de Execução Orçamentária. Valores não monetários equivalentes são subtraídos de receita e despesa para comparabilidade com os dados do FMI.",
+    "chart.outcome_secondary.info": "Para se alinhar ao nível “Secundário” combinado mostrado no lado da despesa, os valores do secundário apresentados aqui são a média dos números do secundário inferior e do secundário superior reportados pelo UIS da UNESCO (ignorando qualquer subnível ausente).",
     "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
 
     # --- Déficit / fiscal balance ---
