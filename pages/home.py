@@ -1474,8 +1474,8 @@ def render_budget_func_changes(data, country, exp_type, lang):
 def _get_revenue_budget_context(country):
     """Load country-scoped fiscal-balance inputs from server store."""
     national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_revenue_expenditure"), country)
-    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
+    gfs_df = filter_country_sort_year(server_store.get("government_revenue_expenditure_gfs"), country)
+    weo_df = filter_country_sort_year(server_store.get("government_revenue_expenditure_weo"), country)
     basic_info = server_store.get("basic_country_info")[country]
     return national_df, gfs_df, weo_df, basic_info
 

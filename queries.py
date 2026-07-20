@@ -6,7 +6,6 @@ from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
 
-from constants import IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES
 from query_cache import PersistentQueryCache
 
 
@@ -254,16 +253,12 @@ class QueryService:
                 year,
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,
-                tax_expenditure AS tax_expenditure,
-                data_source AS source
+                tax_expenditure AS tax_expenditure
             FROM prd_mega.{INDICATOR_SCHEMA}.togo_revenue_budget
         """
         return self.fetch_data(query)
 
-    def get_government_revenue_expenditure_data(self):
-        source_filter = ",\n                ".join(
-            f"'{src}'" for src in IMF_GOVERNMENT_REVENUE_EXPENDITURE_SOURCES
-        )
+    def get_government_revenue_expenditure_weo_data(self):
         query = f"""
             SELECT
                 country_name,
@@ -271,11 +266,20 @@ class QueryService:
                 year,
                 revenue_current_lcu AS revenue,
                 expenditure_current_lcu AS expenditure,
-                data_source AS source,
                 is_forecast
-            FROM prd_mega.{INDICATOR_SCHEMA}.government_revenue_expenditure
-            WHERE data_source IN (
-                {source_filter}
-            )
+            FROM prd_mega.{INDICATOR_SCHEMA}.government_revenue_expenditure_weo
+        """
+        return self.fetch_data(query)
+
+    def get_government_revenue_expenditure_gfs_data(self):
+        # GFS has no forecast concept — no is_forecast column.
+        query = f"""
+            SELECT
+                country_name,
+                country_code,
+                year,
+                revenue_current_lcu AS revenue,
+                expenditure_current_lcu AS expenditure
+            FROM prd_mega.{INDICATOR_SCHEMA}.government_revenue_expenditure_gfs
         """
         return self.fetch_data(query)
