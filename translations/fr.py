@@ -475,8 +475,8 @@ TRANSLATIONS = {
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Affichage des données de {year}",
-    "annotation.poverty_threshold": "Taux de pauvreté (seuil de {threshold} pour un pays à {level_name}).",
-    "annotation.poverty_threshold_default": "Taux de pauvreté (seuil de 3,00 $).",
+    "annotation.poverty_threshold": "Taux de pauvreté : seuil de {threshold} pour un pays à {level_name}",
+    "annotation.poverty_threshold_default": "Taux de pauvreté : seuil de 3,00 $",
 
     # --- Operational vs Capital narrative ---
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f} % des dépenses {func_gen} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",

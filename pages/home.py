@@ -923,7 +923,7 @@ INCOME_LEVEL_THRESHOLD = {
     "HIC": ("$8.30", "income.high"),
 }
 
-def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en"):
+def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en", selected_year=None):
     if df[df.region_name != "National"].empty:
         return empty_plot(t("error.subnat_poverty_unavailable", lang))
     # TODO align accents across all datasets
@@ -971,10 +971,17 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
     fig.add_trace(no_data_trace)
 
+    # Parallel footnotes. The carried-forward data year is shown only when the
+    # poverty survey year differs from the selected (expenditure) year — i.e. the
+    # map is showing an earlier survey. The threshold note always shows.
+    notes = []
+    if selected_year is None or year != selected_year:
+        notes.append(t("annotation.displaying_data_from", lang, year=year))
+    notes.append(_get_poverty_source_text(income_level, lang))
     fig.update_layout(
         title=t("chart.poverty_map", lang),
         plot_bgcolor="white",
-        margin=dict(l=40, r=40, t=60, b=80),
+        margin=dict(l=40, r=40, t=60, b=95),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -985,12 +992,13 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 xref="paper",
                 yref="paper",
                 x=0,
-                y=-0.13,
+                y=-0.13 - 0.06 * i,
                 xanchor="left",
-                text=t("annotation.displaying_data_from", lang, year=year) + " " + _get_poverty_source_text(income_level, lang),
+                text=note,
                 showarrow=False,
                 font=dict(size=10),
-            ),
+            )
+            for i, note in enumerate(notes)
         ],
     )
     fig.data[0].hovertemplate = (
@@ -1360,6 +1368,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         income_level,
         theme=theme,
         lang=lang,
+        selected_year=year,
     )
 
 
