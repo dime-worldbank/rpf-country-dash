@@ -391,8 +391,8 @@ TRANSLATIONS = {
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Displaying data from {year}",
-    "annotation.poverty_threshold": "Poverty rate ({threshold} threshold for {level_name} country).",
-    "annotation.poverty_threshold_default": "Poverty rate ($3.00 threshold).",
+    "annotation.poverty_threshold": "Poverty rate: {threshold} threshold for {level_name} country",
+    "annotation.poverty_threshold_default": "Poverty rate: $3.00 threshold",
 
     # --- Operational vs Capital narrative ---
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f}% of {func} spending was allocated to employee compensation and {other_pct:.0f}% to non-wage recurrent expenditures in {year}.{emp_narrative}",
