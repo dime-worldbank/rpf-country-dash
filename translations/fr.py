@@ -40,6 +40,7 @@ TRANSLATIONS = {
     "heading.public_spending_health_regions": "Dépenses publiques vs. résultats sanitaires par région",
 
     # --- Chart titles ---
+    "chart.fiscal_balance_over_time": "Comment le solde budgétaire a-t-il évolué au fil du temps ?",
     "chart.total_expenditure_over_time": "Comment les dépenses totales ont-elles évolué au fil du temps ?",
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
@@ -636,16 +637,16 @@ TRANSLATIONS = {
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---
+    "deficit.view.label": "Source des données :",
     "deficit.view.composite": "Composite",
     "deficit.view.official": "Rapport officiel",
     "deficit.view.gfs": "SFP",
     "deficit.view.weo": "PEM",
 
-    "deficit.chart.subplot_revenue_expenditure": "Recettes et dépenses",
-    "deficit.chart.subplot_balance": "Déficit (Recettes − Dépenses)",
     "deficit.chart.revenue": "Recettes",
     "deficit.chart.expenditure": "Dépenses",
-    "deficit.chart.balance": "Excédent / Déficit",
+    "deficit.chart.surplus": "Excédent",
+    "deficit.chart.deficit": "Déficit",
     "deficit.chart.forecast_suffix": " (prévision)",
     "deficit.chart.actual": "réel",
     "deficit.chart.forecast": "prévision",
