@@ -1324,7 +1324,11 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     )
     filtered_geojson = filter_geojson_by_country(geojson, country)
     df = server_store.get("subnational_poverty_rate")
-    df = filter_country_sort_year(df, country)
+    # Poverty surveys are sparse and some predate START_YEAR. The map carries the
+    # latest survey forward to the selected year, so keep every survey year (unlike
+    # the annual charts) — otherwise early years can't reach their most recent
+    # survey (e.g. 2010–2013 would miss the 2008 survey and show "not available").
+    df = filter_country_sort_year(df, country, start_year=0)
 
     legend_min, legend_max = server_store.get("basic_country_info")[country].get(
         "poverty_bounds", (None, None)
