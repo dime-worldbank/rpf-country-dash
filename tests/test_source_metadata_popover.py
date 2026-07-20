@@ -219,6 +219,16 @@ class TestBuildModalInfo(unittest.TestCase):
                     "latest_year": 2019,
                 }
             ],
+            # Bridge: chart indicator_key(s) → source_id(s). Charts resolve their
+            # source sections through this, so every indicator a tested chart lists
+            # must appear here (government_revenue_expenditure is multi-source).
+            "indicator_source": [
+                {"indicator_key": "boost", "source_id": "boost"},
+                {"indicator_key": "poverty_rate", "source_id": "world_bank_pip"},
+                {"indicator_key": "togo_revenue_budget", "source_id": "togo_dgb"},
+                {"indicator_key": "government_revenue_expenditure", "source_id": "imf_weo"},
+                {"indicator_key": "government_revenue_expenditure", "source_id": "imf_gfs"},
+            ],
         }
 
     def test_build_modal_info_single_source(self):
@@ -269,9 +279,9 @@ class TestBuildModalInfo(unittest.TestCase):
 
         info = build_modal_info(chart_id, country, self.source_meta)
 
-        # Verify chart metadata is included (sources field from CHART_METADATA)
-        self.assertIn("sources", info)
-        self.assertEqual(info["sources"], CHART_METADATA[chart_id]["sources"])
+        # Verify chart metadata is included (indicators field from CHART_METADATA)
+        self.assertIn("indicators", info)
+        self.assertEqual(info["indicators"], CHART_METADATA[chart_id]["indicators"])
 
     def test_build_modal_info_missing_country(self):
         """Test graceful handling when country has no coverage data."""

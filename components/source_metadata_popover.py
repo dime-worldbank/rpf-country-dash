@@ -30,7 +30,7 @@ SOURCE_DISPLAY = {
     "pip_spid":        {"label_key": "source.subnational_poverty.label", "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.pip_spid",        "description_key": "source.subnational_poverty.description", "coverage_key": "subnational_poverty_rate",       "countries": None},
     "pip_gsap":        {"label_key": "source.subnational_poverty.label", "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.pip_gsap",        "description_key": "source.subnational_poverty.description", "coverage_key": "subnational_poverty_rate",       "countries": None},
     "world_bank_icp":  {"label_key": "source.edu_private.label",         "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.world_bank_icp",  "description_key": "source.edu_private.description",  "coverage_key": "edu_private_expenditure",               "countries": None},
-    "unesco_uis":      {"label_key": "source.learning_poverty.label",    "publisher_key": "source.publisher.unesco",           "name_key": "source.name.unesco_uis",      "description_key": None,                              "coverage_key": "learning_poverty_rate",                 "countries": None},
+    "world_bank_lpgd": {"label_key": "source.learning_poverty.label",    "publisher_key": "source.publisher.world_bank",       "name_key": "source.name.world_bank_lpgd", "description_key": None,                              "coverage_key": "learning_poverty_rate",                 "countries": None},
     "who_gho":         {"label_key": "source.uhc.label",                 "publisher_key": "source.publisher.who",              "name_key": "source.name.who_gho",         "description_key": None,                              "coverage_key": "universal_health_coverage_index_gho",   "countries": None},
     "who_nha":         {"label_key": "source.health_private.label",      "publisher_key": "source.publisher.who",              "name_key": "source.name.who_nha",         "description_key": "source.health_private.description", "coverage_key": "health_private_expenditure",          "countries": None},
     "pefa":            {"label_key": "source.pefa.label",                "publisher_key": "source.publisher.pefa_secretariat", "name_key": "source.name.pefa",            "description_key": "source.pefa.description",         "coverage_key": "pefa_by_pillar",                        "countries": None},
@@ -47,6 +47,13 @@ def _registry_lookup(source_id, source_meta):
         if row.get("source_id") == source_id:
             return row
     return {}
+
+
+def _sources_for_indicator(indicator_key, source_meta):
+    """Source id(s) feeding an indicator, resolved via the indicator_source bridge
+    (order preserved). A multi-source indicator yields several source sections."""
+    return [r["source_id"] for r in (source_meta or {}).get("indicator_source", [])
+            if r.get("indicator_key") == indicator_key]
 
 
 def _resolve_url(source_id, country, source_meta, registry):
@@ -104,76 +111,72 @@ def _resolve_source_section(slot, country, source_meta, lang="en"):
 
 
 # ---------------------------------------------------------------------------
-# Chart-level metadata for the ⓘ info buttons.
-# Keyed by chart ID (matches the ``index`` used in ``source_info_button``).
-# Each source is a slot: a bare ``source_id`` string (uses SOURCE_DISPLAY
-# defaults) or a dict ``{"source_id": ..., **overrides}`` when a chart needs a
-# specific heading (``label_key``) or, for a source feeding several indicators,
-# a specific ``coverage_key``. Dynamic per-country coverage years are merged at
-# runtime. ``info_key`` adds a chart-level intro paragraph above the sections.
+# Chart-level metadata for the ⓘ info buttons, keyed by chart ID.
+# Each chart lists the indicator_key(s) it shows; the source(s) are resolved at
+# runtime via the indicator_source bridge (a multi-source indicator yields several
+# sections). An entry is a bare indicator_key string, or a dict
+# {"indicator_key": ..., "label_key": ...} when the heading needs to be
+# chart-specific (e.g. BOOST shown as education vs health expenditure).
+# ``info_key`` adds a chart-level intro paragraph above the sections.
 # ---------------------------------------------------------------------------
-# Chart-specific boost headings (same boost source, different metric label).
-_BOOST_EDU = {"source_id": "boost", "label_key": "source.boost_edu.label"}
-_BOOST_HEALTH = {"source_id": "boost", "label_key": "source.boost_health.label"}
+# Chart-specific BOOST headings (same boost pseudo-indicator, different metric label).
+_BOOST_EDU = {"indicator_key": "boost", "label_key": "source.boost_edu.label"}
+_BOOST_HEALTH = {"indicator_key": "boost", "label_key": "source.boost_health.label"}
 
 CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Over Time
     # ------------------------------------------------------------------
-    "overview-total": {"sources": ["boost"]},
-    "overview-per-capita": {"sources": ["boost", "world_bank_pip"]},
-    "functional-breakdown": {"sources": ["boost"]},
-    "func-growth": {"sources": ["boost"]},
-    "economic-breakdown": {"sources": ["boost"]},
-    "pefa-overall": {"sources": ["pefa", "world_bank_pip"]},
-    "pefa-by-pillar": {"sources": ["pefa"]},
+    "overview-total": {"indicators": ["boost"]},
+    "overview-per-capita": {"indicators": ["boost", "poverty_rate"]},
+    "functional-breakdown": {"indicators": ["boost"]},
+    "func-growth": {"indicators": ["boost"]},
+    "economic-breakdown": {"indicators": ["boost"]},
+    "pefa-overall": {"indicators": ["pefa_by_pillar", "poverty_rate"]},
+    "pefa-by-pillar": {"indicators": ["pefa_by_pillar"]},
     "revenue-expenditure-combined": {
         "info_key": "chart.revenue_expenditure_combined.info",
-        "sources": ["togo_dgb", "imf_gfs", "imf_weo"],
+        "indicators": ["togo_revenue_budget", "government_revenue_expenditure"],
     },
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
-    "subnational-spending": {"sources": ["boost"]},
-    "subnational-poverty": {"sources": ["pip_spid", "pip_gsap"]},
+    "subnational-spending": {"indicators": ["boost"]},
+    "subnational-poverty": {"indicators": ["subnational_poverty_rate"]},
     # ------------------------------------------------------------------
     # Education – Over Time
     # ------------------------------------------------------------------
-    "education-public-private": {"sources": [_BOOST_EDU, "world_bank_icp"]},
-    "education-total": {"sources": ["boost"]},
-    "education-outcome": {"sources": [
+    "education-public-private": {"indicators": [_BOOST_EDU, "edu_private_expenditure"]},
+    "education-total": {"indicators": ["boost"]},
+    "education-outcome": {"indicators": [
         _BOOST_EDU,
-        # Learning poverty is attributed to World Bank alone (name suppressed);
-        # coverage tracks the learning_poverty_rate indicator.
-        {"source_id": "world_bank_pip", "label_key": "source.learning_poverty.label",
-         "coverage_key": "learning_poverty_rate", "name_key": ""},
-        {"source_id": "global_data_lab", "label_key": "source.attendance.label",
-         "coverage_key": "global_data_lab_attendance"},
+        "learning_poverty_rate",
+        {"indicator_key": "global_data_lab_attendance", "label_key": "source.attendance.label"},
     ]},
-    "econ-breakdown-func-edu": {"sources": ["boost"]},
+    "econ-breakdown-func-edu": {"indicators": ["boost"]},
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------
-    "education-central-vs-regional": {"sources": ["boost"]},
-    "education-sub-func": {"sources": ["boost"]},
-    "education-expenditure-map": {"sources": ["boost"]},
-    "education-outcome-map": {"sources": ["global_data_lab"]},
-    "education-subnational": {"sources": [_BOOST_EDU, "global_data_lab"]},
+    "education-central-vs-regional": {"indicators": ["boost"]},
+    "education-sub-func": {"indicators": ["boost"]},
+    "education-expenditure-map": {"indicators": ["boost"]},
+    "education-outcome-map": {"indicators": ["global_data_lab_hd_index"]},
+    "education-subnational": {"indicators": [_BOOST_EDU, "global_data_lab_hd_index"]},
     # ------------------------------------------------------------------
     # Health – Over Time
     # ------------------------------------------------------------------
-    "health-public-private": {"sources": [_BOOST_HEALTH, "who_nha"]},
-    "health-total": {"sources": ["boost"]},
-    "health-outcome": {"sources": [_BOOST_HEALTH, "who_gho"]},
-    "econ-breakdown-func-health": {"sources": ["boost"]},
+    "health-public-private": {"indicators": [_BOOST_HEALTH, "health_private_expenditure"]},
+    "health-total": {"indicators": ["boost"]},
+    "health-outcome": {"indicators": [_BOOST_HEALTH, "universal_health_coverage_index_gho"]},
+    "econ-breakdown-func-health": {"indicators": ["boost"]},
     # ------------------------------------------------------------------
     # Health – Across Space
     # ------------------------------------------------------------------
-    "health-central-vs-regional": {"sources": ["boost"]},
-    "health-sub-func": {"sources": ["boost"]},
-    "health-expenditure-map": {"sources": ["boost"]},
-    "health-outcome-map": {"sources": ["who_gho"]},
-    "health-subnational": {"sources": [_BOOST_HEALTH, "who_gho"]},
+    "health-central-vs-regional": {"indicators": ["boost"]},
+    "health-sub-func": {"indicators": ["boost"]},
+    "health-expenditure-map": {"indicators": ["boost"]},
+    "health-outcome-map": {"indicators": ["universal_health_coverage_index_gho"]},
+    "health-subnational": {"indicators": [_BOOST_HEALTH, "universal_health_coverage_index_gho"]},
 }
 
 
@@ -383,12 +386,21 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
     """
     chart_meta = CHART_METADATA.get(chart_id, {})
 
+    # Bridge-driven: the chart lists indicator_key(s); each resolves to its
+    # source(s) via the indicator_source bridge (a multi-source indicator
+    # yields several sections). Coverage tracks the indicator; an optional
+    # per-entry label_key overrides the heading (e.g. BOOST's chart context).
     source_sections = []
-    for entry in chart_meta.get("sources", []):
-        slot = {"source_id": entry} if isinstance(entry, str) else entry
-        section = _resolve_source_section(slot, country, source_meta, lang)
-        if section is not None:
-            source_sections.append(section)
+    for entry in chart_meta.get("indicators", []):
+        ind_key = entry if isinstance(entry, str) else entry["indicator_key"]
+        label_key = None if isinstance(entry, str) else entry.get("label_key")
+        for source_id in _sources_for_indicator(ind_key, source_meta):
+            slot = {"source_id": source_id, "coverage_key": ind_key}
+            if label_key:
+                slot["label_key"] = label_key
+            section = _resolve_source_section(slot, country, source_meta, lang)
+            if section is not None:
+                source_sections.append(section)
 
     info_key = chart_meta.get("info_key")
     return {

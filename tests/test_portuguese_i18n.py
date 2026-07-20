@@ -90,6 +90,11 @@ class TestPortugueseSourceMetadata(unittest.TestCase):
                     "latest_year": 2019,
                 }
             ],
+            # Bridge: overview-per-capita's indicators (boost, poverty_rate) → source_id(s).
+            "indicator_source": [
+                {"indicator_key": "boost", "source_id": "boost"},
+                {"indicator_key": "poverty_rate", "source_id": "world_bank_pip"},
+            ],
         }
 
     def test_build_modal_info_portuguese(self):

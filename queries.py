@@ -227,6 +227,13 @@ class QueryService:
         """
         return self.fetch_data(query)
 
+    def get_indicator_source(self):
+        query = f"""
+            SELECT indicator_key, source_id
+            FROM prd_mega.{INDICATOR_SCHEMA}.indicator_source
+        """
+        return self.fetch_data(query)
+
     def get_boost_source_urls(self):
         query = f"""
             SELECT

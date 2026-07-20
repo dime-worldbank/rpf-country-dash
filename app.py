@@ -462,11 +462,13 @@ def fetch_source_metadata_once(data):
         indicator_df = db.get_indicator_data_availability()
         boost_urls_df = db.get_boost_source_urls()
         registry_df = db.get_source_registry()
+        indicator_source_df = db.get_indicator_source()
 
         return {
             "indicator_availability": indicator_df.to_dict("records"),
             "boost_source_urls": boost_urls_df.to_dict("records"),
             "source_registry": registry_df.to_dict("records"),
+            "indicator_source": indicator_source_df.to_dict("records"),
         }
     return no_update
 

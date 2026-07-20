@@ -605,7 +605,6 @@ TRANSLATIONS = {
     "source.publisher.world_bank": "Banque mondiale",
     "source.publisher.imf": "FMI",
     "source.publisher.who": "OMS",
-    "source.publisher.unesco": "UNESCO",
     "source.publisher.pefa_secretariat": "Secrétariat PEFA",
     "source.publisher.global_data_lab": "Global Data Lab",
     "source.publisher.togo_dgb": "Direction Générale du Budget du Togo",
@@ -614,6 +613,7 @@ TRANSLATIONS = {
     "source.name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
     "source.name.world_bank_pip": "Plateforme sur la pauvreté et les inégalités",
     "source.name.world_bank_icp": "Programme de comparaison internationale (ICP)",
+    "source.name.world_bank_lpgd": "Base de données mondiale sur la pauvreté des apprentissages",
     "source.name.who_nha": "Base de données mondiale des dépenses de santé",
     "source.name.togo_dgb": "Rapport d'exécution du budget de l'État",
 
