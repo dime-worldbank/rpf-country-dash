@@ -74,7 +74,7 @@ TRANSLATIONS = {
     "trace.public_expenditure": "Despesa pública",
     "trace.private_expenditure": "Despesa privada",
     "trace.poverty_rate": "Taxa de pobreza",
-    "trace.domestic_funded": "Financiamento interno",
+    "trace.domestic_funded": "Financiamento doméstico",
     "trace.foreign_funded": "Financiamento externo",
     "trace.per_capita": "Per capita",
     "trace.pefa_score": "Pontuação PEFA",
