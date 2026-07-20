@@ -477,7 +477,9 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Usa valores reportados pelo FMI para Receita (GGR) e Despesa (GGX) no nível do Governo Geral.",
     "source.togo_dgb.label": "Relatório oficial do Togo",
     "source.togo_dgb.description": "Receita e despesa realizadas a partir do Relatório anual de Execução Orçamentária. Valores não monetários equivalentes são subtraídos de receita e despesa para comparabilidade com os dados do FMI.",
-    "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
+    "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. As visões de fonte única exibem todos os anos de dados disponíveis dessa fonte.",
+    "chart.revenue_expenditure_combined.info_imf": "O GFS e o WEO são apresentados como visões separadas e selecionáveis; cada uma exibe todos os anos de dados disponíveis dessa fonte.",
+    "chart.revenue_expenditure_combined.panels": "Receita e despesa aparecem como linhas no painel superior; o saldo (Receita − Despesa) aparece como barras no painel inferior, onde valores positivos indicam superávit e valores negativos um déficit.",
 
     # --- Déficit / fiscal balance ---
     "deficit.view.label": "Fonte de dados:",

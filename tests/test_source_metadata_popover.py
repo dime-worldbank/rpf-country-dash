@@ -386,6 +386,21 @@ class TestBuildModalInfo(unittest.TestCase):
         self.assertIsNotNone(info_fr.get("info"))
         self.assertIn("vue composite", info_fr["info"].lower())
 
+    def test_build_modal_info_chart_level_info_mentions_official_when_present(self):
+        """Togo shows the official national report, so its intro mentions it."""
+        info = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta, lang="en")
+        self.assertIn("official national report", info["info"].lower())
+
+    def test_build_modal_info_chart_level_info_falls_back_without_official(self):
+        """A country without the composite/official view gets the GFS/WEO intro,
+        which never mentions a composite view or the official national report."""
+        info = build_modal_info("revenue-expenditure-combined", "Kenya", self.source_meta, lang="en")
+        self.assertIsNotNone(info.get("info"))
+        self.assertNotIn("composite", info["info"].lower())
+        self.assertNotIn("official", info["info"].lower())
+        self.assertIn("gfs", info["info"].lower())
+        self.assertIn("weo", info["info"].lower())
+
     def test_build_modal_info_no_chart_level_info(self):
         """Charts without ``info_key`` return ``info=None``."""
         info = build_modal_info("overview-total", "Kenya", self.source_meta)

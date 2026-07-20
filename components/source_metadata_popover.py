@@ -136,6 +136,12 @@ CHART_METADATA = {
     "pefa-by-pillar": {"indicators": ["pefa_by_pillar"]},
     "revenue-expenditure-combined": {
         "info_key": "chart.revenue_expenditure_combined.info",
+        # Used when the official national report (togo_revenue_budget) isn't shown
+        # for the country — then there's no composite, just GFS/WEO views.
+        "info_key_fallback": "chart.revenue_expenditure_combined.info_imf",
+        # Shared panel legend appended to whichever intro applies.
+        "info_suffix_key": "chart.revenue_expenditure_combined.panels",
+        "info_primary_indicator": "togo_revenue_budget",
         "indicators": ["togo_revenue_budget", "government_revenue_expenditure"],
     },
     # ------------------------------------------------------------------
@@ -408,6 +414,7 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
     # yields several sections). Coverage tracks the indicator; an optional
     # per-entry label_key overrides the heading (e.g. BOOST's chart context).
     source_sections = []
+    rendered_indicators = set()
     for entry in chart_meta.get("indicators", []):
         ind_key = entry if isinstance(entry, str) else entry["indicator_key"]
         label_key = None if isinstance(entry, str) else entry.get("label_key")
@@ -418,12 +425,27 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
             section = _resolve_source_section(slot, country, source_meta, lang)
             if section is not None:
                 source_sections.append(section)
+                rendered_indicators.add(ind_key)
 
+    # A chart may vary its intro by whether a priority source actually renders for
+    # this country: the revenue/expenditure composite only describes the official
+    # national report when one exists, and falls back to the IMF-only wording
+    # otherwise, so it never describes sources that aren't shown.
     info_key = chart_meta.get("info_key")
+    primary = chart_meta.get("info_primary_indicator")
+    if primary and primary not in rendered_indicators:
+        info_key = chart_meta.get("info_key_fallback", info_key)
+    info = t(info_key, lang) if info_key else None
+    # Shared trailing text (e.g. the panel legend) is appended to whichever intro
+    # was chosen, so the intro variants don't each repeat it.
+    suffix_key = chart_meta.get("info_suffix_key")
+    if info and suffix_key:
+        info = f"{info} {t(suffix_key, lang)}"
+
     return {
         **chart_meta,
         "_index": chart_id,
         "country_name": country,
         "source_sections": source_sections,
-        "info": t(info_key, lang) if info_key else None,
+        "info": info,
     }
