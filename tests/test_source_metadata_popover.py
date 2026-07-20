@@ -1,10 +1,24 @@
 import unittest
 from components.source_metadata_popover import (
     build_modal_info,
+    build_modal_children,
     get_coverage_years,
     _resolve_source_section,
+    _group_sections,
     CHART_METADATA,
 )
+
+
+def _collect_text(component):
+    """Flatten a Dash component tree into a list of string leaves."""
+    if isinstance(component, str):
+        return [component]
+    if isinstance(component, (list, tuple)):
+        return [s for c in component for s in _collect_text(c)]
+    children = getattr(component, "children", None)
+    if children is not None:
+        return _collect_text(children)
+    return []
 
 
 class TestSourceMetaContract(unittest.TestCase):
@@ -363,6 +377,76 @@ class TestBuildModalInfo(unittest.TestCase):
         """Charts without ``info_key`` return ``info=None``."""
         info = build_modal_info("overview-total", "Kenya", self.source_meta)
         self.assertIsNone(info.get("info"))
+
+
+class TestSourceSectionGrouping(unittest.TestCase):
+    """Multiple sources feeding one metric share heading/methodology/coverage."""
+
+    def test_group_sections_merges_same_metric(self):
+        """Sources with identical heading, methodology, and coverage collapse."""
+        sections = [
+            {"label": "Subnational Poverty Rate", "description": "m", "coverage": "2010–2023",
+             "source_name": "World Bank — SPID"},
+            {"label": "Subnational Poverty Rate", "description": "m", "coverage": "2010–2023",
+             "source_name": "World Bank — GSAP"},
+        ]
+        groups = _group_sections(sections)
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(groups[0]), 2)
+
+    def test_group_sections_keeps_distinct_metrics_separate(self):
+        """Sources with different headings stay in separate groups (e.g. WEO vs GFS)."""
+        sections = [
+            {"label": "WEO", "description": "a", "coverage": "2010–2023"},
+            {"label": "GFS", "description": "b", "coverage": "2010–2023"},
+        ]
+        groups = _group_sections(sections)
+        self.assertEqual(len(groups), 2)
+
+    def test_multi_source_metric_shares_heading_repeats_source_rows(self):
+        """A grouped metric shows heading/methodology/coverage once, and repeats
+        the More-info and Source rows per source."""
+        info = {
+            "_index": "subnational-poverty",
+            "country_name": "Togo",
+            "source_sections": [
+                {"label": "Subnational Poverty Rate", "description": "Thresholds vary.",
+                 "coverage": "2010–2023", "source_name": "World Bank — SPID",
+                 "source_url": "https://pipmaps.example/spid"},
+                {"label": "Subnational Poverty Rate", "description": "Thresholds vary.",
+                 "coverage": "2010–2023", "source_name": "World Bank — GSAP",
+                 "source_url": "https://pipmaps.example/gsap"},
+            ],
+        }
+        text = _collect_text(build_modal_children(info, lang="en"))
+        # Shared fields appear exactly once despite two sources.
+        self.assertEqual(text.count("Subnational Poverty Rate"), 1)
+        self.assertEqual(text.count("Thresholds vary."), 1)
+        self.assertEqual(text.count("2010–2023"), 1)
+        # The Source row repeats per source, each with its own link.
+        self.assertEqual(text.count("More info: "), 2)
+        self.assertEqual(text.count("Source: "), 2)
+        self.assertIn("World Bank — SPID", text)
+        self.assertIn("World Bank — GSAP", text)
+        self.assertIn("https://pipmaps.example/spid", text)
+        self.assertIn("https://pipmaps.example/gsap", text)
+
+    def test_single_source_metric_layout_unchanged(self):
+        """A single-source metric renders one heading, one More-info, one Source."""
+        info = {
+            "_index": "overview-total",
+            "country_name": "Kenya",
+            "source_sections": [
+                {"label": "BOOST Expenditure Data", "description": None,
+                 "coverage": "2010–2020", "source_name": "World Bank — BOOST",
+                 "source_url": "https://boost.example"},
+            ],
+        }
+        text = _collect_text(build_modal_children(info, lang="en"))
+        self.assertEqual(text.count("BOOST Expenditure Data"), 1)
+        self.assertEqual(text.count("More info: "), 1)
+        self.assertEqual(text.count("Source: "), 1)
+        self.assertIn("World Bank — BOOST", text)
 
 
 if __name__ == "__main__":

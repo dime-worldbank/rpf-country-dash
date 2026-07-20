@@ -228,46 +228,57 @@ def _make_detail_row(label, value):
     )
 
 
-def _build_source_section(section, country_name=None, lang="en"):
-    """Build the Dash components for a single source section.
+def _group_sections(sections):
+    """Group sections that describe the same metric (identical heading,
+    methodology, and coverage) so a multi-source indicator renders those shared
+    fields once. Order of first appearance is preserved."""
+    groups = []
+    seen = {}
+    for section in sections:
+        key = (section.get("label"), section.get("description"), section.get("coverage"))
+        if key in seen:
+            groups[seen[key]].append(section)
+        else:
+            seen[key] = len(groups)
+            groups.append([section])
+    return groups
 
-    ``section`` is a dict with keys: label, source_name, and optionally
-    description, source_url, coverage.
+
+def _build_source_section(sections, country_name=None, lang="en"):
+    """Build the Dash components for one metric.
+
+    ``sections`` is a list of source sections sharing heading, methodology, and
+    coverage (a single-source metric is a one-element list). The heading,
+    methodology, and coverage render once; the More-info and Source rows repeat
+    per source in order.
     """
-    children = []
+    first = sections[0]
+    children = [html.H6(first.get("label", ""), className="source-section-heading")]
 
-    # Section heading
-    children.append(
-        html.H6(
-            section.get("label", ""),
-            className="source-section-heading",
-        )
-    )
-
-    # Per-source description (right under the heading)
-    desc = section.get("description")
+    # Per-metric description (right under the heading)
+    desc = first.get("description")
     if desc:
         children.append(_make_detail_row(t("detail.methodology", lang), html.Span(desc)))
 
-    # Source URL from pipeline (before source name)
-    source_url = section.get("source_url")
-    if source_url:
-        link = html.A(
-            source_url,
-            href=source_url,
-            target="_blank",
-            rel="noopener noreferrer",
-            className="source-info-link",
-        )
-        children.append(_make_detail_row(t("detail.more_info", lang), link))
+    # More-info link + source name, repeated per contributing source
+    for section in sections:
+        source_url = section.get("source_url")
+        if source_url:
+            link = html.A(
+                source_url,
+                href=source_url,
+                target="_blank",
+                rel="noopener noreferrer",
+                className="source-info-link",
+            )
+            children.append(_make_detail_row(t("detail.more_info", lang), link))
 
-    # Source name
-    source_name = section.get("source_name")
-    if source_name:
-        children.append(_make_detail_row(t("detail.source", lang), html.Span(source_name)))
+        source_name = section.get("source_name")
+        if source_name:
+            children.append(_make_detail_row(t("detail.source", lang), html.Span(source_name)))
 
-    # Coverage years
-    coverage = section.get("coverage")
+    # Coverage years (shared across the metric's sources)
+    coverage = first.get("coverage")
     if coverage:
         label = (
             t("detail.coverage_for", lang, country=t(f"country.{country_name}", lang))
@@ -310,9 +321,11 @@ def build_modal_children(info, lang="en"):
             html.P(chart_info, className="rpf-chart-info", style={"fontStyle": "italic"})
         )
 
-    # Per-source sections
-    for section in source_sections:
-        body.append(_build_source_section(section, country_name=info.get("country_name"), lang=lang))
+    # Per-metric sections. Sources feeding the same metric (identical heading,
+    # methodology, coverage) render those shared fields once and repeat only the
+    # More-info/Source rows per source.
+    for group in _group_sections(source_sections):
+        body.append(_build_source_section(group, country_name=info.get("country_name"), lang=lang))
 
     return [dbc.ModalBody(body, className="rpf-modal-body")]
 
