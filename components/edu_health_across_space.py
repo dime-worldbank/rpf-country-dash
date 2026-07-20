@@ -33,7 +33,8 @@ def update_year_slider(data, country, func, lang="en"):
     data = server_store.get("geo1_func_expenditure")
     data = data.loc[(data.func == func)]
 
-    data = filter_country_sort_year(data, country)
+    # No START_YEAR clamp here — get_slider_config clamps the year lists itself.
+    data = filter_country_sort_year(data, country, start_year=0)
 
     if data.empty:
         return {"display": "block"}, {}, 0, 0, 0, {}
@@ -79,6 +80,21 @@ def render_func_subnat_overview(func_econ_data, sub_func_data, country, selected
 def _subset_data(df, year, country, func):
     data = filter_country_sort_year(df, country)
     return data.loc[(data.func == func) & (data.year == year)]
+
+
+def _outcome_display_year(country, func, selected_year):
+    """Latest year <= selected_year with subnational outcome data for this
+    country/func, or None. Shared by both across-space maps so the outcome map
+    picks its (possibly carried-forward) render year and the spending map can
+    tell when its selected year differs from it — labelling both only then."""
+    data = server_store.lookup("geo1_func_expenditure")
+    if data is None:
+        return None
+    data = filter_country_sort_year(data, country)
+    data = data[(data.func == func) & (data.adm1_name != "Central Scope")]
+    data = data.dropna(subset=["outcome_index"])
+    years = [y for y in sorted(data.year.unique()) if y <= selected_year]
+    return years[-1] if years else None
 
 def _central_vs_regional_fig(data, func, currency_code, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
@@ -354,6 +370,15 @@ def update_func_expenditure_map(
     )
     add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
+    # Spending always shows the selected year, so its year note is only useful when
+    # the outcome map is showing a different (carried-forward) year — then both maps
+    # label their year. The source note always shows.
+    outcome_year = _outcome_display_year(country, func, year)
+    notes = []
+    if outcome_year is not None and outcome_year != year:
+        notes.append(t("annotation.displaying_data_from", lang, year=year))
+    notes.append(t("source.boost_database", lang))
+
     cofog_name = t(f"cofog.{func.lower()}", lang)
     fig.update_layout(
         title=t(
@@ -371,22 +396,13 @@ def update_func_expenditure_map(
                 xref="paper",
                 yref="paper",
                 x=0,
-                y=-0.13,
+                y=-0.13 - 0.07 * i,
                 xanchor="left",
-                text=t("annotation.displaying_data_from", lang, year=year),
+                text=note,
                 showarrow=False,
                 font=dict(size=12),
-            ),
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                xanchor="left",
-                text=t("source.boost_database", lang),
-                showarrow=False,
-                font=dict(size=12),
-            ),
+            )
+            for i, note in enumerate(notes)
         ],
     )
 
@@ -427,14 +443,9 @@ def update_hd_index_map(
     all_data = filter_country_sort_year(all_data, country)
     all_data = all_data[(all_data.func == func) & (all_data.adm1_name != 'Central Scope')]
 
-    outcome_data = all_data.dropna(subset=["outcome_index"])
-    available_years = sorted(outcome_data["year"].unique())
-    relevant_years = [y for y in available_years if y <= year]
-
-    if not relevant_years:
+    display_year = _outcome_display_year(country, func, year)
+    if display_year is None:
         return empty_plot(t("error.no_outcome_data", lang))
-
-    display_year = relevant_years[-1]
     df = all_data[all_data.year == display_year].copy()
 
     if df.empty:
@@ -510,6 +521,13 @@ def update_hd_index_map(
     )
     add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
+    # The carried-forward data-year note shows only when the outcome displayed is
+    # from an earlier year than the one selected; the source note always shows.
+    notes = []
+    if display_year != year:
+        notes.append(t("annotation.displaying_data_from", lang, year=display_year))
+    notes.append(t("source.undp_gdl", lang))
+
     fig.update_layout(
         title=t("chart.subnational_outcome", lang, outcome_name=outcome_name),
         plot_bgcolor="white",
@@ -523,22 +541,13 @@ def update_hd_index_map(
                 xref="paper",
                 yref="paper",
                 x=0,
-                y=-0.13,
+                y=-0.13 - 0.07 * i,
                 xanchor="left",
-                text=t("annotation.displaying_data_from", lang, year=display_year),
+                text=note,
                 showarrow=False,
                 font=dict(size=12),
-            ),
-            dict(
-                xref="paper",
-                yref="paper",
-                x=0,
-                y=-0.2,
-                xanchor="left",
-                text=t("source.undp_gdl", lang),
-                showarrow=False,
-                font=dict(size=12),
-            ),
+            )
+            for i, note in enumerate(notes)
         ],
     )
 
