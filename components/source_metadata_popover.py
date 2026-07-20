@@ -41,6 +41,14 @@ SOURCE_DISPLAY = {
 _UNSET = object()
 
 
+def source_display_name(source_id, lang="en"):
+    """Localized "publisher — name" for a source_id, shared by popover and narratives."""
+    display = SOURCE_DISPLAY.get(source_id, {})
+    publisher = t(display["publisher_key"], lang) if display.get("publisher_key") else ""
+    name = t(display["name_key"], lang) if display.get("name_key") else ""
+    return f"{publisher} — {name}" if publisher and name else (publisher or name)
+
+
 def _registry_lookup(source_id, source_meta):
     """Return the source_registry record for source_id, or an empty dict."""
     for row in (source_meta or {}).get("source_registry", []):
