@@ -4,6 +4,7 @@ from components.source_metadata_popover import (
     build_modal_children,
     get_coverage_years,
     _resolve_source_section,
+    _sources_for_indicator,
     _group_sections,
     CHART_METADATA,
 )
@@ -475,6 +476,70 @@ class TestSourceSectionGrouping(unittest.TestCase):
         self.assertEqual(text.count("More info: "), 1)
         self.assertEqual(text.count("Source: "), 1)
         self.assertIn("World Bank — BOOST", text)
+
+
+class TestSubnationalPopulationSourceScoping(unittest.TestCase):
+    """subnational_population resolves a different source per country via the bridge's
+    country_name column (NULL = all countries)."""
+
+    def setUp(self):
+        self.source_meta = {
+            "source_registry": [
+                {"source_id": "boost", "name": "BOOST", "publisher": "World Bank",
+                 "url": "https://boost.example"},
+                {"source_id": "census_gov", "name": "International Database",
+                 "publisher": "US Census Bureau", "url": "https://census.example"},
+                {"source_id": "wb_subnational_population", "name": "Subnational Population database",
+                 "publisher": "World Bank", "url": "https://databank.example"},
+                {"source_id": "alb_instat", "name": "Population by prefecture",
+                 "publisher": "INSTAT", "url": "https://instat.example"},
+                {"source_id": "global_data_lab", "name": "Area Database",
+                 "publisher": "Global Data Lab", "url": "https://gdl.example"},
+            ],
+            "boost_source_urls": [],
+            "indicator_availability": [],
+            "indicator_source": [
+                {"indicator_key": "boost", "source_id": "boost", "country_name": None},
+                {"indicator_key": "subnational_population", "source_id": "census_gov", "country_name": "Kenya"},
+                {"indicator_key": "subnational_population", "source_id": "wb_subnational_population", "country_name": "Albania"},
+                {"indicator_key": "subnational_population", "source_id": "alb_instat", "country_name": "Albania"},
+                {"indicator_key": "subnational_population", "source_id": "global_data_lab", "country_name": "Congo, Dem. Rep."},
+            ],
+        }
+
+    def test_null_country_applies_everywhere(self):
+        self.assertEqual(_sources_for_indicator("boost", self.source_meta, "Kenya"), ["boost"])
+        self.assertEqual(_sources_for_indicator("boost", self.source_meta, "Albania"), ["boost"])
+
+    def test_scoped_source_returns_only_for_its_country(self):
+        self.assertEqual(
+            _sources_for_indicator("subnational_population", self.source_meta, "Kenya"),
+            ["census_gov"],
+        )
+        self.assertEqual(
+            _sources_for_indicator("subnational_population", self.source_meta, "Albania"),
+            ["wb_subnational_population", "alb_instat"],
+        )
+        self.assertEqual(
+            _sources_for_indicator("subnational_population", self.source_meta, "Congo, Dem. Rep."),
+            ["global_data_lab"],
+        )
+
+    def test_country_without_a_source_returns_none(self):
+        self.assertEqual(
+            _sources_for_indicator("subnational_population", self.source_meta, "Narnia"),
+            [],
+        )
+
+    def test_popover_lists_boost_plus_country_population_source(self):
+        info = build_modal_info("subnational-spending", "Kenya", self.source_meta)
+        names = [s["source_name"] for s in info["source_sections"]]
+        self.assertEqual(names, ["World Bank — BOOST", "US Census Bureau — International Database"])
+        # Every population section shows the shared "Subnational Population" heading,
+        # even Global Data Lab (whose own default label is HDI).
+        info_alb = build_modal_info("subnational-spending", "Albania", self.source_meta)
+        pop_labels = [s["label"] for s in info_alb["source_sections"][1:]]
+        self.assertEqual(pop_labels, ["Subnational Population", "Subnational Population"])
 
 
 if __name__ == "__main__":

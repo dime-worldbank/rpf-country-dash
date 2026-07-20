@@ -443,6 +443,7 @@ TRANSLATIONS = {
     "source.boost_health.label": "Despesa pública em saúde",
     "source.poverty_rate.label": "Taxa de pobreza",
     "source.subnational_poverty.label": "Taxa de pobreza subnacional",
+    "source.subnational_population.label": "População subnacional",
     "source.learning_poverty.label": "Taxa de pobreza de aprendizagem",
     "source.hd_index.label": "Índice de Desenvolvimento Humano subnacional",
     "source.attendance.label": "Taxa de frequência escolar",

@@ -509,6 +509,7 @@ TRANSLATIONS = {
     "source.boost_health.label": "Public Health Expenditure",
     "source.poverty_rate.label": "Poverty Rate",
     "source.subnational_poverty.label": "Subnational Poverty Rate",
+    "source.subnational_population.label": "Subnational Population",
     "source.learning_poverty.label": "Learning Poverty Rate",
     "source.hd_index.label": "Subnational Human Development Index",
     "source.attendance.label": "School Attendance Rate",

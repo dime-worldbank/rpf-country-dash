@@ -35,6 +35,14 @@ SOURCE_DISPLAY = {
     "who_nha":         {"label_key": "source.health_private.label",      "publisher_key": "source.publisher.who",              "name_key": "source.name.who_nha",         "description_key": "source.health_private.description", "coverage_key": "health_private_expenditure",          "countries": None},
     "pefa":            {"label_key": "source.pefa.label",                "publisher_key": "source.publisher.pefa_secretariat", "name_key": "source.name.pefa",            "description_key": "source.pefa.description",         "coverage_key": "pefa_by_pillar",                        "countries": None},
     "global_data_lab": {"label_key": "source.hd_index.label",            "publisher_key": "source.publisher.global_data_lab",  "name_key": "source.name.global_data_lab", "description_key": None,                              "coverage_key": "global_data_lab_hd_index",              "countries": None},
+    # Subnational population sources. Only the non-default keys are listed; every
+    # omitted key falls back in code (publisher/name → source_registry facts,
+    # description → none, countries → all — the bridge does country scoping now).
+    "census_gov":                {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
+    "wb_subnational_population": {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
+    "alb_instat":                {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
+    "moz_ine":                   {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
+    "pry_ine":                   {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
 }
 
 # Sentinel so a slot can distinguish "not overridden" from "overridden to None".
@@ -57,11 +65,22 @@ def _registry_lookup(source_id, source_meta):
     return {}
 
 
-def _sources_for_indicator(indicator_key, source_meta):
+def _sources_for_indicator(indicator_key, source_meta, country=None):
     """Source id(s) feeding an indicator, resolved via the indicator_source bridge
-    (order preserved). A multi-source indicator yields several source sections."""
-    return [r["source_id"] for r in (source_meta or {}).get("indicator_source", [])
-            if r.get("indicator_key") == indicator_key]
+    (order preserved). A multi-source indicator yields several source sections.
+
+    A bridge row's country_name scopes it to one country; NULL/absent applies to all.
+    subnational_population uses this — each country's admin1 population comes from a
+    different source (census.gov, WB, Global Data Lab, national offices)."""
+    sources = []
+    for r in (source_meta or {}).get("indicator_source", []):
+        if r.get("indicator_key") != indicator_key:
+            continue
+        row_country = r.get("country_name")
+        if row_country and row_country != country:
+            continue
+        sources.append(r["source_id"])
+    return sources
 
 
 def _resolve_url(source_id, country, source_meta, registry):
@@ -155,7 +174,13 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     # Home – Across Space
     # ------------------------------------------------------------------
-    "subnational-spending": {"indicators": ["boost"]},
+    "subnational-spending": {"indicators": [
+        "boost",
+        # One heading for whichever per-country source the bridge resolves (census.gov,
+        # WB, Global Data Lab, national offices) — overrides each source's own label
+        # (e.g. Global Data Lab's HDI label) in this population context.
+        {"indicator_key": "subnational_population", "label_key": "source.subnational_population.label"},
+    ]},
     "subnational-poverty": {"indicators": ["subnational_poverty_rate"]},
     # ------------------------------------------------------------------
     # Education – Over Time
@@ -426,7 +451,7 @@ def build_modal_info(chart_id, country, source_meta, lang="en"):
     for entry in chart_meta.get("indicators", []):
         ind_key = entry if isinstance(entry, str) else entry["indicator_key"]
         label_key = None if isinstance(entry, str) else entry.get("label_key")
-        for source_id in _sources_for_indicator(ind_key, source_meta):
+        for source_id in _sources_for_indicator(ind_key, source_meta, country):
             slot = {"source_id": source_id, "coverage_key": ind_key}
             if label_key:
                 slot["label_key"] = label_key

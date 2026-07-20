@@ -591,6 +591,7 @@ TRANSLATIONS = {
     "source.boost_health.label": "Dépenses publiques de santé",
     "source.poverty_rate.label": "Taux de pauvreté",
     "source.subnational_poverty.label": "Taux de pauvreté infranational",
+    "source.subnational_population.label": "Population infranationale",
     "source.learning_poverty.label": "Taux de pauvreté des apprentissages",
     "source.hd_index.label": "Indice de développement humain infranational",
     "source.attendance.label": "Taux de scolarisation",

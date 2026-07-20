@@ -228,7 +228,7 @@ class QueryService:
 
     def get_indicator_source(self):
         query = f"""
-            SELECT indicator_key, source_id
+            SELECT indicator_key, source_id, country_name
             FROM prd_mega.{INDICATOR_SCHEMA}.indicator_source
         """
         return self.fetch_data(query)
