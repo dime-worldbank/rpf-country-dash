@@ -86,8 +86,7 @@ class TestPortugueseSourceMetadata(unittest.TestCase):
                 {
                     "country_name": "Kenya",
                     "indicator_key": "poverty_rate",
-                    "earliest_year": 2012,
-                    "latest_year": 2019,
+                    "years": [2012, 2015, 2019],
                 }
             ],
             # Bridge: overview-per-capita's indicators (boost, poverty_rate) → source_id(s).

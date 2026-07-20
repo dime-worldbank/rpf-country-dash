@@ -60,20 +60,18 @@ class TestGetCoverageYears(unittest.TestCase):
                 {
                     "country_name": "Kenya",
                     "indicator_key": "poverty_rate",
-                    "earliest_year": 2012,
-                    "latest_year": 2019,
+                    # 2009 is before the display floor and is dropped from the span.
+                    "years": [2009, 2012, 2015, 2019],
                 },
                 {
                     "country_name": "Kenya",
                     "indicator_key": "pefa_by_pillar",
-                    "earliest_year": 2011,
-                    "latest_year": 2018,
+                    "years": [2011, 2014, 2018],
                 },
                 {
                     "country_name": "Nigeria",
                     "indicator_key": "poverty_rate",
-                    "earliest_year": 2010,
-                    "latest_year": 2021,
+                    "years": [2010, 2016, 2021],
                 },
             ],
         }
@@ -85,10 +83,26 @@ class TestGetCoverageYears(unittest.TestCase):
         self.assertEqual(end, 2020)
 
     def test_get_coverage_years_indicator(self):
-        """Test getting indicator coverage years."""
+        """An indicator's span is min–max of its data years >= START_YEAR."""
         start, end = get_coverage_years("poverty_rate", "Kenya", self.source_meta)
-        self.assertEqual(start, 2012)
+        self.assertEqual(start, 2012)  # 2009 dropped by the display floor
         self.assertEqual(end, 2019)
+
+    def test_get_coverage_years_indicator_snaps_start_to_first_year_in_window(self):
+        """Start is the first real data year >= START_YEAR, not an older survey
+        year floored up to START_YEAR (regression for the Mozambique 2010 artifact)."""
+        meta = {
+            "indicator_availability": [
+                {
+                    "country_name": "Mozambique",
+                    "indicator_key": "subnational_poverty_rate",
+                    "years": [2002, 2008, 2014, 2019, 2022, 2023],
+                }
+            ]
+        }
+        start, end = get_coverage_years("subnational_poverty_rate", "Mozambique", meta)
+        self.assertEqual(start, 2014)
+        self.assertEqual(end, 2023)
 
     def test_get_coverage_years_multiple_indicators_same_country(self):
         """Test with multiple indicators for same country."""
@@ -229,8 +243,7 @@ class TestBuildModalInfo(unittest.TestCase):
                 {
                     "country_name": "Kenya",
                     "indicator_key": "poverty_rate",
-                    "earliest_year": 2012,
-                    "latest_year": 2019,
+                    "years": [2012, 2015, 2019],
                 }
             ],
             # Bridge: chart indicator_key(s) → source_id(s). Charts resolve their

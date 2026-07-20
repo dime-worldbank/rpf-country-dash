@@ -349,34 +349,37 @@ def empty_modal(index):
 
 def get_coverage_years(coverage_key, country, source_meta):
     """
-    Return ``(earliest_year, latest_year)`` for a coverage key and country.
+    Return the ``(start_year, end_year)`` span to display for a coverage key and
+    country, or ``(None, None)``.
 
-    *coverage_key* is either ``"boost"`` (looks up from boost_source_urls) or an
-    indicator_key such as ``"pefa_by_pillar"`` (looks up from indicator_availability).
-    Keyed by indicator (not source) so a source feeding several indicators still
-    resolves to the precise span of the indicator shown in this chart slot.
+    *coverage_key* is either ``"boost"`` (span from boost_source_urls) or an
+    indicator_key (discrete ``years`` from indicator_availability). Keyed by
+    indicator (not source) so a source feeding several indicators still resolves
+    to the precise span of the indicator shown in this chart slot.
+
+    START_YEAR is the dashboard's display floor: BOOST clamps its start to it, and
+    an indicator's span is taken over its data years >= START_YEAR — so the start
+    is the first real data year in view, not an older survey year floored up.
     """
     if not country or not source_meta:
         return None, None
 
-    # Select the appropriate data source
-    rows = (
-        source_meta.get("boost_source_urls", [])
-        if coverage_key == "boost"
-        else source_meta.get("indicator_availability", [])
-    )
+    if coverage_key == "boost":
+        for row in source_meta.get("boost_source_urls", []):
+            if row.get("country_name") == country:
+                start = row.get("earliest_year")
+                end = row.get("latest_year")
+                start = max(int(start), START_YEAR) if start else None
+                end = int(end) if end else None
+                return start, end
+        return None, None
 
-    # Find matching row
-    for row in rows:
-        if row.get("country_name") == country and (
-            coverage_key == "boost" or row.get("indicator_key") == coverage_key
-        ):
-            start = row.get("earliest_year")
-            end = row.get("latest_year")
-            # Convert to int, return None if missing
-            start = max(int(start), START_YEAR) if start else None
-            end = int(end) if end else None
-            return start, end
+    for row in source_meta.get("indicator_availability", []):
+        if row.get("country_name") == country and row.get("indicator_key") == coverage_key:
+            years = sorted(
+                int(y) for y in (row.get("years") or []) if y is not None and int(y) >= START_YEAR
+            )
+            return (years[0], years[-1]) if years else (None, None)
 
     return None, None
 

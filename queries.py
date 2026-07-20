@@ -215,7 +215,7 @@ class QueryService:
 
     def get_indicator_data_availability(self):
         query = f"""
-            SELECT country_name, indicator_key, earliest_year, latest_year
+            SELECT country_name, indicator_key, years
             FROM prd_mega.{INDICATOR_SCHEMA}.indicator_data_availability
         """
         return self.fetch_data(query)
