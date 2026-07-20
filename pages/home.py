@@ -1238,6 +1238,18 @@ def update_year_range(data, country, lang):
         return {"display": "block"}, {}, 0, 0, 0, {}
 
 
+def _poverty_display_year(country, selected_year):
+    """Latest subnational-poverty survey year <= selected_year for this country,
+    or None. Shared by both subnational maps so the poverty map picks its
+    (possibly carried-forward) render year and the spending map can tell when its
+    selected year differs from it — labelling both only then."""
+    available_years = (
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("poverty_years", [])
+    )
+    relevant = [y for y in available_years if y <= selected_year]
+    return relevant[-1] if relevant else None
+
+
 @callback(
     Output("subnational-spending", "figure"),
     Input("stored-data-subnational", "data"),
@@ -1284,7 +1296,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     )
 
     if plot_type == "percapita":
-        return regional_percapita_spending_choropleth(
+        fig = regional_percapita_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1297,7 +1309,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lang=lang,
         )
     else:
-        return regional_spending_choropleth(
+        fig = regional_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1309,6 +1321,17 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             theme=theme,
             lang=lang,
         )
+
+    # When the poverty map is showing a different (carried-forward) year, label the
+    # spending year here too so the two maps are unambiguous.
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is not None and poverty_year != year:
+        fig.add_annotation(
+            xref="paper", yref="paper", x=0, y=-0.13, xanchor="left",
+            text=t("annotation.displaying_data_from", lang, year=year),
+            showarrow=False, font=dict(size=10),
+        )
+    return fig
 
 
 @callback(
@@ -1347,19 +1370,15 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     ]
     zoom = server_store.get("basic_country_info")[country]["zoom"]
 
-    available_years = server_store.get("basic_country_info")[country].get(
-        "poverty_years", []
-    )
-    relevant_years = [x for x in available_years if x <= year]
-
-    if not relevant_years or df.empty:
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is None or df.empty:
         return empty_plot(t("error.poverty_unavailable", lang))
 
     income_level = server_store.get("basic_country_info")[country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
-        df[df.year == relevant_years[-1]],
+        df[df.year == poverty_year],
         legend_min,
         legend_max,
         lat,
@@ -1388,16 +1407,17 @@ def render_subnational_spending_narrative(
         return t("error.data_not_available", lang)
 
     df_poverty = server_store.get("subnational_poverty_rate")
-    df_poverty = filter_country_sort_year(df_poverty, country)
+    # Keep every survey year (like the map, no START_YEAR clamp) and reference the
+    # same carried-forward survey the map shows, rather than averaging all years.
+    df_poverty = filter_country_sort_year(df_poverty, country, start_year=0)
 
-    available_years = server_store.get("basic_country_info")[country].get(
-        "poverty_years", []
-    )
+    poverty_year = _poverty_display_year(country, year)
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    relevant_years = [x for x in available_years if x <= year]
 
-    if not relevant_years or df_poverty.empty:
+    if poverty_year is None or df_poverty.empty:
         df_poverty = pd.DataFrame()
+    else:
+        df_poverty = df_poverty[df_poverty.year == poverty_year]
 
     df_spending = server_store.get("geo1_expenditure")
     df_spending = filter_country_sort_year(df_spending, country)
