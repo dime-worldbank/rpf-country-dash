@@ -117,19 +117,9 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
 
     # --- Source annotations ---
-    "source.boost_cpi": "Source : BOOST & IPC : World Bank",
     "source.boost": "Source : BOOST : World Bank",
     "source.boost_database": "Source : base de données BOOST, World Bank",
-    "source.boost_cpi_poverty": "Source : BOOST, IPC, taux de pauvreté : World Bank ; <br>Population : ONU, Eurostat",
-    "source.cofog_boost": "% des dépenses par catégories COFOG. Source : BOOST",
-    "source.econ_boost": "% des dépenses par catégories économiques. Source : BOOST",
     "source.pefa_poverty": "Source : PEFA & taux de pauvreté : World Bank",
-    "source.regional_boost": "Dépenses régionales. Source : BOOST",
-    "source.regional_boost_space": " Dépenses régionales. Source : BOOST",
-    "source.spid_gsap": "Source : SPID et GSAP, World Bank.",
-    "source.education_outcome": "Source : Indice d'éducation mesuré par les années de scolarisation : UNDP via GDL. <br>BOOST, IPC, pauvreté des apprentissages : World Bank ; Population : ONU, Eurostat",
-    "source.health_household": "Source : Dép. des ménages : WHO, dép. publiques provenant de BOOST : World Bank",
-    "source.health_outcome": "Source : UHC : WHO ; BOOST : World Bank ; <br> Population : ONU, Eurostat",
     "source.undp_gdl": "Source : UNDP via Global Data Lab",
     "source.boost_wb": "Source : BOOST, World Bank",
     "footer.supported_by": "Soutenu par",
@@ -475,8 +465,8 @@ TRANSLATIONS = {
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Affichage des données de {year}",
-    "annotation.poverty_threshold": "Taux de pauvreté (seuil de {threshold} pour un pays à {level_name}).",
-    "annotation.poverty_threshold_default": "Taux de pauvreté (seuil de 3,00 $).",
+    "annotation.poverty_threshold": "Taux de pauvreté : seuil de {threshold} pour un pays à {level_name}",
+    "annotation.poverty_threshold_default": "Taux de pauvreté : seuil de 3,00 $",
 
     # --- Operational vs Capital narrative ---
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f} % des dépenses {func_gen} ont été allouées à la rémunération des employés et {other_pct:.0f} % aux dépenses récurrentes hors salaires en {year}.{emp_narrative}",
@@ -601,6 +591,7 @@ TRANSLATIONS = {
     "source.boost_health.label": "Dépenses publiques de santé",
     "source.poverty_rate.label": "Taux de pauvreté",
     "source.subnational_poverty.label": "Taux de pauvreté infranational",
+    "source.subnational_population.label": "Population infranationale",
     "source.learning_poverty.label": "Taux de pauvreté des apprentissages",
     "source.hd_index.label": "Indice de développement humain infranational",
     "source.attendance.label": "Taux de scolarisation",
@@ -610,17 +601,22 @@ TRANSLATIONS = {
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
 
     # --- Source metadata modal (source names) — shared across sources ---
-    "source_name.world_bank_boost": "BOOST de la Banque mondiale",
-    "source_name.world_bank_pip": "Plateforme de la Banque mondiale sur la pauvreté et les inégalités",
-    "source_name.world_bank": "Banque mondiale",
-    "source_name.world_bank_icp": "ICP de la Banque mondiale",
-    "source_name.global_data_lab": "Global Data Lab",
-    "source_name.who_gho": "OMS (GHO)",
-    "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
-    "source_name.pefa_secretariat": "Secrétariat PEFA",
-    "source_name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
-    "source_name.imf_weo": "Perspectives de l'économie mondiale du FMI",
-    "source_name.togo_dgb": "Direction Générale du Budget du Togo — Rapport d'exécution du budget de l'État",
+    # Decomposed source attribution — "publisher — name". Names without a
+    # confident French translation are omitted and fall back to English via t().
+    "source.publisher.world_bank": "Banque mondiale",
+    "source.publisher.imf": "FMI",
+    "source.publisher.who": "OMS",
+    "source.publisher.pefa_secretariat": "Secrétariat PEFA",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Direction Générale du Budget du Togo",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "Perspectives de l'économie mondiale",
+    "source.name.imf_gfs": "Statistiques de finances publiques — État de situation des opérations",
+    "source.name.world_bank_pip": "Plateforme sur la pauvreté et les inégalités",
+    "source.name.world_bank_icp": "Programme de comparaison internationale (ICP)",
+    "source.name.world_bank_lpgd": "Base de données mondiale sur la pauvreté des apprentissages",
+    "source.name.who_nha": "Base de données mondiale des dépenses de santé",
+    "source.name.togo_dgb": "Rapport d'exécution du budget de l'État",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Les seuils de pauvreté varient selon la classification de revenu des pays : 3,00 $ pour les pays à faible revenu, 4,20 $ pour les pays à revenu intermédiaire (tranche inférieure) et 8,30 $ pour les pays à revenu intermédiaire (tranche supérieure) et à revenu élevé.",
@@ -634,7 +630,9 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
-    "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
+    "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
+    "chart.revenue_expenditure_combined.info_imf": "Les SFP et les PEM sont présentés comme des vues distinctes et sélectionnables ; chacune affiche toutes les années de données disponibles pour cette source.",
+    "chart.revenue_expenditure_combined.panels": "Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit.",
 
     # --- Deficit / solde budgétaire ---
     "deficit.view.label": "Source des données :",

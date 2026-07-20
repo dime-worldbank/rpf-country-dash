@@ -114,19 +114,9 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
 
     # --- Source annotations ---
-    "source.boost_cpi": "Source: BOOST & CPI: World Bank",
     "source.boost": "Source: BOOST: World Bank",
     "source.boost_database": "Source: BOOST Database, World Bank",
-    "source.boost_cpi_poverty": "Source: BOOST, CPI, Poverty Rate: World Bank; <br>Population: UN, Eurostat",
-    "source.cofog_boost": "Expenditure % by COFOG categories. Source: BOOST",
-    "source.econ_boost": "Expenditure % by economic categories. Source: BOOST",
     "source.pefa_poverty": "Source: PEFA & Poverty Rate: World Bank",
-    "source.regional_boost": "Regional Spending. Source: BOOST",
-    "source.regional_boost_space": " Regional Spending. Source: BOOST",
-    "source.spid_gsap": "Source: SPID and GSAP, World Bank.",
-    "source.education_outcome": "Source: Education index measured by years of education: UNDP through GDL. <br>BOOST, CPI, Learning Poverty: World Bank; Population: UN, Eurostat",
-    "source.health_household": "Source: Household exp: WHO, Public exp from BOOST: World Bank",
-    "source.health_outcome": "Source: UHC: WHO; BOOST: World Bank; <br> Population: UN, Eurostat",
     "source.undp_gdl": "Source: UNDP through Global Data Lab",
     "source.boost_wb": "Source: BOOST, World Bank",
     "footer.supported_by": "Supported by",
@@ -401,8 +391,8 @@ TRANSLATIONS = {
 
     # --- Annotations ---
     "annotation.displaying_data_from": "Displaying data from {year}",
-    "annotation.poverty_threshold": "Poverty rate ({threshold} threshold for {level_name} country).",
-    "annotation.poverty_threshold_default": "Poverty rate ($3.00 threshold).",
+    "annotation.poverty_threshold": "Poverty rate: {threshold} threshold for {level_name} country",
+    "annotation.poverty_threshold_default": "Poverty rate: $3.00 threshold",
 
     # --- Operational vs Capital narrative ---
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f}% of {func} spending was allocated to employee compensation and {other_pct:.0f}% to non-wage recurrent expenditures in {year}.{emp_narrative}",
@@ -519,6 +509,7 @@ TRANSLATIONS = {
     "source.boost_health.label": "Public Health Expenditure",
     "source.poverty_rate.label": "Poverty Rate",
     "source.subnational_poverty.label": "Subnational Poverty Rate",
+    "source.subnational_population.label": "Subnational Population",
     "source.learning_poverty.label": "Learning Poverty Rate",
     "source.hd_index.label": "Subnational Human Development Index",
     "source.attendance.label": "School Attendance Rate",
@@ -528,17 +519,27 @@ TRANSLATIONS = {
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
 
     # --- Source metadata modal (source names) — shared across sources ---
-    "source_name.world_bank_boost": "World Bank BOOST",
-    "source_name.world_bank_pip": "World Bank Poverty and Inequality Platform",
-    "source_name.world_bank": "World Bank",
-    "source_name.world_bank_icp": "World Bank ICP",
-    "source_name.global_data_lab": "Global Data Lab",
-    "source_name.who_gho": "WHO (GHO)",
-    "source_name.who_health_db": "WHO Global Health Expenditure Database",
-    "source_name.pefa_secretariat": "PEFA Secretariat",
-    "source_name.imf_gfs": "Government Finance Statistics — Statement of Operations",
-    "source_name.imf_weo": "IMF World Economic Outlook",
-    "source_name.togo_dgb": "Togo Direction Générale du Budget — Rapport d'exécution du budget de l'État",
+    # Decomposed source attribution — shared publisher + per-source name,
+    # rendered as "publisher — name". Supersedes the combined source_name.* above.
+    "source.publisher.world_bank": "World Bank",
+    "source.publisher.imf": "IMF",
+    "source.publisher.who": "WHO",
+    "source.publisher.pefa_secretariat": "PEFA Secretariat",
+    "source.publisher.global_data_lab": "Global Data Lab",
+    "source.publisher.togo_dgb": "Togo Direction Générale du Budget",
+    "source.name.boost": "BOOST",
+    "source.name.imf_weo": "World Economic Outlook",
+    "source.name.imf_gfs": "Government Finance Statistics — Statement of Operations",
+    "source.name.world_bank_pip": "Poverty and Inequality Platform",
+    "source.name.pip_spid": "Subnational Poverty (SPID)",
+    "source.name.pip_gsap": "Global Subnational Atlas of Poverty (GSAP)",
+    "source.name.world_bank_icp": "International Comparison Program",
+    "source.name.world_bank_lpgd": "Global Learning Poverty Database",
+    "source.name.who_gho": "Global Health Observatory (GHO)",
+    "source.name.who_nha": "Global Health Expenditure Database",
+    "source.name.pefa": "Public Expenditure & Financial Accountability",
+    "source.name.global_data_lab": "Subnational HDI Database",
+    "source.name.togo_dgb": "Budget Execution Report",
 
     # --- Source metadata modal (descriptions) ---
     "source.poverty_rate.description": "Poverty thresholds vary by country income classification: $3.00 for Low Income, $4.20 for Lower Middle Income, and $8.30 for Upper Middle and High Income countries.",
@@ -552,7 +553,9 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
     "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
-    "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
+    "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Single-source views display every year of data available from that source.",
+    "chart.revenue_expenditure_combined.info_imf": "GFS and WEO are shown as separate, selectable views; each displays every year of data available from that source.",
+    "chart.revenue_expenditure_combined.panels": "Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit.",
 
     # --- Deficit / fiscal balance ---
     "deficit.view.label": "Data source:",
