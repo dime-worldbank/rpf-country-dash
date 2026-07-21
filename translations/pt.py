@@ -33,7 +33,7 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Resultado fiscal",
     "heading.regional_expenditure": "Despesa regional",
     "heading.country_regional_expenditure": "Despesa regional {country_gen}",
-    "heading.who_funds_budget": "Quem financia o orçamento?",
+    "heading.who_funds_budget": "Orçamento total",
     "heading.who_pays_education": "Quem paga pela educação?",
     "heading.who_pays_health": "Quem paga pela saúde?",
     "heading.public_spending_education_outcome": "Despesa pública e resultados educacionais",
