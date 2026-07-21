@@ -97,6 +97,26 @@ class TestRealBudgetColumn(unittest.TestCase):
         self.assertTrue(result["real_budget"].isna().all())
 
     @patch("components.funding_source.server_store.get")
+    def test_real_bars_reconcile_with_real_total(self, mock_get):
+        mock_get.return_value = pd.DataFrame(
+            {
+                "country_name": ["Togo", "Togo"],
+                "year": [2018, 2019],
+                "budget": [100.0, 200.0],
+                "foreign_funded_budget": [30.0, 40.0],
+                "expenditure": [100.0, 100.0],
+                "real_expenditure": [90.0, 80.0],
+            }
+        )
+
+        result = funding_source._prepare_funding_df("Togo")
+
+        recomposed = (
+            result["real_domestic_funded_budget"] + result["real_foreign_funded_budget"]
+        )
+        self.assertEqual(recomposed.tolist(), result["real_budget"].tolist())
+
+    @patch("components.funding_source.server_store.get")
     def test_real_budget_nan_when_expenditure_zero(self, mock_get):
         # Zero expenditure must guard to NaN, not inf.
         mock_get.return_value = pd.DataFrame(
@@ -126,7 +146,10 @@ class TestFundingSourceFigure(unittest.TestCase):
                 "foreign_funded_budget": [30.0, 40.0],
                 "domestic_funded_budget": [70.0, 160.0],
                 "domestic_share": [70.0, 80.0],
+                "foreign_share": [30.0, 20.0],
                 "real_budget": [90.0, 160.0],
+                "real_domestic_funded_budget": [63.0, 128.0],
+                "real_foreign_funded_budget": [27.0, 32.0],
             }
         )
 

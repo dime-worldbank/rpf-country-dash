@@ -47,19 +47,23 @@ def _prepare_funding_df(country):
 
     df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
     df["domestic_share"] = df["domestic_funded_budget"] / df["budget"] * 100
-    df["real_budget"] = _real_budget(df)
+    df["foreign_share"] = df["foreign_funded_budget"] / df["budget"] * 100
+
+    # Deflate every amount by the same factor, so the real bars still sum to the
+    # real total and the shares are unchanged.
+    deflator = _deflator(df)
+    df["real_budget"] = df["budget"] * deflator
+    df["real_domestic_funded_budget"] = df["domestic_funded_budget"] * deflator
+    df["real_foreign_funded_budget"] = df["foreign_funded_budget"] * deflator
     return df.sort_values("year")
 
 
-def _real_budget(df):
-    """Deflate the whole budget by ``real_expenditure / expenditure``.
-
-    NaN where the deflator columns are missing or expenditure is zero.
-    """
+def _deflator(df):
+    """``real_expenditure / expenditure``; NaN where unavailable or expenditure is zero."""
     if not {"expenditure", "real_expenditure"}.issubset(df.columns):
         return np.nan
     expenditure = df["expenditure"].where(df["expenditure"] != 0)
-    return df["real_expenditure"] / expenditure * df["budget"]
+    return df["real_expenditure"] / expenditure
 
 
 def render_fig_and_narrative(country, lang="en", amount="nominal"):
@@ -79,26 +83,30 @@ def render_fig_and_narrative(country, lang="en", amount="nominal"):
 
 
 def create_funding_source_figure(df, currency_code, lang="en", amount="nominal"):
-    """``amount`` selects nominal ``budget`` or inflation-adjusted ``real_budget``."""
+    """``amount`` selects the nominal or the inflation-adjusted budget columns."""
+    real = amount == "real"
+
+    def as_currency(values):
+        return values.apply(lambda x: format_currency(x, currency_code, lang=lang))
+
     fig = go.Figure()
 
-    series = [
-        ("domestic_funded_budget", t("trace.domestic_funded", lang), DOMESTIC_FUNDED_COLOR),
-        ("foreign_funded_budget", t("trace.foreign_funded", lang), FOREIGN_FUNDED_COLOR),
+    bars = [
+        ("domestic_funded_budget", "real_domestic_funded_budget", "domestic_share",
+         t("trace.domestic_funded", lang), DOMESTIC_FUNDED_COLOR),
+        ("foreign_funded_budget", "real_foreign_funded_budget", "foreign_share",
+         t("trace.foreign_funded", lang), FOREIGN_FUNDED_COLOR),
     ]
-    # Deflate bar amounts too, so domestic + foreign reconcile with the real total.
-    deflator = df["real_budget"] / df["budget"] if amount == "real" else 1
-    for col, name, color in series:
-        amounts = df[col] * deflator
-        formatted = amounts.apply(lambda x: format_currency(x, currency_code, lang=lang))
-        share = df[col] / df["budget"] * 100
+    for nominal_col, real_col, share_col, name, color in bars:
+        share = df[share_col]
+        amounts = as_currency(df[real_col if real else nominal_col])
         fig.add_trace(
             go.Bar(
                 name=name,
                 x=df["year"],
                 y=share,
                 marker_color=color,
-                customdata=np.column_stack([formatted, share]),
+                customdata=np.column_stack([amounts, share]),
                 hovertemplate=(
                     "<b>" + name + "</b>: "
                     "%{customdata[1]:.1f}% (%{customdata[0]})<extra></extra>"
@@ -106,13 +114,8 @@ def create_funding_source_figure(df, currency_code, lang="en", amount="nominal")
             )
         )
 
-    total_col = "real_budget" if amount == "real" else "budget"
-    total_name = t(
-        "trace.total_budget_real" if amount == "real" else "trace.total_budget", lang
-    )
-    total_formatted = df[total_col].apply(
-        lambda x: format_currency(x, currency_code, lang=lang)
-    )
+    total_col = "real_budget" if real else "budget"
+    total_name = t("trace.total_budget_real" if real else "trace.total_budget", lang)
     fig.add_trace(
         go.Scatter(
             name=total_name,
@@ -121,7 +124,7 @@ def create_funding_source_figure(df, currency_code, lang="en", amount="nominal")
             yaxis="y2",
             mode="lines+markers",
             marker_color=TOTAL_BUDGET_COLOR,
-            customdata=np.column_stack([total_formatted]),
+            customdata=np.column_stack([as_currency(df[total_col])]),
             hovertemplate="<b>" + total_name + "</b>: %{customdata[0]}<extra></extra>",
         )
     )
