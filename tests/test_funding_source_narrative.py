@@ -61,6 +61,116 @@ class TestPrepareFundingDf(unittest.TestCase):
         self.assertTrue(result.empty)
 
 
+class TestRealBudgetColumn(unittest.TestCase):
+    """The inflation-adjusted total budget derived via the expenditure deflator."""
+
+    @patch("components.funding_source.server_store.get")
+    def test_real_budget_deflates_whole_budget(self, mock_get):
+        mock_get.return_value = pd.DataFrame(
+            {
+                "country_name": ["Togo", "Togo"],
+                "year": [2018, 2019],
+                "budget": [100.0, 200.0],
+                "foreign_funded_budget": [30.0, 40.0],
+                "expenditure": [100.0, 100.0],
+                "real_expenditure": [90.0, 80.0],
+            }
+        )
+
+        result = funding_source._prepare_funding_df("Togo")
+
+        self.assertEqual(result["real_budget"].tolist(), [90.0, 160.0])
+
+    @patch("components.funding_source.server_store.get")
+    def test_real_budget_is_nan_without_deflator_columns(self, mock_get):
+        mock_get.return_value = pd.DataFrame(
+            {
+                "country_name": ["Togo"],
+                "year": [2018],
+                "budget": [100.0],
+                "foreign_funded_budget": [30.0],
+            }
+        )
+
+        result = funding_source._prepare_funding_df("Togo")
+
+        self.assertTrue(result["real_budget"].isna().all())
+
+    @patch("components.funding_source.server_store.get")
+    def test_real_budget_nan_when_expenditure_zero(self, mock_get):
+        # Zero expenditure must guard to NaN, not inf.
+        mock_get.return_value = pd.DataFrame(
+            {
+                "country_name": ["Togo"],
+                "year": [2018],
+                "budget": [100.0],
+                "foreign_funded_budget": [30.0],
+                "expenditure": [0.0],
+                "real_expenditure": [0.0],
+            }
+        )
+
+        result = funding_source._prepare_funding_df("Togo")
+
+        self.assertTrue(result["real_budget"].isna().all())
+
+
+class TestFundingSourceFigure(unittest.TestCase):
+    """Two share bars plus a total-budget line on a secondary axis."""
+
+    def _df(self):
+        return pd.DataFrame(
+            {
+                "year": [2018, 2019],
+                "budget": [100.0, 200.0],
+                "foreign_funded_budget": [30.0, 40.0],
+                "domestic_funded_budget": [70.0, 160.0],
+                "domestic_share": [70.0, 80.0],
+                "real_budget": [90.0, 160.0],
+            }
+        )
+
+    def test_domestic_bar_uses_non_blue_colour(self):
+        # Domestic must stay off the central-government blue used just above.
+        fig = funding_source.create_funding_source_figure(self._df(), "XOF", lang="en")
+
+        self.assertEqual(fig.data[0].marker.color, funding_source.DOMESTIC_FUNDED_COLOR)
+        self.assertNotEqual(funding_source.DOMESTIC_FUNDED_COLOR, "rgb(17, 141, 255)")
+
+    def test_has_total_line_on_secondary_axis(self):
+        fig = funding_source.create_funding_source_figure(self._df(), "XOF", lang="en")
+
+        self.assertEqual(len(fig.data), 3)
+        line = fig.data[2]
+        self.assertEqual(line.type, "scatter")
+        self.assertEqual(line.yaxis, "y2")
+
+    def test_amount_switches_line_between_nominal_and_real(self):
+        nominal = funding_source.create_funding_source_figure(
+            self._df(), "XOF", lang="en", amount="nominal"
+        )
+        real = funding_source.create_funding_source_figure(
+            self._df(), "XOF", lang="en", amount="real"
+        )
+
+        self.assertEqual(list(nominal.data[2].y), [100.0, 200.0])
+        self.assertEqual(list(real.data[2].y), [90.0, 160.0])
+
+    def test_real_mode_deflates_bar_amounts_but_keeps_shares(self):
+        nominal = funding_source.create_funding_source_figure(
+            self._df(), "XOF", lang="en", amount="nominal"
+        )
+        real = funding_source.create_funding_source_figure(
+            self._df(), "XOF", lang="en", amount="real"
+        )
+
+        self.assertEqual(list(nominal.data[0].y), list(real.data[0].y))
+        self.assertNotEqual(
+            list(nominal.data[0].customdata[:, 0]),
+            list(real.data[0].customdata[:, 0]),
+        )
+
+
 class TestFundingSourceNarrative(unittest.TestCase):
     """The narrative text built from the prepared split."""
 

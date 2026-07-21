@@ -61,7 +61,7 @@ TRANSLATIONS = {
     "chart.subnational_func_spending": "Subnational {func} Spending",
     "chart.subnational_outcome": "Subnational {outcome_name}",
     "chart.budget_func_fluctuation": "How do budgets for functional categories fluctuate over time?",
-    "chart.budget_by_funding_source": "How is the budget financed?",
+    "chart.budget_by_funding_source": "How is the budget funded?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Inflation Adjusted",
@@ -72,6 +72,8 @@ TRANSLATIONS = {
     "trace.poverty_rate": "Poverty Rate",
     "trace.domestic_funded": "Domestically Funded",
     "trace.foreign_funded": "Foreign Funded",
+    "trace.total_budget": "Total Budget",
+    "trace.total_budget_real": "Total Budget (inflation-adjusted)",
     "trace.per_capita": "Per Capita",
     "trace.pefa_score": "PEFA Score",
     "trace.uhc_index": "Universal health coverage index",

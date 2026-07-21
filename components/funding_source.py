@@ -11,11 +11,12 @@ from utils import (
     filter_country_sort_year,
     format_currency,
 )
-from viz_theme import CENTRAL_COLOR, WARM_BRIGHTER
 import server_store
 
-# Foreign funding: warm colour to contrast the blue domestic bars.
-FOREIGN_COLOR = WARM_BRIGHTER[0]
+# Kept off blue: total_figure above uses the central-government blue.
+DOMESTIC_FUNDED_COLOR = "#8E6BA6"
+FOREIGN_FUNDED_COLOR = "#E0AE3C"
+TOTAL_BUDGET_COLOR = "#3A3F47"
 
 
 def _prepare_funding_df(country):
@@ -46,10 +47,22 @@ def _prepare_funding_df(country):
 
     df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
     df["domestic_share"] = df["domestic_funded_budget"] / df["budget"] * 100
+    df["real_budget"] = _real_budget(df)
     return df.sort_values("year")
 
 
-def render_fig_and_narrative(country, lang="en"):
+def _real_budget(df):
+    """Deflate the whole budget by ``real_expenditure / expenditure``.
+
+    NaN where the deflator columns are missing or expenditure is zero.
+    """
+    if not {"expenditure", "real_expenditure"}.issubset(df.columns):
+        return np.nan
+    expenditure = df["expenditure"].where(df["expenditure"] != 0)
+    return df["real_expenditure"] / expenditure * df["budget"]
+
+
+def render_fig_and_narrative(country, lang="en", amount="nominal"):
     funding_df = _prepare_funding_df(country)
     if funding_df.empty:
         return (
@@ -60,20 +73,24 @@ def render_fig_and_narrative(country, lang="en"):
     basic_info = server_store.get("basic_country_info")[country]
     currency_code = basic_info["currency_code"]
 
-    fig = create_funding_source_figure(funding_df, currency_code, lang=lang)
+    fig = create_funding_source_figure(funding_df, currency_code, lang=lang, amount=amount)
     narrative = format_funding_source_narrative(funding_df, country, lang=lang)
     return fig, narrative
 
 
-def create_funding_source_figure(df, currency_code, lang="en"):
+def create_funding_source_figure(df, currency_code, lang="en", amount="nominal"):
+    """``amount`` selects nominal ``budget`` or inflation-adjusted ``real_budget``."""
     fig = go.Figure()
 
     series = [
-        ("domestic_funded_budget", t("trace.domestic_funded", lang), CENTRAL_COLOR),
-        ("foreign_funded_budget", t("trace.foreign_funded", lang), FOREIGN_COLOR),
+        ("domestic_funded_budget", t("trace.domestic_funded", lang), DOMESTIC_FUNDED_COLOR),
+        ("foreign_funded_budget", t("trace.foreign_funded", lang), FOREIGN_FUNDED_COLOR),
     ]
+    # Deflate bar amounts too, so domestic + foreign reconcile with the real total.
+    deflator = df["real_budget"] / df["budget"] if amount == "real" else 1
     for col, name, color in series:
-        formatted = df[col].apply(lambda x: format_currency(x, currency_code, lang=lang))
+        amounts = df[col] * deflator
+        formatted = amounts.apply(lambda x: format_currency(x, currency_code, lang=lang))
         share = df[col] / df["budget"] * 100
         fig.add_trace(
             go.Bar(
@@ -89,6 +106,26 @@ def create_funding_source_figure(df, currency_code, lang="en"):
             )
         )
 
+    total_col = "real_budget" if amount == "real" else "budget"
+    total_name = t(
+        "trace.total_budget_real" if amount == "real" else "trace.total_budget", lang
+    )
+    total_formatted = df[total_col].apply(
+        lambda x: format_currency(x, currency_code, lang=lang)
+    )
+    fig.add_trace(
+        go.Scatter(
+            name=total_name,
+            x=df["year"],
+            y=df[total_col],
+            yaxis="y2",
+            mode="lines+markers",
+            marker_color=TOTAL_BUDGET_COLOR,
+            customdata=np.column_stack([total_formatted]),
+            hovertemplate="<b>" + total_name + "</b>: %{customdata[0]}<extra></extra>",
+        )
+    )
+
     fig.update_xaxes(tickformat="d", dtick=1)
     fig.update_yaxes(
         title_text=t("axis.budget_share", lang),
@@ -102,6 +139,14 @@ def create_funding_source_figure(df, currency_code, lang="en"):
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
         hovermode="x unified",
+        yaxis2=dict(
+            title_text=t("trace.total_budget", lang),
+            overlaying="y",
+            side="right",
+            showgrid=False,
+            rangemode="tozero",
+            fixedrange=True,
+        ),
     )
     return apply_locale(fig, lang)
 

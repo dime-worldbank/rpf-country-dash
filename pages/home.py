@@ -176,7 +176,29 @@ def render_overview_content(tab, lang):
                 dbc.Row(
                     [
                         dbc.Col(
-                            chart_container("funding-source"),
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="funding-source-amount",
+                                        options=[
+                                            {
+                                                "label": t("radio.budget", lang),
+                                                "value": "nominal",
+                                            },
+                                            {
+                                                "label": t("radio.inflation_adjusted_budget", lang),
+                                                "value": "real",
+                                            },
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("funding-source"),
+                            ],
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
@@ -1471,12 +1493,14 @@ def render_budget_func_changes(data, country, exp_type, lang):
     Input("stored-data", "data"),
     Input("country-select", "value"),
     Input("stored-language", "data"),
+    Input("funding-source-amount", "value"),
 )
-def render_funding_source(data, country, lang):
+def render_funding_source(data, country, lang, amount):
     lang = lang or "en"
+    amount = amount or "nominal"
     if not data or not country:
         return dash.no_update, dash.no_update
-    return funding_source.render_fig_and_narrative(country, lang=lang)
+    return funding_source.render_fig_and_narrative(country, lang=lang, amount=amount)
 
 
 def _get_revenue_budget_context(country):

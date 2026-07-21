@@ -75,6 +75,8 @@ TRANSLATIONS = {
     "trace.poverty_rate": "Taux de pauvreté",
     "trace.domestic_funded": "Financement intérieur",
     "trace.foreign_funded": "Financement extérieur",
+    "trace.total_budget": "Budget total",
+    "trace.total_budget_real": "Budget total (ajusté à l'inflation)",
     "trace.per_capita": "Par habitant",
     "trace.pefa_score": "Score PEFA",
     "trace.uhc_index": "Indice de couverture sanitaire universelle",
