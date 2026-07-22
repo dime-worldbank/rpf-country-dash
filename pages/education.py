@@ -32,7 +32,7 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
-from components import funding_source
+from components import budget_funding_execution
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import (
     get_relationship_narrative_i18n,
@@ -1037,7 +1037,7 @@ def render_education_funding(data, country, lang, budget_terms):
     budget_terms = budget_terms or "nominal"
     if not data or not country:
         return dash.no_update, dash.no_update
-    return funding_source.render_funding(
+    return budget_funding_execution.render_funding(
         country, lang=lang, budget_terms=budget_terms, sector="Education"
     )
 
@@ -1055,10 +1055,10 @@ def render_education_budget_execution(data, country, lang, metric):
     metric = metric or "execution_rate"
     if not data or not country:
         return dash.no_update, dash.no_update
-    overall = funding_source.render_execution_figure(
+    overall = budget_funding_execution.render_execution_figure(
         country, lang=lang, metric=metric, sector="Education"
     )
-    by_category = funding_source.render_econ_execution_figure(
+    by_category = budget_funding_execution.render_econ_execution_figure(
         country, lang=lang, metric=metric, sector="Education"
     )
     return overall, by_category
@@ -1074,4 +1074,4 @@ def render_education_execution_narrative(data, country, lang):
     lang = lang or "en"
     if not data or not country:
         return dash.no_update
-    return funding_source.render_execution_narrative(country, lang=lang, sector="Education")
+    return budget_funding_execution.render_execution_narrative(country, lang=lang, sector="Education")

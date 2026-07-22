@@ -78,8 +78,8 @@ ECON_KEY_MAP = {
     "Other expenses":               "econ.other_expenses",
     "Non-wage recurrent":           "econ.non_wage_recurrent",
     # Synthetic bucket for the execution-by-category chart in
-    # funding_source.py: everything besides wage bill, capital, and goods
-    # and services (social benefits, subsidies, interest, other transfers).
+    # budget_funding_execution.py: everything besides wage bill, capital, and
+    # goods and services (social benefits, subsidies, interest, other transfers).
     "Other recurrent":              "econ.other_recurrent",
 }
 

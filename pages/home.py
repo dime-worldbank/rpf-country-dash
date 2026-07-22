@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, funding_source
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, budget_funding_execution
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
@@ -1530,7 +1530,7 @@ def render_funding_source(data, country, lang, budget_terms):
     budget_terms = budget_terms or "nominal"
     if not data or not country:
         return dash.no_update, dash.no_update
-    return funding_source.render_funding(country, lang=lang, budget_terms=budget_terms)
+    return budget_funding_execution.render_funding(country, lang=lang, budget_terms=budget_terms)
 
 
 @callback(
@@ -1545,7 +1545,7 @@ def render_budget_execution(data, country, lang, metric):
     metric = metric or "execution_rate"
     if not data or not country:
         return dash.no_update
-    return funding_source.render_execution_figure(country, lang=lang, metric=metric)
+    return budget_funding_execution.render_execution_figure(country, lang=lang, metric=metric)
 
 
 @callback(
@@ -1558,7 +1558,7 @@ def render_execution_narrative(data, country, lang):
     lang = lang or "en"
     if not data or not country:
         return dash.no_update
-    return funding_source.render_execution_narrative(country, lang=lang)
+    return budget_funding_execution.render_execution_narrative(country, lang=lang)
 
 
 def _get_revenue_budget_context(country):
