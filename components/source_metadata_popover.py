@@ -153,6 +153,11 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "education-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
     "education-total": {"sources": [_BOOST]},
+    "education-funding-source": {"sources": [_BOOST_EDU]},
+    "education-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_EDU],
+    },
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
     # ------------------------------------------------------------------

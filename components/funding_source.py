@@ -22,35 +22,42 @@ SHORTFALL_COLOR = "#C0503A"  # budget unspent
 REFERENCE_LINE_COLOR = "#8A8F98"
 
 
-def _prepare_funding_df(country):
-    """Per-year total budget for ``country``, with the domestic/foreign split.
-
-    Keeps every year that has a budget so the total-budget line shows even when
-    the funding breakdown is missing; the split columns are NaN for years (or
-    countries) that don't report ``foreign_funded_budget``, rather than implying
-    an all-domestic split.
-
-    Deliberately budget-based, not expenditure-based: foreign-sourced execution
-    is not tracked for Togo, which would render the split as flat 100% domestic.
-    """
-    df = server_store.get("expenditure_w_poverty")
-    df = filter_country_sort_year(df, country)
+def _prepare_funding_df(df):
+    """Funding split + real-terms columns from a country(-sector)-scoped frame."""
     if df.empty or "budget" not in df.columns:
         return df.iloc[0:0]
+    return _add_funding_columns(df)
 
+
+def _add_funding_columns(df):
+    """Domestic/foreign split + real-terms columns for a scoped budget frame.
+
+    Split is left NaN where unknown — including the sector table's
+    ``domestic == budget`` sentinel — rather than implying all-domestic.
+    Budget-based, not expenditure-based: foreign execution isn't reliably tracked.
+    """
     df = df.copy()
     df = df[df["budget"].notna() & (df["budget"].round(0) != 0)]
     if df.empty:
         return df
 
-    if "foreign_funded_budget" not in df.columns:
-        df["foreign_funded_budget"] = np.nan
-    df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
+    if "foreign_funded_budget" in df.columns:
+        foreign = df["foreign_funded_budget"]
+    elif "domestic_funded_budget" in df.columns:
+        foreign = df["budget"] - df["domestic_funded_budget"]
+        # domestic == budget is the sector table's "foreign unknown" sentinel.
+        foreign = foreign.where(
+            df["domestic_funded_budget"].round(0) != df["budget"].round(0)
+        )
+    else:
+        foreign = np.nan
+
+    df["foreign_funded_budget"] = foreign
+    df["domestic_funded_budget"] = df["budget"] - foreign
     df["domestic_share"] = df["domestic_funded_budget"] / df["budget"] * 100
     df["foreign_share"] = df["foreign_funded_budget"] / df["budget"] * 100
 
-    # Deflate every amount by the same factor, so the real bars still sum to the
-    # real total and the shares are unchanged.
+    # One deflator for all amounts, so the real bars still sum to the real total.
     deflator = _deflator(df)
     df["real_budget"] = df["budget"] * deflator
     df["real_domestic_funded_budget"] = df["domestic_funded_budget"] * deflator
@@ -72,15 +79,14 @@ def _deflator(df):
 _FUNDING_CACHE = {}
 
 
-def render_funding(country, lang="en", budget_terms="nominal"):
-    """Funding figure and its narrative, from one shared data prep.
+def render_funding(country, lang="en", budget_terms="nominal", sector=None):
+    """Figure and narrative together, so one callback updates both in one round-trip.
 
-    Returned together so a single callback updates the chart and its text in one
-    round-trip. Memoised because the narrative's trend fit is expensive.
+    ``sector`` scopes to a functional sector (None = national). Memoised.
     """
-    key = (country, lang, budget_terms)
+    key = (country, lang, budget_terms, sector)
     if key not in _FUNDING_CACHE:
-        _FUNDING_CACHE[key] = _build_funding(country, lang, budget_terms)
+        _FUNDING_CACHE[key] = _build_funding(country, lang, budget_terms, sector)
     return _FUNDING_CACHE[key]
 
 
@@ -89,29 +95,48 @@ def clear_cache():
     _FUNDING_CACHE.clear()
 
 
-def _build_funding(country, lang, budget_terms):
-    funding_df = _prepare_funding_df(country)
+def _build_funding(country, lang, budget_terms, sector):
+    if sector:
+        source = server_store.get("func_by_country_year")
+        source = source[source["func"] == sector]
+    else:
+        source = server_store.get("expenditure_w_poverty")
+    funding_df = _prepare_funding_df(filter_country_sort_year(source, country))
     if funding_df.empty:
         unavailable = t("error.data_unavailable", lang)
         return empty_plot(unavailable), unavailable
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    fig = create_funding_source_figure(funding_df, currency_code, lang=lang, budget_terms=budget_terms)
-    narrative = format_funding_source_narrative(funding_df, country, lang=lang, budget_terms=budget_terms)
+    budget_label = None
+    if sector:
+        phrase = _sector_budget_phrase(sector, lang, real=False)
+        budget_label = phrase[0].upper() + phrase[1:]
+    fig = create_funding_source_figure(
+        funding_df, currency_code, lang=lang, budget_terms=budget_terms, budget_label=budget_label
+    )
+    narrative = format_funding_source_narrative(
+        funding_df, country, lang=lang, budget_terms=budget_terms, sector=sector
+    )
     return fig, narrative
 
 
-def render_execution_narrative(country, lang="en"):
-    execution_df = _prepare_execution_df(country)
+def render_execution_narrative(country, lang="en", sector=None):
+    execution_df = (
+        _prepare_sector_execution_df(country, sector)
+        if sector
+        else _prepare_execution_df(country)
+    )
     if execution_df.empty:
         return t("error.data_unavailable", lang)
     return format_execution_narrative(execution_df, country, lang=lang)
 
 
-def create_funding_source_figure(df, currency_code, lang="en", budget_terms="nominal"):
+def create_funding_source_figure(
+    df, currency_code, lang="en", budget_terms="nominal", budget_label=None
+):
     """Total-budget line, plus the domestic/foreign split where it's available.
 
-    Countries that report only a total (no ``foreign_funded_budget``) get a plain
-    total-budget line rather than an empty funding chart.
+    A country reporting only a total gets a plain line, not an empty chart.
+    ``budget_label`` names the total line (e.g. "Education budget").
     """
     real = budget_terms == "real"
     has_split = df["domestic_share"].notna().any()
@@ -146,9 +171,8 @@ def create_funding_source_figure(df, currency_code, lang="en", budget_terms="nom
             )
 
     total_col = "real_budget" if real else "budget"
-    # Constant, compact legend label; the radio conveys nominal vs inflation-
-    # adjusted, and a longer label wraps the legend into the title.
-    total_name = t("trace.total_budget", lang)
+    # Constant label: a real-terms variant would wrap the legend into the title.
+    total_name = budget_label or t("trace.total_budget", lang)
     fig.add_trace(
         go.Scatter(
             name=total_name,
@@ -164,7 +188,6 @@ def create_funding_source_figure(df, currency_code, lang="en", budget_terms="nom
 
     fig.update_xaxes(tickformat="d")
     if has_split:
-        # Bars carry the share on the left axis; the total line on the right.
         fig.update_yaxes(
             title_text=t("axis.budget_share", lang),
             ticksuffix="%",
@@ -184,7 +207,7 @@ def create_funding_source_figure(df, currency_code, lang="en", budget_terms="nom
             ),
         )
     else:
-        # No breakdown: just the total budget on a single axis.
+        # No split: total budget on a single axis.
         fig.update_yaxes(title_text=total_name, rangemode="tozero", fixedrange=True)
         fig.update_layout(title=t("chart.total_budget_over_time", lang), showlegend=False)
 
@@ -196,13 +219,28 @@ def create_funding_source_figure(df, currency_code, lang="en", budget_terms="nom
     return apply_locale(fig, lang)
 
 
-def format_funding_source_narrative(df, country, lang="en", budget_terms="nominal"):
+def _sector_budget_phrase(sector, lang, real):
+    sector_name = t(f"sector.{sector.lower()}", lang)
+    key = "phrase.sector_budget_real" if real else "phrase.sector_budget"
+    return t(key, lang, sector=sector_name, sector_gen=genitive(lang, sector_name))
+
+
+def _budget_metric(sector, lang, real):
+    if not sector:
+        return t("metric.total_budget_real" if real else "metric.total_budget", lang)
+    phrase = _sector_budget_phrase(sector, lang, real)
+    if lang == "en":
+        return phrase
+    # "orçamento" / "budget" are masculine, so the metric dict is masculine.
+    return {"name": ("o " if lang == "pt" else "le ") + phrase, "plural": False, "feminine": False}
+
+
+def format_funding_source_narrative(df, country, lang="en", budget_terms="nominal", sector=None):
     country_label = t(f"country.{country}", lang)
 
     # Total-budget trend, for the terms currently shown.
     real = budget_terms == "real"
     total_col = "real_budget" if real else "budget"
-    metric_key = "metric.total_budget_real" if real else "metric.total_budget"
     budget_df = df.dropna(subset=[total_col]).sort_values("year")
     trend = ""
     if len(budget_df) >= 2:
@@ -213,7 +251,7 @@ def format_funding_source_narrative(df, country, lang="en", budget_terms="nomina
         )
         trend = get_segment_narrative_i18n(
             extractor=extractor,
-            metric=t(metric_key, lang),
+            metric=_budget_metric(sector, lang, real),
             lang=lang,
         )
         if trend:
@@ -242,14 +280,23 @@ def format_funding_source_narrative(df, country, lang="en", budget_terms="nomina
 
 
 def _prepare_execution_df(country):
-    """Per-year budget execution for ``country`` (expenditure vs budget).
+    """National per-year budget execution for ``country`` (expenditure vs budget)."""
+    df = filter_country_sort_year(server_store.get("expenditure_w_poverty"), country)
+    return _add_execution_columns(df)
 
-    Filters on expenditure, not the foreign-funding split, so it keeps years the
-    funding chart drops.
-    """
-    df = server_store.get("expenditure_w_poverty")
-    df = filter_country_sort_year(df, country)
-    if df.empty or "budget" not in df.columns or "expenditure" not in df.columns:
+
+def _prepare_sector_execution_df(country, sector):
+    """Same, scoped to one functional ``sector``."""
+    df = server_store.get("func_by_country_year")
+    return _add_execution_columns(
+        filter_country_sort_year(df[df["func"] == sector], country)
+    )
+
+
+def _add_execution_columns(df):
+    """Execution rate and variance; filters on expenditure (not the split), so it
+    keeps years the funding chart drops."""
+    if df.empty or not {"budget", "expenditure"}.issubset(df.columns):
         return df.iloc[0:0]
 
     df = df.copy()
@@ -266,8 +313,12 @@ def _prepare_execution_df(country):
     return df.sort_values("year")
 
 
-def render_execution_figure(country, lang="en", metric="execution_rate"):
-    execution_df = _prepare_execution_df(country)
+def render_execution_figure(country, lang="en", metric="execution_rate", sector=None):
+    execution_df = (
+        _prepare_sector_execution_df(country, sector)
+        if sector
+        else _prepare_execution_df(country)
+    )
     if execution_df.empty:
         return empty_plot(t("error.data_unavailable", lang))
     return create_execution_figure(execution_df, lang=lang, metric=metric)

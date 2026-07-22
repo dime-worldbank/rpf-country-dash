@@ -32,6 +32,7 @@ from components.edu_health_across_space import (
 )
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
+from components import funding_source
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import (
     get_relationship_narrative_i18n,
@@ -121,6 +122,8 @@ def fetch_edu_private_data_once(edu_data):
 def render_education_content(tab, lang):
     lang = lang or "en"
     if tab == "edu-tab-time":
+        sector_name = t("sector.education", lang)
+        sector_gen = genitive(lang, sector_name)
         return html.Div(
             [
                 dbc.Row(
@@ -196,6 +199,98 @@ def render_education_content(tab, lang):
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
                             lg={"size": 5, "offset": 0},
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t(
+                            "heading.budget_funded_executed", lang,
+                            sector=sector_name, sector_gen=sector_gen,
+                        ))
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="education-funding-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=4,
+                        ),
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="education-funding-terms",
+                                        options=[
+                                            {"label": t("radio.budget", lang), "value": "nominal"},
+                                            {"label": t("radio.inflation_adjusted_budget", lang), "value": "real"},
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("education-funding-source"),
+                            ],
+                            xs=12, lg=8,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.P(
+                            id="education-execution-narrative",
+                            children=t("loading", lang),
+                        )
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="education-budget-execution-metric",
+                                        options=[
+                                            {"label": t("radio.execution_rate", lang), "value": "execution_rate"},
+                                            {"label": t("radio.variance", lang), "value": "variance"},
+                                        ],
+                                        value="execution_rate",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("education-budget-execution"),
+                            ],
+                            xs=12, lg=6,
+                        ),
+                        dbc.Col(
+                            html.Div(
+                                "Economic-breakdown execution chart — coming next",
+                                style={
+                                    "display": "flex",
+                                    "alignItems": "center",
+                                    "justifyContent": "center",
+                                    "minHeight": "300px",
+                                    "border": "1px dashed #ccc",
+                                    "borderRadius": "8px",
+                                    "color": "#999",
+                                    "fontStyle": "italic",
+                                },
+                            ),
+                            xs=12, lg=6,
                         ),
                     ]
                 ),
@@ -937,3 +1032,51 @@ def render_education_subnat_rank(subnational_data, country, base_year, country_d
         return empty_plot("Loading..."), "Loading..."
     currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_rank(subnational_data, country, base_year, 'Education', currency_code, lang=lang)
+
+
+@callback(
+    Output("education-funding-source", "figure"),
+    Output("education-funding-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("education-funding-terms", "value"),
+)
+def render_education_funding(data, country, lang, budget_terms):
+    lang = lang or "en"
+    budget_terms = budget_terms or "nominal"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return funding_source.render_funding(
+        country, lang=lang, budget_terms=budget_terms, sector="Education"
+    )
+
+
+@callback(
+    Output("education-budget-execution", "figure"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("education-budget-execution-metric", "value"),
+)
+def render_education_budget_execution(data, country, lang, metric):
+    lang = lang or "en"
+    metric = metric or "execution_rate"
+    if not data or not country:
+        return dash.no_update
+    return funding_source.render_execution_figure(
+        country, lang=lang, metric=metric, sector="Education"
+    )
+
+
+@callback(
+    Output("education-execution-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_education_execution_narrative(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update
+    return funding_source.render_execution_narrative(country, lang=lang, sector="Education")

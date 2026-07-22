@@ -1,3 +1,13 @@
+"""Integration tests for components.funding_source.
+
+Drive everything through the module's public entry points (``render_funding``,
+``render_execution_figure``, ``render_execution_narrative``) with realistic
+``server_store``-shaped data, rather than unit-testing the private prep
+helpers. Scenarios are chosen for branch coverage: split vs no-split,
+national vs sector, the domestic-sentinel guard, credibility bands, and the
+recent-window rise/fall/steady wording.
+"""
+
 import unittest
 from unittest.mock import patch
 
@@ -6,393 +16,323 @@ import pandas as pd
 from components import funding_source
 
 
-class TestPrepareFundingDf(unittest.TestCase):
-    """The domestic/foreign split derived from budget columns."""
+def _rows_df(country, rows, func=None):
+    df = pd.DataFrame(rows)
+    df["country_name"] = country
+    if func is not None:
+        df["func"] = func
+    return df
 
+
+def _currency(country, code="XOF"):
+    return {country: {"currency_code": code}}
+
+
+def _store(national=None, sector=None, currency=None):
+    """A ``server_store.get`` stand-in keyed like the real store."""
+    mapping = {}
+    if national is not None:
+        mapping["expenditure_w_poverty"] = national
+    if sector is not None:
+        mapping["func_by_country_year"] = sector
+    if currency is not None:
+        mapping["basic_country_info"] = currency
+    return mapping.__getitem__
+
+
+class TestFundingSourceIntegration(unittest.TestCase):
+    """render_funding: national vs sector, split vs no-split, real vs nominal."""
+
+    def setUp(self):
+        # The cache is module-global; a stale entry from another test would
+        # silently mask what this test's server_store mock actually produces.
+        funding_source.clear_cache()
+
+    @patch("components.funding_source.get_segment_narrative_i18n")
     @patch("components.funding_source.server_store.get")
-    def test_computes_domestic_split_and_share(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo"],
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "foreign_funded_budget": [30.0, 40.0],
-            }
+    def test_national_full_split(self, mock_get, mock_trend):
+        mock_trend.return_value = "the budget grew steadily"
+        national = _rows_df(
+            "Togo",
+            [
+                {"year": 2018, "budget": 100.0, "foreign_funded_budget": 20.0},
+                {"year": 2019, "budget": 200.0, "foreign_funded_budget": 40.0},
+                {"year": 2020, "budget": 300.0, "foreign_funded_budget": 60.0},
+            ],
         )
+        mock_get.side_effect = _store(national=national, currency=_currency("Togo"))
 
-        result = funding_source._prepare_funding_df("Togo")
+        fig, narrative = funding_source.render_funding("Togo", "en", "nominal")
 
-        # Sorted ascending by year, domestic = budget - foreign.
-        self.assertEqual(result["year"].tolist(), [2018, 2019])
-        self.assertEqual(result["domestic_funded_budget"].tolist(), [70.0, 160.0])
-        self.assertEqual(result["domestic_share"].tolist(), [70.0, 80.0])
+        self.assertEqual(len(fig.data), 3)  # domestic bar + foreign bar + total line
+        self.assertEqual(fig.data[-1].name, "Total Budget")
+        self.assertEqual(fig.layout.barmode, "stack")
+        self.assertIsNotNone(fig.layout.yaxis2)
+        self.assertTrue(narrative.startswith("The budget grew steadily"))
+        self.assertIn("80.0%", narrative)  # mean domestic share
+        self.assertIn("20.0%", narrative)  # mean foreign share
 
+    @patch("components.funding_source.get_segment_narrative_i18n")
     @patch("components.funding_source.server_store.get")
-    def test_keeps_null_foreign_years_drops_zero_budget(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo", "Togo", "Kenya"],
-                "year": [2018, 2019, 2020, 2018],
-                "budget": [100.0, 100.0, 0.0, 100.0],
-                # 2019 has no breakdown; 2020 has a zero budget.
-                "foreign_funded_budget": [30.0, None, 10.0, 50.0],
-            }
+    def test_national_no_split_states_unavailable(self, mock_get, mock_trend):
+        mock_trend.return_value = ""  # no trend text; isolates the split branch
+        national = _rows_df(
+            "Kenya",
+            [
+                {"year": 2018, "budget": 100.0},
+                {"year": 2019, "budget": 120.0},
+                {"year": 2020, "budget": 150.0},
+            ],
         )
+        mock_get.side_effect = _store(national=national, currency=_currency("Kenya"))
 
-        result = funding_source._prepare_funding_df("Togo")
+        fig, narrative = funding_source.render_funding("Kenya", "en", "nominal")
 
-        # Zero-budget and the other country drop; the null-foreign year stays so
-        # the total-budget line still shows, but its split is NaN.
-        self.assertEqual(result["year"].tolist(), [2018, 2019])
-        self.assertEqual(result.loc[result.year == 2018, "domestic_share"].iloc[0], 70.0)
-        self.assertTrue(pd.isna(result.loc[result.year == 2019, "domestic_share"].iloc[0]))
-
-    @patch("components.funding_source.server_store.get")
-    def test_missing_foreign_column_keeps_total_budget(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo"],
-                "year": [2018],
-                "budget": [100.0],
-            }
-        )
-
-        result = funding_source._prepare_funding_df("Togo")
-
-        self.assertEqual(result["budget"].tolist(), [100.0])
-        self.assertTrue(result["domestic_share"].isna().all())
-
-
-class TestRealBudgetColumn(unittest.TestCase):
-    """The inflation-adjusted total budget derived via the expenditure deflator."""
-
-    @patch("components.funding_source.server_store.get")
-    def test_real_budget_deflates_whole_budget(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo"],
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "foreign_funded_budget": [30.0, 40.0],
-                "expenditure": [100.0, 100.0],
-                "real_expenditure": [90.0, 80.0],
-            }
-        )
-
-        result = funding_source._prepare_funding_df("Togo")
-
-        self.assertEqual(result["real_budget"].tolist(), [90.0, 160.0])
-
-    @patch("components.funding_source.server_store.get")
-    def test_real_budget_is_nan_without_deflator_columns(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo"],
-                "year": [2018],
-                "budget": [100.0],
-                "foreign_funded_budget": [30.0],
-            }
-        )
-
-        result = funding_source._prepare_funding_df("Togo")
-
-        self.assertTrue(result["real_budget"].isna().all())
-
-    @patch("components.funding_source.server_store.get")
-    def test_real_bars_reconcile_with_real_total(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo"],
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "foreign_funded_budget": [30.0, 40.0],
-                "expenditure": [100.0, 100.0],
-                "real_expenditure": [90.0, 80.0],
-            }
-        )
-
-        result = funding_source._prepare_funding_df("Togo")
-
-        recomposed = (
-            result["real_domestic_funded_budget"] + result["real_foreign_funded_budget"]
-        )
-        self.assertEqual(recomposed.tolist(), result["real_budget"].tolist())
-
-    @patch("components.funding_source.server_store.get")
-    def test_real_budget_nan_when_expenditure_zero(self, mock_get):
-        # Zero expenditure must guard to NaN, not inf.
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo"],
-                "year": [2018],
-                "budget": [100.0],
-                "foreign_funded_budget": [30.0],
-                "expenditure": [0.0],
-                "real_expenditure": [0.0],
-            }
-        )
-
-        result = funding_source._prepare_funding_df("Togo")
-
-        self.assertTrue(result["real_budget"].isna().all())
-
-
-class TestFundingSourceFigure(unittest.TestCase):
-    """Two share bars plus a total-budget line on a secondary axis."""
-
-    def _df(self):
-        return pd.DataFrame(
-            {
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "foreign_funded_budget": [30.0, 40.0],
-                "domestic_funded_budget": [70.0, 160.0],
-                "domestic_share": [70.0, 80.0],
-                "foreign_share": [30.0, 20.0],
-                "real_budget": [90.0, 160.0],
-                "real_domestic_funded_budget": [63.0, 128.0],
-                "real_foreign_funded_budget": [27.0, 32.0],
-            }
-        )
-
-    def test_domestic_bar_uses_non_blue_colour(self):
-        # Domestic must stay off the central-government blue used just above.
-        fig = funding_source.create_funding_source_figure(self._df(), "XOF", lang="en")
-
-        self.assertEqual(fig.data[0].marker.color, funding_source.DOMESTIC_FUNDED_COLOR)
-        self.assertNotEqual(funding_source.DOMESTIC_FUNDED_COLOR, "rgb(17, 141, 255)")
-
-    def test_has_total_line_on_secondary_axis(self):
-        fig = funding_source.create_funding_source_figure(self._df(), "XOF", lang="en")
-
-        self.assertEqual(len(fig.data), 3)
-        line = fig.data[2]
-        self.assertEqual(line.type, "scatter")
-        self.assertEqual(line.yaxis, "y2")
-
-    def test_amount_switches_line_between_nominal_and_real(self):
-        nominal = funding_source.create_funding_source_figure(
-            self._df(), "XOF", lang="en", budget_terms="nominal"
-        )
-        real = funding_source.create_funding_source_figure(
-            self._df(), "XOF", lang="en", budget_terms="real"
-        )
-
-        self.assertEqual(list(nominal.data[2].y), [100.0, 200.0])
-        self.assertEqual(list(real.data[2].y), [90.0, 160.0])
-
-    def test_real_mode_deflates_bar_amounts_but_keeps_shares(self):
-        nominal = funding_source.create_funding_source_figure(
-            self._df(), "XOF", lang="en", budget_terms="nominal"
-        )
-        real = funding_source.create_funding_source_figure(
-            self._df(), "XOF", lang="en", budget_terms="real"
-        )
-
-        self.assertEqual(list(nominal.data[0].y), list(real.data[0].y))
-        self.assertNotEqual(
-            list(nominal.data[0].customdata[:, 0]),
-            list(real.data[0].customdata[:, 0]),
-        )
-
-    def _df_no_split(self):
-        na = [None, None]
-        return pd.DataFrame(
-            {
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "foreign_funded_budget": na,
-                "domestic_funded_budget": na,
-                "domestic_share": na,
-                "foreign_share": na,
-                "real_budget": [90.0, 160.0],
-                "real_domestic_funded_budget": na,
-                "real_foreign_funded_budget": na,
-            }
-        )
-
-    def test_split_present_titles_the_funding_question(self):
-        fig = funding_source.create_funding_source_figure(self._df(), "XOF", lang="en")
-
-        self.assertEqual(len(fig.data), 3)  # two bars + line
-        self.assertIn("funded", fig.layout.title.text.lower())
-        self.assertEqual(fig.layout.yaxis2.overlaying, "y")
-
-    def test_no_split_shows_only_total_line_with_total_title(self):
-        fig = funding_source.create_funding_source_figure(
-            self._df_no_split(), "XOF", lang="en"
-        )
-
-        self.assertEqual(len(fig.data), 1)  # line only, no bars
+        self.assertEqual(len(fig.data), 1)  # total line only, no split bars
         self.assertEqual(fig.data[0].type, "scatter")
         self.assertIn("total budget", fig.layout.title.text.lower())
-        self.assertNotIn("yaxis2", fig.layout.to_plotly_json())
-
-
-class TestFundingSourceNarrative(unittest.TestCase):
-    """Total-budget trend followed by the plain funding-split average."""
-
-    def _df(self, years, budgets, shares):
-        return pd.DataFrame(
-            {"year": years, "budget": budgets, "domestic_share": shares}
+        self.assertEqual(
+            narrative,
+            "The breakdown between domestic and foreign funding is not available in the data.",
         )
-
-    def test_single_point_returns_average_only(self):
-        # One year can't support a trend fit, so only the split average.
-        text = funding_source.format_funding_source_narrative(
-            self._df([2018], [100.0], [70.0]), "Togo", lang="en"
-        )
-
-        self.assertIsInstance(text, str)
-        self.assertIn("70.0%", text)
-        self.assertIn("30.0%", text)
 
     @patch("components.funding_source.get_segment_narrative_i18n")
-    def test_total_budget_trend_precedes_split_average(self, mock_trend):
-        mock_trend.return_value = "the total budget grew steadily"
-
-        result = funding_source.format_funding_source_narrative(
-            self._df([2018, 2019, 2020], [100.0, 120.0, 150.0], [80.0, 75.0, 70.0]),
-            "Togo",
-            lang="en",
-        )
-
-        self.assertIsInstance(result, str)
-        self.assertTrue(result.startswith("The total budget grew steadily"))
-        self.assertIn("75.0%", result)  # mean domestic share
-
-    @patch("components.funding_source.get_segment_narrative_i18n")
-    @patch("components.funding_source.InsightExtractor")
-    def test_trend_runs_on_budget_not_share(self, mock_extractor, mock_trend):
-        mock_trend.return_value = "trend"
-
-        funding_source.format_funding_source_narrative(
-            self._df([2018, 2019, 2020], [100.0, 120.0, 150.0], [80.0, 75.0, 70.0]),
-            "Togo",
-            lang="en",
-        )
-
-        passed_values = list(mock_extractor.call_args[0][1])
-        self.assertEqual(passed_values, [100.0, 120.0, 150.0])
-
-    @patch("components.funding_source.get_segment_narrative_i18n")
-    @patch("components.funding_source.InsightExtractor")
-    def test_real_amount_trends_real_budget(self, mock_extractor, mock_trend):
-        mock_trend.return_value = "trend"
-        df = pd.DataFrame(
-            {
-                "year": [2018, 2019, 2020],
-                "budget": [100.0, 120.0, 150.0],
-                "real_budget": [95.0, 110.0, 130.0],
-                "domestic_share": [80.0, 75.0, 70.0],
-            }
-        )
-
-        funding_source.format_funding_source_narrative(
-            df, "Togo", lang="en", budget_terms="real"
-        )
-
-        passed_values = list(mock_extractor.call_args[0][1])
-        self.assertEqual(passed_values, [95.0, 110.0, 130.0])
-
-    @patch("components.funding_source.get_segment_narrative_i18n")
-    def test_falls_back_to_average_when_no_trend(self, mock_trend):
+    @patch("components.funding_source.server_store.get")
+    def test_sector_split_names_its_own_budget_and_filters_other_sectors(
+        self, mock_get, mock_trend
+    ):
         mock_trend.return_value = ""
-
-        result = funding_source.format_funding_source_narrative(
-            self._df([2018, 2019, 2020], [100.0, 120.0, 150.0], [80.0, 75.0, 70.0]),
+        sector = _rows_df(
             "Togo",
-            lang="en",
+            [
+                {"year": 2018, "budget": 100.0, "domestic_funded_budget": 70.0},
+                {"year": 2019, "budget": 200.0, "domestic_funded_budget": 160.0},
+                # A different sector's row must never leak into the Education result.
+                {"year": 2018, "budget": 999.0, "domestic_funded_budget": 500.0},
+            ],
+            func=["Education", "Education", "Health"],
+        )
+        mock_get.side_effect = _store(sector=sector, currency=_currency("Togo"))
+
+        fig, narrative = funding_source.render_funding(
+            "Togo", "en", "nominal", sector="Education"
         )
 
-        self.assertIsInstance(result, str)
-        self.assertIn("75.0%", result)
+        self.assertEqual(list(fig.data[-1].x), [2018, 2019])  # Health row excluded
+        self.assertEqual(fig.data[-1].name, "Education budget")
+        self.assertEqual(mock_trend.call_args.kwargs["metric"], "education budget")
+        self.assertIn("75.0%", narrative)  # mean domestic share: (70+80)/2
 
     @patch("components.funding_source.get_segment_narrative_i18n")
-    def test_no_split_states_breakdown_unavailable(self, mock_trend):
-        mock_trend.return_value = "the total budget grew"
+    @patch("components.funding_source.server_store.get")
+    def test_sector_all_domestic_sentinel_is_not_a_split(self, mock_get, mock_trend):
+        mock_trend.return_value = ""
+        # domestic == budget is the sector table's "foreign unknown" sentinel,
+        # not a genuine 100%-domestic split.
+        sector = _rows_df(
+            "Liberia",
+            [
+                {"year": 2018, "budget": 100.0, "domestic_funded_budget": 100.0},
+                {"year": 2019, "budget": 200.0, "domestic_funded_budget": 200.0},
+            ],
+            func="Education",
+        )
+        mock_get.side_effect = _store(sector=sector, currency=_currency("Liberia"))
 
-        result = funding_source.format_funding_source_narrative(
-            self._df([2018, 2019, 2020], [100.0, 120.0, 150.0], [None, None, None]),
-            "Togo",
-            lang="en",
+        fig, narrative = funding_source.render_funding(
+            "Liberia", "en", "nominal", sector="Education"
         )
 
-        self.assertIn("The total budget grew", result)
-        self.assertIn("not available in the data", result)
-        self.assertNotIn("financed", result)  # no fabricated split figure
+        self.assertEqual(len(fig.data), 1)  # sentinel collapses to total-only
+        self.assertEqual(fig.data[0].name, "Education budget")
+        self.assertIn("not available in the data", narrative)
 
+    @patch("components.funding_source.get_segment_narrative_i18n")
+    @patch("components.funding_source.server_store.get")
+    def test_real_terms_deflates_the_total_line(self, mock_get, mock_trend):
+        mock_trend.return_value = ""
+        national = _rows_df(
+            "Ghana",
+            [
+                {
+                    "year": 2018,
+                    "budget": 100.0,
+                    "foreign_funded_budget": 20.0,
+                    "expenditure": 100.0,
+                    "real_expenditure": 90.0,
+                },
+                {
+                    "year": 2019,
+                    "budget": 200.0,
+                    "foreign_funded_budget": 40.0,
+                    "expenditure": 180.0,
+                    "real_expenditure": 150.0,
+                },
+            ],
+        )
+        mock_get.side_effect = _store(national=national, currency=_currency("Ghana"))
 
-class TestPrepareExecutionDf(unittest.TestCase):
-    """Execution rate and variance derived from budget vs expenditure."""
+        nominal_fig, _ = funding_source.render_funding("Ghana", "en", "nominal")
+        real_fig, _ = funding_source.render_funding("Ghana", "en", "real")
+
+        self.assertEqual(list(nominal_fig.data[-1].y), [100.0, 200.0])
+        # deflator = real_expenditure / expenditure: 90/100, then 150/180.
+        real_y = [round(v, 2) for v in real_fig.data[-1].y]
+        self.assertEqual(real_y, [90.0, 166.67])
+        # Shares stay the split, not the deflated amounts.
+        self.assertEqual(list(nominal_fig.data[0].y), list(real_fig.data[0].y))
 
     @patch("components.funding_source.server_store.get")
-    def test_computes_rate_and_variance(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo"],
-                "year": [2018, 2019],
-                "budget": [100.0, 200.0],
-                "expenditure": [90.0, 150.0],
-            }
-        )
+    def test_no_data_for_country_is_unavailable(self, mock_get):
+        # Data exists, but not for the requested country.
+        national = _rows_df("Nigeria", [{"year": 2018, "budget": 100.0}])
+        mock_get.side_effect = _store(national=national)
 
-        result = funding_source._prepare_execution_df("Togo")
+        fig, narrative = funding_source.render_funding("Ghana", "en", "nominal")
 
-        self.assertEqual(result["execution_rate"].tolist(), [90.0, 75.0])
-        self.assertEqual(result["execution_variance"].tolist(), [-10.0, -25.0])
+        self.assertEqual(len(fig.data), 0)
+        self.assertEqual(narrative, "Data not available for this period.")
 
     @patch("components.funding_source.server_store.get")
-    def test_excludes_null_expenditure_and_zero_budget(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {
-                "country_name": ["Togo", "Togo", "Togo"],
-                "year": [2018, 2019, 2020],
-                "budget": [100.0, 100.0, 0.0],
-                "expenditure": [90.0, None, 10.0],
-            }
+    def test_single_year_skips_trend_but_still_reports_split(self, mock_get):
+        # Real trend fitter left unmocked: a lone point must not reach it at all.
+        national = _rows_df(
+            "Pakistan", [{"year": 2020, "budget": 100.0, "foreign_funded_budget": 30.0}]
         )
+        mock_get.side_effect = _store(national=national, currency=_currency("Pakistan"))
 
-        result = funding_source._prepare_execution_df("Togo")
+        _, narrative = funding_source.render_funding("Pakistan", "en", "nominal")
 
-        self.assertEqual(result["year"].tolist(), [2018])
+        self.assertIn("70.0%", narrative)
+        self.assertIn("30.0%", narrative)
+
+
+class TestExecutionIntegration(unittest.TestCase):
+    """render_execution_figure / render_execution_narrative: credibility bands,
+    the recent-window wording, sector scoping, and the variance metric."""
+
+    def _budget_expenditure(self, country, years, rates, budget=100.0):
+        rows = [
+            {"year": y, "budget": budget, "expenditure": budget * r / 100.0}
+            for y, r in zip(years, rates)
+        ]
+        return _rows_df(country, rows)
 
     @patch("components.funding_source.server_store.get")
-    def test_missing_expenditure_column_returns_empty(self, mock_get):
-        mock_get.return_value = pd.DataFrame(
-            {"country_name": ["Togo"], "year": [2018], "budget": [100.0]}
+    def test_under_execution_reads_as_not_credible(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018], [85.0])
         )
 
-        result = funding_source._prepare_execution_df("Togo")
+        narrative = funding_source.render_execution_narrative("Ghana", "en")
+        fig = funding_source.render_execution_figure("Ghana", "en")
 
-        self.assertTrue(result.empty)
-
-
-class TestExecutionFigure(unittest.TestCase):
-    """Execution bars, coloured by metric."""
-
-    def _df(self):
-        return pd.DataFrame(
-            {
-                "year": [2018, 2019, 2020],
-                "execution_rate": [90.0, 110.0, 75.0],
-                "execution_variance": [-10.0, 10.0, -25.0],
-            }
-        )
-
-    def test_rate_mode_is_single_colour_with_100_reference(self):
-        fig = funding_source.create_execution_figure(self._df(), lang="en")
-
-        self.assertEqual(list(fig.data[0].y), [90.0, 110.0, 75.0])
+        self.assertIn("under-executing", narrative)
+        self.assertIn("15.0%", narrative)  # gap below the approved budget
+        self.assertEqual(list(fig.data[0].y), [85.0])
         self.assertEqual(fig.data[0].marker.color, funding_source.EXECUTED_COLOR)
         self.assertEqual(fig.layout.shapes[0].y0, 100)
 
-    def test_variance_mode_colours_shortfall_red_and_zero_reference(self):
-        fig = funding_source.create_execution_figure(
-            self._df(), lang="en", metric="variance"
+    @patch("components.funding_source.server_store.get")
+    def test_on_track_execution_reads_as_credible(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Pakistan", [2018], [99.0])
         )
 
-        self.assertEqual(list(fig.data[0].y), [-10.0, 10.0, -25.0])
+        narrative = funding_source.render_execution_narrative("Pakistan", "en")
+
+        self.assertIn("credible", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_over_execution_flags_spending_above_budget(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Bangladesh", [2018], [108.0])
+        )
+
+        narrative = funding_source.render_execution_narrative("Bangladesh", "en")
+
+        self.assertIn("more than was approved", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_recent_window_reports_rise_over_last_five_years(self, mock_get):
+        years = list(range(2014, 2022))
+        rates = [60, 62, 64, 78, 82, 86, 90, 94]
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Chile", years, rates)
+        )
+
+        narrative = funding_source.render_execution_narrative("Chile", "en")
+
+        # Recent window is the last 5 years (2017-2021) -> starts at 78, not 60.
+        self.assertIn("In the most recent 5 years, execution rose from 78.0% to 94.0%", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_recent_window_reports_fall(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure(
+                "Uruguay", [2018, 2019, 2020], [95.0, 88.0, 80.0]
+            )
+        )
+
+        narrative = funding_source.render_execution_narrative("Uruguay", "en")
+
+        self.assertIn("execution fell from 95.0% to 80.0%", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_recent_window_reports_steady(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure(
+                "Paraguay", [2018, 2019, 2020], [90.0, 91.0, 90.5]
+            )
+        )
+
+        narrative = funding_source.render_execution_narrative("Paraguay", "en")
+
+        self.assertIn("held broadly steady", narrative)
+        self.assertIn("90.5%", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_sector_scoping_excludes_other_sectors(self, mock_get):
+        sector = _rows_df(
+            "Togo",
+            [
+                {"year": 2018, "budget": 100.0, "expenditure": 90.0},
+                {"year": 2018, "budget": 50.0, "expenditure": 50.0},
+            ],
+            func=["Education", "Health"],
+        )
+        mock_get.side_effect = _store(sector=sector)
+
+        education = funding_source.render_execution_figure(
+            "Togo", "en", sector="Education"
+        )
+        health = funding_source.render_execution_figure("Togo", "en", sector="Health")
+
+        self.assertEqual(list(education.data[0].y), [90.0])
+        self.assertEqual(list(health.data[0].y), [100.0])
+
+    @patch("components.funding_source.server_store.get")
+    def test_missing_expenditure_is_unavailable(self, mock_get):
+        national = _rows_df("Colombia", [{"year": 2018, "budget": 100.0}])
+        mock_get.side_effect = _store(national=national)
+
+        fig = funding_source.render_execution_figure("Colombia", "en")
+        narrative = funding_source.render_execution_narrative("Colombia", "en")
+
+        self.assertEqual(len(fig.data), 0)
+        self.assertEqual(narrative, "Data not available for this period.")
+
+    @patch("components.funding_source.server_store.get")
+    def test_variance_metric_colours_shortfall_red_with_zero_reference(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure(
+                "Albania", [2018, 2019, 2020], [90.0, 110.0, 75.0]
+            )
+        )
+
+        fig = funding_source.render_execution_figure("Albania", "en", metric="variance")
+
+        self.assertEqual([round(v, 6) for v in fig.data[0].y], [-10.0, 10.0, -25.0])
         self.assertEqual(
             list(fig.data[0].marker.color),
             [
@@ -402,72 +342,6 @@ class TestExecutionFigure(unittest.TestCase):
             ],
         )
         self.assertEqual(fig.layout.shapes[0].y0, 0)
-
-
-class TestExecutionNarrative(unittest.TestCase):
-    """The credibility-framed execution narrative built from the prepared rates."""
-
-    def _df(self, years, rates):
-        return pd.DataFrame({"year": years, "execution_rate": rates})
-
-    def test_under_execution_leads_with_credibility(self):
-        text = funding_source.format_execution_narrative(
-            self._df([2018], [85.0]), "Togo", lang="en"
-        )
-
-        self.assertIsInstance(text, str)
-        self.assertIn("85.0%", text)
-        self.assertIn("under-executing", text)
-        self.assertIn("15.0%", text)  # gap below the approved budget
-
-    def test_on_track_execution_reads_as_credible(self):
-        text = funding_source.format_execution_narrative(
-            self._df([2018], [99.0]), "Togo", lang="en"
-        )
-
-        self.assertIn("credible", text)
-
-    def test_over_execution_flags_spending_above_budget(self):
-        text = funding_source.format_execution_narrative(
-            self._df([2018], [108.0]), "Togo", lang="en"
-        )
-
-        self.assertIn("more than was approved", text)
-
-    def test_lead_carries_no_date_range(self):
-        # The funding paragraph states the years; execution must not repeat them.
-        text = funding_source.format_execution_narrative(
-            self._df([2017, 2018, 2019, 2020], [85.0, 86.0, 87.0, 88.0]),
-            "Togo",
-            lang="en",
-        )
-
-        self.assertNotIn("2017", text)
-        self.assertNotIn("2020", text)
-
-    def test_recent_clause_reports_rise_over_last_five_years(self):
-        text = funding_source.format_execution_narrative(
-            self._df(list(range(2014, 2022)), [60, 62, 64, 78, 82, 86, 90, 94]),
-            "Togo",
-            lang="en",
-        )
-
-        # Recent window is 2017–2021 → first is 78, not the 2014 value.
-        self.assertIn("In the most recent 5 years, execution rose from 78.0% to 94.0%", text)
-
-    def test_recent_clause_reports_fall(self):
-        text = funding_source.format_execution_narrative(
-            self._df([2018, 2019, 2020], [95.0, 88.0, 80.0]), "Togo", lang="en"
-        )
-
-        self.assertIn("execution fell from 95.0% to 80.0%", text)
-
-    def test_recent_clause_reports_steady(self):
-        text = funding_source.format_execution_narrative(
-            self._df([2018, 2019, 2020], [90.0, 91.0, 90.5]), "Togo", lang="en"
-        )
-
-        self.assertIn("held broadly steady", text)
 
 
 if __name__ == "__main__":
