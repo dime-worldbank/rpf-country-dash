@@ -173,6 +173,11 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
     "health-total": {"sources": [_BOOST]},
+    "health-funding-source": {"sources": [_BOOST_HEALTH]},
+    "health-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_HEALTH],
+    },
     "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
     "econ-breakdown-func-health": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
