@@ -599,7 +599,7 @@ TRANSLATIONS = {
     "narrative.execution_under": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, avec une sous-exécution constante — environ {gap:.1f} % du {budget} approuvé reste non dépensé chaque année.",
     "narrative.execution_on_track": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en suivant de près la planification — signe d'un {budget} crédible.",
     "narrative.execution_over": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en dépensant régulièrement plus que ce qui était prévu.",
-    "narrative.econ_execution_breakdown": "Au sein du {budget}, la catégorie {high} a le mieux exécuté, à {high_rate:.1f} %, tandis que la catégorie {low} a le plus accusé de retard, à {low_rate:.1f} %.",
+    "narrative.econ_execution_breakdown": "Au sein du {budget}, sur la même période, la catégorie {high} a le mieux exécuté, à {high_rate:.1f} %, tandis que la catégorie {low} a le plus accusé de retard, à {low_rate:.1f} %.",
     "narrative.execution_recent_rose": "Au cours des {n} dernières années, l'exécution a augmenté, passant de {first:.1f} % à {last:.1f} %.",
     "narrative.execution_recent_fell": "Au cours des {n} dernières années, l'exécution a diminué, passant de {first:.1f} % à {last:.1f} %.",
     "narrative.execution_recent_steady": "Au cours des {n} dernières années, l'exécution est restée globalement stable, à {latest:.1f} % la dernière année.",

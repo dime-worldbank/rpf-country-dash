@@ -456,8 +456,29 @@ class TestEconExecutionBreakdown(unittest.TestCase):
             "Albania", "en", sector="Health"
         )
 
+        self.assertIn("over the same period", narrative)
         self.assertIn("the goods and services category executed highest at 150.0%", narrative)
         self.assertIn("the capital expenditures category lagged at 40.0%", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_clause_uses_the_recent_window_not_all_time(self, mock_get):
+        # Goods and services drifts from ~95% to 160% only in the last few
+        # years; the clause should reflect the recent value, not the diluted
+        # all-time mean (which would sit somewhere around ~113%).
+        rows = []
+        for year in range(2010, 2022):  # 12 years, only the last 5 (2017-2021) count
+            gs_rate = 95.0 if year < 2017 else 160.0
+            rows.append(("Wage bill", year, 100.0, 98.0))
+            rows.append(("Goods and services", year, 100.0, gs_rate))
+        func_econ = self._func_econ("Albania", "Education", rows)
+        mock_get.side_effect = _store(sector=func_econ, func_econ=func_econ)
+
+        narrative = funding_source.render_execution_narrative(
+            "Albania", "en", sector="Education"
+        )
+
+        self.assertIn("the goods and services category executed highest at 160.0%", narrative)
+        self.assertNotIn("113", narrative)  # would appear if it wrongly averaged all 12 years
 
     @patch("components.funding_source.server_store.get")
     def test_single_bucket_appends_no_clause(self, mock_get):

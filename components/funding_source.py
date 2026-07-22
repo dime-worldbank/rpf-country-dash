@@ -459,9 +459,16 @@ def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
 
 
 def _format_econ_execution_clause(df, sector, lang="en"):
-    """Highest- and lowest-executing category, appended to the execution
-    narrative rather than shown as a separate paragraph."""
-    means = df.dropna(subset=["execution_rate"]).groupby("econ")["execution_rate"].mean()
+    """Highest- and lowest-executing category over the same recent window as
+    the trend clause above it, appended to the execution narrative rather
+    than shown as a separate paragraph.
+
+    ``df`` has one row per (year, category); ``.tail()`` would cut off
+    mid-year with several categories per row, so filter by year value instead.
+    """
+    recent_years = sorted(df["year"].unique())[-RECENT_YEARS:]
+    recent = df[df["year"].isin(recent_years)]
+    means = recent.dropna(subset=["execution_rate"]).groupby("econ")["execution_rate"].mean()
     if len(means) < 2:
         return ""
     high_bucket, low_bucket = means.idxmax(), means.idxmin()
@@ -483,6 +490,9 @@ def _format_econ_execution_clause(df, sector, lang="en"):
 CREDIBLE_BAND = (97, 103)
 # Recent moves smaller than this read as flat rather than a rise or fall.
 STEADY_MARGIN = 2
+# How many trailing years count as "recent" — shared by the recent-trend
+# clause and the by-category high/low clause so they describe the same window.
+RECENT_YEARS = 5
 
 
 def format_execution_narrative(df, country, lang="en", sector=None):
@@ -502,7 +512,7 @@ def format_execution_narrative(df, country, lang="en", sector=None):
     lead = t(key, lang, country=country_label, mean=mean_rate, gap=gap, budget=budget)
     lead = lead[0].upper() + lead[1:]
 
-    recent = plot_df.tail(5)
+    recent = plot_df.tail(RECENT_YEARS)
     if len(recent) < 2:
         return lead
 

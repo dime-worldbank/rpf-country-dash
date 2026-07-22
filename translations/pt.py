@@ -453,7 +453,7 @@ TRANSLATIONS = {
     "narrative.execution_under": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, com subexecução constante — cerca de {gap:.1f}% do {budget} aprovado fica sem ser gasto a cada ano.",
     "narrative.execution_on_track": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, acompanhando de perto o planejado — sinal de um {budget} credível.",
     "narrative.execution_over": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, gastando regularmente mais do que o aprovado.",
-    "narrative.econ_execution_breakdown": "No {budget}, a categoria {high} teve a maior execução, com {high_rate:.1f}%, enquanto a categoria {low} ficou mais para trás, com {low_rate:.1f}%.",
+    "narrative.econ_execution_breakdown": "No {budget}, no mesmo período, a categoria {high} teve a maior execução, com {high_rate:.1f}%, enquanto a categoria {low} ficou mais para trás, com {low_rate:.1f}%.",
     "narrative.execution_recent_rose": "Nos últimos {n} anos, a execução subiu de {first:.1f}% para {last:.1f}%.",
     "narrative.execution_recent_fell": "Nos últimos {n} anos, a execução caiu de {first:.1f}% para {last:.1f}%.",
     "narrative.execution_recent_steady": "Nos últimos {n} anos, a execução manteve-se praticamente estável, em {latest:.1f}% no último ano.",
