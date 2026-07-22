@@ -65,6 +65,7 @@ TRANSLATIONS = {
     "chart.budget_by_funding_source": "How is the budget funded?",
     "chart.total_budget_over_time": "How has total budget changed?",
     "chart.budget_execution": "How much of the budget is spent?",
+    "chart.budget_execution_by_category": "How does execution vary by spending category?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Inflation Adjusted",
@@ -364,6 +365,8 @@ TRANSLATIONS = {
     "econ.wage_bill.narrative":              "wage bill",
     "econ.non_wage_recurrent":               "Non-wage recurrent",
     "econ.non_wage_recurrent.narrative":     "non-wage recurrent",
+    "econ.other_recurrent":                  "Other recurrent",
+    "econ.other_recurrent.narrative":        "other recurrent spending",
 
     # --- Functional narrative ---
     # Shared between func and econ narratives — same phrasing in both.
@@ -503,9 +506,10 @@ TRANSLATIONS = {
     "narrative.external_financing_excluded": "This analysis excludes external financing as it tends to be volatile.",
     "narrative.funding_source_average": "On average over this period, domestic sources financed {domestic_share:.1f}% of {country}'s budget, with the remaining {foreign_share:.1f}% funded by foreign sources.",
     "narrative.funding_source_unavailable": "The breakdown between domestic and foreign funding is not available in the data.",
-    "narrative.execution_under": "{country} spent an average of {mean:.1f}% of its approved budget, consistently under-executing — about {gap:.1f}% of the approved budget goes unspent each year.",
-    "narrative.execution_on_track": "{country} spent an average of {mean:.1f}% of its approved budget, closely tracking the plan — a sign of a credible budget.",
-    "narrative.execution_over": "{country} spent an average of {mean:.1f}% of its approved budget, regularly spending more than was approved.",
+    "narrative.execution_under": "{country} spent an average of {mean:.1f}% of its approved {budget}, consistently under-executing — about {gap:.1f}% of the approved {budget} goes unspent each year.",
+    "narrative.execution_on_track": "{country} spent an average of {mean:.1f}% of its approved {budget}, closely tracking the plan — a sign of a credible {budget}.",
+    "narrative.execution_over": "{country} spent an average of {mean:.1f}% of its approved {budget}, regularly spending more than was approved.",
+    "narrative.econ_execution_breakdown": "Within the {budget}, the {high} category executed highest at {high_rate:.1f}%, while the {low} category lagged at {low_rate:.1f}%.",
     "narrative.execution_recent_rose": "In the most recent {n} years, execution rose from {first:.1f}% to {last:.1f}%.",
     "narrative.execution_recent_fell": "In the most recent {n} years, execution fell from {first:.1f}% to {last:.1f}%.",
     "narrative.execution_recent_steady": "In the most recent {n} years, execution held broadly steady, at {latest:.1f}% in the latest year.",

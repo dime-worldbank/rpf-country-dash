@@ -69,6 +69,7 @@ TRANSLATIONS = {
     "chart.budget_by_funding_source": "Como o orçamento é financiado?",
     "chart.total_budget_over_time": "Como o orçamento total mudou?",
     "chart.budget_execution": "Quanto do orçamento é executado?",
+    "chart.budget_execution_by_category": "Como a execução varia por categoria de despesa?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajustado pela inflação",
@@ -333,6 +334,8 @@ TRANSLATIONS = {
     "econ.wage_bill.narrative": "a folha salarial",
     "econ.non_wage_recurrent": "Despesa recorrente não salarial",
     "econ.non_wage_recurrent.narrative": "a despesa recorrente não salarial",
+    "econ.other_recurrent": "Outras despesas recorrentes",
+    "econ.other_recurrent.narrative": "outras despesas recorrentes",
 
     # --- Functional / economic narratives ---
     "narrative.missing_single": "Não temos dados para {cats}. ",
@@ -447,9 +450,10 @@ TRANSLATIONS = {
     "narrative.external_financing_excluded": "Esta análise exclui financiamento externo, pois ele tende a ser volátil.",
     "narrative.funding_source_average": "Em média, ao longo deste período, {domestic_share:.1f}% do orçamento {country_gen} foi financiado domesticamente, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
     "narrative.funding_source_unavailable": "A divisão entre financiamento doméstico e externo não está disponível nos dados.",
-    "narrative.execution_under": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, com subexecução constante — cerca de {gap:.1f}% do orçamento aprovado fica sem ser gasto a cada ano.",
-    "narrative.execution_on_track": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, acompanhando de perto o planejado — sinal de um orçamento credível.",
-    "narrative.execution_over": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, gastando regularmente mais do que o aprovado.",
+    "narrative.execution_under": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, com subexecução constante — cerca de {gap:.1f}% do {budget} aprovado fica sem ser gasto a cada ano.",
+    "narrative.execution_on_track": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, acompanhando de perto o planejado — sinal de um {budget} credível.",
+    "narrative.execution_over": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, gastando regularmente mais do que o aprovado.",
+    "narrative.econ_execution_breakdown": "No {budget}, a categoria {high} teve a maior execução, com {high_rate:.1f}%, enquanto a categoria {low} ficou mais para trás, com {low_rate:.1f}%.",
     "narrative.execution_recent_rose": "Nos últimos {n} anos, a execução subiu de {first:.1f}% para {last:.1f}%.",
     "narrative.execution_recent_fell": "Nos últimos {n} anos, a execução caiu de {first:.1f}% para {last:.1f}%.",
     "narrative.execution_recent_steady": "Nos últimos {n} anos, a execução manteve-se praticamente estável, em {latest:.1f}% no último ano.",

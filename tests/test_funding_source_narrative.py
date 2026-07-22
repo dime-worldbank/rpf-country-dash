@@ -28,7 +28,7 @@ def _currency(country, code="XOF"):
     return {country: {"currency_code": code}}
 
 
-def _store(national=None, sector=None, currency=None):
+def _store(national=None, sector=None, currency=None, func_econ=None):
     """A ``server_store.get`` stand-in keyed like the real store."""
     mapping = {}
     if national is not None:
@@ -37,6 +37,8 @@ def _store(national=None, sector=None, currency=None):
         mapping["func_by_country_year"] = sector
     if currency is not None:
         mapping["basic_country_info"] = currency
+    if func_econ is not None:
+        mapping["func_econ_raw"] = func_econ
     return mapping.__getitem__
 
 
@@ -292,6 +294,25 @@ class TestExecutionIntegration(unittest.TestCase):
         self.assertIn("90.5%", narrative)
 
     @patch("components.funding_source.server_store.get")
+    def test_sector_execution_narrative_names_the_sector_budget(self, mock_get):
+        # Regression: this used to read "approved budget" for every sector,
+        # not naming which budget was over/under-executing.
+        sector = _rows_df(
+            "Albania",
+            [{"year": 2018, "budget": 100.0, "expenditure": 130.0}],
+            func="Health",
+        )
+        func_econ = sector.assign(econ="Wage bill")
+        mock_get.side_effect = _store(sector=sector, func_econ=func_econ)
+
+        narrative = funding_source.render_execution_narrative(
+            "Albania", "en", sector="Health"
+        )
+
+        self.assertIn("approved health budget", narrative)
+        self.assertNotIn("approved budget,", narrative)  # not the generic form
+
+    @patch("components.funding_source.server_store.get")
     def test_sector_scoping_excludes_other_sectors(self, mock_get):
         sector = _rows_df(
             "Togo",
@@ -342,6 +363,127 @@ class TestExecutionIntegration(unittest.TestCase):
             ],
         )
         self.assertEqual(fig.layout.shapes[0].y0, 0)
+
+
+class TestEconExecutionBreakdown(unittest.TestCase):
+    """render_econ_execution_figure / the appended high-low narrative clause."""
+
+    def _func_econ(self, country, func, rows):
+        # rows: list of (econ, year, budget, expenditure)
+        return _rows_df(
+            country,
+            [
+                {"year": y, "budget": b, "expenditure": e}
+                for _, y, b, e in rows
+            ],
+            func=func,
+        ).assign(econ=[econ for econ, _, _, _ in rows])
+
+    @patch("components.funding_source.server_store.get")
+    def test_buckets_raw_econ_categories_and_orders_traces(self, mock_get):
+        func_econ = self._func_econ(
+            "Albania", "Health",
+            [
+                ("Wage bill", 2018, 100.0, 98.0),
+                ("Capital expenditures", 2018, 50.0, 20.0),
+                ("Goods and services", 2018, 30.0, 45.0),
+                ("Social benefits", 2018, 20.0, 18.0),  # -> "Other recurrent"
+            ],
+        )
+        mock_get.side_effect = _store(func_econ=func_econ)
+
+        fig = funding_source.render_econ_execution_figure(
+            "Albania", "en", sector="Health"
+        )
+
+        names = [trace.name for trace in fig.data]
+        self.assertEqual(names, ["Wage bill", "Capital expenditures", "Goods and services", "Other recurrent"])
+        rates = {trace.name: list(trace.y) for trace in fig.data}
+        self.assertEqual(rates["Wage bill"], [98.0])
+        self.assertEqual(rates["Other recurrent"], [90.0])  # Social benefits bucketed in
+        self.assertEqual(fig.layout.shapes[0].y0, 100)  # rate-mode reference
+
+    @patch("components.funding_source.server_store.get")
+    def test_variance_metric_uses_zero_reference(self, mock_get):
+        func_econ = self._func_econ(
+            "Albania", "Health", [("Wage bill", 2018, 100.0, 110.0)]
+        )
+        mock_get.side_effect = _store(func_econ=func_econ)
+
+        fig = funding_source.render_econ_execution_figure(
+            "Albania", "en", metric="variance", sector="Health"
+        )
+
+        self.assertEqual([round(v, 6) for v in fig.data[0].y], [10.0])
+        self.assertEqual(fig.layout.shapes[0].y0, 0)
+
+    @patch("components.funding_source.server_store.get")
+    def test_no_sector_is_unavailable(self, mock_get):
+        mock_get.side_effect = _store()
+
+        fig = funding_source.render_econ_execution_figure("Albania", "en")
+
+        self.assertEqual(len(fig.data), 0)
+
+    @patch("components.funding_source.server_store.get")
+    def test_no_data_for_sector_is_unavailable(self, mock_get):
+        # Data exists, but only for a different sector.
+        func_econ = self._func_econ(
+            "Albania", "Education", [("Wage bill", 2018, 100.0, 98.0)]
+        )
+        mock_get.side_effect = _store(func_econ=func_econ)
+
+        fig = funding_source.render_econ_execution_figure(
+            "Albania", "en", sector="Health"
+        )
+
+        self.assertEqual(len(fig.data), 0)
+
+    @patch("components.funding_source.server_store.get")
+    def test_narrative_appends_highest_and_lowest_category(self, mock_get):
+        func_econ = self._func_econ(
+            "Albania", "Health",
+            [
+                ("Wage bill", 2018, 100.0, 98.0),      # 98%
+                ("Capital expenditures", 2018, 50.0, 20.0),  # 40%, lowest
+                ("Goods and services", 2018, 30.0, 45.0),    # 150%, highest
+            ],
+        )
+        # render_execution_narrative also needs the sector's overall rate.
+        mock_get.side_effect = _store(sector=func_econ, func_econ=func_econ)
+
+        narrative = funding_source.render_execution_narrative(
+            "Albania", "en", sector="Health"
+        )
+
+        self.assertIn("the goods and services category executed highest at 150.0%", narrative)
+        self.assertIn("the capital expenditures category lagged at 40.0%", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_single_bucket_appends_no_clause(self, mock_get):
+        func_econ = self._func_econ(
+            "Albania", "Health", [("Wage bill", 2018, 100.0, 98.0)]
+        )
+        mock_get.side_effect = _store(sector=func_econ, func_econ=func_econ)
+
+        narrative = funding_source.render_execution_narrative(
+            "Albania", "en", sector="Health"
+        )
+
+        self.assertNotIn("category", narrative)
+
+    @patch("components.funding_source.server_store.get")
+    def test_national_narrative_never_touches_econ_breakdown(self, mock_get):
+        # No "func_econ_raw" key in the store at all: if the national path
+        # tried to fetch it, this would KeyError instead of returning cleanly.
+        national = _rows_df(
+            "Togo", [{"year": 2018, "budget": 100.0, "expenditure": 90.0}]
+        )
+        mock_get.side_effect = _store(national=national)
+
+        narrative = funding_source.render_execution_narrative("Togo", "en")
+
+        self.assertNotIn("category", narrative)
 
 
 if __name__ == "__main__":

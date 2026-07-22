@@ -158,6 +158,10 @@ CHART_METADATA = {
         "info_key": "chart.budget_execution.info",
         "sources": [_BOOST_EDU],
     },
+    "education-econ-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_EDU],
+    },
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
@@ -175,6 +179,10 @@ CHART_METADATA = {
     "health-total": {"sources": [_BOOST]},
     "health-funding-source": {"sources": [_BOOST_HEALTH]},
     "health-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_HEALTH],
+    },
+    "health-econ-execution": {
         "info_key": "chart.budget_execution.info",
         "sources": [_BOOST_HEALTH],
     },

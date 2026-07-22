@@ -4,6 +4,8 @@ import plotly.graph_objects as go
 from translations import t, genitive
 from trend_narrative import InsightExtractor, TrendDetector
 from trend_narrative_i18n import get_segment_narrative_i18n
+from constants import translate_econ
+from components.func_operational_vs_capital_spending import CAPEX, OP_WAGE_BILL
 from utils import (
     apply_locale,
     empty_plot,
@@ -127,7 +129,13 @@ def render_execution_narrative(country, lang="en", sector=None):
     )
     if execution_df.empty:
         return t("error.data_unavailable", lang)
-    return format_execution_narrative(execution_df, country, lang=lang)
+    narrative = format_execution_narrative(execution_df, country, lang=lang, sector=sector)
+    if sector:
+        econ_df = _prepare_econ_execution_df(country, sector)
+        clause = _format_econ_execution_clause(econ_df, sector, lang=lang)
+        if clause:
+            narrative = f"{narrative} {clause}"
+    return narrative
 
 
 def create_funding_source_figure(
@@ -233,6 +241,13 @@ def _budget_metric(sector, lang, real):
         return phrase
     # "orçamento" / "budget" are masculine, so the metric dict is masculine.
     return {"name": ("o " if lang == "pt" else "le ") + phrase, "plural": False, "feminine": False}
+
+
+def _budget_label(sector, lang):
+    """Lowercase, mid-sentence budget noun: 'budget', or '{sector} budget'."""
+    if not sector:
+        return t("radio.budget", lang).lower()
+    return _sector_budget_phrase(sector, lang, real=False)
 
 
 def format_funding_source_narrative(df, country, lang="en", budget_terms="nominal", sector=None):
@@ -355,6 +370,98 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
     return apply_locale(fig, lang)
 
 
+# Execution keeps "Goods and services" as its own bucket, separate from the
+# composition chart's 3-way split: PERs (e.g. the World Bank's education
+# spending work) flag goods-and-services execution as its own signal of
+# service-delivery reliability, distinct from wage bill or capital.
+EXEC_GOODS_SERVICES = "Goods and services"
+EXEC_OTHER = "Other recurrent"
+_EXEC_ECON_ORDER = (OP_WAGE_BILL, CAPEX, EXEC_GOODS_SERVICES, EXEC_OTHER)
+_EXEC_ECON_BUCKET_MAP = {
+    "Wage bill": OP_WAGE_BILL,
+    "Capital expenditures": CAPEX,
+    "Goods and services": EXEC_GOODS_SERVICES,
+}
+
+
+def _prepare_econ_execution_df(country, sector):
+    """Execution rate/variance by economic-category bucket, for one sector."""
+    df = server_store.get("func_econ_raw")
+    df = filter_country_sort_year(df[df["func"] == sector], country)
+    if df.empty:
+        return df
+    df = df.assign(econ=df["econ"].map(_EXEC_ECON_BUCKET_MAP).fillna(EXEC_OTHER))
+    grouped = df.groupby(["year", "econ"], as_index=False).agg(
+        budget=("budget", "sum"), expenditure=("expenditure", "sum")
+    )
+    result = _add_execution_columns(grouped)
+    return result if result.empty else result.sort_values(["year", "econ"])
+
+
+def render_econ_execution_figure(country, lang="en", metric="execution_rate", sector=None):
+    if not sector:
+        return empty_plot(t("error.data_unavailable", lang))
+    econ_df = _prepare_econ_execution_df(country, sector)
+    if econ_df.empty:
+        return empty_plot(t("error.data_unavailable", lang))
+    return create_econ_execution_figure(econ_df, lang=lang, metric=metric)
+
+
+def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
+    """One line per economic-category bucket; ``metric`` selects rate or variance."""
+    variance = metric == "variance"
+    if variance:
+        col, reference, axis = "execution_variance", 0, t("axis.execution_variance", lang)
+    else:
+        col, reference, axis = "execution_rate", 100, t("axis.execution_rate", lang)
+
+    fig = go.Figure()
+    for bucket in _EXEC_ECON_ORDER:
+        bucket_df = df[df["econ"] == bucket]
+        if bucket_df.empty:
+            continue
+        name = translate_econ(bucket, lang)
+        fig.add_trace(
+            go.Scatter(
+                x=bucket_df["year"],
+                y=bucket_df[col],
+                mode="lines+markers",
+                name=name,
+                hovertemplate="<b>" + name + "</b>: %{y:.1f}%<extra></extra>",
+            )
+        )
+    fig.add_hline(y=reference, line_dash="dash", line_color=REFERENCE_LINE_COLOR)
+    fig.update_xaxes(tickformat="d")
+    fig.update_yaxes(title_text=axis, ticksuffix="%", fixedrange=True)
+    fig.update_layout(
+        title=t("chart.budget_execution_by_category", lang),
+        plot_bgcolor="white",
+        hovermode="x unified",
+        legend=dict(orientation="h", yanchor="bottom", y=1.03),
+    )
+    return apply_locale(fig, lang)
+
+
+def _format_econ_execution_clause(df, sector, lang="en"):
+    """Highest- and lowest-executing category, appended to the execution
+    narrative rather than shown as a separate paragraph."""
+    means = df.dropna(subset=["execution_rate"]).groupby("econ")["execution_rate"].mean()
+    if len(means) < 2:
+        return ""
+    high_bucket, low_bucket = means.idxmax(), means.idxmin()
+
+    def label(bucket):
+        name = translate_econ(bucket, lang)
+        return name[0].lower() + name[1:]
+
+    return t(
+        "narrative.econ_execution_breakdown", lang,
+        budget=_budget_label(sector, lang),
+        high=label(high_bucket), high_rate=means[high_bucket],
+        low=label(low_bucket), low_rate=means[low_bucket],
+    )
+
+
 # PEFA PI-1 rates a budget credible when execution stays within ±3% of the
 # approved budget; outside that band is under- or over-execution.
 CREDIBLE_BAND = (97, 103)
@@ -362,8 +469,9 @@ CREDIBLE_BAND = (97, 103)
 STEADY_MARGIN = 2
 
 
-def format_execution_narrative(df, country, lang="en"):
+def format_execution_narrative(df, country, lang="en", sector=None):
     country_label = t(f"country.{country}", lang)
+    budget = _budget_label(sector, lang)
     plot_df = df.dropna(subset=["execution_rate"]).sort_values("year")
     mean_rate = plot_df["execution_rate"].mean()
 
@@ -375,7 +483,7 @@ def format_execution_narrative(df, country, lang="en"):
     else:
         key, gap = "narrative.execution_on_track", 0
     # No period phrase: the funding paragraph above already states the years.
-    lead = t(key, lang, country=country_label, mean=mean_rate, gap=gap)
+    lead = t(key, lang, country=country_label, mean=mean_rate, gap=gap, budget=budget)
     lead = lead[0].upper() + lead[1:]
 
     recent = plot_df.tail(5)

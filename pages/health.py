@@ -248,41 +248,31 @@ def render_health_content(tab, lang):
                     )
                 ),
                 dbc.Row(
+                    dbc.Col(
+                        html.Div(
+                            dbc.RadioItems(
+                                id="health-budget-execution-metric",
+                                options=[
+                                    {"label": t("radio.execution_rate", lang), "value": "execution_rate"},
+                                    {"label": t("radio.variance", lang), "value": "variance"},
+                                ],
+                                value="execution_rate",
+                                inline=True,
+                                style={"padding": "10px"},
+                                labelStyle={"margin-right": "20px"},
+                            ),
+                            className="disclaimer-div",
+                        )
+                    )
+                ),
+                dbc.Row(
                     [
                         dbc.Col(
-                            [
-                                html.Div(
-                                    dbc.RadioItems(
-                                        id="health-budget-execution-metric",
-                                        options=[
-                                            {"label": t("radio.execution_rate", lang), "value": "execution_rate"},
-                                            {"label": t("radio.variance", lang), "value": "variance"},
-                                        ],
-                                        value="execution_rate",
-                                        inline=True,
-                                        style={"padding": "10px"},
-                                        labelStyle={"margin-right": "20px"},
-                                    ),
-                                    className="disclaimer-div",
-                                ),
-                                chart_container("health-budget-execution"),
-                            ],
+                            chart_container("health-budget-execution"),
                             xs=12, lg=6,
                         ),
                         dbc.Col(
-                            html.Div(
-                                "Economic-breakdown execution chart — coming next",
-                                style={
-                                    "display": "flex",
-                                    "alignItems": "center",
-                                    "justifyContent": "center",
-                                    "minHeight": "300px",
-                                    "border": "1px dashed #ccc",
-                                    "borderRadius": "8px",
-                                    "color": "#999",
-                                    "fontStyle": "italic",
-                                },
-                            ),
+                            chart_container("health-econ-execution"),
                             xs=12, lg=6,
                         ),
                     ]
@@ -1000,6 +990,7 @@ def render_health_funding(data, country, lang, budget_terms):
 
 @callback(
     Output("health-budget-execution", "figure"),
+    Output("health-econ-execution", "figure"),
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
     Input("stored-language", "data"),
@@ -1009,10 +1000,14 @@ def render_health_budget_execution(data, country, lang, metric):
     lang = lang or "en"
     metric = metric or "execution_rate"
     if not data or not country:
-        return dash.no_update
-    return funding_source.render_execution_figure(
+        return dash.no_update, dash.no_update
+    overall = funding_source.render_execution_figure(
         country, lang=lang, metric=metric, sector="Health"
     )
+    by_category = funding_source.render_econ_execution_figure(
+        country, lang=lang, metric=metric, sector="Health"
+    )
+    return overall, by_category
 
 
 @callback(
