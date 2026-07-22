@@ -490,8 +490,8 @@ class TestEconExecutionBreakdown(unittest.TestCase):
         )
 
         self.assertIn("over the same period", narrative)
-        self.assertIn("the goods and services category executed highest at 150.0%", narrative)
-        self.assertIn("the capital expenditures category lagged at 40.0%", narrative)
+        self.assertIn("the goods and services category executed highest on average at 150.0%", narrative)
+        self.assertIn("the capital expenditures category lagged on average at 40.0%", narrative)
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_clause_uses_the_recent_window_not_all_time(self, mock_get):
@@ -510,7 +510,7 @@ class TestEconExecutionBreakdown(unittest.TestCase):
             "Albania", "en", sector="Education"
         )
 
-        self.assertIn("the goods and services category executed highest at 160.0%", narrative)
+        self.assertIn("the goods and services category executed highest on average at 160.0%", narrative)
         self.assertNotIn("113", narrative)  # would appear if it wrongly averaged all 12 years
 
     @patch("components.budget_funding_execution.server_store.get")
