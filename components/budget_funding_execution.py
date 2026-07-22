@@ -16,13 +16,13 @@ from utils import (
 import server_store
 
 # Kept off blue: total_figure above uses the central-government blue.
-DOMESTIC_FUNDED_COLOR = "#8E6BA6"
-FOREIGN_FUNDED_COLOR = "#E0AE3C"
-TOTAL_BUDGET_COLOR = "#3A3F47"
+DOMESTIC_FUNDED_COLOR = "#8E6BA6"  # dusty violet
+FOREIGN_FUNDED_COLOR = "#E0AE3C"  # gold
+TOTAL_BUDGET_COLOR = "#3A3F47"  # charcoal
 
-EXECUTED_COLOR = "#2E8B6B"  # budget spent
-SHORTFALL_COLOR = "#C0503A"  # budget unspent
-REFERENCE_LINE_COLOR = "#8A8F98"
+EXECUTED_COLOR = "#2E8B6B"  # sea green
+SHORTFALL_COLOR = "#C0503A"  # terracotta
+REFERENCE_LINE_COLOR = "#8A8F98"  # slate gray
 
 
 def _prepare_funding_df(df):
@@ -76,9 +76,8 @@ def _deflator(df):
     return df["real_expenditure"] / expenditure
 
 
-# The narrative's trend fit runs a slow global optimiser (~90ms) and its result
-# is deterministic, so memoise the finished figure+narrative per
-# (country, lang, terms) — toggling the radio back and forth must not refit it.
+# Trend fit runs a slow, deterministic global optimiser (~90ms); memoise per
+# (country, lang, terms, sector) so toggling the radio doesn't refit it.
 _FUNDING_CACHE = {}
 
 
@@ -216,7 +215,6 @@ def create_funding_source_figure(
             ),
         )
     else:
-        # No split: total budget on a single axis.
         fig.update_yaxes(title_text=total_name, rangemode="tozero", fixedrange=True)
         fig.update_layout(title=t("chart.total_budget_over_time", lang), showlegend=False)
 
@@ -254,7 +252,6 @@ def _budget_label(sector, lang):
 def format_funding_source_narrative(df, country, lang="en", budget_terms="nominal", sector=None):
     country_label = t(f"country.{country}", lang)
 
-    # Total-budget trend, for the terms currently shown.
     real = budget_terms == "real"
     total_col = "real_budget" if real else "budget"
     budget_df = df.dropna(subset=[total_col]).sort_values("year")
@@ -273,9 +270,8 @@ def format_funding_source_narrative(df, country, lang="en", budget_terms="nomina
         if trend:
             trend = trend[0].upper() + trend[1:]
 
-    # The funding split where the breakdown exists; otherwise say it's unknown
-    # rather than drop it silently (silence would read as "no foreign funding").
-    # The trend already covers the total.
+    # State the split as unknown rather than dropping it silently — silence
+    # would read as "no foreign funding". The trend above already covers the total.
     shares = df["domestic_share"].dropna()
     if not shares.empty:
         average = t(
@@ -371,10 +367,9 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
     return apply_locale(fig, lang)
 
 
-# Execution keeps "Goods and services" as its own bucket, separate from the
-# composition chart's 3-way split: PERs (e.g. the World Bank's education
-# spending work) flag goods-and-services execution as its own signal of
-# service-delivery reliability, distinct from wage bill or capital.
+# Execution keeps "Goods and services" separate from the composition chart's
+# 3-way split — PERs (e.g. the World Bank's education-spending blog) flag it
+# as its own signal of delivery reliability, distinct from wage bill or capital.
 EXEC_GOODS_SERVICES = "Goods and services"
 EXEC_OTHER = "Other recurrent"
 _EXEC_ECON_ORDER = (OP_WAGE_BILL, CAPEX, EXEC_GOODS_SERVICES, EXEC_OTHER)
@@ -383,18 +378,17 @@ _EXEC_ECON_BUCKET_MAP = {
     "Capital expenditures": CAPEX,
     "Goods and services": EXEC_GOODS_SERVICES,
 }
-# Wage bill / capital keep the exact colors the composition chart assigns
-# them (its pivot table's alphabetical column order puts Capital
-# expenditures, Non-wage recurrent, Wage bill on QUALITATIVE[0:3]). Goods and
-# services gets an unused palette color. "Other recurrent" is a different
-# category from the composition chart's "Non-wage recurrent" (it excludes
-# goods and services) so it doesn't reuse that color; a neutral tone instead.
-OTHER_RECURRENT_COLOR = "#B8A99A"
+# Wage bill / capital match the composition chart's colors exactly (its pivot
+# table's alphabetical order puts them on QUALITATIVE[0] and [2]). "Other
+# recurrent" isn't "Non-wage recurrent" (it excludes goods and services), so
+# it doesn't reuse that color — a neutral tone instead; goods and services
+# gets an unused palette color.
+OTHER_RECURRENT_COLOR = "#B8A99A"  # warm taupe
 _EXEC_ECON_COLOR = {
-    CAPEX: QUALITATIVE[0],
+    CAPEX: QUALITATIVE[0],  # light blue
     EXEC_OTHER: OTHER_RECURRENT_COLOR,
-    OP_WAGE_BILL: QUALITATIVE[2],
-    EXEC_GOODS_SERVICES: QUALITATIVE[6],
+    OP_WAGE_BILL: QUALITATIVE[2],  # light green
+    EXEC_GOODS_SERVICES: QUALITATIVE[6],  # light orange
 }
 
 
@@ -459,12 +453,11 @@ def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
 
 
 def _format_econ_execution_clause(df, sector, lang="en"):
-    """Highest- and lowest-executing category over the same recent window as
-    the trend clause above it, appended to the execution narrative rather
-    than shown as a separate paragraph.
+    """Highest/lowest-executing category, appended to the execution narrative
+    rather than a separate paragraph. Same recent window as the trend clause.
 
-    ``df`` has one row per (year, category); ``.tail()`` would cut off
-    mid-year with several categories per row, so filter by year value instead.
+    ``df`` has one row per (year, category), so ``.tail()`` would cut off
+    mid-year — filter by year value instead.
     """
     recent_years = sorted(df["year"].unique())[-RECENT_YEARS:]
     recent = df[df["year"].isin(recent_years)]
@@ -490,8 +483,8 @@ def _format_econ_execution_clause(df, sector, lang="en"):
 CREDIBLE_BAND = (97, 103)
 # Recent moves smaller than this read as flat rather than a rise or fall.
 STEADY_MARGIN = 2
-# How many trailing years count as "recent" — shared by the recent-trend
-# clause and the by-category high/low clause so they describe the same window.
+# "Recent" window length, shared by the trend clause and the by-category
+# high/low clause so both describe the same years.
 RECENT_YEARS = 5
 
 
