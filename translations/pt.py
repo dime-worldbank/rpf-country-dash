@@ -512,7 +512,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Usa valores reportados pelo FMI para Receita (GGR) e Despesa (GGX) no nível do Governo Geral.",
     "source.togo_dgb.label": "Relatório oficial do Togo",
     "source.togo_dgb.description": "Receita e despesa realizadas a partir do Relatório anual de Execução Orçamentária. Valores não monetários equivalentes são subtraídos de receita e despesa para comparabilidade com os dados do FMI.",
-    "chart.budget_execution.info": "A taxa de execução é a despesa efetiva como proporção do orçamento aprovado (despesa ÷ orçamento aprovado). Seguindo o marco PEFA, um orçamento é considerado credível quando a execução permanece dentro de ±3% do orçamento aprovado (97–103%); abaixo dessa faixa há subexecução e acima dela, superexecução. A visão de variação mostra o mesmo valor como desvio em relação a 100%.",
+    "chart.budget_execution.info": "A taxa de execução é a despesa efetiva como proporção do orçamento aprovado (despesa ÷ orçamento aprovado). Seguindo o marco PEFA (PI-1), uma execução dentro de ±5% do orçamento aprovado recebe nota A (a mais credível), ±10% nota B, e ±15% nota C; além disso, é D. A visão de variação mostra o mesmo valor como desvio em relação a 100%. As faixas sombreadas e a cor das barras indicam essas mesmas zonas A/B/C.",
     "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
 
     # --- Déficit / fiscal balance ---

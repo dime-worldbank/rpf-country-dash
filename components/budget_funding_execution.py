@@ -24,6 +24,29 @@ EXECUTED_COLOR = "#2E8B6B"  # sea green
 SHORTFALL_COLOR = "#C0503A"  # terracotta
 REFERENCE_LINE_COLOR = "#8A8F98"  # slate gray
 
+# PEFA PI-1's rating bands (in at least 2 of the last 3 years — this
+# dashboard applies the threshold per year, not PEFA's multi-year rule).
+# Nested: A inside B inside C. https://www.pefa.org/node/4762
+PEFA_A_BAND = (95, 105)
+PEFA_B_BAND = (90, 110)
+PEFA_C_BAND = (85, 115)
+CREDIBLE_BAND = PEFA_A_BAND  # the narrative's credible/not-credible cutoff
+
+# Bars are colored by tier too (at reduced opacity, so the band underneath
+# still shows through). B gets its own amber rather than reusing
+# FOREIGN_FUNDED_COLOR — this chart sits right next to the funding-source
+# chart on the home page and the two golds would otherwise read as one signal.
+PEFA_A_COLOR = EXECUTED_COLOR
+PEFA_B_COLOR = "#C8781E"  # amber-orange
+PEFA_C_COLOR = SHORTFALL_COLOR
+PEFA_BAR_OPACITY = 0.75
+
+# Pale tints of the tier colors above, lightened 85% toward white, for the
+# A/B/C background zones.
+PEFA_A_BAND_COLOR = "#DFEDE8"
+PEFA_B_BAND_COLOR = "#F6EADD"
+PEFA_C_BAND_COLOR = "#F5E4E1"
+
 
 def _prepare_funding_df(df):
     """Funding split + real-terms columns from a country(-sector)-scoped frame."""
@@ -336,25 +359,53 @@ def render_execution_figure(country, lang="en", metric="execution_rate", sector=
     return create_execution_figure(execution_df, lang=lang, metric=metric)
 
 
-def create_execution_figure(df, lang="en", metric="execution_rate"):
-    """``metric`` selects the ``execution_rate`` or its ``variance`` from budget."""
-    variance = metric == "variance"
+def _pefa_tier_color(rate):
+    a_low, a_high = PEFA_A_BAND
+    b_low, b_high = PEFA_B_BAND
+    if a_low <= rate <= a_high:
+        return PEFA_A_COLOR
+    if b_low <= rate <= b_high:
+        return PEFA_B_COLOR
+    return PEFA_C_COLOR
 
-    if variance:
-        col, reference, axis = "execution_variance", 0, t("axis.execution_variance", lang)
-        color = [EXECUTED_COLOR if v >= 0 else SHORTFALL_COLOR for v in df[col]]
-    else:
-        col, reference, axis = "execution_rate", 100, t("axis.execution_rate", lang)
-        color = EXECUTED_COLOR
+
+def create_execution_figure(df, lang="en", metric="execution_rate"):
+    """``metric`` selects the ``execution_rate`` or its ``variance`` from budget.
+
+    Background shading follows PEFA PI-1's A/B/C rating bands rather than a
+    flat credible/not-credible split, so a mild miss and a severe one read
+    differently. Bars match the same tier colors at reduced opacity, so the
+    band underneath still shows through instead of the bar hiding it.
+    """
+    variance = metric == "variance"
+    col, reference, axis = (
+        ("execution_variance", 0, t("axis.execution_variance", lang))
+        if variance
+        else ("execution_rate", 100, t("axis.execution_rate", lang))
+    )
+    # Variance is rate - 100, so shift each band's rate-space edges by -100
+    # to place them correctly when the variance metric is shown instead.
+    offset = 100 if variance else 0
+    bands = [
+        (PEFA_C_BAND, PEFA_C_BAND_COLOR),
+        (PEFA_B_BAND, PEFA_B_BAND_COLOR),
+        (PEFA_A_BAND, PEFA_A_BAND_COLOR),
+    ]
 
     fig = go.Figure(
         go.Bar(
             x=df["year"],
             y=df[col],
-            marker_color=color,
+            marker=dict(
+                color=[_pefa_tier_color(rate) for rate in df["execution_rate"]],
+                opacity=PEFA_BAR_OPACITY,
+            ),
             hovertemplate="%{x}: %{y:.1f}%<extra></extra>",
         )
     )
+    # Widest (C) band first so the narrower B and A bands layer on top of it.
+    for (low, high), color in bands:
+        fig.add_hrect(y0=low - offset, y1=high - offset, fillcolor=color, line_width=0, layer="below")
     fig.add_hline(y=reference, line_dash="dash", line_color=REFERENCE_LINE_COLOR)
     fig.update_xaxes(tickformat="d")
     fig.update_yaxes(title_text=axis, ticksuffix="%", fixedrange=True)
@@ -478,9 +529,6 @@ def _format_econ_execution_clause(df, sector, lang="en"):
     )
 
 
-# PEFA PI-1 rates a budget credible when execution stays within ±3% of the
-# approved budget; outside that band is under- or over-execution.
-CREDIBLE_BAND = (97, 103)
 # Recent moves smaller than this read as flat rather than a rise or fall.
 STEADY_MARGIN = 2
 # "Recent" window length, shared by the trend clause and the by-category

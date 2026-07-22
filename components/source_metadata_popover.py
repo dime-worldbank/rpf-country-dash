@@ -322,12 +322,12 @@ def build_modal_children(info, lang="en"):
         )
     )
 
-    # Chart-level intro paragraph (optional) — appears once above all sources
+    # Chart-level intro paragraph (optional) — appears once above all sources.
+    # Same "Methodology: ..." row style as per-source descriptions, since
+    # this is the same kind of content (how the metric is computed).
     chart_info = info.get("info")
     if chart_info:
-        body.append(
-            html.P(chart_info, className="rpf-chart-info", style={"fontStyle": "italic"})
-        )
+        body.append(_make_detail_row(t("detail.methodology", lang), html.Span(chart_info)))
 
     # Per-source sections
     for section in source_sections:

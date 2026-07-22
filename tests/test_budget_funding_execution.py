@@ -232,8 +232,10 @@ class TestExecutionIntegration(unittest.TestCase):
         self.assertIn("under-executing", narrative)
         self.assertIn("15.0%", narrative)  # gap below the approved budget
         self.assertEqual(list(fig.data[0].y), [85.0])
-        self.assertEqual(fig.data[0].marker.color, budget_funding_execution.EXECUTED_COLOR)
-        self.assertEqual(fig.layout.shapes[0].y0, 100)
+        # 85% is outside B (90-110) too, so it's the C-tier color, at reduced
+        # opacity so the band underneath still shows through.
+        self.assertEqual(list(fig.data[0].marker.color), [budget_funding_execution.PEFA_C_COLOR])
+        self.assertEqual(fig.data[0].marker.opacity, budget_funding_execution.PEFA_BAR_OPACITY)
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_on_track_execution_reads_as_credible(self, mock_get):
@@ -344,25 +346,53 @@ class TestExecutionIntegration(unittest.TestCase):
         self.assertEqual(narrative, "Data not available for this period.")
 
     @patch("components.budget_funding_execution.server_store.get")
-    def test_variance_metric_colours_shortfall_red_with_zero_reference(self, mock_get):
+    def test_execution_chart_shades_pefa_abc_bands(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018], [99.0])
+        )
+
+        rate_fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+        # 3 nested hrects (C, B, A — widest first) precede the reference hline.
+        rate_bands = [
+            (round(s.y0), round(s.y1), s.fillcolor) for s in rate_fig.layout.shapes[:3]
+        ]
+        self.assertEqual(
+            rate_bands,
+            [
+                (85, 115, budget_funding_execution.PEFA_C_BAND_COLOR),
+                (90, 110, budget_funding_execution.PEFA_B_BAND_COLOR),
+                (95, 105, budget_funding_execution.PEFA_A_BAND_COLOR),
+            ],
+        )
+        self.assertEqual(rate_fig.layout.shapes[-1].y0, 100)  # reference line at 100%
+
+        variance_fig = budget_funding_execution.render_execution_figure(
+            "Ghana", "en", metric="variance"
+        )
+        variance_bands = [(round(s.y0), round(s.y1)) for s in variance_fig.layout.shapes[:3]]
+        self.assertEqual(variance_bands, [(-15, 15), (-10, 10), (-5, 5)])
+        self.assertEqual(variance_fig.layout.shapes[-1].y0, 0)  # reference line at 0
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_bars_colored_by_pefa_tier_at_reduced_opacity(self, mock_get):
+        # 99% -> A, 92% -> B (outside A, inside B), 70% -> C (outside B too).
         mock_get.side_effect = _store(
             national=self._budget_expenditure(
-                "Albania", [2018, 2019, 2020], [90.0, 110.0, 75.0]
+                "Ghana", [2018, 2019, 2020], [99.0, 92.0, 70.0]
             )
         )
 
-        fig = budget_funding_execution.render_execution_figure("Albania", "en", metric="variance")
+        fig = budget_funding_execution.render_execution_figure("Ghana", "en")
 
-        self.assertEqual([round(v, 6) for v in fig.data[0].y], [-10.0, 10.0, -25.0])
         self.assertEqual(
             list(fig.data[0].marker.color),
             [
-                budget_funding_execution.SHORTFALL_COLOR,
-                budget_funding_execution.EXECUTED_COLOR,
-                budget_funding_execution.SHORTFALL_COLOR,
+                budget_funding_execution.PEFA_A_COLOR,
+                budget_funding_execution.PEFA_B_COLOR,
+                budget_funding_execution.PEFA_C_COLOR,
             ],
         )
-        self.assertEqual(fig.layout.shapes[0].y0, 0)
+        self.assertEqual(fig.data[0].marker.opacity, budget_funding_execution.PEFA_BAR_OPACITY)
 
 
 class TestEconExecutionBreakdown(unittest.TestCase):
