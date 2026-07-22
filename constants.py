@@ -17,7 +17,6 @@ VIEW_COMPOSITE = "composite"
 VIEW_OFFICIAL = "official"
 VIEW_GFS = "gfs"
 VIEW_WEO = "weo"
-DEFAULT_FISCAL_VIEW = VIEW_COMPOSITE
 
 # Countries where the composite fiscal-balance view is meaningful. Composite
 # stitches GFS (budgetary central govt) and WEO (general govt), which are only

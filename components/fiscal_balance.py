@@ -25,15 +25,24 @@ from constants import (
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
-from viz_theme import BRIGHT_BLUE, SOLID_BLUE, WARM_BRIGHTER, lighten_color
+from viz_theme import SOLID_BLUE, WARM_BRIGHTER
 
 REVENUE_COLOR = SOLID_BLUE
 EXPENDITURE_COLOR = WARM_BRIGHTER[2]
-SURPLUS_COLOR = BRIGHT_BLUE
-DEFICIT_COLOR = WARM_BRIGHTER[2]
-FORECAST_REVENUE_COLOR = lighten_color(SOLID_BLUE, 0.5)
-FORECAST_EXPENDITURE_COLOR = lighten_color(WARM_BRIGHTER[2], 0.5)
-DEFICIT_BAR_OPACITY = 0.4
+BALANCE_BAR_OPACITY = 0.4
+# Pinned so a sparse surplus/deficit trace isn't auto-sized into overly wide bars.
+BALANCE_BAR_WIDTH = 0.7
+
+# Fixed legend order keyed by legendgroup: each line sits next to its forecast
+# (they share a hue, differing only by dash), balance bars last.
+LEGEND_RANK = {
+    "actual_rev": 1,
+    "forecast_rev": 2,
+    "actual_exp": 3,
+    "forecast_exp": 4,
+    "surplus": 5,
+    "deficit": 6,
+}
 
 
 def split_imf_sources(gov_df):
@@ -44,11 +53,6 @@ def split_imf_sources(gov_df):
         gov_df[gov_df["source"] == GFS_SOO_SOURCE],
         gov_df[gov_df["source"] == WEO_SOURCE],
     )
-
-
-def _balance_bar_colors(series):
-    """Blue for surplus (>= 0), red/pink for deficit (< 0)."""
-    return [SURPLUS_COLOR if x >= 0 else DEFICIT_COLOR for x in series]
 
 
 def _clean_rev_exp(df):
@@ -154,15 +158,12 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         shared_xaxes=True,
         vertical_spacing=0.08,
         row_heights=[0.65, 0.35],
-        subplot_titles=(
-            t("deficit.chart.subplot_revenue_expenditure", lang),
-            t("deficit.chart.subplot_balance", lang),
-        ),
     )
 
     revenue_label = t("deficit.chart.revenue", lang)
     expenditure_label = t("deficit.chart.expenditure", lang)
-    balance_label = t("deficit.chart.balance", lang)
+    surplus_label = t("deficit.chart.surplus", lang)
+    deficit_label = t("deficit.chart.deficit", lang)
     forecast_suffix = t("deficit.chart.forecast_suffix", lang)
     actual_kind = t("deficit.chart.actual", lang)
     forecast_kind = t("deficit.chart.forecast", lang)
@@ -173,28 +174,23 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         """Emit revenue/expenditure lines and a balance bar for one source."""
         if df is None or df.empty:
             return
-        bar_df = df
 
         if is_forecast:
             cat = "forecast"
             label_suffix = forecast_suffix
             kind_label = forecast_kind
-            rev_color = FORECAST_REVENUE_COLOR
-            exp_color = FORECAST_EXPENDITURE_COLOR
-            rev_line = dict(color=rev_color, dash="dash", width=2)
-            exp_line = dict(color=exp_color, dash="dash", width=2)
+            rev_line = dict(color=REVENUE_COLOR, dash="dash", width=2)
+            exp_line = dict(color=EXPENDITURE_COLOR, dash="dash", width=2)
             rev_marker = exp_marker = None
             scatter_mode = "lines"
         else:
             cat = "actual"
             label_suffix = ""
             kind_label = actual_kind
-            rev_color = REVENUE_COLOR
-            exp_color = EXPENDITURE_COLOR
-            rev_line = dict(color=rev_color, width=2.5)
-            exp_line = dict(color=exp_color, width=2.5)
-            rev_marker = dict(color=rev_color, size=7)
-            exp_marker = dict(color=exp_color, size=7)
+            rev_line = dict(color=REVENUE_COLOR, width=2.5)
+            exp_line = dict(color=EXPENDITURE_COLOR, width=2.5)
+            rev_marker = dict(color=REVENUE_COLOR, size=7)
+            exp_marker = dict(color=EXPENDITURE_COLOR, size=7)
             scatter_mode = "lines+markers"
 
         def _show_once(key):
@@ -206,6 +202,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             go.Scatter(
                 name=f"{revenue_label}{label_suffix}",
                 legendgroup=f"{cat}_rev",
+                legendrank=LEGEND_RANK[f"{cat}_rev"],
                 showlegend=_show_once(f"{cat}_rev"),
                 x=df.year, y=df.revenue,
                 mode=scatter_mode,
@@ -220,6 +217,7 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             go.Scatter(
                 name=f"{expenditure_label}{label_suffix}",
                 legendgroup=f"{cat}_exp",
+                legendrank=LEGEND_RANK[f"{cat}_exp"],
                 showlegend=_show_once(f"{cat}_exp"),
                 x=df.year, y=df.expenditure,
                 mode=scatter_mode,
@@ -230,19 +228,32 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
             ),
             row=1, col=1,
         )
-        fig.add_trace(
-            go.Bar(
-                name=f"{balance_label}{label_suffix}",
-                legendgroup=f"{cat}_def",
-                showlegend=_show_once(f"{cat}_def"),
-                x=bar_df.year, y=bar_df.balance,
-                marker_color=_balance_bar_colors(bar_df.balance),
-                opacity=DEFICIT_BAR_OPACITY,
-                customdata=bar_df["balance_formatted"],
-                hovertemplate=f"<b>{balance_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
-            ),
-            row=2, col=1,
-        )
+        # Split the balance bar into surplus/deficit traces so each gets its own
+        # correctly-colored legend entry. Both share a legendgroup across every
+        # source and across actual/forecast, so surplus and deficit each appear
+        # once regardless of how the timeline is stitched together. Each reuses
+        # its revenue/expenditure line hue, kept distinct by the bar opacity.
+        for seg_df, seg_color, seg_key, seg_label in (
+            (df[df.balance >= 0], REVENUE_COLOR, "surplus", surplus_label),
+            (df[df.balance < 0], EXPENDITURE_COLOR, "deficit", deficit_label),
+        ):
+            if seg_df.empty:
+                continue
+            fig.add_trace(
+                go.Bar(
+                    name=seg_label,
+                    legendgroup=seg_key,
+                    legendrank=LEGEND_RANK[seg_key],
+                    showlegend=_show_once(seg_key),
+                    x=seg_df.year, y=seg_df.balance,
+                    width=BALANCE_BAR_WIDTH,
+                    marker_color=seg_color,
+                    opacity=BALANCE_BAR_OPACITY,
+                    customdata=seg_df["balance_formatted"],
+                    hovertemplate=f"<b>{seg_label} ({source_label}, {kind_label})</b>: %{{customdata}}<extra></extra>",
+                ),
+                row=2, col=1,
+            )
 
     def add_weo_split(df, source_label):
         """Split WEO into actual and forecast traces.
@@ -264,8 +275,8 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         if not actual.empty and not forecast.empty:
             bridge = pd.concat([actual.tail(1), forecast.head(1)], ignore_index=True)
             for col, color in (
-                ("revenue", FORECAST_REVENUE_COLOR),
-                ("expenditure", FORECAST_EXPENDITURE_COLOR),
+                ("revenue", REVENUE_COLOR),
+                ("expenditure", EXPENDITURE_COLOR),
             ):
                 fig.add_trace(
                     go.Scatter(
@@ -318,10 +329,10 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
     fig.update_layout(
         plot_bgcolor="white",
         hovermode="x unified",
-        height=650,
-        legend=dict(orientation="h", yanchor="bottom", y=1.05, x=0),
+        title=dict(text=t("chart.fiscal_balance_over_time", lang), x=0.5, xanchor="center", y=0.97, yref="container", yanchor="top"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
         barmode="overlay",
-        margin=dict(t=80, b=40, l=100, r=40),
+        margin=dict(t=70, b=40, l=100, r=40),
     )
 
     return apply_locale(fig, lang=lang)

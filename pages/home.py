@@ -38,7 +38,6 @@ from constants import (
     VIEW_OFFICIAL,
     VIEW_GFS,
     VIEW_WEO,
-    DEFAULT_FISCAL_VIEW,
     COMPOSITE_VIEW_COUNTRIES,
 )
 from translations import t, genitive, localize_currency_name
@@ -360,37 +359,43 @@ def render_overview_content(tab, lang):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        dbc.RadioItems(
-                            id="revenue-expenditure-view",
-                            options=[
-                                {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
-                                {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
-                                {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-                                {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                        html.Div(
+                            [
+                                dbc.Label(
+                                    t("deficit.view.label", lang),
+                                    html_for="revenue-expenditure-view",
+                                    className="mb-0",
+                                ),
+                                dbc.RadioItems(
+                                    id="revenue-expenditure-view",
+                                    options=[
+                                        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                                    ],
+                                    value=VIEW_COMPOSITE,
+                                    inline=True,
+                                ),
                             ],
-                            value=DEFAULT_FISCAL_VIEW,
-                            inline=True,
-                            style={"padding": "10px"},
-                            labelStyle={"margin-right": "20px"},
+                            className="d-flex align-items-center flex-wrap gap-2 pb-2",
                         )
                     )
                 ),
                 dbc.Row(
-                    dbc.Col(
-                        html.P(
-                            id="revenue-expenditure-narrative",
-                            children=t("loading", lang),
-                        )
-                    )
-                ),
-                dbc.Row(
-                    dbc.Col(
-                        chart_container("revenue-expenditure-combined"),
-                        xs={"size": 12, "offset": 0},
-                        sm={"size": 12, "offset": 0},
-                        md={"size": 12, "offset": 0},
-                        lg={"size": 12, "offset": 0},
-                    )
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="revenue-expenditure-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=3,
+                        ),
+                        dbc.Col(
+                            chart_container("revenue-expenditure-combined"),
+                            xs=12, lg=9,
+                        ),
+                    ]
                 ),
                 dbc.Row(
                     dbc.Col(
@@ -1595,15 +1600,24 @@ def update_revenue_expenditure_view_options(country, lang, revenue_data, current
     if official_available:
         available.add(VIEW_OFFICIAL)
 
-    options = [
-        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE, "disabled": not composite_available},
-        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL, "disabled": not official_available},
-        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
-        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
-    ]
+    options = []
+    if composite_available:
+        options.append({"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE})
+    if official_available:
+        options.append({"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL})
+    options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
+    options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
+
+    # Default to the richest available view: composite, else official, else WEO
+    # (WEO has broader year coverage than GFS).
+    if composite_available:
+        default_view = VIEW_COMPOSITE
+    elif official_available:
+        default_view = VIEW_OFFICIAL
+    else:
+        default_view = VIEW_WEO
 
     # Reset on country switch; otherwise keep the current view if still valid.
-    default_view = DEFAULT_FISCAL_VIEW if composite_available else VIEW_GFS
     if ctx.triggered_id == "country-select" or current_view not in available:
         new_view = default_view
     else:
@@ -1634,7 +1648,7 @@ def render_revenue_expenditure_combined(revenue_data, gov_data, country, country
             lang=lang or "en",
             currency_code=basic_info["currency_code"],
         ),
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
 
@@ -1655,6 +1669,6 @@ def render_revenue_expenditure_narrative(revenue_data, gov_data, country, countr
     national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
     return fiscal_balance.narrative(
         national_df, gfs_df, weo_df, basic_info["currency_code"],
-        view_mode=view_mode or DEFAULT_FISCAL_VIEW,
+        view_mode=view_mode or VIEW_COMPOSITE,
         lang=lang or "en",
     )
