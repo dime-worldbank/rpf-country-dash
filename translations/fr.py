@@ -65,6 +65,8 @@ TRANSLATIONS = {
     "chart.subnational_outcome": "{outcome_name} au niveau infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
     "chart.budget_by_funding_source": "Comment le budget est-il financé ?",
+    "chart.total_budget_over_time": "Comment le budget total a-t-il évolué ?",
+    "chart.budget_execution": "Quelle part du budget est dépensée ?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajusté à l'inflation",
@@ -76,7 +78,6 @@ TRANSLATIONS = {
     "trace.domestic_funded": "Financement intérieur",
     "trace.foreign_funded": "Financement extérieur",
     "trace.total_budget": "Budget total",
-    "trace.total_budget_real": "Budget total (ajusté à l'inflation)",
     "trace.per_capita": "Par habitant",
     "trace.pefa_score": "Score PEFA",
     "trace.uhc_index": "Indice de couverture sanitaire universelle",
@@ -113,6 +114,8 @@ TRANSLATIONS = {
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
     "axis.budget_share": "Part du budget (%)",
+    "axis.execution_rate": "Budget exécuté (%)",
+    "axis.execution_variance": "Écart par rapport au budget (%)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Dépenses par habitant {sector_prep}",
@@ -121,6 +124,8 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Dépenses totales",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
+    "radio.execution_rate": "Taux d'exécution",
+    "radio.variance": "Écart",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source : BOOST & IPC : World Bank",
@@ -272,6 +277,16 @@ TRANSLATIONS = {
         "name": "la part du budget financée par des sources intérieures",
         "plural": False,
         "feminine": True,
+    },
+    "metric.total_budget": {
+        "name": "le budget total",
+        "plural": False,
+        "feminine": False,
+    },
+    "metric.total_budget_real": {
+        "name": "le budget total ajusté de l'inflation",
+        "plural": False,
+        "feminine": False,
     },
 
     # Plain-string labels used mid-sentence by get_correlation_text on the
@@ -574,6 +589,13 @@ TRANSLATIONS = {
     "narrative.external_financing_included": "Cette analyse inclut actuellement le financement externe car les données budgétaires utilisées ont une granularité limitée. Idéalement, elle exclurait le financement externe en raison de sa volatilité.",
     "narrative.external_financing_excluded": "Cette analyse exclut le financement externe en raison de sa tendance à la volatilité.",
     "narrative.funding_source_average": "En moyenne sur cette période, les sources intérieures ont financé {domestic_share:.1f} % du budget {country_gen}, les {foreign_share:.1f} % restants étant financés par des sources extérieures.",
+    "narrative.funding_source_unavailable": "La répartition entre financement intérieur et extérieur n'est pas disponible dans les données.",
+    "narrative.execution_under": "{country} a exécuté en moyenne {mean:.1f} % de son budget approuvé, avec une sous-exécution constante — environ {gap:.1f} % du budget approuvé reste non dépensé chaque année.",
+    "narrative.execution_on_track": "{country} a exécuté en moyenne {mean:.1f} % de son budget approuvé, en suivant de près la planification — signe d'un budget crédible.",
+    "narrative.execution_over": "{country} a exécuté en moyenne {mean:.1f} % de son budget approuvé, en dépensant régulièrement plus que ce qui était prévu.",
+    "narrative.execution_recent_rose": "Au cours des {n} dernières années, l'exécution a augmenté, passant de {first:.1f} % à {last:.1f} %.",
+    "narrative.execution_recent_fell": "Au cours des {n} dernières années, l'exécution a diminué, passant de {first:.1f} % à {last:.1f} %.",
+    "narrative.execution_recent_steady": "Au cours des {n} dernières années, l'exécution est restée globalement stable, à {latest:.1f} % la dernière année.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "Par défaut, seuls le budget global, la santé, l'éducation et les services publics généraux sont affichés dans le graphique. Cliquez sur la légende pour voir le taux de croissance budgétaire annuel des autres catégories fonctionnelles.",
@@ -646,6 +668,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
+    "chart.budget_execution.info": "Le taux d'exécution correspond aux dépenses réelles rapportées au budget approuvé (dépenses ÷ budget approuvé). Selon le cadre PEFA, un budget est jugé crédible lorsque l'exécution reste à ±3 % du budget approuvé (97–103 %) ; en dessous de cette plage, il y a sous-exécution et au-dessus, sur-exécution. La vue en écart présente la même donnée comme écart par rapport à 100 %.",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---

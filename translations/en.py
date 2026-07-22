@@ -62,6 +62,8 @@ TRANSLATIONS = {
     "chart.subnational_outcome": "Subnational {outcome_name}",
     "chart.budget_func_fluctuation": "How do budgets for functional categories fluctuate over time?",
     "chart.budget_by_funding_source": "How is the budget funded?",
+    "chart.total_budget_over_time": "How has total budget changed?",
+    "chart.budget_execution": "How much of the budget is spent?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Inflation Adjusted",
@@ -73,7 +75,6 @@ TRANSLATIONS = {
     "trace.domestic_funded": "Domestically Funded",
     "trace.foreign_funded": "Foreign Funded",
     "trace.total_budget": "Total Budget",
-    "trace.total_budget_real": "Total Budget (inflation-adjusted)",
     "trace.per_capita": "Per Capita",
     "trace.pefa_score": "PEFA Score",
     "trace.uhc_index": "Universal health coverage index",
@@ -110,6 +111,8 @@ TRANSLATIONS = {
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
     "axis.budget_share": "Share of budget (%)",
+    "axis.execution_rate": "Budget executed (%)",
+    "axis.execution_variance": "Deviation from budget (%)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Per capita expenditure {sector_prep}",
@@ -118,6 +121,8 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Total expenditure",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
+    "radio.execution_rate": "Execution rate",
+    "radio.variance": "Variance",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source: BOOST & CPI: World Bank",
@@ -225,6 +230,8 @@ TRANSLATIONS = {
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
     "metric.domestic_funded_share": "domestically financed budget share",
+    "metric.total_budget": "total budget",
+    "metric.total_budget_real": "inflation-adjusted total budget",
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",
@@ -492,6 +499,13 @@ TRANSLATIONS = {
     "narrative.external_financing_included": "This analysis currently includes external financing as the budget data used has limited granularity. It would ideally exclude external financing due to its volatility.",
     "narrative.external_financing_excluded": "This analysis excludes external financing as it tends to be volatile.",
     "narrative.funding_source_average": "On average over this period, domestic sources financed {domestic_share:.1f}% of {country}'s budget, with the remaining {foreign_share:.1f}% funded by foreign sources.",
+    "narrative.funding_source_unavailable": "The breakdown between domestic and foreign funding is not available in the data.",
+    "narrative.execution_under": "{country} spent an average of {mean:.1f}% of its approved budget, consistently under-executing — about {gap:.1f}% of the approved budget goes unspent each year.",
+    "narrative.execution_on_track": "{country} spent an average of {mean:.1f}% of its approved budget, closely tracking the plan — a sign of a credible budget.",
+    "narrative.execution_over": "{country} spent an average of {mean:.1f}% of its approved budget, regularly spending more than was approved.",
+    "narrative.execution_recent_rose": "In the most recent {n} years, execution rose from {first:.1f}% to {last:.1f}%.",
+    "narrative.execution_recent_fell": "In the most recent {n} years, execution fell from {first:.1f}% to {last:.1f}%.",
+    "narrative.execution_recent_steady": "In the most recent {n} years, execution held broadly steady, at {latest:.1f}% in the latest year.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "By default, only Overall Budget, Health, Education, and General Public Services are shown in the chart. Click on the legend to view the year-on-year budget growth rate for other functional categories.",
@@ -560,6 +574,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
     "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
+    "chart.budget_execution.info": "The execution rate is actual spending as a share of the approved budget (spending ÷ approved budget). Following the PEFA framework, a budget is considered credible when execution stays within ±3% of the approved budget (97–103%); below that range is under-execution and above it is over-execution. The variance view shows the same figure as the deviation from 100%.",
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---

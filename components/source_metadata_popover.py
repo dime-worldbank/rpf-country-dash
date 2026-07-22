@@ -132,6 +132,10 @@ CHART_METADATA = {
     "functional-breakdown": {"sources": [_BOOST]},
     "func-growth": {"sources": [_BOOST]},
     "funding-source": {"sources": [_BOOST]},
+    "budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST],
+    },
     "economic-breakdown": {"sources": [_BOOST]},
     "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
     "pefa-by-pillar": {"sources": [_PEFA]},

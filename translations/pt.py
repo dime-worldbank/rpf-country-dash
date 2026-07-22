@@ -66,6 +66,8 @@ TRANSLATIONS = {
     "chart.subnational_outcome": "{outcome_name} subnacional",
     "chart.budget_func_fluctuation": "Como os orçamentos por categorias funcionais oscilam ao longo do tempo?",
     "chart.budget_by_funding_source": "Como o orçamento é financiado?",
+    "chart.total_budget_over_time": "Como o orçamento total mudou?",
+    "chart.budget_execution": "Quanto do orçamento é executado?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajustado pela inflação",
@@ -77,7 +79,6 @@ TRANSLATIONS = {
     "trace.domestic_funded": "Financiamento doméstico",
     "trace.foreign_funded": "Financiamento externo",
     "trace.total_budget": "Orçamento total",
-    "trace.total_budget_real": "Orçamento total (ajustado pela inflação)",
     "trace.per_capita": "Per capita",
     "trace.pefa_score": "Pontuação PEFA",
     "trace.uhc_index": "Índice de cobertura universal de saúde",
@@ -115,12 +116,16 @@ TRANSLATIONS = {
     "axis.pct_total_func_expenditure": "Percentual da despesa total {func_gen}",
     "axis.yoy_growth_rate": "Taxa de crescimento anual (%)",
     "axis.budget_share": "Parcela do orçamento (%)",
+    "axis.execution_rate": "Orçamento executado (%)",
+    "axis.execution_variance": "Desvio em relação ao orçamento (%)",
     "radio.per_capita_expenditure": "Despesa per capita {sector_prep}",
     "radio.total_expenditure": "Despesa total {sector_prep}",
     "radio.per_capita_expenditure_plain": "  Despesa per capita",
     "radio.total_expenditure_plain": "  Despesa total",
     "radio.budget": "Orçamento",
     "radio.inflation_adjusted_budget": "Orçamento ajustado pela inflação",
+    "radio.execution_rate": "Taxa de execução",
+    "radio.variance": "Variação",
 
     # --- Source annotations / footer / disclaimer ---
     "source.boost_cpi": "Fonte: BOOST e IPC: Banco Mundial",
@@ -220,6 +225,8 @@ TRANSLATIONS = {
     "metric.school_attendance": {"name": "a taxa de frequência escolar (6 a 17 anos)", "plural": False, "feminine": True, "article": "a"},
     "metric.learning_poverty_rate": {"name": "a taxa de pobreza de aprendizagem", "plural": False, "feminine": True, "article": "a"},
     "metric.domestic_funded_share": {"name": "a parcela do orçamento domesticamente financiada", "plural": False, "feminine": True, "article": "a"},
+    "metric.total_budget": {"name": "o orçamento total", "plural": False, "feminine": False, "article": "o"},
+    "metric.total_budget_real": {"name": "o orçamento total ajustado pela inflação", "plural": False, "feminine": False, "article": "o"},
     "label.per_capita_spending_lower": "a despesa per capita",
     "label.poverty_rates_lower": "as taxas de pobreza",
 
@@ -436,6 +443,13 @@ TRANSLATIONS = {
     "narrative.external_financing_included": "Esta análise atualmente inclui financiamento externo porque os dados orçamentários usados têm granularidade limitada. Idealmente, ele seria excluído devido à sua volatilidade.",
     "narrative.external_financing_excluded": "Esta análise exclui financiamento externo, pois ele tende a ser volátil.",
     "narrative.funding_source_average": "Em média, ao longo deste período, {domestic_share:.1f}% do orçamento {country_gen} foi financiado domesticamente, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
+    "narrative.funding_source_unavailable": "A divisão entre financiamento doméstico e externo não está disponível nos dados.",
+    "narrative.execution_under": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, com subexecução constante — cerca de {gap:.1f}% do orçamento aprovado fica sem ser gasto a cada ano.",
+    "narrative.execution_on_track": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, acompanhando de perto o planejado — sinal de um orçamento credível.",
+    "narrative.execution_over": "{country} executou em média {mean:.1f}% do seu orçamento aprovado, gastando regularmente mais do que o aprovado.",
+    "narrative.execution_recent_rose": "Nos últimos {n} anos, a execução subiu de {first:.1f}% para {last:.1f}%.",
+    "narrative.execution_recent_fell": "Nos últimos {n} anos, a execução caiu de {first:.1f}% para {last:.1f}%.",
+    "narrative.execution_recent_steady": "Nos últimos {n} anos, a execução manteve-se praticamente estável, em {latest:.1f}% no último ano.",
     "instruction.budget_legend": "Por padrão, apenas Orçamento geral, Saúde, Educação e Serviços públicos gerais aparecem no gráfico. Clique na legenda para ver a taxa anual de crescimento do orçamento das outras categorias funcionais.",
 
     # --- Outcome names / ranks ---
@@ -490,6 +504,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Usa valores reportados pelo FMI para Receita (GGR) e Despesa (GGX) no nível do Governo Geral.",
     "source.togo_dgb.label": "Relatório oficial do Togo",
     "source.togo_dgb.description": "Receita e despesa realizadas a partir do Relatório anual de Execução Orçamentária. Valores não monetários equivalentes são subtraídos de receita e despesa para comparabilidade com os dados do FMI.",
+    "chart.budget_execution.info": "A taxa de execução é a despesa efetiva como proporção do orçamento aprovado (despesa ÷ orçamento aprovado). Seguindo o marco PEFA, um orçamento é considerado credível quando a execução permanece dentro de ±3% do orçamento aprovado (97–103%); abaixo dessa faixa há subexecução e acima dela, superexecução. A visão de variação mostra o mesmo valor como desvio em relação a 100%.",
     "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
 
     # --- Déficit / fiscal balance ---
