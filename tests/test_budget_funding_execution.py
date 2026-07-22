@@ -14,6 +14,7 @@ from unittest.mock import patch
 import pandas as pd
 
 from components import budget_funding_execution
+import data_mapping
 
 
 def _rows_df(country, rows, func=None):
@@ -32,9 +33,9 @@ def _store(national=None, sector=None, currency=None, func_econ=None):
     """A ``server_store.get`` stand-in keyed like the real store."""
     mapping = {}
     if national is not None:
-        mapping["expenditure_w_poverty"] = national
+        mapping["expenditure_w_poverty"] = data_mapping._add_real_funding_split_columns(national)
     if sector is not None:
-        mapping["func_by_country_year"] = sector
+        mapping["func_by_country_year"] = data_mapping._add_real_funding_split_columns(sector)
     if currency is not None:
         mapping["basic_country_info"] = currency
     if func_econ is not None:
@@ -151,7 +152,7 @@ class TestFundingSourceIntegration(unittest.TestCase):
 
     @patch("components.budget_funding_execution.get_segment_narrative_i18n")
     @patch("components.budget_funding_execution.server_store.get")
-    def test_real_terms_deflates_the_total_line(self, mock_get, mock_trend):
+    def test_real_terms_uses_source_real_budget_for_total_line(self, mock_get, mock_trend):
         mock_trend.return_value = ""
         national = _rows_df(
             "Ghana",
@@ -159,6 +160,7 @@ class TestFundingSourceIntegration(unittest.TestCase):
                 {
                     "year": 2018,
                     "budget": 100.0,
+                    "real_budget": 90.0,
                     "foreign_funded_budget": 20.0,
                     "expenditure": 100.0,
                     "real_expenditure": 90.0,
@@ -166,6 +168,7 @@ class TestFundingSourceIntegration(unittest.TestCase):
                 {
                     "year": 2019,
                     "budget": 200.0,
+                    "real_budget": 166.67,
                     "foreign_funded_budget": 40.0,
                     "expenditure": 180.0,
                     "real_expenditure": 150.0,
@@ -178,7 +181,7 @@ class TestFundingSourceIntegration(unittest.TestCase):
         real_fig, _ = budget_funding_execution.render_funding("Ghana", "en", "real")
 
         self.assertEqual(list(nominal_fig.data[-1].y), [100.0, 200.0])
-        # deflator = real_expenditure / expenditure: 90/100, then 150/180.
+        # Real terms should come from source ``real_budget`` directly.
         real_y = [round(v, 2) for v in real_fig.data[-1].y]
         self.assertEqual(real_y, [90.0, 166.67])
         # Shares stay the split, not the deflated amounts.

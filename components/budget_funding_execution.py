@@ -56,45 +56,16 @@ def _prepare_funding_df(df):
 def _add_funding_columns(df):
     """Domestic/foreign split + real-terms columns for a scoped budget frame.
 
-    Split is left NaN where unknown — including the sector table's
-    ``domestic == budget`` sentinel — rather than implying all-domestic.
-    Budget-based, not expenditure-based: foreign execution isn't reliably tracked.
+    Data structure checks are centralized in ``data_mapping``; this function
+    assumes funding columns already exist and uses them directly.
     """
     df = df.copy()
     df = df[df["budget"].notna() & (df["budget"].round(0) != 0)]
     if df.empty:
         return df
-
-    if "foreign_funded_budget" in df.columns:
-        foreign = df["foreign_funded_budget"]
-    elif "domestic_funded_budget" in df.columns:
-        foreign = df["budget"] - df["domestic_funded_budget"]
-        # domestic == budget is the sector table's "foreign unknown" sentinel.
-        foreign = foreign.where(
-            df["domestic_funded_budget"].round(0) != df["budget"].round(0)
-        )
-    else:
-        foreign = np.nan
-
-    df["foreign_funded_budget"] = foreign
-    df["domestic_funded_budget"] = df["budget"] - foreign
     df["domestic_share"] = df["domestic_funded_budget"] / df["budget"] * 100
     df["foreign_share"] = df["foreign_funded_budget"] / df["budget"] * 100
-
-    # One deflator for all amounts, so the real bars still sum to the real total.
-    deflator = _deflator(df)
-    df["real_budget"] = df["budget"] * deflator
-    df["real_domestic_funded_budget"] = df["domestic_funded_budget"] * deflator
-    df["real_foreign_funded_budget"] = df["foreign_funded_budget"] * deflator
     return df.sort_values("year")
-
-
-def _deflator(df):
-    """``real_expenditure / expenditure``; NaN where unavailable or expenditure is zero."""
-    if not {"expenditure", "real_expenditure"}.issubset(df.columns):
-        return np.nan
-    expenditure = df["expenditure"].where(df["expenditure"] != 0)
-    return df["real_expenditure"] / expenditure
 
 
 # Trend fit runs a slow, deterministic global optimiser (~90ms); memoise per
@@ -442,7 +413,13 @@ _EXEC_ECON_COLOR = {
 
 
 def _prepare_econ_execution_df(country, sector):
-    """Execution rate/variance by economic-category bucket, for one sector."""
+    """Execution rate/variance by economic-category bucket, for one sector.
+
+    ``real_budget`` in the raw table does not remove this prep step: execution
+    rates use ``expenditure / budget`` and are unchanged by a common deflator.
+    The key work here is collapsing many raw econ labels into the 4 displayed
+    buckets and re-aggregating totals per (year, bucket).
+    """
     df = server_store.get("func_econ_raw")
     df = filter_country_sort_year(df[df["func"] == sector], country)
     if df.empty:
