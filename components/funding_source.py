@@ -66,12 +66,30 @@ def _deflator(df):
     return df["real_expenditure"] / expenditure
 
 
+# The narrative's trend fit runs a slow global optimiser (~90ms) and its result
+# is deterministic, so memoise the finished figure+narrative per
+# (country, lang, terms) — toggling the radio back and forth must not refit it.
+_FUNDING_CACHE = {}
+
+
 def render_funding(country, lang="en", budget_terms="nominal"):
     """Funding figure and its narrative, from one shared data prep.
 
     Returned together so a single callback updates the chart and its text in one
-    round-trip, keeping the narrative from lagging the chart on a toggle.
+    round-trip. Memoised because the narrative's trend fit is expensive.
     """
+    key = (country, lang, budget_terms)
+    if key not in _FUNDING_CACHE:
+        _FUNDING_CACHE[key] = _build_funding(country, lang, budget_terms)
+    return _FUNDING_CACHE[key]
+
+
+def clear_cache():
+    """Drop memoised results so a data refresh isn't served stale narratives."""
+    _FUNDING_CACHE.clear()
+
+
+def _build_funding(country, lang, budget_terms):
     funding_df = _prepare_funding_df(country)
     if funding_df.empty:
         unavailable = t("error.data_unavailable", lang)

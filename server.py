@@ -40,9 +40,11 @@ def clear_cache_endpoint():
     # Lazy imports: avoids circular import with queries/server_store at load.
     from queries import QueryService
     import server_store
+    from components import funding_source
 
     server_store.clear()
     QueryService.get_instance().clear_cache()
+    funding_source.clear_cache()
     return jsonify({"status": "ok", "cleared_at": time.time()})
 
 
