@@ -6,6 +6,7 @@ from trend_narrative import InsightExtractor, TrendDetector
 from trend_narrative_i18n import get_segment_narrative_i18n
 from constants import translate_econ
 from components.func_operational_vs_capital_spending import CAPEX, OP_WAGE_BILL
+from viz_theme import QUALITATIVE
 from utils import (
     apply_locale,
     empty_plot,
@@ -382,6 +383,19 @@ _EXEC_ECON_BUCKET_MAP = {
     "Capital expenditures": CAPEX,
     "Goods and services": EXEC_GOODS_SERVICES,
 }
+# Wage bill / capital keep the exact colors the composition chart assigns
+# them (its pivot table's alphabetical column order puts Capital
+# expenditures, Non-wage recurrent, Wage bill on QUALITATIVE[0:3]). Goods and
+# services gets an unused palette color. "Other recurrent" is a different
+# category from the composition chart's "Non-wage recurrent" (it excludes
+# goods and services) so it doesn't reuse that color; a neutral tone instead.
+OTHER_RECURRENT_COLOR = "#B8A99A"
+_EXEC_ECON_COLOR = {
+    CAPEX: QUALITATIVE[0],
+    EXEC_OTHER: OTHER_RECURRENT_COLOR,
+    OP_WAGE_BILL: QUALITATIVE[2],
+    EXEC_GOODS_SERVICES: QUALITATIVE[6],
+}
 
 
 def _prepare_econ_execution_df(country, sector):
@@ -427,6 +441,7 @@ def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
                 y=bucket_df[col],
                 mode="lines+markers",
                 name=name,
+                line_color=_EXEC_ECON_COLOR[bucket],
                 hovertemplate="<b>" + name + "</b>: %{y:.1f}%<extra></extra>",
             )
         )
@@ -437,7 +452,8 @@ def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
         title=t("chart.budget_execution_by_category", lang),
         plot_bgcolor="white",
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.03),
+        legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5),
+        margin=dict(b=60),
     )
     return apply_locale(fig, lang)
 
