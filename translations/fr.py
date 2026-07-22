@@ -128,7 +128,7 @@ TRANSLATIONS = {
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
     "radio.execution_rate": "Taux d'exécution",
-    "radio.variance": "Écart",
+    "radio.variance": "Déviation",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source : BOOST & IPC : World Bank",
