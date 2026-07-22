@@ -20,8 +20,6 @@ DOMESTIC_FUNDED_COLOR = "#8E6BA6"  # dusty violet
 FOREIGN_FUNDED_COLOR = "#E0AE3C"  # gold
 TOTAL_BUDGET_COLOR = "#3A3F47"  # charcoal
 
-EXECUTED_COLOR = "#2E8B6B"  # sea green
-SHORTFALL_COLOR = "#C0503A"  # terracotta
 REFERENCE_LINE_COLOR = "#8A8F98"  # slate gray
 
 # PEFA PI-1's rating bands (in at least 2 of the last 3 years — this
@@ -36,9 +34,9 @@ CREDIBLE_BAND = PEFA_A_BAND  # the narrative's credible/not-credible cutoff
 # still shows through). B gets its own amber rather than reusing
 # FOREIGN_FUNDED_COLOR — this chart sits right next to the funding-source
 # chart on the home page and the two golds would otherwise read as one signal.
-PEFA_A_COLOR = EXECUTED_COLOR
+PEFA_A_COLOR = "#2E8B6B"  # sea green
 PEFA_B_COLOR = "#C8781E"  # amber-orange
-PEFA_C_COLOR = SHORTFALL_COLOR
+PEFA_C_COLOR = "#C0503A"  # terracotta
 PEFA_BAR_OPACITY = 0.75
 
 # Pale tints of the tier colors above, lightened 85% toward white, for the
