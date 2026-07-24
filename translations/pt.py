@@ -355,8 +355,8 @@ TRANSLATIONS = {
 
     # --- Annotations / operational vs capital ---
     "annotation.displaying_data_from": "Exibindo dados de {year}",
-    "annotation.poverty_threshold": "Taxa de pobreza (linha de {threshold} para país de {level_name}).",
-    "annotation.poverty_threshold_default": "Taxa de pobreza (linha de US$ 3,00).",
+    "annotation.poverty_threshold": "Taxa de pobreza: linha de {threshold} para país de {level_name}",
+    "annotation.poverty_threshold_default": "Taxa de pobreza: linha de US$ 3,00",
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f}% da despesa {func_gen} foi alocada à remuneração de empregados e {other_pct:.0f}% a despesas recorrentes não salariais em {year}.{emp_narrative}",
     "narrative.emp_comp_high": " Isso indica que uma parcela significativa da despesa é direcionada a salários e benefícios, deixando margem limitada para custos operacionais não salariais, como {resources} e manutenção de instalações.",
     "narrative.emp_comp_balanced": " Isso indica uma alocação equilibrada entre salários e outros recursos operacionais para apoiar a prestação de serviços.",
