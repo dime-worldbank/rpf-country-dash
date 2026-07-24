@@ -65,7 +65,7 @@ def get_slider_config(expenditure_years, outcome_years, lang="en"):
         marks[str(year)] = {"label": str(year), "style": style}
 
     min_year, max_year = all_years[0], all_years[-1]
-    selected_year = max(common_years) if common_years else max_year
+    selected_year = max(common_years) if common_years else expenditure_years[-1]
     return (
         {"display": "block"},
         marks,
