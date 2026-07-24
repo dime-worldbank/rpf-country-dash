@@ -32,6 +32,14 @@ class TestGetSliderConfig(unittest.TestCase):
         self.assertEqual(max_year, 2023)
         self.assertEqual(selected, 2022)                               # latest complete year
 
+    def test_no_overlap_defaults_to_latest_expenditure_year(self):
+        # If there is no overlap, default to the latest expenditure year (not an outcome-only max).
+        _, marks, selected, min_year, max_year, _ = get_slider_config([2010, 2011], [2014])
+        self.assertEqual(min_year, 2010)
+        self.assertEqual(max_year, 2014)
+        self.assertEqual(selected, 2011)
+        self.assertEqual(marks["2014"]["style"], YEAR_PARTIAL_STYLE)
+
     def test_outcome_subset_of_expenditure_unchanged(self):
         # edu/health slider: outcome years are a subset of (already-clamped) spending.
         _, marks, selected, min_year, max_year, _ = get_slider_config(
