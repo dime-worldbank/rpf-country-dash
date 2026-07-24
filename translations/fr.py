@@ -29,11 +29,13 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Solde budgétaire",
     "heading.regional_expenditure": "Dépenses régionales",
     "heading.country_regional_expenditure": "Dépenses régionales {country_gen}",
-    "heading.who_pays_education": "Qui finance l'éducation ?",
-    "heading.who_pays_health": "Qui finance la santé ?",
-    "heading.public_spending_education_outcome": "Dépenses publiques et résultats en matière d’éducation",
-    "heading.public_spending_health_outcome": "Dépenses publiques et résultats en matière de santé",
-    "heading.operational_vs_capital": "Dépenses opérationnelles et dépenses d’investissement",
+    "heading.who_funds_budget": "Budget total",
+    "heading.who_pays_education": "Qui paie pour l'éducation ?",
+    "heading.who_pays_health": "Qui paie pour la santé ?",
+    "heading.budget_funded_executed": "Comment le budget {sector_gen} est-il financé et exécuté ?",
+    "heading.public_spending_education_outcome": "Quel est le lien entre les dépenses et les résultats éducatifs ?",
+    "heading.public_spending_health_outcome": "Quel est le lien entre les dépenses et les résultats sanitaires ?",
+    "heading.operational_vs_capital": "À quoi sert l'argent ?",
     "heading.central_vs_geo_education": "Dépenses d'éducation centralisées vs. géographiquement allouées",
     "heading.central_vs_geo_health": "Dépenses de santé centralisées vs. géographiquement allouées",
     "heading.public_spending_education_regions": "Dépenses publiques vs. résultats éducatifs par région",
@@ -64,6 +66,10 @@ TRANSLATIONS = {
     # without requiring gendered adjective agreement ("infranational(e)").
     "chart.subnational_outcome": "{outcome_name} au niveau infranational",
     "chart.budget_func_fluctuation": "Comment les budgets par catégorie fonctionnelle fluctuent-ils au fil du temps ?",
+    "chart.budget_by_funding_source": "Comment le budget est-il financé ?",
+    "chart.total_budget_over_time": "Comment le budget total a-t-il évolué ?",
+    "chart.budget_execution": "Quelle part du budget est dépensée ?",
+    "chart.budget_execution_by_category": "Comment l'exécution varie-t-elle selon la catégorie de dépense ?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajusté à l'inflation",
@@ -72,6 +78,9 @@ TRANSLATIONS = {
     "trace.public_expenditure": "Dépenses publiques",
     "trace.private_expenditure": "Dépenses privées",
     "trace.poverty_rate": "Taux de pauvreté",
+    "trace.domestic_funded": "Financement intérieur",
+    "trace.foreign_funded": "Financement extérieur",
+    "trace.total_budget": "Budget total",
     "trace.per_capita": "Par habitant",
     "trace.pefa_score": "Score PEFA",
     "trace.uhc_index": "Indice de couverture sanitaire universelle",
@@ -107,6 +116,9 @@ TRANSLATIONS = {
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
+    "axis.budget_share": "Part du budget (%)",
+    "axis.execution_rate": "Budget exécuté (%)",
+    "axis.execution_variance": "Écart par rapport au budget (%)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Dépenses par habitant {sector_prep}",
@@ -115,6 +127,8 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Dépenses totales",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
+    "radio.execution_rate": "Taux d'exécution",
+    "radio.variance": "Déviation",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source : BOOST & IPC : World Bank",
@@ -259,6 +273,23 @@ TRANSLATIONS = {
     },
     "metric.learning_poverty_rate": {
         "name": "le taux de pauvreté des apprentissages",
+        "plural": False,
+        "feminine": False,
+    },
+    "metric.domestic_funded_share": {
+        "name": "la part du budget financée par des sources intérieures",
+        "plural": False,
+        "feminine": True,
+    },
+    "metric.total_budget": {
+        "name": "le budget total",
+        "plural": False,
+        "feminine": False,
+    },
+    "phrase.sector_budget": "budget {sector_gen}",
+    "phrase.sector_budget_real": "budget {sector_gen} ajusté à l'inflation",
+    "metric.total_budget_real": {
+        "name": "le budget total ajusté de l'inflation",
         "plural": False,
         "feminine": False,
     },
@@ -407,6 +438,8 @@ TRANSLATIONS = {
     "econ.wage_bill.narrative":            "la masse salariale",
     "econ.non_wage_recurrent":             "Dépenses récurrentes hors salaires",
     "econ.non_wage_recurrent.narrative":   "les dépenses récurrentes hors salaires",
+    "econ.other_recurrent":                "Autres dépenses récurrentes",
+    "econ.other_recurrent.narrative":      "les autres dépenses récurrentes",
 
     # --- Functional narrative ---
     # Shared between func and econ narratives — same phrasing in both.
@@ -562,6 +595,15 @@ TRANSLATIONS = {
     "narrative.grew_modest": "a augmenté à un rythme modeste de {rate:.1f} %",
     "narrative.external_financing_included": "Cette analyse inclut actuellement le financement externe car les données budgétaires utilisées ont une granularité limitée. Idéalement, elle exclurait le financement externe en raison de sa volatilité.",
     "narrative.external_financing_excluded": "Cette analyse exclut le financement externe en raison de sa tendance à la volatilité.",
+    "narrative.funding_source_average": "En moyenne sur cette période, les sources intérieures ont financé {domestic_share:.1f} % du budget {country_gen}, les {foreign_share:.1f} % restants étant financés par des sources extérieures.",
+    "narrative.funding_source_unavailable": "La répartition entre financement intérieur et extérieur n'est pas disponible dans les données.",
+    "narrative.execution_under": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, avec une sous-exécution constante — environ {gap:.1f} % du {budget} approuvé reste non dépensé chaque année.",
+    "narrative.execution_on_track": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en suivant de près la planification — signe d'un {budget} crédible.",
+    "narrative.execution_over": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en dépensant régulièrement plus que ce qui était prévu.",
+    "narrative.econ_execution_breakdown": "Au sein du {budget}, sur la même période, la catégorie {high} a le mieux exécuté, à {high_rate:.1f} %, tandis que la catégorie {low} a le plus accusé de retard, à {low_rate:.1f} %.",
+    "narrative.execution_recent_rose": "Au cours des {n} dernières années, l'exécution a augmenté, passant de {first:.1f} % à {last:.1f} %.",
+    "narrative.execution_recent_fell": "Au cours des {n} dernières années, l'exécution a diminué, passant de {first:.1f} % à {last:.1f} %.",
+    "narrative.execution_recent_steady": "Au cours des {n} dernières années, l'exécution est restée globalement stable, à {latest:.1f} % la dernière année.",
 
     # --- Budget increment instruction ---
     "instruction.budget_legend": "Par défaut, seuls le budget global, la santé, l'éducation et les services publics généraux sont affichés dans le graphique. Cliquez sur la légende pour voir le taux de croissance budgétaire annuel des autres catégories fonctionnelles.",
@@ -634,6 +676,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
+    "chart.budget_execution.info": "Le taux d'exécution correspond aux dépenses réelles rapportées au budget approuvé (dépenses ÷ budget approuvé). Selon le cadre PEFA (PI-1), une exécution à ±5 % du budget approuvé obtient la note A (la plus crédible), à ±10 % la note B, et à ±15 % la note C ; au-delà, c'est un D. La vue en écart présente la même donnée comme écart par rapport à 100 %. Les zones ombrées et la couleur des barres indiquent ces mêmes zones A/B/C.",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---

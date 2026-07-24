@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, budget_funding_execution
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
@@ -157,6 +157,90 @@ def render_overview_content(tab, lang):
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                    ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.who_funds_budget", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        [
+                            html.P(
+                                id="funding-narrative",
+                                children=t("loading", lang),
+                            ),
+                            html.P(
+                                id="execution-narrative",
+                                children=t("loading", lang),
+                            ),
+                        ]
+                    )
+                ),
+                dbc.Row(
+                    [
+                        # How is the budget funded?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="funding-source-terms",
+                                        options=[
+                                            {
+                                                "label": t("radio.budget", lang),
+                                                "value": "nominal",
+                                            },
+                                            {
+                                                "label": t("radio.inflation_adjusted_budget", lang),
+                                                "value": "real",
+                                            },
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("funding-source"),
+                            ],
+                            xs={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                        # How much of the budget is spent?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="budget-execution-metric",
+                                        options=[
+                                            {
+                                                "label": t("radio.execution_rate", lang),
+                                                "value": "execution_rate",
+                                            },
+                                            {
+                                                "label": t("radio.variance", lang),
+                                                "value": "variance",
+                                            },
+                                        ],
+                                        value="execution_rate",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("budget-execution"),
+                            ],
+                            xs={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                     ],
@@ -1469,6 +1553,50 @@ def render_pefa_overall(data, pefa_data, country, lang):
 def render_budget_func_changes(data, country, exp_type, lang):
     lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+@callback(
+    Output("funding-source", "figure"),
+    Output("funding-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("funding-source-terms", "value"),
+)
+def render_funding_source(data, country, lang, budget_terms):
+    lang = lang or "en"
+    budget_terms = budget_terms or "nominal"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return budget_funding_execution.render_funding(country, lang=lang, budget_terms=budget_terms)
+
+
+@callback(
+    Output("budget-execution", "figure"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("budget-execution-metric", "value"),
+)
+def render_budget_execution(data, country, lang, metric):
+    lang = lang or "en"
+    metric = metric or "execution_rate"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_figure(country, lang=lang, metric=metric)
+
+
+@callback(
+    Output("execution-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_execution_narrative(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_narrative(country, lang=lang)
 
 
 def _get_revenue_budget_context(country):
