@@ -177,6 +177,7 @@ TRANSLATIONS = {
     "country.Kenya": {"name": "o Quênia", "plural": False, "feminine": False, "article": "o"},
     "country.Liberia": {"name": "a Libéria", "plural": False, "feminine": True, "article": "a"},
     "country.Mozambique": {"name": "Moçambique", "plural": False, "feminine": False, "article": ""},
+    "country.Moldova": {"name": "a Moldávia", "plural": False, "feminine": True, "article": "a"},
     "country.Nigeria": {"name": "a Nigéria", "plural": False, "feminine": True, "article": "a"},
     "country.Pakistan": {"name": "o Paquistão", "plural": False, "feminine": False, "article": "o"},
     "country.Paraguay": {"name": "o Paraguai", "plural": False, "feminine": False, "article": "o"},

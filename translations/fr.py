@@ -213,6 +213,7 @@ TRANSLATIONS = {
     "country.Kenya": {"name": "Kenya", "plural": False, "feminine": False},
     "country.Liberia": {"name": "Libéria", "plural": False, "feminine": False},
     "country.Mozambique": {"name": "Mozambique", "plural": False, "feminine": False},
+    "country.Moldova": {"name": "Moldavie", "plural": False, "feminine": True},
     "country.Nigeria": {"name": "Nigéria", "plural": False, "feminine": False},
     "country.Pakistan": {"name": "Pakistan", "plural": False, "feminine": False},
     "country.Paraguay": {"name": "Paraguay", "plural": False, "feminine": False},
