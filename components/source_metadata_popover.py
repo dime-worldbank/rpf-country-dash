@@ -2,7 +2,7 @@ import pandas as pd
 from dash import html
 import dash_bootstrap_components as dbc
 
-from constants import START_YEAR
+from constants import EDU_OUTCOME_CHART_ID, EDU_SPENDING_CHART_ID, START_YEAR
 from translations import t
 
 
@@ -51,6 +51,27 @@ _HD_INDEX = {
     "key": "global_data_lab_hd_index",
     "label_key": "source.hd_index.label",
     "source_name_key": "source_name.global_data_lab",
+}
+
+_TEACHER_SALARIES = {
+    "key": "teacher_salaries",
+    "label_key": "source.teacher_salary.label",
+    "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.teacher_salary.description",
+}
+
+_COMPLETION_RATES = {
+    "key": "completion_rates",
+    "label_key": "source.completion_rate.label",
+    "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.completion_rate.description",
+}
+
+_SCHOOL_BASIC_SERVICES = {
+    "key": "school_basic_services",
+    "label_key": "source.school_services.label",
+    "source_name_key": "source_name.unesco_uis",
+    "description_key": "source.school_services.description",
 }
 
 _ATTENDANCE = {
@@ -150,6 +171,11 @@ CHART_METADATA = {
     "education-total": {"sources": [_BOOST]},
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
+    EDU_SPENDING_CHART_ID: {"sources": [_BOOST_EDU]},
+    EDU_OUTCOME_CHART_ID: {
+        "info_key": "chart.outcome_secondary.info",
+        "sources": [_COMPLETION_RATES, _TEACHER_SALARIES, _SCHOOL_BASIC_SERVICES],
+    },
     # ------------------------------------------------------------------
     # Education – Across Space
     # ------------------------------------------------------------------

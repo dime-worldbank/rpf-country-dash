@@ -134,6 +134,48 @@ class QueryService:
         """
         return self.fetch_data(query)
 
+    def get_edu_expenditure_by_func_sub_econ(self):
+        query = f"""
+            SELECT country_name, year, func_sub, econ, per_capita_real_expenditure
+            FROM prd_mega.{BOOST_SCHEMA}.expenditure_by_country_admin_func_sub_econ_year
+            WHERE func = 'Education'
+        """
+        return self.fetch_data(query)
+
+    def get_completion_rates(self):
+        query = f"""
+            SELECT country_name, year,
+                   completion_rate_primary,
+                   completion_rate_lower_secondary,
+                   completion_rate_upper_secondary
+            FROM prd_mega.{INDICATOR_SCHEMA}.completion_rates
+        """
+        return self.fetch_data(query)
+
+    def get_teacher_salaries(self):
+        query = f"""
+            SELECT country_name, year,
+                   teacher_salary_pre_primary,
+                   teacher_salary_primary,
+                   teacher_salary_lower_secondary,
+                   teacher_salary_upper_secondary
+            FROM prd_mega.{INDICATOR_SCHEMA}.teacher_salaries
+        """
+        return self.fetch_data(query)
+
+    def get_school_basic_services(self):
+        query = f"""
+            SELECT country_name, year,
+                   schools_with_electricity_primary,
+                   schools_with_electricity_lower_secondary,
+                   schools_with_electricity_upper_secondary,
+                   schools_with_internet_primary,
+                   schools_with_internet_lower_secondary,
+                   schools_with_internet_upper_secondary
+            FROM prd_mega.{INDICATOR_SCHEMA}.school_basic_services
+        """
+        return self.fetch_data(query)
+
     def get_basic_country_data(self, countries):
         country_list = "', '".join(countries)
         query = f"""

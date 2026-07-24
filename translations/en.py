@@ -37,6 +37,7 @@ TRANSLATIONS = {
     "heading.central_vs_geo_education": "Centrally vs. Geographically Allocated Education Spending",
     "heading.central_vs_geo_health": "Centrally vs. Geographically Allocated Health Spending",
     "heading.public_spending_education_regions": "Public Spending vs. Education Outcomes across Regions",
+    "heading.edu_func_sub_econ": "Public Spending by Education Levels",
     "heading.public_spending_health_regions": "Public Spending vs. Health Outcomes across Regions",
 
     # --- Chart titles ---
@@ -45,6 +46,14 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "How has per capita expenditure changed over time?",
     "chart.sector_prioritization": "How has sector prioritization changed over time?",
     "chart.edu_spending_over_time": "How has govt spending on education changed over time?",
+    # Axis titles. Kept terse: the legend already names the levels, and a
+    # y-axis title longer than the plot area (~350px) is clipped, not shrunk.
+    # "public" is carried by the section heading directly above.
+    "chart.edu_func_sub_econ": "Inflation-adjusted per capita expenditure",
+    "chart.teacher_salary": "Relative teacher salary (ratio)",
+    "chart.completion_rate": "Completion rate (%)",
+    "chart.schools_electricity": "Schools with electricity (%)",
+    "chart.schools_internet": "Schools with internet access (%)",
     "chart.health_spending_over_time": "How has govt spending on health changed over time?",
     "chart.pct_govt_vs_household": "What % was spent by the govt vs household?",
     "chart.education_outcome": "How has education outcome changed?",
@@ -103,6 +112,20 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Poverty Rate (%)",
     "axis.quality_budget_institutions": "Quality of Budget Institutions",
     "axis.pct_total_func_expenditure": "Percentage of total {func} expenditure",
+
+    # --- Education level labels ---
+    "level.pre_primary": "Pre-primary",
+    "level.primary": "Primary",
+    "level.primary_secondary": "Primary & secondary",
+    "level.post_secondary": "Post-secondary non-tertiary",
+    # Longer, mid-sentence forms used in narratives ("secondary education").
+    "level.primary.long": "primary education",
+    "level.primary_secondary.long": "primary & secondary education",
+    "level.secondary.long": "secondary education",
+    "level.post_secondary.long": "post-secondary non-tertiary education",
+    "level.tertiary.long": "tertiary education",
+    "level.secondary": "Secondary",
+    "level.tertiary": "Tertiary",
     "axis.yoy_growth_rate": "Year-on-year growth rate (%)",
 
     # --- Radio button labels ---
@@ -112,6 +135,15 @@ TRANSLATIONS = {
     "radio.total_expenditure_plain": "  Total expenditure",
     "radio.budget": "Budget",
     "radio.inflation_adjusted_budget": "Inflation-adjusted Budget",
+
+    # --- Dropdown / filter labels ---
+    "label.economic_category": "Economic category",
+    "label.outcome_indicator": "Outcome indicator",
+    "outcome.completion_rate": "Completion rate",
+    "outcome.teacher_salary": "Teacher salary vs. comparable professions",
+    "outcome.electricity": "Schools with electricity",
+    "outcome.internet": "Schools with internet",
+    "dropdown.all_econ_categories": "All economic categories",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source: BOOST & CPI: World Bank",
@@ -218,6 +250,12 @@ TRANSLATIONS = {
     "metric.per_capita_education_spending": "per capita education spending",
     "metric.school_attendance": "school attendance (6-17 year-olds)",
     "metric.learning_poverty_rate": "learning poverty rate",
+    # Dynamic metrics for the func-sub spending section's trend narrative.
+    "metric.level_spending": {"name": "{level} spending", "plural": False, "feminine": False},
+    "metric.completion_rate": {"name": "completion rate", "plural": False, "feminine": False},
+    "metric.teacher_salary": {"name": "teacher salary relative to comparable professions", "plural": False, "feminine": False},
+    "metric.electricity": {"name": "electricity access", "plural": False, "feminine": False},
+    "metric.internet": {"name": "internet access", "plural": False, "feminine": False},
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Lowercase, no trailing punctuation.
     "label.per_capita_spending_lower": "per capita spending",
@@ -242,6 +280,10 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "Generally, while education outcomes related to access can be conceptually linked to the availability of public finance, results related to quality have a more complex chain of causality.",
+    "narrative.func_sub_most_least": "{scope}, between {start} and {end}, {most} received the most inflation-adjusted per-capita spending, averaging {most_val} per year, while {least} received the least, at {least_val}.",
+    "narrative.func_sub_single": "{scope}, between {start} and {end}, {level} was the only level with reported spending, averaging {level_val} per capita per year.",
+    "narrative.econ_scope_all": "Across all economic categories",
+    "narrative.econ_scope_one": "For {econ}",
     "narrative.education_outcome_measure": "To check if this is the case for {country}, we can use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on education, use school attendance rate of 6-17 year-old children to proximate access to education, and use learning poverty rate as an indicator for education quality.",
     "narrative.health_outcome_measure": "We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome.",
     "narrative.outcome_from_to": "From {start_year} to {end_year}, {pcc}",
@@ -526,6 +568,15 @@ TRANSLATIONS = {
     "source.pefa.label": "PEFA Assessment",
     "source.edu_private.label": "Private Education Expenditure",
     "source.health_private.label": "Out-of-Pocket Health Expenditure",
+    # Source-modal labels and descriptions. The UI labels above are shortened to
+    # fit; the full official UNESCO SDG 4 indicator name and code live here,
+    # where there is room for them.
+    "source.teacher_salary.label": "Teacher Salary Relative to Comparable Professions",
+    "source.teacher_salary.description": "UNESCO SDG indicator 4.c.5 — “Average teacher salary relative to other professions requiring a comparable level of qualification”. The ratio of a teacher's statutory salary to the earnings of workers with comparable qualifications. A value of 1.0 means teachers are paid on par with similar professions; below 1.0 means less, above 1.0 more. Indicates how attractive and fairly compensated teaching is.",
+    "source.completion_rate.label": "Completion Rate",
+    "source.completion_rate.description": "UNESCO SDG indicator 4.1.2 — “Completion rate (primary education, lower secondary education, upper secondary education)”. The percentage of a cohort that completes a given level of education.",
+    "source.school_services.label": "School Basic Services",
+    "source.school_services.description": "UNESCO SDG indicator 4.a.1 — “Proportion of schools offering basic services, by type of service”. Covers two service-delivery indicators, each reported for primary and secondary schools: the percentage of schools with electricity, and the percentage of schools with internet access for pedagogical purposes.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "World Bank BOOST",
@@ -533,6 +584,7 @@ TRANSLATIONS = {
     "source_name.world_bank": "World Bank",
     "source_name.world_bank_icp": "World Bank ICP",
     "source_name.global_data_lab": "Global Data Lab",
+    "source_name.unesco_uis": "UNESCO Institute for Statistics (UIS)",
     "source_name.who_gho": "WHO (GHO)",
     "source_name.who_health_db": "WHO Global Health Expenditure Database",
     "source_name.pefa_secretariat": "PEFA Secretariat",
@@ -552,6 +604,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
     "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
+    "chart.outcome_secondary.info": "To align with the combined 'Secondary' level shown on the spending side, secondary-level values here are the average of the lower-secondary and upper-secondary figures reported by UNESCO UIS (skipping any missing sub-level).",
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---

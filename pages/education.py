@@ -17,10 +17,10 @@ from utils import (
     filter_country_sort_year,
     format_currency,
     get_percentage_change_text,
-    millify,
     require_login,
 )
 import numpy as np
+from components import edu_spending_by_level as esl
 from components.year_slider import slider, get_slider_config
 from components.func_operational_vs_capital_spending import render_econ_breakdown
 from components.edu_health_across_space import (
@@ -225,6 +225,7 @@ def render_education_content(tab, lang):
                         ),
                     ]
                 ),
+                esl.layout(lang),
             ]
         )
     elif tab == "edu-tab-space":
@@ -534,6 +535,61 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
 
     fig = total_edu_figure(df, currency_code, lang=lang)
     return fig, education_narrative(data, country, lang=lang)
+
+
+@callback(
+    Output(esl.ECON_FILTER_ID, "options"),
+    Output(esl.ECON_FILTER_ID, "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    State(esl.ECON_FILTER_ID, "value"),
+)
+def update_edu_func_sub_econ_options(country, lang, current_value):
+    lang = lang or "en"
+    return esl.get_econ_category_options(country, lang, current_value)
+
+
+@callback(
+    Output(esl.OUTCOME_FILTER_ID, "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+)
+def default_outcome_for_econ(econ_filter):
+    return esl.default_outcome_indicator(econ_filter)
+
+
+@callback(
+    Output(esl.SPENDING_CHART_ID, "figure"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_econ(country, econ_filter, lang):
+    lang = lang or "en"
+    return esl.spending_figure(country, econ_filter, lang)
+
+
+@callback(
+    Output(esl.NARRATIVE_ID, "children"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input(esl.OUTCOME_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_narrative(country, econ_filter, indicator, lang):
+    lang = lang or "en"
+    return esl.spending_narrative(country, econ_filter, indicator, lang)
+
+
+@callback(
+    Output(esl.OUTCOME_CHART_ID, "figure"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input(esl.OUTCOME_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_level_outcome(country, econ_filter, indicator, lang):
+    lang = lang or "en"
+    return esl.outcome_figure(country, econ_filter, indicator, lang)
 
 
 def public_private_narrative(df, country, lang="en"):
