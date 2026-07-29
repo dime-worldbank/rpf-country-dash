@@ -24,26 +24,14 @@ REFERENCE_LINE_COLOR = "#8A8F98"  # slate gray
 
 # --- Budget execution ("How much of the budget is spent?") ------------------
 #
-# What the chart has to do:
-#   1. Show each year's execution rate (spending / approved budget), or the
-#      same figure as its deviation from 100%, whichever the radio selects.
-#   2. Make the *distance from 100%* the thing the eye measures — that gap is
-#      what PEFA PI-1 grades — hence a lollipop per year rather than a bar.
-#   3. Grade that distance: A/B/C bands within ±5/10/15%, D past that, shaded
-#      behind the marks and lettered on the right-hand axis.
-#   4. Hold the same window on every country and sector, so a given distance
-#      always looks the same; show the years past it without letting them set
-#      the scale.
-#   5. Say it in the reader's language, and say "unavailable" when it is.
-#
-# PEFA PI-1 grades on 2 of the last 3 years; this dashboard applies the
-# threshold per year. Bands nest: A inside B inside C. https://www.pefa.org/node/4762
-PEFA_A_BAND = (95, 105)
-PEFA_B_BAND = (90, 110)
-PEFA_C_BAND = (85, 115)
-CREDIBLE_BAND = PEFA_A_BAND  # the narrative's credible/not-credible cutoff
-# The window (req. 4) and the blank gutter held outside it, where an off-scale
-# year's arrow goes — far enough out to read as off the chart, not a near miss.
+# PEFA PI-1 grades how far spending lands from the approved budget: within ±5%
+# an A, ±10% a B, ±15% a C, past that a D. The indicator grades on 2 of the last
+# 3 years; this dashboard applies the threshold per year.
+# https://www.pefa.org/node/4762
+PEFA_A_BAND = (95, 105)  # also the narrative's credible/not-credible cutoff
+# One window for every country and sector, so a given distance always looks the
+# same, plus the blank gutter outside it where an off-scale year's arrow goes —
+# far enough out to read as off the chart, not a near miss.
 PEFA_PLOT_RANGE = (80, 120)
 PEFA_OFF_SCALE_GUTTER = 6
 
@@ -54,8 +42,8 @@ PEFA_OFF_SCALE_GUTTER = 6
 _SEA_GREEN, _AMBER, _TERRACOTTA = "#2E8B6B", "#C8781E", "#C0503A"
 PEFA_ZONES = (
     ("D", PEFA_PLOT_RANGE, lighten_color(_TERRACOTTA, 0.70)),
-    ("C", PEFA_C_BAND, lighten_color(_TERRACOTTA, 0.85)),
-    ("B", PEFA_B_BAND, lighten_color(_AMBER, 0.85)),
+    ("C", (85, 115), lighten_color(_TERRACOTTA, 0.85)),
+    ("B", (90, 110), lighten_color(_AMBER, 0.85)),
     ("A", PEFA_A_BAND, lighten_color(_SEA_GREEN, 0.85)),
 )
 # The zone behind a dot names its tier, so the marks are one neutral ink.
@@ -314,18 +302,13 @@ def _add_execution_columns(df):
     if df.empty or not {"budget", "expenditure"}.issubset(df.columns):
         return df.iloc[0:0]
 
-    df = df.copy()
     df = df[
         df["budget"].notna()
         & (df["budget"].round(0) != 0)
         & df["expenditure"].notna()
     ]
-    if df.empty:
-        return df
-
-    df["execution_rate"] = df["expenditure"] / df["budget"] * 100
-    df["execution_variance"] = df["execution_rate"] - 100
-    return df.sort_values("year")
+    rate = df["expenditure"] / df["budget"] * 100
+    return df.assign(execution_rate=rate, execution_variance=rate - 100).sort_values("year")
 
 
 def render_execution_figure(country, lang="en", metric="execution_rate", sector=None):
@@ -338,8 +321,8 @@ def render_execution_figure(country, lang="en", metric="execution_rate", sector=
 def _metric_fields(metric, lang):
     """(column, offset from rate space, axis title) for the metric on show.
 
-    Variance is rate - 100, so the whole rate-space scale — bands, reference
-    line, zone edges — shifts by that offset when it's the metric selected.
+    Variance is rate - 100, so the bands, reference line and zone edges all
+    shift by that offset when it's the one selected.
     """
     if metric == "variance":
         return "execution_variance", 100, t("axis.execution_variance", lang)
@@ -358,8 +341,8 @@ def _stem_trace(years, values, reference):
         x=xs,
         y=ys,
         mode="lines",
-        # A connector, not the reading: thin and faint enough to sit under the
-        # reference line and the dot without competing with either.
+        # A connector, not the reading — thin and faint enough to sit under both
+        # the reference line and the dot without competing with either.
         line=dict(color=EXECUTION_MARK_COLOR, width=1.2),
         opacity=0.45,
         hoverinfo="skip",
@@ -385,8 +368,8 @@ def _off_scale_trace(years, values, pinned, last_year):
             line=MARK_RING,
         ),
         text=[f"{value:.0f}%" for value in values],
-        # Beside the arrow: the stem arrives from one side and the plot edge is
-        # on the other. The last year flips left, having no room to its right.
+        # Beside the arrow, clear of the stem arriving at it; the last year flips
+        # left for want of room to its right.
         textposition=np.where(years >= last_year, "middle left", "middle right"),
         textfont=dict(color=EXECUTION_MARK_COLOR, size=11),
         customdata=values,
@@ -398,11 +381,11 @@ def _off_scale_trace(years, values, pinned, last_year):
 def _zone_shapes_and_ticks(offset):
     """The zone rects, widest first, and the (y, letter) ticks that name them.
 
-    Both come off ``PEFA_ZONES`` in one pass. Each narrower rect paints over the
-    middle of the one before it, exactly as the ratings nest. A letter goes at
-    the middle of the strip its zone adds to the one inside it — 105-110 for B,
-    and so on — plus that strip's mirror below the reference line; A, which the
-    line runs through, is lettered once, on it.
+    Each narrower rect paints over the middle of the one before it, exactly as
+    the ratings nest. A letter goes at the middle of the strip its zone adds to
+    the one inside it — 105-110 for B, and so on — plus that strip's mirror
+    below the reference line; A, which the line runs through, is lettered once,
+    on it.
     """
     shapes = [
         dict(
@@ -451,13 +434,12 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
     gutter = PEFA_OFF_SCALE_GUTTER
     values = df[col]
     off_scale = (values < zone_low) | (values > zone_high)
-    # Off-scale years are pinned to the middle of the gutter — as far as their
-    # stems run, so a year that misses by 200% takes up no more of the plot than
-    # one that misses by 41%.
+    # Off-scale years pin to the middle of the gutter, so a year that misses by
+    # 200% takes up no more of the plot than one that misses by 41%.
     pinned = np.clip(values.to_numpy(), zone_low - gutter / 2, zone_high + gutter / 2)
 
     marks = [
-        # plotly only draws an overlaying axis that some trace sits on, and the
+        # plotly only draws an overlaying axis some trace sits on, and the
         # rating axis has no data of its own.
         go.Scatter(x=[None], y=[None], yaxis="y2", mode="markers", showlegend=False),
         _stem_trace(df["year"], pinned, reference),
@@ -488,8 +470,8 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
             type="line",
             xref="x domain", x0=0, x1=1,
             yref="y", y0=reference, y1=reference,
-            # Everything here is measured against this line, so it is dark and
-            # heavy — dotted rather than solid, to read as a reference, not data.
+            # Everything is measured against this line, so it is dark and heavy
+            # — but dotted, to read as a reference rather than as data.
             line=dict(color=PEFA_REFERENCE_COLOR, width=2.5, dash="dot"),
         )
     )
@@ -543,10 +525,9 @@ _EXEC_ECON_COLOR = {
 def _prepare_econ_execution_df(country, sector):
     """Execution rate/variance by economic-category bucket, for one sector.
 
-    ``real_budget`` in the raw table does not remove this prep step: execution
-    rates use ``expenditure / budget`` and are unchanged by a common deflator.
-    The key work here is collapsing many raw econ labels into the 4 displayed
-    buckets and re-aggregating totals per (year, bucket).
+    Collapses the many raw econ labels into the 4 displayed buckets and
+    re-aggregates per (year, bucket). Nothing is deflated: a rate is
+    expenditure / budget, which a common deflator leaves unchanged.
     """
     df = server_store.get("func_econ_raw")
     df = filter_country_sort_year(df[df["func"] == sector], country)
@@ -642,7 +623,7 @@ def format_execution_narrative(df, country, lang="en", sector=None):
     plot_df = df.dropna(subset=["execution_rate"]).sort_values("year")
     mean_rate = plot_df["execution_rate"].mean()
 
-    low, high = CREDIBLE_BAND
+    low, high = PEFA_A_BAND
     if mean_rate < low:
         key, gap = "narrative.execution_under", 100 - mean_rate
     elif mean_rate > high:
