@@ -234,11 +234,7 @@ class TestExecutionIntegration(unittest.TestCase):
 
         self.assertIn("under-executing", narrative)
         self.assertIn("15.0%", narrative)  # gap below the approved budget
-        self.assertEqual(list(fig.data[0].y), [85.0])
-        # 85% is outside B (90-110) too, so it's the C-tier color, at reduced
-        # opacity so the band underneath still shows through.
-        self.assertEqual(list(fig.data[0].marker.color), [budget_funding_execution.PEFA_C_COLOR])
-        self.assertEqual(fig.data[0].marker.opacity, budget_funding_execution.PEFA_BAR_OPACITY)
+        self.assertEqual(list(self._mark(fig, "dots").y), [85.0])
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_on_track_execution_reads_as_credible(self, mock_get):
@@ -334,8 +330,8 @@ class TestExecutionIntegration(unittest.TestCase):
         )
         health = budget_funding_execution.render_execution_figure("Togo", "en", sector="Health")
 
-        self.assertEqual(list(education.data[0].y), [90.0])
-        self.assertEqual(list(health.data[0].y), [100.0])
+        self.assertEqual(list(self._mark(education, "dots").y), [90.0])
+        self.assertEqual(list(self._mark(health, "dots").y), [100.0])
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_missing_expenditure_is_unavailable(self, mock_get):
@@ -348,23 +344,35 @@ class TestExecutionIntegration(unittest.TestCase):
         self.assertEqual(len(fig.data), 0)
         self.assertEqual(narrative, "Data not available for this period.")
 
+    def _mark(self, fig, name):
+        """A mark trace by name, so the assertions don't ride on trace order."""
+        return next(trace for trace in fig.data if trace.name == name)
+
+    def _zones(self, fig):
+        """The four zone rects, widest first, as (tint, y-span)."""
+        return [
+            (s.fillcolor, (round(s.y0, 1), round(s.y1, 1)))
+            for s in fig.layout.shapes[:-1]  # the last shape is the reference line
+        ]
+
     @patch("components.budget_funding_execution.server_store.get")
-    def test_execution_chart_shades_pefa_abc_bands(self, mock_get):
+    def test_execution_chart_shades_pefa_abcd_zones(self, mock_get):
         mock_get.side_effect = _store(
             national=self._budget_expenditure("Ghana", [2018], [99.0])
         )
 
         rate_fig = budget_funding_execution.render_execution_figure("Ghana", "en")
-        # 3 nested hrects (C, B, A — widest first) precede the reference hline.
-        rate_bands = [
-            (round(s.y0), round(s.y1), s.fillcolor) for s in rate_fig.layout.shapes[:3]
-        ]
+
+        # D spans the whole plot; C, B and A paint over its middle in turn, so
+        # what's left of D is everything beyond ±15%.
         self.assertEqual(
-            rate_bands,
+            self._zones(rate_fig),
             [
-                (85, 115, budget_funding_execution.PEFA_C_BAND_COLOR),
-                (90, 110, budget_funding_execution.PEFA_B_BAND_COLOR),
-                (95, 105, budget_funding_execution.PEFA_A_BAND_COLOR),
+                (tint, span)
+                for (_, _, tint), span in zip(
+                    budget_funding_execution.PEFA_ZONES,
+                    [(80.0, 120.0), (85.0, 115.0), (90.0, 110.0), (95.0, 105.0)],
+                )
             ],
         )
         self.assertEqual(rate_fig.layout.shapes[-1].y0, 100)  # reference line at 100%
@@ -372,30 +380,152 @@ class TestExecutionIntegration(unittest.TestCase):
         variance_fig = budget_funding_execution.render_execution_figure(
             "Ghana", "en", metric="variance"
         )
-        variance_bands = [(round(s.y0), round(s.y1)) for s in variance_fig.layout.shapes[:3]]
-        self.assertEqual(variance_bands, [(-15, 15), (-10, 10), (-5, 5)])
+        self.assertEqual(
+            [span for _, span in self._zones(variance_fig)],
+            [(-20.0, 20.0), (-15.0, 15.0), (-10.0, 10.0), (-5.0, 5.0)],
+        )
         self.assertEqual(variance_fig.layout.shapes[-1].y0, 0)  # reference line at 0
 
     @patch("components.budget_funding_execution.server_store.get")
-    def test_bars_colored_by_pefa_tier_at_reduced_opacity(self, mock_get):
-        # 99% -> A, 92% -> B (outside A, inside B), 70% -> C (outside B too).
+    def test_window_is_the_same_80_120_whatever_the_data_does(self, mock_get):
+        # One year at 300% used to set the scale for all of them, squashing the
+        # ±5/10/15% distances the chart exists to show into a few pixels.
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018, 2019], [99.0, 300.0])
+        )
+
+        rate_fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+        variance_fig = budget_funding_execution.render_execution_figure(
+            "Ghana", "en", metric="variance"
+        )
+
+        # The zones stop at the window; the axis runs a gutter past it, and
+        # nothing is painted there — that blank strip is the off-scale margin.
+        self.assertEqual(
+            [span for _, span in self._zones(rate_fig)][0], (80.0, 120.0)
+        )
+        self.assertEqual(list(rate_fig.layout.yaxis.range), [74, 126])
+        self.assertEqual(
+            [span for _, span in self._zones(variance_fig)][0], (-20.0, 20.0)
+        )
+        self.assertEqual(list(variance_fig.layout.yaxis.range), [-26, 26])
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_off_scale_year_becomes_an_arrow_carrying_its_own_figure(self, mock_get):
         mock_get.side_effect = _store(
             national=self._budget_expenditure(
-                "Ghana", [2018, 2019, 2020], [99.0, 92.0, 70.0]
+                "Ghana", [2018, 2019, 2020], [99.0, 300.0, 45.0]
             )
         )
 
         fig = budget_funding_execution.render_execution_figure("Ghana", "en")
 
-        self.assertEqual(
-            list(fig.data[0].marker.color),
-            [
-                budget_funding_execution.PEFA_A_COLOR,
-                budget_funding_execution.PEFA_B_COLOR,
-                budget_funding_execution.PEFA_C_COLOR,
-            ],
+        dots, arrows = self._mark(fig, "dots"), self._mark(fig, "off_scale")
+        self.assertEqual(list(dots.y), [99.0])  # only the year that fits
+        self.assertEqual(list(arrows.x), [2019, 2020])
+        # Out in the gutter past the edge it ran through — no zone is painted
+        # there — pointing that way, labelled with the real figure, which is
+        # also what the tooltip reports.
+        self.assertEqual([round(y, 1) for y in arrows.y], [123.0, 77.0])
+        self.assertEqual(list(arrows.marker.symbol), ["triangle-up", "triangle-down"])
+        self.assertEqual(list(arrows.text), ["300%", "45%"])
+        self.assertEqual([round(v, 1) for v in arrows.customdata], [300.0, 45.0])
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_off_scale_label_is_the_metric_on_show(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018], [130.0])
         )
-        self.assertEqual(fig.data[0].marker.opacity, budget_funding_execution.PEFA_BAR_OPACITY)
+
+        rate_fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+        variance_fig = budget_funding_execution.render_execution_figure(
+            "Ghana", "en", metric="variance"
+        )
+
+        # The same year is 130% of budget, or 30% over it.
+        self.assertEqual(list(self._mark(rate_fig, "off_scale").text), ["130%"])
+        self.assertEqual(list(self._mark(variance_fig, "off_scale").text), ["30%"])
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_stem_runs_into_the_gutter_for_an_off_scale_year(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018, 2019], [92.0, 45.0])
+        )
+
+        fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+
+        # 92% keeps its own stem; 45%'s crosses out of the last zone and stops
+        # at its arrow in the gutter — visibly running off, but no further, so
+        # it can't drag the plot open.
+        self.assertEqual(
+            [None if y is None else round(y, 1) for y in self._mark(fig, "stems").y],
+            [100, 92.0, None, 100, 77.0, None],
+        )
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_lollipops_are_one_neutral_ink_not_tier_colored(self, mock_get):
+        # 99% -> A, 92% -> B, 84% -> C: three different tiers, one mark color,
+        # because the zone behind each dot already names its tier.
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure(
+                "Ghana", [2018, 2019, 2020], [99.0, 92.0, 84.0]
+            )
+        )
+
+        fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+
+        stems, dots = self._mark(fig, "stems"), self._mark(fig, "dots")
+        self.assertEqual(dots.marker.color, budget_funding_execution.EXECUTION_MARK_COLOR)
+        self.assertEqual(stems.line.color, budget_funding_execution.EXECUTION_MARK_COLOR)
+        # Every stem runs from the 100% reference line to its year's value,
+        # None-separated so they don't join up, and never steals the dot's hover.
+        self.assertEqual(
+            list(stems.y), [100, 99.0, None, 100, 92.0, None, 100, 84.0, None]
+        )
+        self.assertEqual(stems.hoverinfo, "skip")
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_right_axis_names_each_zone_instead_of_a_legend(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018, 2019], [98.0, 101.0])
+        )
+
+        rate_fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+        variance_fig = budget_funding_execution.render_execution_figure(
+            "Ghana", "en", metric="variance"
+        )
+
+        # Each rating letter against the strip its zone adds, on both sides of
+        # the reference line — the same margin over or under budget earns the
+        # same grade — except A, which the line runs through and so is labelled
+        # once, on it. No legend to look away to, and nothing else keyed there.
+        rating = rate_fig.layout.yaxis2
+        self.assertFalse(rate_fig.layout.showlegend)
+        self.assertTrue(rating.title.text.startswith("PEFA PI-1"))
+        self.assertEqual(rating.side, "right")
+        self.assertEqual(
+            list(rating.tickvals), [82.5, 87.5, 92.5, 100, 107.5, 112.5, 117.5]
+        )
+        self.assertEqual(list(rating.ticktext), ["D", "C", "B", "A", "B", "C", "D"])
+        # Same letters, shifted into deviation-from-100% space.
+        self.assertEqual(
+            list(variance_fig.layout.yaxis2.tickvals),
+            [-17.5, -12.5, -7.5, 0, 7.5, 12.5, 17.5],
+        )
+        self.assertEqual(rate_fig.layout.annotations, ())  # nothing on the plot
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_variance_stems_start_at_zero_not_one_hundred(self, mock_get):
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018], [88.0])
+        )
+
+        fig = budget_funding_execution.render_execution_figure(
+            "Ghana", "en", metric="variance"
+        )
+
+        self.assertEqual(list(self._mark(fig, "dots").y), [-12.0])
+        self.assertEqual(list(self._mark(fig, "stems").y), [0, -12.0, None])
 
 
 class TestEconExecutionBreakdown(unittest.TestCase):

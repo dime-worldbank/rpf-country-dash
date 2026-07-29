@@ -116,6 +116,7 @@ TRANSLATIONS = {
     "axis.budget_share": "Share of budget (%)",
     "axis.execution_rate": "Budget executed (%)",
     "axis.execution_variance": "Deviation from budget (%)",
+    "axis.pefa_pi1": "PEFA PI-1<br>(budget credibility score)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Per capita expenditure {sector_prep}",
@@ -582,7 +583,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Uses values reported by the IMF for Revenue (GGR) and Expenditure (GGX) at the General Government level.",
     "source.togo_dgb.label": "Togo Official Report",
     "source.togo_dgb.description": "Realized revenue and expenditure from the annual Budget Execution Report. Equal non-cash amounts (recette non liquide = dépenses en atténuation de recettes) are subtracted from both revenue and expenditure for comparability with IMF data.",
-    "chart.budget_execution.info": "The execution rate is actual spending as a share of the approved budget (spending ÷ approved budget). Following the PEFA framework (PI-1), execution within ±5% of the approved budget scores an A (most credible), ±10% a B, and ±15% a C; beyond that is a D. The variance view shows the same figure as the deviation from 100%. The shaded bands and bar colors mark these same A/B/C zones.",
+    "chart.budget_execution.info": "The execution rate is actual spending as a share of the approved budget (spending ÷ approved budget). Following the PEFA framework (PI-1), execution within ±5% of the approved budget scores an A (most credible), ±10% a B, and ±15% a C; beyond that is a D. The variance view shows the same figure as the deviation from 100%. The shaded background marks these same zones — A, B and C nested around the reference line, D beyond them — and the right-hand scale names each one. The chart is always drawn from 80% to 120%, so the same distance means the same thing on every chart; a year beyond that appears as an arrow at the edge, labelled with its actual figure.",
     "chart.revenue_expenditure_combined.info": "The composite view combines available sources on one timeline. Where an official national report is available, it takes priority; IMF GFS fills earlier historical years, and WEO projects forward. Revenue and expenditure are shown as lines in the upper panel; the balance (Revenue − Expenditure) is shown as bars in the lower panel, where positive values indicate a surplus and negative values a deficit. Single-source views display every year of data available from that source.",
 
     # --- Deficit / fiscal balance ---

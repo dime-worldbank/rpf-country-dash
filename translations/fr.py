@@ -119,6 +119,7 @@ TRANSLATIONS = {
     "axis.budget_share": "Part du budget (%)",
     "axis.execution_rate": "Budget exécuté (%)",
     "axis.execution_variance": "Écart par rapport au budget (%)",
+    "axis.pefa_pi1": "PEFA PI-1<br>(score de crédibilité budgétaire)",
 
     # --- Radio button labels ---
     "radio.per_capita_expenditure": "Dépenses par habitant {sector_prep}",
@@ -676,7 +677,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
-    "chart.budget_execution.info": "Le taux d'exécution correspond aux dépenses réelles rapportées au budget approuvé (dépenses ÷ budget approuvé). Selon le cadre PEFA (PI-1), une exécution à ±5 % du budget approuvé obtient la note A (la plus crédible), à ±10 % la note B, et à ±15 % la note C ; au-delà, c'est un D. La vue en écart présente la même donnée comme écart par rapport à 100 %. Les zones ombrées et la couleur des barres indiquent ces mêmes zones A/B/C.",
+    "chart.budget_execution.info": "Le taux d'exécution correspond aux dépenses réelles rapportées au budget approuvé (dépenses ÷ budget approuvé). Selon le cadre PEFA (PI-1), une exécution à ±5 % du budget approuvé obtient la note A (la plus crédible), à ±10 % la note B, et à ±15 % la note C ; au-delà, c'est un D. La vue en écart présente la même donnée comme écart par rapport à 100 %. Le fond ombré indique ces mêmes zones — A, B et C imbriquées autour de la ligne de référence, D au-delà —, chacune nommée sur l'échelle de droite. Le graphique est toujours tracé de 80 % à 120 %, afin qu'une même distance ait partout le même sens ; une année au-delà apparaît sous forme de flèche au bord, accompagnée de sa valeur réelle.",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
     # --- Deficit / solde budgétaire ---
