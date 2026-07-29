@@ -234,7 +234,7 @@ class TestExecutionIntegration(unittest.TestCase):
 
         self.assertIn("under-executing", narrative)
         self.assertIn("15.0%", narrative)  # gap below the approved budget
-        self.assertEqual(list(self._mark(fig, "dots").y), [85.0])
+        self.assertEqual(list(self._mark(fig, "marks").y), [85.0])
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_on_track_execution_reads_as_credible(self, mock_get):
@@ -330,8 +330,8 @@ class TestExecutionIntegration(unittest.TestCase):
         )
         health = budget_funding_execution.render_execution_figure("Togo", "en", sector="Health")
 
-        self.assertEqual(list(self._mark(education, "dots").y), [90.0])
-        self.assertEqual(list(self._mark(health, "dots").y), [100.0])
+        self.assertEqual(list(self._mark(education, "marks").y), [90.0])
+        self.assertEqual(list(self._mark(health, "marks").y), [100.0])
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_missing_expenditure_is_unavailable(self, mock_get):
@@ -347,6 +347,16 @@ class TestExecutionIntegration(unittest.TestCase):
     def _mark(self, fig, name):
         """A mark trace by name, so the assertions don't ride on trace order."""
         return next(trace for trace in fig.data if trace.name == name)
+
+    def _drawn(self, fig):
+        """What each year draws, in order: (year, plotted y, symbol, label)."""
+        marks = self._mark(fig, "marks")
+        return [
+            (year, round(y, 1), symbol, text)
+            for year, y, symbol, text in zip(
+                marks.x, marks.y, marks.marker.symbol, marks.text
+            )
+        ]
 
     def _zones(self, fig):
         """The four zone rects, widest first, as (tint, y-span)."""
@@ -420,16 +430,48 @@ class TestExecutionIntegration(unittest.TestCase):
 
         fig = budget_funding_execution.render_execution_figure("Ghana", "en")
 
-        dots, arrows = self._mark(fig, "dots"), self._mark(fig, "off_scale")
-        self.assertEqual(list(dots.y), [99.0])  # only the year that fits
-        self.assertEqual(list(arrows.x), [2019, 2020])
-        # Out in the gutter past the edge it ran through — no zone is painted
-        # there — pointing that way, labelled with the real figure, which is
-        # also what the tooltip reports.
-        self.assertEqual([round(y, 1) for y in arrows.y], [123.0, 77.0])
-        self.assertEqual(list(arrows.marker.symbol), ["triangle-up", "triangle-down"])
-        self.assertEqual(list(arrows.text), ["300%", "45%"])
-        self.assertEqual([round(v, 1) for v in arrows.customdata], [300.0, 45.0])
+        # The year that fits keeps its place and needs no label. The two that
+        # don't go out in the gutter past the edge they ran through — no zone is
+        # painted there — pointing that way, labelled with the real figure.
+        self.assertEqual(
+            self._drawn(fig),
+            [
+                (2018, 99.0, "circle", ""),
+                (2019, 123.0, "triangle-up", "300"),
+                (2020, 77.0, "triangle-down", "45"),
+            ],
+        )
+        marks = self._mark(fig, "marks")
+        # The real figures are what the tooltip reports, pinned or not.
+        self.assertEqual([round(v, 1) for v in marks.customdata], [99.0, 300.0, 45.0])
+        # Labels go past the arrow, on the side it points to; side-on, a run of
+        # off-scale years wrote them over each other.
+        self.assertEqual(
+            list(marks.textposition), ["bottom center", "top center", "bottom center"]
+        )
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_every_off_scale_year_parks_at_the_same_spot(self, mock_get):
+        # A near miss and a wild one, on each side.
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure(
+                "Ghana", [2018, 2019, 2020, 2021], [121.0, 300.0, 79.0, 12.0]
+            )
+        )
+
+        fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+
+        # 121 and 300 draw at the same height, as do 79 and 12: the position
+        # says the year ran off, and only the label says how far.
+        self.assertEqual(
+            self._drawn(fig),
+            [
+                (2018, 123.0, "triangle-up", "121"),
+                (2019, 123.0, "triangle-up", "300"),
+                (2020, 77.0, "triangle-down", "79"),
+                (2021, 77.0, "triangle-down", "12"),
+            ],
+        )
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_off_scale_label_is_the_metric_on_show(self, mock_get):
@@ -442,9 +484,10 @@ class TestExecutionIntegration(unittest.TestCase):
             "Ghana", "en", metric="variance"
         )
 
-        # The same year is 130% of budget, or 30% over it.
-        self.assertEqual(list(self._mark(rate_fig, "off_scale").text), ["130%"])
-        self.assertEqual(list(self._mark(variance_fig, "off_scale").text), ["30%"])
+        # The same year is 130% of budget, or 30% over it. No unit on the label:
+        # the axis it's read against carries it.
+        self.assertEqual(list(self._mark(rate_fig, "marks").text), ["130"])
+        self.assertEqual(list(self._mark(variance_fig, "marks").text), ["30"])
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_stem_runs_into_the_gutter_for_an_off_scale_year(self, mock_get):
@@ -474,8 +517,8 @@ class TestExecutionIntegration(unittest.TestCase):
 
         fig = budget_funding_execution.render_execution_figure("Ghana", "en")
 
-        stems, dots = self._mark(fig, "stems"), self._mark(fig, "dots")
-        self.assertEqual(dots.marker.color, budget_funding_execution.EXECUTION_MARK_COLOR)
+        stems, marks = self._mark(fig, "stems"), self._mark(fig, "marks")
+        self.assertEqual(marks.marker.color, budget_funding_execution.EXECUTION_MARK_COLOR)
         self.assertEqual(stems.line.color, budget_funding_execution.EXECUTION_MARK_COLOR)
         # Every stem runs from the 100% reference line to its year's value,
         # None-separated so they don't join up, and never steals the dot's hover.
@@ -483,6 +526,24 @@ class TestExecutionIntegration(unittest.TestCase):
             list(stems.y), [100, 99.0, None, 100, 92.0, None, 100, 84.0, None]
         )
         self.assertEqual(stems.hoverinfo, "skip")
+
+    @patch("components.budget_funding_execution.server_store.get")
+    def test_hover_reports_the_hovered_year_and_nothing_else(self, mock_get):
+        # Dots and arrows in separate traces made unified hover fill each one in
+        # with its nearest year, so hovering 2019 also showed 2018's dot.
+        mock_get.side_effect = _store(
+            national=self._budget_expenditure("Ghana", [2018, 2019], [117.4, 121.0])
+        )
+
+        fig = budget_funding_execution.render_execution_figure("Ghana", "en")
+
+        self.assertEqual(fig.layout.hovermode, "x unified")
+        hoverable = [trace for trace in fig.data if trace.hoverinfo != "skip"]
+        self.assertEqual([trace.name for trace in hoverable], ["marks"])
+        # One row per year, and the year itself is the box's header already.
+        self.assertEqual(
+            self._mark(fig, "marks").hovertemplate, "%{customdata:.1f}%<extra></extra>"
+        )
 
     @patch("components.budget_funding_execution.server_store.get")
     def test_right_axis_names_each_zone_instead_of_a_legend(self, mock_get):
@@ -524,7 +585,7 @@ class TestExecutionIntegration(unittest.TestCase):
             "Ghana", "en", metric="variance"
         )
 
-        self.assertEqual(list(self._mark(fig, "dots").y), [-12.0])
+        self.assertEqual(list(self._mark(fig, "marks").y), [-12.0])
         self.assertEqual(list(self._mark(fig, "stems").y), [0, -12.0, None])
 
 

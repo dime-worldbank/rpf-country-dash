@@ -330,7 +330,7 @@ def _metric_fields(metric, lang):
 
 
 def _stem_trace(years, values, reference):
-    """The reference-to-value stems as one trace; the dots on top own the hover."""
+    """The reference-to-value stems as one trace; the marks on top own the hover."""
     xs, ys = [], []
     for year, value in zip(years, values):
         # None breaks the line between stems so they don't join up.
@@ -350,30 +350,40 @@ def _stem_trace(years, values, reference):
     )
 
 
-def _off_scale_trace(years, values, pinned, last_year):
-    """The off-scale years, as arrows at their pinned position in the gutter.
+def _marks_trace(years, values, pinned, off_scale, above):
+    """Every year in one trace: a dot where it fits the window, an arrow parked
+    in the gutter where it doesn't, labelled with the figure the axis can't show.
 
-    Each carries its real figure as a label, since the axis can't be read for it.
+    One trace, not one per shape — a year owns a single mark, and unified hover
+    fills each trace in with its nearest year, so a split put the neighbouring
+    year's dot in an off-scale year's tooltip.
     """
-    above = values.to_numpy() > pinned
+    arrow = np.where(above, "triangle-up", "triangle-down")
     return go.Scatter(
-        name="off_scale",
+        name="marks",
         x=years,
         y=pinned,
         mode="markers+text",
         marker=dict(
             color=EXECUTION_MARK_COLOR,
-            size=13,
-            symbol=np.where(above, "triangle-up", "triangle-down"),
+            size=np.where(off_scale, 13, 11),  # a triangle reads smaller than a dot
+            symbol=np.where(off_scale, arrow, "circle"),
             line=MARK_RING,
         ),
-        text=[f"{value:.0f}%" for value in values],
-        # Beside the arrow, clear of the stem arriving at it; the last year flips
-        # left for want of room to its right.
-        textposition=np.where(years >= last_year, "middle left", "middle right"),
-        textfont=dict(color=EXECUTION_MARK_COLOR, size=11),
+        # Only the parked years are labelled, and unitless: the rest are read
+        # off the axis, which is also where the % comes from.
+        text=[f"{v:.0f}" if parked else "" for v, parked in zip(values, off_scale)],
+        # Past the arrow, on the side it points to: beside it, consecutive
+        # off-scale years wrote their labels over each other.
+        textposition=np.where(above, "top center", "bottom center"),
+        cliponaxis=False,  # the labels sit in the gutter, up against the axis end
+        # Smaller than the axis text: a footnote on the arrow, not a headline.
+        textfont=dict(color=EXECUTION_MARK_COLOR, size=9),
+        # The parked y is a position, not a reading, so hover comes off the real
+        # value. Unified hover heads the box with the year; repeating it here
+        # showed it twice.
         customdata=values,
-        hovertemplate="%{x}: %{customdata:.1f}%<extra></extra>",
+        hovertemplate="%{customdata:.1f}%<extra></extra>",
         showlegend=False,
     )
 
@@ -433,36 +443,25 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
     zone_low, zone_high = PEFA_PLOT_RANGE[0] - offset, PEFA_PLOT_RANGE[1] - offset
     gutter = PEFA_OFF_SCALE_GUTTER
     values = df[col]
-    off_scale = (values < zone_low) | (values > zone_high)
-    # Off-scale years pin to the middle of the gutter, so a year that misses by
-    # 200% takes up no more of the plot than one that misses by 41%.
-    pinned = np.clip(values.to_numpy(), zone_low - gutter / 2, zone_high + gutter / 2)
+    above = values > zone_high
+    off_scale = (values < zone_low) | above
+    # One parking spot per side, however far the year missed by: spacing them
+    # out would read as a scale the axis doesn't carry past the window.
+    pinned = np.where(
+        off_scale, np.where(above, zone_high + gutter / 2, zone_low - gutter / 2), values
+    )
 
-    marks = [
+    traces = [
         # plotly only draws an overlaying axis some trace sits on, and the
         # rating axis has no data of its own.
-        go.Scatter(x=[None], y=[None], yaxis="y2", mode="markers", showlegend=False),
-        _stem_trace(df["year"], pinned, reference),
-        # Dots after their stems, so they sit on top of them.
         go.Scatter(
-            name="dots",
-            x=df["year"][~off_scale],
-            y=values[~off_scale],
-            mode="markers",
-            marker=dict(color=EXECUTION_MARK_COLOR, size=11, line=MARK_RING),
-            hovertemplate="%{x}: %{y:.1f}%<extra></extra>",
-            showlegend=False,
+            x=[None], y=[None], yaxis="y2", mode="markers",
+            hoverinfo="skip", showlegend=False,
         ),
+        _stem_trace(df["year"], pinned, reference),
+        # Marks after their stems, so they sit on top of them.
+        _marks_trace(df["year"], values, pinned, off_scale, above),
     ]
-    if off_scale.any():
-        marks.append(
-            _off_scale_trace(
-                df["year"][off_scale],
-                values[off_scale],
-                pinned[off_scale.to_numpy()],
-                df["year"].max(),
-            )
-        )
 
     shapes, ticks = _zone_shapes_and_ticks(offset)
     shapes.append(
@@ -476,7 +475,7 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
         )
     )
     fig = go.Figure(
-        data=marks,
+        data=traces,
         layout=dict(
             title=t("chart.budget_execution", lang),
             plot_bgcolor="white",
