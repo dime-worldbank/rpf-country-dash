@@ -39,7 +39,7 @@ TRANSLATIONS = {
     "heading.budget_funded_executed": "Como o orçamento {sector_gen} é financiado e executado?",
     "heading.public_spending_education_outcome": "Como a despesa se relaciona com os resultados educacionais?",
     "heading.public_spending_health_outcome": "Como a despesa se relaciona com os resultados de saúde?",
-    "heading.operational_vs_capital": "Em que o dinheiro é gasto?",
+    "heading.operational_vs_capital": "Onde o dinheiro é gasto?",
     "heading.central_vs_geo_education": "Despesa em educação centralizada vs. alocada geograficamente",
     "heading.central_vs_geo_health": "Despesa em saúde centralizada vs. alocada geograficamente",
     "heading.public_spending_education_regions": "Despesa pública vs. resultados educacionais entre regiões",
