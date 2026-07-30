@@ -131,6 +131,11 @@ CHART_METADATA = {
     "overview-per-capita": {"sources": [_BOOST, _POVERTY_RATE]},
     "functional-breakdown": {"sources": [_BOOST]},
     "func-growth": {"sources": [_BOOST]},
+    "funding-source": {"sources": [_BOOST]},
+    "budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST],
+    },
     "economic-breakdown": {"sources": [_BOOST]},
     "pefa-overall": {"sources": [_PEFA, _POVERTY_RATE]},
     "pefa-by-pillar": {"sources": [_PEFA]},
@@ -148,6 +153,15 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "education-public-private": {"sources": [_BOOST_EDU, _EDU_PRIVATE]},
     "education-total": {"sources": [_BOOST]},
+    "education-funding-source": {"sources": [_BOOST_EDU]},
+    "education-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_EDU],
+    },
+    "education-econ-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_EDU],
+    },
     "education-outcome": {"sources": [_BOOST_EDU, _LEARNING_POVERTY, _ATTENDANCE]},
     "econ-breakdown-func-edu": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
@@ -163,6 +177,15 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "health-public-private": {"sources": [_BOOST_HEALTH, _HEALTH_PRIVATE]},
     "health-total": {"sources": [_BOOST]},
+    "health-funding-source": {"sources": [_BOOST_HEALTH]},
+    "health-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_HEALTH],
+    },
+    "health-econ-execution": {
+        "info_key": "chart.budget_execution.info",
+        "sources": [_BOOST_HEALTH],
+    },
     "health-outcome": {"sources": [_BOOST_HEALTH, _UHC]},
     "econ-breakdown-func-health": {"sources": [_BOOST]},
     # ------------------------------------------------------------------
@@ -299,12 +322,12 @@ def build_modal_children(info, lang="en"):
         )
     )
 
-    # Chart-level intro paragraph (optional) — appears once above all sources
+    # Chart-level intro paragraph (optional) — appears once above all sources.
+    # Same "Methodology: ..." row style as per-source descriptions, since
+    # this is the same kind of content (how the metric is computed).
     chart_info = info.get("info")
     if chart_info:
-        body.append(
-            html.P(chart_info, className="rpf-chart-info", style={"fontStyle": "italic"})
-        )
+        body.append(_make_detail_row(t("detail.methodology", lang), html.Span(chart_info)))
 
     # Per-source sections
     for section in source_sections:

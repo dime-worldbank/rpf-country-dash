@@ -75,7 +75,10 @@ ECON_KEY_MAP = {
     "Interest on debt":             "econ.interest_debt",
     "Other grants and transfers":   "econ.grants_transfers",
     "Other expenses":               "econ.other_expenses",
+    # Synthetic bucket: everything besides wage bill, capital
     "Non-wage recurrent":           "econ.non_wage_recurrent",
+    # Synthetic bucket: everything besides wage bill, capital, and goods and services
+    "Other recurrent":              "econ.other_recurrent",
 }
 
 
