@@ -66,7 +66,7 @@ def _add_real_funding_split_columns(df):
             df["foreign_funded_budget"] = np.nan
 
     if {"budget", "foreign_funded_budget"}.issubset(df.columns):
-        df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
+        df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"].fillna(0)
     elif "domestic_funded_budget" not in df.columns:
         df["domestic_funded_budget"] = np.nan
 
