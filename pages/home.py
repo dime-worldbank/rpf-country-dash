@@ -21,7 +21,7 @@ from utils import (
     millify
 )
 
-from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, budget_funding_execution
 from trend_narrative import InsightExtractor
 from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
@@ -157,6 +157,90 @@ def render_overview_content(tab, lang):
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
                             md={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                    ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.who_funds_budget", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        [
+                            html.P(
+                                id="funding-narrative",
+                                children=t("loading", lang),
+                            ),
+                            html.P(
+                                id="execution-narrative",
+                                children=t("loading", lang),
+                            ),
+                        ]
+                    )
+                ),
+                dbc.Row(
+                    [
+                        # How is the budget funded?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="funding-source-terms",
+                                        options=[
+                                            {
+                                                "label": t("radio.budget", lang),
+                                                "value": "nominal",
+                                            },
+                                            {
+                                                "label": t("radio.inflation_adjusted_budget", lang),
+                                                "value": "real",
+                                            },
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("funding-source"),
+                            ],
+                            xs={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                        # How much of the budget is spent?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="budget-execution-metric",
+                                        options=[
+                                            {
+                                                "label": t("radio.execution_rate", lang),
+                                                "value": "execution_rate",
+                                            },
+                                            {
+                                                "label": t("radio.variance", lang),
+                                                "value": "variance",
+                                            },
+                                        ],
+                                        value="execution_rate",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("budget-execution"),
+                            ],
+                            xs={"size": 12, "offset": 0},
                             lg={"size": 6, "offset": 0},
                         ),
                     ],
@@ -923,7 +1007,7 @@ INCOME_LEVEL_THRESHOLD = {
     "HIC": ("$8.30", "income.high"),
 }
 
-def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en"):
+def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en", selected_year=None):
     if df[df.region_name != "National"].empty:
         return empty_plot(t("error.subnat_poverty_unavailable", lang))
     # TODO align accents across all datasets
@@ -971,10 +1055,17 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     )
     fig.add_trace(no_data_trace)
 
+    # Parallel footnotes. The carried-forward data year is shown only when the
+    # poverty survey year differs from the selected (expenditure) year — i.e. the
+    # map is showing an earlier survey. The threshold note always shows.
+    notes = []
+    if selected_year is None or year != selected_year:
+        notes.append(t("annotation.displaying_data_from", lang, year=year))
+    notes.append(_get_poverty_source_text(income_level, lang))
     fig.update_layout(
         title=t("chart.poverty_map", lang),
         plot_bgcolor="white",
-        margin=dict(l=40, r=40, t=60, b=80),
+        margin=dict(l=40, r=40, t=60, b=95),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -985,12 +1076,13 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 xref="paper",
                 yref="paper",
                 x=0,
-                y=-0.13,
+                y=-0.13 - 0.06 * i,
                 xanchor="left",
-                text=t("annotation.displaying_data_from", lang, year=year) + " " + _get_poverty_source_text(income_level, lang),
+                text=note,
                 showarrow=False,
                 font=dict(size=10),
-            ),
+            )
+            for i, note in enumerate(notes)
         ],
     )
     fig.data[0].hovertemplate = (
@@ -1230,6 +1322,18 @@ def update_year_range(data, country, lang):
         return {"display": "block"}, {}, 0, 0, 0, {}
 
 
+def _poverty_display_year(country, selected_year):
+    """Latest subnational-poverty survey year <= selected_year for this country,
+    or None. Shared by both subnational maps so the poverty map picks its
+    (possibly carried-forward) render year and the spending map can tell when its
+    selected year differs from it — labelling both only then."""
+    available_years = (
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("poverty_years", [])
+    )
+    relevant = [y for y in available_years if y <= selected_year]
+    return relevant[-1] if relevant else None
+
+
 @callback(
     Output("subnational-spending", "figure"),
     Input("stored-data-subnational", "data"),
@@ -1276,7 +1380,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     )
 
     if plot_type == "percapita":
-        return regional_percapita_spending_choropleth(
+        fig = regional_percapita_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1289,7 +1393,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lang=lang,
         )
     else:
-        return regional_spending_choropleth(
+        fig = regional_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1301,6 +1405,17 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             theme=theme,
             lang=lang,
         )
+
+    # When the poverty map is showing a different (carried-forward) year, label the
+    # spending year here too so the two maps are unambiguous.
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is not None and poverty_year != year:
+        fig.add_annotation(
+            xref="paper", yref="paper", x=0, y=-0.13, xanchor="left",
+            text=t("annotation.displaying_data_from", lang, year=year),
+            showarrow=False, font=dict(size=10),
+        )
+    return fig
 
 
 @callback(
@@ -1324,7 +1439,11 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     )
     filtered_geojson = filter_geojson_by_country(geojson, country)
     df = server_store.get("subnational_poverty_rate")
-    df = filter_country_sort_year(df, country)
+    # Poverty surveys are sparse and some predate START_YEAR. The map carries the
+    # latest survey forward to the selected year, so keep every survey year (unlike
+    # the annual charts) — otherwise early years can't reach their most recent
+    # survey (e.g. 2010–2013 would miss the 2008 survey and show "not available").
+    df = filter_country_sort_year(df, country, start_year=0)
 
     legend_min, legend_max = server_store.get("basic_country_info")[country].get(
         "poverty_bounds", (None, None)
@@ -1335,19 +1454,15 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     ]
     zoom = server_store.get("basic_country_info")[country]["zoom"]
 
-    available_years = server_store.get("basic_country_info")[country].get(
-        "poverty_years", []
-    )
-    relevant_years = [x for x in available_years if x <= year]
-
-    if not relevant_years or df.empty:
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is None or df.empty:
         return empty_plot(t("error.poverty_unavailable", lang))
 
     income_level = server_store.get("basic_country_info")[country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
-        df[df.year == relevant_years[-1]],
+        df[df.year == poverty_year],
         legend_min,
         legend_max,
         lat,
@@ -1356,6 +1471,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         income_level,
         theme=theme,
         lang=lang,
+        selected_year=year,
     )
 
 
@@ -1375,16 +1491,17 @@ def render_subnational_spending_narrative(
         return t("error.data_not_available", lang)
 
     df_poverty = server_store.get("subnational_poverty_rate")
-    df_poverty = filter_country_sort_year(df_poverty, country)
+    # Keep every survey year (like the map, no START_YEAR clamp) and reference the
+    # same carried-forward survey the map shows, rather than averaging all years.
+    df_poverty = filter_country_sort_year(df_poverty, country, start_year=0)
 
-    available_years = server_store.get("basic_country_info")[country].get(
-        "poverty_years", []
-    )
+    poverty_year = _poverty_display_year(country, year)
     currency_code = server_store.get("basic_country_info")[country]["currency_code"]
-    relevant_years = [x for x in available_years if x <= year]
 
-    if not relevant_years or df_poverty.empty:
+    if poverty_year is None or df_poverty.empty:
         df_poverty = pd.DataFrame()
+    else:
+        df_poverty = df_poverty[df_poverty.year == poverty_year]
 
     df_spending = server_store.get("geo1_expenditure")
     df_spending = filter_country_sort_year(df_spending, country)
@@ -1436,6 +1553,50 @@ def render_pefa_overall(data, pefa_data, country, lang):
 def render_budget_func_changes(data, country, exp_type, lang):
     lang = lang or "en"
     return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+@callback(
+    Output("funding-source", "figure"),
+    Output("funding-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("funding-source-terms", "value"),
+)
+def render_funding_source(data, country, lang, budget_terms):
+    lang = lang or "en"
+    budget_terms = budget_terms or "nominal"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return budget_funding_execution.render_funding(country, lang=lang, budget_terms=budget_terms)
+
+
+@callback(
+    Output("budget-execution", "figure"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("budget-execution-metric", "value"),
+)
+def render_budget_execution(data, country, lang, metric):
+    lang = lang or "en"
+    metric = metric or "execution_rate"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_figure(country, lang=lang, metric=metric)
+
+
+@callback(
+    Output("execution-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_execution_narrative(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_narrative(country, lang=lang)
 
 
 def _get_revenue_budget_context(country):

@@ -9,6 +9,7 @@ Functions that need a `countries` list obtain it by first looking up
 the expenditure_w_poverty key (which has no parameters).
 """
 import json
+import numpy as np
 import pandas as pd
 from queries import QueryService
 from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
@@ -32,6 +33,7 @@ def _countries():
 _AGG_DICT = {
     "expenditure": "sum",
     "budget": "sum",
+    "real_budget": "sum",
     "real_expenditure": "sum",
     "domestic_funded_budget": "sum",
     "decentralized_expenditure": "sum",
@@ -39,6 +41,55 @@ _AGG_DICT = {
     "per_capita_expenditure": "sum",
     "per_capita_real_expenditure": "sum",
 }
+
+
+def _add_real_funding_split_columns(df):
+    """Normalize funding columns and attach real funding columns.
+
+    This centralizes schema checks so component code can assume the
+    funding columns are always present (filled with NaN where unknown).
+    """
+    if df.empty:
+        return df
+
+    df = df.copy()
+
+    if "foreign_funded_budget" not in df.columns:
+        if {"budget", "domestic_funded_budget"}.issubset(df.columns):
+            foreign = df["budget"] - df["domestic_funded_budget"]
+            # domestic == budget is used in sector data as "foreign unknown".
+            foreign = foreign.where(
+                df["domestic_funded_budget"].round(0) != df["budget"].round(0)
+            )
+            df["foreign_funded_budget"] = foreign
+        else:
+            df["foreign_funded_budget"] = np.nan
+
+    if {"budget", "foreign_funded_budget"}.issubset(df.columns):
+        df["domestic_funded_budget"] = df["budget"] - df["foreign_funded_budget"]
+    elif "domestic_funded_budget" not in df.columns:
+        df["domestic_funded_budget"] = np.nan
+
+    if "real_budget" not in df.columns and {"budget", "expenditure", "real_expenditure"}.issubset(df.columns):
+        expenditure_nonzero = df["expenditure"].where(df["expenditure"] != 0)
+        scale = df["real_expenditure"] / expenditure_nonzero
+        df["real_budget"] = df["budget"] * scale
+
+    if "real_budget" not in df.columns:
+        df["real_budget"] = np.nan
+
+    if not {"budget", "real_budget", "domestic_funded_budget"}.issubset(df.columns):
+        df["real_domestic_funded_budget"] = np.nan
+        df["real_foreign_funded_budget"] = np.nan
+        return df
+
+    budget_nonzero = df["budget"].where(df["budget"] != 0)
+    scale = df["real_budget"] / budget_nonzero
+    if "real_domestic_funded_budget" not in df.columns:
+        df["real_domestic_funded_budget"] = scale * df["domestic_funded_budget"]
+    if "real_foreign_funded_budget" not in df.columns:
+        df["real_foreign_funded_budget"] = scale * df["foreign_funded_budget"]
+    return df
 
 
 def _load_func_econ_group():
@@ -53,15 +104,14 @@ def _load_func_econ_group():
 
     func_econ_df = _db().get_expenditure_by_country_func_econ_year()
 
+
     func_df = func_econ_df.groupby(
         ["country_name", "year", "func"], as_index=False
     ).agg(_AGG_DICT)
     func_df["expenditure_decentralization"] = (
         func_df["decentralized_expenditure"] / func_df["expenditure"]
     )
-    func_df["real_domestic_funded_budget"] = (
-        func_df["real_expenditure"] / func_df["expenditure"]
-    ) * func_df["domestic_funded_budget"]
+    func_df = _add_real_funding_split_columns(func_df)
 
     econ_df = func_econ_df.groupby(
         ["country_name", "year", "econ"], as_index=False
@@ -82,6 +132,11 @@ def _load_func_econ_group():
 def load_func_econ_raw():
     _load_func_econ_group()
     return server_store.lookup("func_econ_raw")
+
+
+def load_expenditure_w_poverty():
+    df = _db().get_expenditure_w_poverty_by_country_year()
+    return _add_real_funding_split_columns(df)
 
 
 def load_func_by_country_year():
@@ -195,7 +250,7 @@ def load_edu_public_expenditure():
 
 function_data_mapping = {
     # Simple pass-throughs
-    "expenditure_w_poverty": lambda: _db().get_expenditure_w_poverty_by_country_year(),
+    "expenditure_w_poverty": load_expenditure_w_poverty,
     "subnational_poverty_rate": lambda: _db().get_subnational_poverty_rate(_countries()),
     "geo1_expenditure": lambda: _db().get_expenditure_by_country_geo1_year(),
     "geo1_func_expenditure": lambda: _db().expenditure_and_outcome_by_country_geo1_func_year(),

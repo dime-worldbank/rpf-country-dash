@@ -158,6 +158,11 @@ CHART_METADATA = {
     "overview-per-capita": {"indicators": ["boost", "poverty_rate"]},
     "functional-breakdown": {"indicators": ["boost"]},
     "func-growth": {"indicators": ["boost"]},
+    "funding-source": {"indicators": ["boost"]},
+    "budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "indicators": ["boost"],
+    },
     "economic-breakdown": {"indicators": ["boost"]},
     "pefa-overall": {"indicators": ["pefa_by_pillar", "poverty_rate"]},
     "pefa-by-pillar": {"indicators": ["pefa_by_pillar"]},
@@ -187,6 +192,15 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "education-public-private": {"indicators": [_BOOST_EDU, "edu_private_expenditure"]},
     "education-total": {"indicators": ["boost"]},
+    "education-funding-source": {"indicators": [_BOOST_EDU]},
+    "education-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "indicators": [_BOOST_EDU],
+    },
+    "education-econ-execution": {
+        "info_key": "chart.budget_execution.info",
+        "indicators": [_BOOST_EDU],
+    },
     "education-outcome": {"indicators": [
         _BOOST_EDU,
         "learning_poverty_rate",
@@ -206,6 +220,15 @@ CHART_METADATA = {
     # ------------------------------------------------------------------
     "health-public-private": {"indicators": [_BOOST_HEALTH, "health_private_expenditure"]},
     "health-total": {"indicators": ["boost"]},
+    "health-funding-source": {"indicators": [_BOOST_HEALTH]},
+    "health-budget-execution": {
+        "info_key": "chart.budget_execution.info",
+        "indicators": [_BOOST_HEALTH],
+    },
+    "health-econ-execution": {
+        "info_key": "chart.budget_execution.info",
+        "indicators": [_BOOST_HEALTH],
+    },
     "health-outcome": {"indicators": [_BOOST_HEALTH, "universal_health_coverage_index_gho"]},
     "econ-breakdown-func-health": {"indicators": ["boost"]},
     # ------------------------------------------------------------------
@@ -354,12 +377,12 @@ def build_modal_children(info, lang="en"):
         )
     )
 
-    # Chart-level intro paragraph (optional) — appears once above all sources
+    # Chart-level intro paragraph (optional) — appears once above all sources.
+    # Same "Methodology: ..." row style as per-source descriptions, since
+    # this is the same kind of content (how the metric is computed).
     chart_info = info.get("info")
     if chart_info:
-        body.append(
-            html.P(chart_info, className="rpf-chart-info", style={"fontStyle": "italic"})
-        )
+        body.append(_make_detail_row(t("detail.methodology", lang), html.Span(chart_info)))
 
     # Per-metric sections. Sources feeding the same metric (identical heading,
     # methodology, coverage) render those shared fields once and repeat only the
