@@ -184,21 +184,6 @@ def filter_geojson_by_country(geojson, country):
     return filtered_geojson
 
 
-BURUNDI_CURRENT_REGION_NAMES = {
-    "Bujumbura Mairie": "Mairie de Bujumbura",
-    "Bujumbura Rural": "Bujumbura",
-    "Buyengero & Burambi & Rumonge & Bugarama & Muhuta": "Rumonge",
-}
-
-
-def harmonize_subnational_region_names(df, country, column):
-    """Align source labels to the pre-2025 18-province boundary names."""
-    result = df.copy()
-    if country == "Burundi":
-        result[column] = result[column].replace(BURUNDI_CURRENT_REGION_NAMES)
-    return result
-
-
 def map_center(geojson):
     polygons = []
     for feature in geojson["features"]:
@@ -552,3 +537,5 @@ def add_currency_column(df, column_name, currency_code, lang="en"):
     df[f'{column_name}_formatted'] = df[column_name].apply(
         lambda x: format_currency(x, currency_code, lang=lang)
     )
+
+

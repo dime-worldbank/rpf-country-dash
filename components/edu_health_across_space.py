@@ -21,7 +21,6 @@ from utils import (
     empty_plot,
     filter_country_sort_year,
     filter_geojson_by_country,
-    harmonize_subnational_region_names,
     format_currency,
     get_correlation_text,
     millify,
@@ -291,7 +290,6 @@ def update_func_expenditure_map(
         year, country, func
     )
     df = df[df.adm1_name != 'Central Scope']
-    df = harmonize_subnational_region_names(df, country, "adm1_name")
 
     if df.empty:
         return empty_plot(t("error.no_data_year", lang))
@@ -457,7 +455,6 @@ def update_hd_index_map(
     outcome_name = t(outcome_name_key, lang) if outcome_name_key else FUNC_OUTCOME_MAP[func][0]
     _, transform_fn, format_fn = FUNC_OUTCOME_MAP[func]
     df['outcome_index'] = df['outcome_index'].map(transform_fn)
-    df = harmonize_subnational_region_names(df, country, "adm1_name")
 
     geojson = server_store.get("subnat_boundaries")
     filtered_geojson = filter_geojson_by_country(geojson, country)

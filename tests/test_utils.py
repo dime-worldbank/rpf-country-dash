@@ -12,7 +12,6 @@ from utils import (
     add_currency_column,
     format_currency_yaxis,
     millify,
-    harmonize_subnational_region_names,
 )
 
 class TestUtils(unittest.TestCase):
@@ -162,26 +161,6 @@ class TestUtils(unittest.TestCase):
         self.assertIsNone(calculate_cagr(float('nan'), 200, 5))
         self.assertIsNone(calculate_cagr(0, 200, 5))
         self.assertIsNone(calculate_cagr(-100, 200, 5))
-
-    def test_burundi_names_match_pre_2025_boundaries(self):
-        df = pd.DataFrame(
-            {
-                "region_name": [
-                    "Bujumbura Mairie",
-                    "Bujumbura Rural",
-                    "Buyengero & Burambi & Rumonge & Bugarama & Muhuta",
-                ]
-            }
-        )
-
-        result = harmonize_subnational_region_names(
-            df, "Burundi", "region_name"
-        )
-
-        self.assertEqual(
-            result["region_name"].tolist(),
-            ["Mairie de Bujumbura", "Bujumbura", "Rumonge"],
-        )
 
 
 class TestAssessStatisticalConfidence(unittest.TestCase):

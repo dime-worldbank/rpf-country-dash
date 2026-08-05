@@ -12,7 +12,6 @@ from utils import (
     apply_locale,
     filter_country_sort_year,
     filter_geojson_by_country,
-    harmonize_subnational_region_names,
     empty_plot,
     get_correlation_text,
     remove_accents,
@@ -1371,9 +1370,6 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
         return empty_plot(t("error.no_expenditure_data_year", lang))
 
     df_for_year = df[df.year == year]
-    df_for_year = harmonize_subnational_region_names(
-        df_for_year, country, "adm1_name"
-    )
     legend_percapita_min, legend_percapita_max = (
         df_for_year.per_capita_expenditure.min(),
         df_for_year.per_capita_expenditure.max(),
@@ -1441,6 +1437,7 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     disputed_geojson = filter_geojson_by_country(
         server_store.get("disputed_boundaries"), country
     )
+    filtered_geojson = filter_geojson_by_country(geojson, country)
     df = server_store.get("subnational_poverty_rate")
     # Poverty surveys are sparse and some predate START_YEAR. The map carries the
     # latest survey forward to the selected year, so keep every survey year (unlike
@@ -1461,18 +1458,11 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     if poverty_year is None or df.empty:
         return empty_plot(t("error.poverty_unavailable", lang))
 
-    filtered_geojson = filter_geojson_by_country(geojson, country)
-    df_for_year = harmonize_subnational_region_names(
-        df[df.year == poverty_year],
-        country,
-        "region_name",
-    )
-
     income_level = server_store.get("basic_country_info")[country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
-        df_for_year,
+        df[df.year == poverty_year],
         legend_min,
         legend_max,
         lat,
