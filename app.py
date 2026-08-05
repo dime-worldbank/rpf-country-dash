@@ -461,33 +461,14 @@ def fetch_source_metadata_once(data):
     if data is None:
         indicator_df = db.get_indicator_data_availability()
         boost_urls_df = db.get_boost_source_urls()
-
-        # Pre-build source URL maps indexed by country for efficient lookup
-        source_urls_by_country = {}
-
-        # Add BOOST URLs
-        for _, row in boost_urls_df.iterrows():
-            country = row["country_name"]
-            if country not in source_urls_by_country:
-                source_urls_by_country[country] = {}
-            url = row.get("source_url")
-            if url:
-                source_urls_by_country[country]["boost"] = url
-
-        # Add indicator URLs
-        for _, row in indicator_df.iterrows():
-            country = row["country_name"]
-            if country not in source_urls_by_country:
-                source_urls_by_country[country] = {}
-            url = row.get("source_url")
-            if url:
-                key = row["indicator_key"]
-                source_urls_by_country[country][key] = url
+        registry_df = db.get_source_registry()
+        indicator_source_df = db.get_indicator_source()
 
         return {
             "indicator_availability": indicator_df.to_dict("records"),
             "boost_source_urls": boost_urls_df.to_dict("records"),
-            "source_urls_by_country": source_urls_by_country,
+            "source_registry": registry_df.to_dict("records"),
+            "indicator_source": indicator_source_df.to_dict("records"),
         }
     return no_update
 
@@ -496,19 +477,24 @@ def fetch_source_metadata_once(data):
     Output({"type": "source-info-modal", "index": MATCH}, "is_open"),
     Output({"type": "source-info-modal", "index": MATCH}, "children"),
     Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
-    State("country-select", "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
     State("stored-source-metadata", "data"),
-    State("stored-language", "data"),
     prevent_initial_call=True,
 )
-def open_source_info_modal(n_clicks, country, source_meta, lang):
-    if not n_clicks:
-        return no_update, no_update
-
+def open_source_info_modal(n_clicks, country, lang, source_meta):
     lang = lang or "en"
-    index = ctx.triggered_id["index"]
-    info = build_modal_info(index, country, source_meta, lang=lang)
-    return True, build_modal_children(info, lang=lang)
+    # From the output, not the trigger, so it resolves for country/lang changes too.
+    index = ctx.outputs_list[0]["id"]["index"]
+    children = build_modal_children(build_modal_info(index, country, source_meta, lang=lang), lang=lang)
+
+    # Open only on a button click; country/lang changes just refresh content in place.
+    triggered = ctx.triggered_id
+    if isinstance(triggered, dict) and triggered.get("type") == "source-info-btn":
+        if not n_clicks:
+            return no_update, no_update
+        return True, children
+    return no_update, children
 
 
 @app.callback(

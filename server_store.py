@@ -29,12 +29,15 @@ def set(key, value):
 def _lookup_raw(key):
     """Return the raw cached value (no copy), or _MISSING if not found.
 
-    On miss, auto-populates via data_mapping.function_data_mapping.
+    On miss, auto-populates via data_mapping.function_data_mapping. A failed
+    load is cached too (as _MISSING) — otherwise a table that's genuinely
+    absent (e.g. togo_revenue_budget for most countries) gets re-queried, and
+    its ~10s Databricks round-trip re-paid, on every single callback that
+    touches it, rather than once until the next explicit cache clear.
     """
     with _lock:
-        value = _store.get(key, _MISSING)
-    if value is not _MISSING:
-        return value
+        if key in _store:
+            return _store[key]
 
     # Lazy import to avoid circular dependency (data_mapping imports server_store).
     from data_mapping import function_data_mapping
@@ -47,15 +50,13 @@ def _lookup_raw(key):
         value = loader()
     except Exception:
         logger.exception("server_store: loader for '%s' failed", key)
-        return _MISSING
+        value = _MISSING
 
     with _lock:
         # Another thread may have beaten us — use theirs
-        existing = _store.get(key, _MISSING)
-        if existing is not _MISSING:
-            return existing
-        _store[key] = value
-    return value
+        if key not in _store:
+            _store[key] = value
+        return _store[key]
 
 
 def lookup(key, default=None):

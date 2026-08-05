@@ -67,15 +67,13 @@ class TestQueryService(unittest.TestCase):
         self.mock_execute_query.return_value = pd.DataFrame({
             "country_name": ["Albania", "Albania"],
             "indicator_key": ["poverty_rate", "pefa_by_pillar"],
-            "earliest_year": [2012, 2016],
-            "latest_year": [2020, 2022],
-            "source_url": ["https://example.com/pip", "https://example.com/pefa"],
+            "years": [[2012, 2016, 2020], [2016, 2022]],
         })
         df = self.query_service.get_indicator_data_availability()
         self.assertEqual(len(df), 2)
         self.assertListEqual(
             list(df.columns),
-            ["country_name", "indicator_key", "earliest_year", "latest_year", "source_url"],
+            ["country_name", "indicator_key", "years"],
         )
 
     @patch("queries.PUBLIC_ONLY", True)
@@ -84,9 +82,7 @@ class TestQueryService(unittest.TestCase):
         self.mock_execute_query.return_value = pd.DataFrame({
             "country_name": ["Albania", "Brazil"],
             "indicator_key": ["poverty_rate", "poverty_rate"],
-            "earliest_year": [2012, 2010],
-            "latest_year": [2020, 2021],
-            "source_url": ["https://example.com/1", "https://example.com/2"],
+            "years": [[2012, 2020], [2010, 2021]],
         })
         df = self.query_service.get_indicator_data_availability()
         self.assertEqual(len(df), 1)
