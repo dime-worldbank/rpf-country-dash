@@ -115,6 +115,23 @@ class TestServerStore(unittest.TestCase):
         data_mapping.function_data_mapping["fail"] = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
         self.assertIsNone(server_store.lookup("fail"))
 
+    def test_loader_failure_is_cached_not_retried(self):
+        """A genuinely-missing table (e.g. togo_revenue_budget for most
+        countries) must not re-pay its failed round-trip on every lookup —
+        that turned a single missing table into a multi-second delay on
+        every callback that touched it."""
+        calls = []
+
+        def failing_loader():
+            calls.append(1)
+            raise RuntimeError("boom")
+
+        data_mapping.function_data_mapping["fail"] = failing_loader
+        server_store.lookup("fail")
+        server_store.lookup("fail")
+        server_store.lookup("fail")
+        self.assertEqual(len(calls), 1)
+
     def test_loader_sets_multiple_keys(self):
         """Loader that populates sibling keys (like _load_func_econ_group)."""
         def group_loader():
