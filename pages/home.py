@@ -92,7 +92,9 @@ def update_overview_tab_labels(lang):
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
-        server_store.get("pefa")
+        # lookup(), not get(): get() raises PreventUpdate on a failed load,
+        # which would leave this Store permanently unset for every country.
+        server_store.lookup("pefa")
         return {"ready": True}
     return dash.no_update
 
@@ -103,7 +105,7 @@ def fetch_pefa_data_once(pefa_data, shared_data):
 )
 def fetch_revenue_budget_data_once(revenue_data, shared_data):
     if revenue_data is None and shared_data:
-        server_store.get("togo_revenue_budget")
+        server_store.lookup("togo_revenue_budget")
         return {"ready": True}
     return dash.no_update
 
@@ -114,7 +116,7 @@ def fetch_revenue_budget_data_once(revenue_data, shared_data):
 )
 def fetch_government_revenue_expenditure_data_once(gov_data, shared_data):
     if gov_data is None and shared_data:
-        server_store.get("government_revenue_expenditure")
+        server_store.lookup("government_revenue_expenditure")
         return {"ready": True}
     return dash.no_update
 
@@ -1600,10 +1602,18 @@ def render_execution_narrative(data, country, lang):
 
 
 def _get_revenue_budget_context(country):
-    """Load country-scoped fiscal-balance inputs from server store."""
-    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gfs_df = filter_country_sort_year(server_store.get("government_revenue_expenditure_gfs"), country)
-    weo_df = filter_country_sort_year(server_store.get("government_revenue_expenditure_weo"), country)
+    """Load country-scoped fiscal-balance inputs from server store.
+
+    Each of these three sources is only ever populated for a subset of
+    countries, so a missing one (togo_revenue_budget most notably — see
+    fetch_revenue_budget_data_once) must not raise PreventUpdate here and
+    block the whole section for every other country. basic_country_info is
+    foundational (every country needs it), so that one still uses get().
+    """
+    empty = pd.DataFrame(columns=["country_name", "year"])
+    national_df = filter_country_sort_year(server_store.lookup("togo_revenue_budget", empty), country)
+    gfs_df = filter_country_sort_year(server_store.lookup("government_revenue_expenditure_gfs", empty), country)
+    weo_df = filter_country_sort_year(server_store.lookup("government_revenue_expenditure_weo", empty), country)
     basic_info = server_store.get("basic_country_info")[country]
     return national_df, gfs_df, weo_df, basic_info
 
