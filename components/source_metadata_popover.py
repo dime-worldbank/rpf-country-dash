@@ -43,6 +43,7 @@ SOURCE_DISPLAY = {
     "alb_instat":                {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
     "moz_ine":                   {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
     "pry_ine":                   {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
+    "imputed":                   {"label_key": "source.subnational_population.label", "coverage_key": "subnational_population"},
 }
 
 # Sentinel so a slot can distinguish "not overridden" from "overridden to None".

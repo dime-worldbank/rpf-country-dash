@@ -116,7 +116,8 @@ def fetch_revenue_budget_data_once(revenue_data, shared_data):
 )
 def fetch_government_revenue_expenditure_data_once(gov_data, shared_data):
     if gov_data is None and shared_data:
-        server_store.lookup("government_revenue_expenditure")
+        server_store.lookup("government_revenue_expenditure_weo")
+        server_store.lookup("government_revenue_expenditure_gfs")
         return {"ready": True}
     return dash.no_update
 
