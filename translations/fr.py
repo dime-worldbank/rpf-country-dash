@@ -221,6 +221,7 @@ TRANSLATIONS = {
     "country.Bangladesh": {"name": "Bangladesh", "plural": False, "feminine": False},
     "country.Bhutan": {"name": "Bhoutan", "plural": False, "feminine": False},
     "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False},
+    "country.Burundi": {"name": "Burundi", "plural": False, "feminine": False},
     "country.Chile": {"name": "Chili", "plural": False, "feminine": False},
     "country.Colombia": {"name": "Colombie", "plural": False, "feminine": True},
     "country.Congo, Dem. Rep.": {"name": "République démocratique du Congo", "plural": False, "feminine": True},
