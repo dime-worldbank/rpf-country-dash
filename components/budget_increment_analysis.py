@@ -29,10 +29,26 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     country_budget_changes_df = filter_country_sort_year(
         country_budget_changes_df, country
     )
+    # Where the source carries no funding split at all, fall back to the total
+    # budget rather than dropping every row: how spending grew is still worth
+    # showing. The totals then equal the domestic figures, which is what
+    # `foreign_funding_isnull` below reads to disclose in the narrative that
+    # these figures include external financing.
+    if not country_budget_changes_df["domestic_funded_budget"].notna().any():
+        country_budget_changes_df = country_budget_changes_df.assign(
+            domestic_funded_budget=country_budget_changes_df["budget"],
+            real_domestic_funded_budget=country_budget_changes_df["real_budget"],
+        )
+
+    funded = country_budget_changes_df["domestic_funded_budget"]
     country_budget_changes_df = country_budget_changes_df[
-        country_budget_changes_df["domestic_funded_budget"].notna()
-        & (round(country_budget_changes_df["domestic_funded_budget"]) != 0)
+        funded.notna() & (round(funded) != 0)
     ]
+    # No budget to plot either way — without this the year arithmetic below
+    # runs on an empty frame and raises.
+    if country_budget_changes_df.empty:
+        unavailable = t("error.data_unavailable", lang)
+        return empty_plot(unavailable), unavailable
 
     overall_budget_df = country_budget_changes_df.groupby(
         ["country_name", "year"], as_index=False
