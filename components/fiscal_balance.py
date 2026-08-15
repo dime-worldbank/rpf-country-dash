@@ -15,13 +15,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 from constants import (
-    WEO_SOURCE,
-    GFS_SOO_SOURCE,
     VIEW_COMPOSITE,
     VIEW_OFFICIAL,
     VIEW_GFS,
     VIEW_WEO,
 )
+from components.source_metadata_popover import source_display_name
+
+# Only official national report today; generalize when a country-agnostic table lands.
+NATIONAL_SOURCE_ID = "togo_dgb"
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
 from utils import add_currency_column, empty_plot, format_currency, apply_locale
@@ -43,16 +45,6 @@ LEGEND_RANK = {
     "surplus": 5,
     "deficit": 6,
 }
-
-
-def split_imf_sources(gov_df):
-    """Split an IMF government revenue/expenditure frame into ``(gfs_df, weo_df)`` by data source."""
-    if gov_df is None or gov_df.empty:
-        return None, None
-    return (
-        gov_df[gov_df["source"] == GFS_SOO_SOURCE],
-        gov_df[gov_df["source"] == WEO_SOURCE],
-    )
 
 
 def _clean_rev_exp(df):
@@ -384,23 +376,14 @@ def _extract_balance_insights(df):
 
 
 def _extract_national_insights(df):
-    """Return ``{"year_min", "year_max", "mean_balance", "source_name"}``.
-
-    ``source_name`` is ``None`` when the frame has no ``source`` column or all
-    rows are null — the caller substitutes a localized default.
-    """
+    """Balance summary for the national frame, or None. Source label is separate
+    (NATIONAL_SOURCE_ID), not read from the data."""
     if df is None or df.empty:
         return None
-    source_name = None
-    if "source" in df.columns:
-        sources = df["source"].dropna().unique().tolist()
-        if sources:
-            source_name = sources[0]
     return {
         "year_min": int(df["year"].min()),
         "year_max": int(df["year"].max()),
         "mean_balance": float(df["balance"].mean()),
-        "source_name": source_name,
     }
 
 
@@ -478,23 +461,20 @@ def _build_period_sentence(prefix, trend, extrema, currency_code, forecast=False
     )
 
 
-_SOURCE_NAME_KEYS = {
-    "Togo DGB Budget Execution Report": "deficit.narrative.source.togo_dgb_budget_execution",
-    # Add more as country data lands. Unknown source values pass through untranslated.
+# Concise narrative labels keyed by source_id; falls back to the registry
+# "publisher — name" (which the popover uses) for sources without a prose label.
+_NARRATIVE_SOURCE_KEYS = {
+    "togo_dgb": "deficit.narrative.source.togo_dgb_budget_execution",
 }
 
 
-def _localize_source(source_name, lang):
-    """Translate a known database source name; pass through unknown values."""
-    if not source_name:
-        return None
-    key = _SOURCE_NAME_KEYS.get(source_name)
-    return t(key, lang) if key else source_name
+def _source_label(source_id, lang):
+    key = _NARRATIVE_SOURCE_KEYS.get(source_id)
+    return t(key, lang) if key else source_display_name(source_id, lang)
 
 
 def _national(source_name, year_min, year_max, mean_balance, currency_code, lang="en"):
     """Build the ``'The recent official reports from {source_name} indicate ...'`` sentence."""
-    source_name = _localize_source(source_name, lang)
     if not source_name:
         source_name = t("deficit.narrative.default_source", lang)
 
@@ -585,7 +565,7 @@ def narrative(national_df, gfs_df, weo_df, currency_code, view_mode=VIEW_COMPOSI
         nat = _extract_national_insights(nat_view)
         if nat:
             parts.append(_national(
-                nat["source_name"], nat["year_min"], nat["year_max"],
+                _source_label(NATIONAL_SOURCE_ID, lang), nat["year_min"], nat["year_max"],
                 nat["mean_balance"], currency_code, lang=lang,
             ))
         return _finalize_parts(parts)

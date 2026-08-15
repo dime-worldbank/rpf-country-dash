@@ -12,6 +12,7 @@ class TestServerStore(unittest.TestCase):
     def setUp(self):
         """Reset store state between tests."""
         server_store._store.clear()
+        server_store._failed.clear()
         self._saved_mapping = data_mapping.function_data_mapping.copy()
         data_mapping.function_data_mapping.clear()
 
@@ -114,6 +115,65 @@ class TestServerStore(unittest.TestCase):
     def test_loader_failure_returns_default_via_lookup(self):
         data_mapping.function_data_mapping["fail"] = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
         self.assertIsNone(server_store.lookup("fail"))
+
+    def test_loader_failure_is_cached_not_retried(self):
+        """A genuinely-missing table (e.g. togo_revenue_budget for most
+        countries) must not re-pay its failed round-trip on every lookup —
+        that turned a single missing table into a multi-second delay on
+        every callback that touched it."""
+        calls = []
+
+        def failing_loader():
+            calls.append(1)
+            raise RuntimeError("boom")
+
+        data_mapping.function_data_mapping["fail"] = failing_loader
+        server_store.lookup("fail")
+        server_store.lookup("fail")
+        server_store.lookup("fail")
+        self.assertEqual(len(calls), 1)
+
+    def test_has_returns_false_after_loader_failure(self):
+        """A cached failure must not read as "successfully cached" — a group
+        loader that gates on has() (see _load_func_econ_group) relies on this
+        to still attempt (and re-fail, rather than infinitely recurse)."""
+        data_mapping.function_data_mapping["fail"] = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
+        server_store.lookup("fail")
+        self.assertFalse(server_store.has("fail"))
+
+    def test_group_loader_short_circuit_does_not_recurse_on_failure(self):
+        """Mirrors _load_func_econ_group: a group loader gates on has() to
+        avoid redundant DB calls, and a sibling loader calls the group loader
+        then re-looks-up its own key. If a cached failure made has() report
+        True without the group having actually populated anything, the
+        sibling's re-lookup of its own (still-unset) key would recurse
+        forever. It must instead retry the group and succeed."""
+        calls = {"gate": 0, "sibling": 0}
+
+        def gate_loader():
+            calls["gate"] += 1
+            raise RuntimeError("boom")
+
+        def group_loader():
+            if server_store.has("gate"):
+                return
+            server_store.set("gate", "populated")
+            server_store.set("sibling", "populated")
+
+        def sibling_loader():
+            calls["sibling"] += 1
+            group_loader()
+            return server_store.lookup("sibling")
+
+        data_mapping.function_data_mapping["gate"] = gate_loader
+        data_mapping.function_data_mapping["sibling"] = sibling_loader
+
+        # First access fails and must be cached as a failure, not a success.
+        self.assertIsNone(server_store.lookup("gate"))
+
+        # A sibling sharing the same has()-gate must not spin forever.
+        self.assertEqual(server_store.lookup("sibling"), "populated")
+        self.assertEqual(calls["sibling"], 1)
 
     def test_loader_sets_multiple_keys(self):
         """Loader that populates sibling keys (like _load_func_econ_group)."""
