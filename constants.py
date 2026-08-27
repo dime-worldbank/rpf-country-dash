@@ -4,6 +4,10 @@ from viz_theme import QUALITATIVE, create_category_color_map
 
 START_YEAR = 2010
 
+# Display ceiling. Charts stop at the last year with complete actuals; pass
+# end_year explicitly to opt out (e.g. IMF WEO forecasts, which run past it).
+END_YEAR = 2024
+
 TREND_THRESHOLDS = 0.4
 
 

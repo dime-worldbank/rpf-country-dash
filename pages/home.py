@@ -11,6 +11,7 @@ from utils import (
     add_currency_column,
     apply_locale,
     filter_country_sort_year,
+    format_year_axis,
     filter_geojson_by_country,
     empty_plot,
     get_correlation_text,
@@ -618,7 +619,7 @@ def per_capita_figure(df, currency_name, currency_code, lang="en"):
         secondary_y=False,
     )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(title_text=t("axis.per_capita_expenditure", lang, currency_name=currency_name), secondary_y=False, fixedrange=True)
     fig.update_yaxes(
         title_text=t("axis.poverty_rate", lang),
@@ -696,7 +697,7 @@ def functional_figure(df, lang="en"):
             )
         )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
@@ -1243,7 +1244,7 @@ def economic_figure(df, currency_code, lang="en"):
             )
         )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
@@ -1601,8 +1602,14 @@ def render_execution_narrative(data, country, lang):
 
 def _get_revenue_budget_context(country):
     """Load country-scoped fiscal-balance inputs from server store."""
-    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
-    gov_df = filter_country_sort_year(server_store.get("government_revenue_expenditure"), country)
+    # end_year=None keeps the IMF WEO forecast tail, which runs past END_YEAR and
+    # is the point of the composite view; every other chart stops at the ceiling.
+    national_df = filter_country_sort_year(
+        server_store.get("togo_revenue_budget"), country, end_year=None
+    )
+    gov_df = filter_country_sort_year(
+        server_store.get("government_revenue_expenditure"), country, end_year=None
+    )
     gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
     basic_info = server_store.get("basic_country_info")[country]
     return national_df, gfs_df, weo_df, basic_info

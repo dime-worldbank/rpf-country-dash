@@ -2,9 +2,9 @@ from dash import html
 import pandas as pd
 import plotly.graph_objects as go
 from translations import t, genitive, preposition, _LANGUAGES
-from constants import translate_econ
+from constants import translate_econ, END_YEAR
 import server_store
-from utils import apply_locale, empty_plot
+from utils import apply_locale, empty_plot, format_year_axis
 
 OP_WAGE_BILL = "Wage bill"
 CAPEX = "Capital expenditures"
@@ -147,7 +147,7 @@ def _generate_econ_figure(data, func, lang="en"):
                 name=translate_econ(econ_category, lang),
             )
         )
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(
         fixedrange=True,
         showticklabels=True,
@@ -182,8 +182,12 @@ def render_econ_breakdown(data, country_name, page_func, lang="en"):
     if not data:
         return empty_plot(t("loading", lang)), t("loading", lang)
     df = server_store.get("prop_econ_by_func")
+    # This view filters inline rather than via filter_country_sort_year, so the
+    # display ceiling has to be applied here too.
     filtered_df = df[
-        (df["country_name"] == country_name) & (df["func"] == page_func)
+        (df["country_name"] == country_name)
+        & (df["func"] == page_func)
+        & (df["year"] <= END_YEAR)
     ]
     pivot_df = filtered_df.pivot_table(
         index="year", columns="econ", values="proportion", aggfunc="sum", fill_value=0

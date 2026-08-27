@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from plotly.subplots import make_subplots
 from translations import t, genitive
-from utils import apply_locale, empty_plot
+from utils import apply_locale, empty_plot, format_year_axis
 import numpy as np
 import plotly.graph_objects as go
 import re
@@ -142,7 +142,7 @@ def pefa_overall_figure(df, pov_df, lang="en"):
         secondary_y=False,
     )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(
         title_text=t("axis.quality_budget_institutions", lang),
         secondary_y=False,

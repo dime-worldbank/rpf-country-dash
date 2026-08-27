@@ -13,6 +13,7 @@ from auth import AUTH_ENABLED
 from collections import OrderedDict
 from constants import (
     START_YEAR,
+    END_YEAR,
     TREND_THRESHOLDS,
 )
 from translations import t
@@ -113,16 +114,20 @@ def parse_rgba_str(s):
     return [211, 211, 211, 0.3]  # Default fallback color
 
 
-def filter_country_sort_year(df, country, start_year=START_YEAR):
+def filter_country_sort_year(df, country, start_year=START_YEAR, end_year=END_YEAR):
     """
     Preprocess the dataframe to filter by country and sort by year
     :param df: DataFrame
     :param country: str
+    :param start_year: inclusive display floor
+    :param end_year: inclusive display ceiling; pass None to keep later years
     :return: DataFrame
     """
     df = df.loc[df["country_name"] == country]
 
     df = df[df.year >= start_year]
+    if end_year is not None:
+        df = df[df.year <= end_year]
     if not df.empty:
         earliest_year = df["year"].min()
         df["earliest_year"] = earliest_year
@@ -507,10 +512,24 @@ def add_disputed_overlay(fig, disputed_geojson, zoom, lang="en"):
     return fig
 
 
+def format_year_axis(fig):
+    """Pin a year x-axis to whole-year ticks.
+
+    With only a few years of data Plotly subdivides and picks a fractional dtick
+    (0.5). tickformat="d" then rounds each fractional tick to an integer, so the
+    axis renders every label twice and the final half-step (e.g. 2024.5) rounds
+    up into a year that has no data. dtick=1 keeps one tick per actual year.
+    """
+    fig.update_xaxes(tickformat="d", dtick=1)
+    return fig
+
+
 def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
     """Format chart axes with currency unit."""
     fig.update_xaxes(tickformat=x_format)
     fig.update_yaxes(fixedrange=True, title_text=f"{y_title} ({currency_name})")
+    if x_format == "d":
+        format_year_axis(fig)
     return fig
 
 

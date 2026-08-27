@@ -1,6 +1,6 @@
 from dash import dcc, html
 
-from constants import START_YEAR
+from constants import START_YEAR, END_YEAR
 from translations import t
 
 
@@ -33,10 +33,11 @@ def get_slider_config(expenditure_years, outcome_years, lang="en"):
     @param outcome_years: list of years from the outcome dataset
     @return: tuple with (style, marks, selected_year, min_year, max_year, tooltip)
     """
-    # Clamp to the display floor so the slider matches the charts (which filter to
-    # >= START_YEAR); a raw expenditure year like 2009 would otherwise show here.
-    expenditure_years = sorted(y for y in expenditure_years if y >= START_YEAR)
-    outcome_years = sorted(y for y in outcome_years if y >= START_YEAR)
+    # Clamp to the display window so the slider matches the charts (which filter to
+    # START_YEAR..END_YEAR); a raw expenditure year like 2009, or an outcome year
+    # past the ceiling, would otherwise show here with no chart data behind it.
+    expenditure_years = sorted(y for y in expenditure_years if START_YEAR <= y <= END_YEAR)
+    outcome_years = sorted(y for y in outcome_years if START_YEAR <= y <= END_YEAR)
 
     if not expenditure_years:
         marks = {

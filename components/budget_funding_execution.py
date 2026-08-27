@@ -9,6 +9,7 @@ from components.func_operational_vs_capital_spending import CAPEX, OP_WAGE_BILL
 from viz_theme import QUALITATIVE, lighten_color
 from utils import (
     apply_locale,
+    format_year_axis,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -194,7 +195,7 @@ def create_funding_source_figure(
         )
     )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     if has_split:
         fig.update_yaxes(
             title_text=t("axis.budget_share", lang),
@@ -482,7 +483,7 @@ def create_execution_figure(df, lang="en", metric="execution_rate"):
             # No legend: the right-hand axis names the zones where they are.
             showlegend=False,
             shapes=shapes,
-            xaxis=dict(tickformat="d"),
+            xaxis=dict(tickformat="d", dtick=1),
             yaxis=dict(
                 title_text=axis,
                 ticksuffix="%",
@@ -571,7 +572,7 @@ def create_econ_execution_figure(df, lang="en", metric="execution_rate"):
             )
         )
     fig.add_hline(y=reference, line_dash="dash", line_color=REFERENCE_LINE_COLOR)
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(title_text=axis, ticksuffix="%", fixedrange=True)
     fig.update_layout(
         title=t("chart.budget_execution_by_category", lang),

@@ -13,6 +13,7 @@ import server_store
 from utils import (
     add_currency_column,
     apply_locale,
+    format_year_axis,
     empty_plot,
     filter_country_sort_year,
     format_currency,
@@ -486,7 +487,7 @@ def total_health_figure(df, currency_code, lang="en"):
         ),
     )
 
-    fig.update_xaxes(tickformat="d")
+    format_year_axis(fig)
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
