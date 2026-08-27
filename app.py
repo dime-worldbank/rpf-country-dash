@@ -37,6 +37,11 @@ from viz_theme import (
     SHOW_FOOTER,
 )
 
+# Optional allowlist so one deployment can serve a single country (e.g. Togo).
+# Comma-separated raw English country names, matching `country_name` in the
+# data; empty means every country present in the data.
+COUNTRIES = [c.strip() for c in os.getenv("COUNTRIES", "").split(",") if c.strip()]
+
 app = Dash(
     __name__,
     server=server,
@@ -113,7 +118,20 @@ def get_relative_path(page_name):
 sidebar = html.Div(
     [
         dbc.Row(
-            [html.Img(src=app.get_asset_url("rpf_logo.png"), alt="Reimagining Public Finance", style={"height": "100"})]
+            [
+                html.Img(
+                    src=app.get_asset_url("togo_logo.png"),
+                    alt="Republic of Togo",
+                    style={
+                        "height": "120px",
+                        "width": "auto",
+                        "display": "block",
+                        "marginLeft": "auto",
+                        "marginRight": "auto",
+                        "marginTop": "20px"
+                    }
+                )
+            ]
         ),
         html.Hr(),
         dbc.Select(
@@ -280,6 +298,8 @@ def fetch_data_once(data):
     if data is None:
         df = server_store.get("expenditure_w_poverty")
         countries = sorted(df["country_name"].unique())
+        if COUNTRIES:
+            countries = [c for c in countries if c in COUNTRIES]
         return {"ready": True, "countries": countries}
     return no_update
 
@@ -338,7 +358,9 @@ def display_data(data, search, lang, current_country):
             options[0]["selected"] = True
         return options
 
-    if data is not None:
+    # An empty list means COUNTRIES matched nothing in the data — surface the
+    # no-data message rather than IndexError-ing on countries[0] below.
+    if data is not None and data.get("countries"):
         countries = data["countries"]
         triggered_id = callback_context.triggered[0]["prop_id"] if callback_context.triggered else ""
 
