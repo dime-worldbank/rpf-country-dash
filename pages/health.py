@@ -543,9 +543,13 @@ def health_narrative(data, country, lang="en"):
 
     text += t("narrative.central_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_central, lang=lang))
 
-    if not np.isnan(
-        spending[spending.year == start_year].decentralized_expenditure.values[0]
-    ):
+    start_decentralized = spending[
+        spending.year == start_year
+    ].decentralized_expenditure.values[0]
+    # A country with no subnational tracking at all sums to 0.0 rather than NaN
+    # in the func aggregation, so 0 means "not tracked" here, not a real zero.
+    # It would also make the growth rate below divide by zero.
+    if not np.isnan(start_decentralized) and start_decentralized != 0:
         spending["real_decentralized_expenditure"] = (
             spending.real_expenditure
             / spending.expenditure
