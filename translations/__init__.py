@@ -59,7 +59,7 @@ _CURRENCY_LOCALES = {
 }
 
 
-def t(key, lang=None, **kwargs):
+def t(key, lang=None, meta=False, **kwargs):
     """Look up a translation key for the given language.
 
     Parameters
@@ -68,21 +68,33 @@ def t(key, lang=None, **kwargs):
         Dot-separated translation key, e.g. "nav.overview".
     lang : str, optional
         Language code ("en", "fr", "pt"). Falls back to DEFAULT_LANGUAGE.
+    meta : bool, default False
+        Return the catalog entry whole instead of just its display name.
+        Nouns in the French and Portuguese catalogs are stored as
+        ``{"name", "plural", "feminine"}`` dicts; trend-narrative agrees
+        verbs and participles off those flags, and a bare name silently
+        defaults to singular/masculine ("les dépenses réelles a augmenté").
+        Pass ``meta=True`` when handing a noun to trend-narrative; leave it
+        False everywhere the value is rendered as text.
     **kwargs :
         Values to interpolate into the template string via str.format().
 
     Returns
     -------
     str or dict
-        The translated string (or dict with metadata for nouns with
-        grammatical properties like plural/feminine). For French,
+        The translated string, or — with ``meta=True`` — the raw catalog
+        entry: a dict where the language carries grammatical metadata, a
+        plain string where it doesn't (English). For French and Portuguese,
         numeric-looking substituted values render with comma decimals
-        (see :class:`_FrenchFormatter`).
+        (see :class:`_CommaDecimalFormatter`).
     """
     if lang is None:
         lang = DEFAULT_LANGUAGE
     translations = _LANGUAGES.get(lang, _LANGUAGES[DEFAULT_LANGUAGE])
     template = translations.get(key, _LANGUAGES[DEFAULT_LANGUAGE].get(key, key))
+
+    if meta:
+        return template
 
     # If template is a dict (metadata), extract the display name for template rendering
     if isinstance(template, dict):
@@ -200,38 +212,41 @@ def _preposition_pt(noun_or_meta):
 
 
 def _genitive_fr(noun_or_meta):
-    """Select French genitive preposition based on noun metadata or parse article.
+    """French genitive: *name* prefixed with the right form of "de".
 
-    Determines the correct "de" contraction based on noun's gender/number:
+    Picks the contraction from the noun's gender and number, then applies
+    elision:
 
-    * Plural: "des"           (de + les)
-    * Masculine singular: "du" (de + le)
-    * Feminine singular: "de la" or "de l'" (no contraction)
-    * Bare noun (vowel-initial): "d'"
-    * Bare noun (consonant-initial): "de"
+    * Plural: "des dépenses"           (de + les)
+    * Vowel-initial: "de l'éducation"  (elision wins over gender)
+    * Feminine singular: "de la santé"
+    * Masculine singular: "du Kenya"   (de + le)
 
     Parameters
     ----------
     noun_or_meta : str or dict
-        Either a dict with "plural" and "feminine" keys (metadata),
+        Either a catalog entry with "name" / "plural" / "feminine" keys,
         or a string with optional article prefix.
 
     Returns
     -------
     str
-        The contraction: "du", "des", "de la", "de l'", "d'", or "de".
+        Preposition *and* noun — "du Kenya", "de la santé" — never the bare
+        contraction, so callers interpolate the result whole.
     """
     if isinstance(noun_or_meta, dict):
-        # Metadata-driven selection
-        plural = noun_or_meta.get("plural", False)
-        feminine = noun_or_meta.get("feminine", False)
-
-        if plural:
-            return "des"
-        elif feminine:
-            return "de la"  # or "de l'" if vowel-initial, but let caller handle
-        else:
-            return "du"
+        # Strip any article baked into the name (Portuguese stores "o Togo";
+        # French stores bare nouns) so it is not articled twice.
+        name = strip_article("fr", noun_or_meta.get("name", ""))
+        if not name:
+            return "de"
+        if noun_or_meta.get("plural", False):
+            return f"des {name}"
+        if name[0].lower() in _FRENCH_VOWELS:
+            return f"de l'{name}"
+        if noun_or_meta.get("feminine", False):
+            return f"de la {name}"
+        return f"du {name}"
 
     # Legacy: parse article from string
     if not noun_or_meta:
@@ -388,17 +403,21 @@ def genitive(lang, name):
     ----------
     lang : str
         Language code ("en", "fr", …).
-    name : str
-        The noun or noun phrase to prefix. May include an article
-        ("le taux", "les dépenses", "l'indice") or be a bare noun.
+    name : str or dict
+        A catalog entry — ``t(key, lang, meta=True)`` — or a noun phrase.
+        Prefer the entry: French and Portuguese pick the contraction from
+        its "plural" / "feminine" keys, whereas a bare string can only be
+        inflected when it carries its own article ("le taux", "o Togo").
 
     Returns
     -------
     str
-        The correctly prefixed form:
+        Preposition *and* noun, ready to interpolate whole — every language
+        returns the full phrase, never a dangling contraction:
 
-        * French: handles article contractions (de+le→du, de+les→des) and
-          vowel elision (d'économies vs. de prix).
+        * French: article contractions (de+le→du, de+les→des) and vowel
+          elision (de l'éducation vs. de la santé).
+        * Portuguese: de+o→do, de+a→da, de+os→dos, de+as→das.
         * English: prepends "of ".
         * Other: returns *name* unchanged.
     """
@@ -409,5 +428,5 @@ def genitive(lang, name):
     if lang == "pt":
         return _genitive_pt(name)
     if lang == "en":
-        return "of " + name
-    return name
+        return "of " + _noun_name(name)
+    return _noun_name(name) if isinstance(name, dict) else name

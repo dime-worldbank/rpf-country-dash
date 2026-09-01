@@ -98,9 +98,10 @@ def _outcome_display_year(country, func, selected_year):
 
 def _central_vs_regional_fig(data, func, currency_code, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
+    func_meta = t(f"sector.{func.lower()}", lang, meta=True)
     fig_title = t(
         "chart.func_spending_directed", lang,
-        func=func_lower, func_gen=genitive(lang, func_lower),
+        func=func_lower, func_gen=genitive(lang, func_meta),
     )
     central_vs_regional = (
         data.groupby("geo0").sum(numeric_only=True).reset_index()
@@ -139,9 +140,10 @@ def _central_vs_regional_fig(data, func, currency_code, lang="en"):
 
 def _sub_func_fig(data, func, currency_code, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
+    func_meta = t(f"sector.{func.lower()}", lang, meta=True)
     fig_title = t(
         "chart.func_levels_spending", lang,
-        func=func_lower, func_gen=genitive(lang, func_lower),
+        func=func_lower, func_gen=genitive(lang, func_meta),
     )
     education_values = data.groupby("func_sub", sort=False).sum(numeric_only=True).reset_index()
 
@@ -234,7 +236,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         decentralization = data_by_func_admin0.expenditure_decentralization.values[0] * 100
 
         func_name = t(f"sector.{func.lower()}", lang)
-        func_gen = genitive(lang, func_name)
+        func_gen = genitive(lang, t(f"sector.{func.lower()}", lang, meta=True))
 
         country_display = t(f"country.{country}", lang)
         country_meta = _LANGUAGES[lang].get(f"country.{country}")
@@ -380,10 +382,11 @@ def update_func_expenditure_map(
     notes.append(t("source.boost_database", lang))
 
     cofog_name = t(f"cofog.{func.lower()}", lang)
+    cofog_meta = t(f"cofog.{func.lower()}", lang, meta=True)
     fig.update_layout(
         title=t(
             "chart.subnational_func_spending", lang,
-            func=cofog_name, func_gen=genitive(lang, cofog_name),
+            func=cofog_name, func_gen=genitive(lang, cofog_meta),
         ),
         plot_bgcolor="white",
         coloraxis_colorbar=dict(

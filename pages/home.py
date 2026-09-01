@@ -650,7 +650,7 @@ def overview_narrative(df, lang="en"):
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
     trend_narrative = get_segment_narrative_i18n(
         extractor=extractor,
-        metric=t("metric.total_real_expenditure", lang),
+        metric=t("metric.total_real_expenditure", lang, meta=True),
         lang=lang,
     )
 
@@ -1114,10 +1114,10 @@ def update_heading(country, lang):
     lang = lang or "en"
     if not country:
         return t("heading.regional_expenditure", lang)
-    country_display = t(f"country.{country}", lang)
+    country_info =  t(f"country.{country}", lang, meta=True)
+    country_gen = genitive(lang, country_info)
     return t(
-        "heading.country_regional_expenditure", lang,
-        country=country_display, country_gen=genitive(lang, country_display),
+        "heading.country_regional_expenditure", lang, country_gen=country_gen,
     )
 
 

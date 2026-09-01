@@ -124,7 +124,7 @@ def render_education_content(tab, lang):
     lang = lang or "en"
     if tab == "edu-tab-time":
         sector_name = t("sector.education", lang)
-        sector_gen = genitive(lang, sector_name)
+        sector_gen = genitive(lang, t("sector.education", lang, meta=True))
         return html.Div(
             [
                 dbc.Row(
@@ -519,7 +519,7 @@ def education_narrative(data, country, lang="en"):
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
     trend_narrative = get_segment_narrative_i18n(
         extractor=extractor,
-        metric=t("metric.real_expenditure", lang),
+        metric=t("metric.real_expenditure", lang, meta=True),
         lang=lang,
     )
 
@@ -581,7 +581,7 @@ def education_narrative(data, country, lang="en"):
         spending.year == end_year
     ].expenditure_decentralization.values[0]
     sector_name = t("sector.education", lang)
-    sector_gen = genitive(lang, sector_name)
+    sector_gen = genitive(lang, t("sector.education", lang, meta=True))
     if pd.isna(decentralization) or decentralization == 0:
         spending_decentralization = t(
             "narrative.decentralization_unknown", lang,
@@ -777,8 +777,8 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=att_df["year"].values,
         comparison_values=att_df["attendance_6to17yo"].values,
-        reference_name=t("metric.per_capita_education_spending", lang),
-        comparison_name=t("metric.school_attendance", lang),
+        reference_name=t("metric.per_capita_education_spending", lang, meta=True),
+        comparison_name=t("metric.school_attendance", lang, meta=True),
         reference_format=spending_fmt,
         comparison_format=".1f",
         lang=lang,
@@ -789,8 +789,8 @@ def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=pov_df_clean["year"].values,
         comparison_values=pov_df_clean["learning_poverty_rate"].values,
-        reference_name=t("metric.per_capita_education_spending", lang),
-        comparison_name=t("metric.learning_poverty_rate", lang),
+        reference_name=t("metric.per_capita_education_spending", lang, meta=True),
+        comparison_name=t("metric.learning_poverty_rate", lang, meta=True),
         reference_format=spending_fmt,
         comparison_format=".1f",
         lang=lang,

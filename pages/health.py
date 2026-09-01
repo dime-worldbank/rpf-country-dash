@@ -120,7 +120,7 @@ def render_health_content(tab, lang):
     lang = lang or "en"
     if tab == "health-tab-time":
         sector_name = t("sector.health", lang)
-        sector_gen = genitive(lang, sector_name)
+        sector_gen = genitive(lang, t("sector.health", lang, meta=True))
         return html.Div(
             [
                 dbc.Row(
@@ -513,7 +513,7 @@ def health_narrative(data, country, lang="en"):
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
     trend_narrative = get_segment_narrative_i18n(
         extractor=extractor,
-        metric=t("metric.real_expenditure", lang),
+        metric=t("metric.real_expenditure", lang, meta=True),
         lang=lang,
     )
 
@@ -575,7 +575,7 @@ def health_narrative(data, country, lang="en"):
         spending.year == end_year
     ].expenditure_decentralization.values[0]
     sector_name = t("sector.health", lang)
-    sector_gen = genitive(lang, sector_name)
+    sector_gen = genitive(lang, t("sector.health", lang, meta=True))
     if pd.isna(decentralization) or decentralization == 0:
         spending_decentralization = t(
             "narrative.decentralization_unknown", lang,
@@ -766,8 +766,8 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=out_df["year"].values,
         comparison_values=out_df["universal_health_coverage_index"].values,
-        reference_name=t("metric.per_capita_health_spending", lang),
-        comparison_name=t("metric.uhc_index", lang),
+        reference_name=t("metric.per_capita_health_spending", lang, meta=True),
+        comparison_name=t("metric.uhc_index", lang, meta=True),
         reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=".1f",
         lang=lang,

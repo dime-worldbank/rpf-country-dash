@@ -289,7 +289,7 @@ def pefa_narrative(df, lang="en"):
     country_display = t(f"country.{country}", lang)
     text = t("narrative.pefa_latest", lang,
              year=latest_year, country=country_display,
-             country_gen=genitive(lang, country_display),
+             country_gen=genitive(lang, t(f"country.{country}", lang, meta=True)),
              highest_pillar=highest_pillar_name, highest_score=highest_score,
              highest_grade=highest_grade, strength_narrative=strength_narrative,
              lowest_pillar=lowest_pillar_name, lowest_score=lowest_score,

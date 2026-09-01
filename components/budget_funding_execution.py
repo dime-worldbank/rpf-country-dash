@@ -229,18 +229,31 @@ def create_funding_source_figure(
 
 def _sector_budget_phrase(sector, lang, real):
     sector_name = t(f"sector.{sector.lower()}", lang)
+    sector_meta = t(f"sector.{sector.lower()}", lang, meta=True)
     key = "phrase.sector_budget_real" if real else "phrase.sector_budget"
-    return t(key, lang, sector=sector_name, sector_gen=genitive(lang, sector_name))
+    return t(key, lang, sector=sector_name, sector_gen=genitive(lang, sector_meta))
 
 
 def _budget_metric(sector, lang, real):
+    """Name the budget for get_segment_narrative_i18n, as its metric kwargs.
+
+    The national budget has a catalog key, so it goes through ``metric``
+    and keeps its grammatical metadata. A sector budget is assembled at
+    runtime from the sector name, so it is passed as a ready-made noun.
+    """
     if not sector:
-        return t("metric.total_budget_real" if real else "metric.total_budget", lang)
+        return {"metric": "metric.total_budget_real" if real else "metric.total_budget"}
     phrase = _sector_budget_phrase(sector, lang, real)
     if lang == "en":
-        return phrase
+        return {"metric": phrase}
     # "orçamento" / "budget" are masculine, so the metric dict is masculine.
-    return {"name": ("o " if lang == "pt" else "le ") + phrase, "plural": False, "feminine": False}
+    return {
+        "metric": {
+            "name": ("o " if lang == "pt" else "le ") + phrase,
+            "plural": False,
+            "feminine": False,
+        }
+    }
 
 
 def _budget_label(sector, lang):
@@ -265,7 +278,7 @@ def format_funding_source_narrative(df, country, lang="en", budget_terms="nomina
         )
         trend = get_segment_narrative_i18n(
             extractor=extractor,
-            metric=_budget_metric(sector, lang, real),
+            **_budget_metric(sector, lang, real),
             lang=lang,
         )
         if trend:
@@ -279,7 +292,7 @@ def format_funding_source_narrative(df, country, lang="en", budget_terms="nomina
             "narrative.funding_source_average",
             lang,
             country=country_label,
-            country_gen=genitive(lang, country_label),
+            country_gen=genitive(lang, t(f"country.{country}", lang, meta=True)),
             domestic_share=shares.mean(),
             foreign_share=100 - shares.mean(),
         )

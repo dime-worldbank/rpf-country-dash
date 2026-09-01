@@ -72,7 +72,7 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
     else:
         emp_narrative = t("narrative.emp_comp_balanced", lang)
 
-    func_gen = genitive(lang, func_label)
+    func_gen = genitive(lang, t(f"sector.{func.lower()}", lang, meta=True))
     country_display = t(f"country.{country_name}", lang)
     country_meta = _LANGUAGES[lang].get(f"country.{country_name}")
     intro_text = t("narrative.econ_breakdown_intro", lang,
@@ -161,7 +161,8 @@ def _generate_econ_figure(data, func, lang="en"):
         plot_bgcolor="white",
         yaxis_title=t(
             "axis.pct_total_func_expenditure", lang,
-            func=func_label, func_gen=genitive(lang, func_label),
+            func=func_label,
+            func_gen=genitive(lang, t(f"sector.{func.lower()}", lang, meta=True)),
         ),
         legend=dict(
             orientation="h",
