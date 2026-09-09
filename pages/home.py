@@ -1117,7 +1117,7 @@ def update_heading(country, lang):
     country_info =  t(f"country.{country}", lang, meta=True)
     country_gen = genitive(lang, country_info)
     return t(
-        "heading.country_regional_expenditure", lang, country_gen=country_gen,
+        "heading.country_regional_expenditure", lang, country_gen=country_gen, country=country
     )
 
 

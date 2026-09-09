@@ -242,7 +242,7 @@ def _budget_metric(sector, lang, real):
     runtime from the sector name, so it is passed as a ready-made noun.
     """
     if not sector:
-        return {"metric": "metric.total_budget_real" if real else "metric.total_budget"}
+        return {"metric": t("metric.total_budget_real", lang) if real else t("metric.total_budget", lang)}
     phrase = _sector_budget_phrase(sector, lang, real)
     if lang == "en":
         return {"metric": phrase}
