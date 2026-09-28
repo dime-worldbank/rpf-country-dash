@@ -276,6 +276,61 @@ class TestBuildModalInfo(unittest.TestCase):
             "https://www.worldbank.org/en/programs/boost-portal/country-data"
         )
 
+    def test_build_modal_info_french(self):
+        """Labels, source names and descriptions should be translated for lang='fr'."""
+        info = build_modal_info("overview-per-capita", "Kenya", self.source_meta, lang="fr")
+
+        # BOOST section - French
+        boost_section = info["source_sections"][0]
+        self.assertEqual(boost_section["label"], "Données de dépenses BOOST")
+        self.assertEqual(boost_section["source_name"], "BOOST de la Banque mondiale")
+
+        # Poverty rate section - French with description
+        poverty_section = info["source_sections"][1]
+        self.assertEqual(poverty_section["label"], "Taux de pauvreté")
+        self.assertIn("Banque mondiale", poverty_section["source_name"])
+        self.assertIsNotNone(poverty_section.get("description"))
+        self.assertIn("seuils de pauvreté", poverty_section["description"])
+
+    def test_build_modal_info_default_lang_is_english(self):
+        """Omitting lang should produce English output (backward compat)."""
+        info = build_modal_info("overview-total", "Kenya", self.source_meta)
+        section = info["source_sections"][0]
+        self.assertEqual(section["label"], "BOOST Expenditure Data")
+        self.assertEqual(section["source_name"], "World Bank BOOST")
+
+    def test_build_modal_info_country_scoped_source_included(self):
+        """A source with a ``countries`` whitelist shows when the current country is in it."""
+        info = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta)
+        labels = [s["label"] for s in info["source_sections"]]
+        # Togo Official Report has countries=["Togo"]; should be present for Togo.
+        self.assertIn("Togo Official Report", labels)
+
+    def test_build_modal_info_country_scoped_source_excluded(self):
+        """A source with a ``countries`` whitelist is filtered out for other countries."""
+        info = build_modal_info("revenue-expenditure-combined", "Kenya", self.source_meta)
+        labels = [s["label"] for s in info["source_sections"]]
+        # Togo Official Report has countries=["Togo"]; should NOT appear for Kenya.
+        self.assertNotIn("Togo Official Report", labels)
+        # Un-scoped sources (no ``countries`` field) still appear.
+        self.assertIn("GFS", labels)
+        self.assertIn("WEO", labels)
+
+    def test_build_modal_info_chart_level_info(self):
+        """Charts with ``info_key`` produce a translated chart-level ``info`` string."""
+        info_en = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta, lang="en")
+        self.assertIsNotNone(info_en.get("info"))
+        self.assertIn("composite view", info_en["info"].lower())
+
+        info_fr = build_modal_info("revenue-expenditure-combined", "Togo", self.source_meta, lang="fr")
+        self.assertIsNotNone(info_fr.get("info"))
+        self.assertIn("vue composite", info_fr["info"].lower())
+
+    def test_build_modal_info_no_chart_level_info(self):
+        """Charts without ``info_key`` return ``info=None``."""
+        info = build_modal_info("overview-total", "Kenya", self.source_meta)
+        self.assertIsNone(info.get("info"))
+
 
 if __name__ == "__main__":
     unittest.main()

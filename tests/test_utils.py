@@ -210,34 +210,34 @@ class TestAssessStatisticalConfidence(unittest.TestCase):
 class TestFormatCurrency(unittest.TestCase):
 
     def test_thousands(self):
-        # Bhutan: 1,000 BTN (Ngultrum) should format as "BTN 1.00 K"
+        # Bhutan: 1,000 BTN (Ngultrum) should format as "1.00 K BTN"
         result = format_currency(1000, "BTN")
-        self.assertEqual(result, "BTN 1.00 K")
+        self.assertEqual(result, "1.00 K BTN")
 
     def test_millions(self):
         # Kenya: 1.5M KES (Shilling) — typical government budget figure
         result = format_currency(1_500_000, "KES")
-        self.assertEqual(result, "KES 1.50 M")
+        self.assertEqual(result, "1.50 M KES")
 
     def test_billions(self):
         # Kenya: 2B KES — national GDP scale
         result = format_currency(2_000_000_000, "KES")
-        self.assertEqual(result, "KES 2.00 B")
+        self.assertEqual(result, "2.00 B KES")
 
     def test_small_value(self):
         # Bhutan: 250 BTN — values under 1000 have no suffix
         result = format_currency(250, "BTN")
-        self.assertEqual(result, "BTN 250.00")
+        self.assertEqual(result, "250.00 BTN")
 
     def test_zero(self):
         # Zero value edge case with Kenyan Shilling
         result = format_currency(0, "KES")
-        self.assertEqual(result, "KES 0.00")
+        self.assertEqual(result, "0.00 KES")
 
     def test_currency_code_used(self):
-        # Ensure the BTN prefix appears in the output
+        # Ensure the BTN suffix appears in the output
         result = format_currency(5000, "BTN")
-        self.assertTrue(result.startswith("BTN "))
+        self.assertTrue(result.endswith(" BTN"))
 
 
 
@@ -255,15 +255,15 @@ class TestAddCurrencyColumn(unittest.TestCase):
 
     def test_formatted_values_correct_btn(self):
         add_currency_column(self.df, "expenditure", "BTN")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "BTN 1.00 K")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "BTN 500.00 K")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "BTN 2.00 B")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "1.00 K BTN")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "500.00 K BTN")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "2.00 B BTN")
 
     def test_formatted_values_correct_kes(self):
         add_currency_column(self.df, "expenditure", "KES")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "KES 1.00 K")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "KES 500.00 K")
-        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "KES 2.00 B")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[0], "1.00 K KES")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[1], "500.00 K KES")
+        self.assertEqual(self.df["expenditure_formatted"].iloc[2], "2.00 B KES")
 
     def test_original_column_unchanged(self):
         add_currency_column(self.df, "expenditure", "BTN")
@@ -323,6 +323,27 @@ class TestMillify(unittest.TestCase):
     def test_zero(self):
         result = millify(0)
         self.assertEqual(result, "0.00")
+
+    # --- French number formatting: comma decimal + long-scale suffixes ---
+
+    def test_fr_thousands_uses_lowercase_k_and_comma(self):
+        self.assertEqual(millify(1500, lang="fr"), "1,50 k")
+
+    def test_fr_millions_same_suffix_as_en(self):
+        self.assertEqual(millify(2_000_000, lang="fr"), "2,00 M")
+
+    def test_fr_billions_uses_md_not_b(self):
+        # 10^9: EN "B" would mean something different (10^18) in French
+        # long-scale — so we use "Md" (milliard).
+        self.assertEqual(millify(2_000_000_000, lang="fr"), "2,00 Md")
+
+    def test_fr_trillions_uses_bn_not_t(self):
+        # 10^12: EN "T" (trillion short-scale) becomes FR "Bn" (billion
+        # long-scale, i.e. 10^12 in French).
+        self.assertEqual(millify(3_500_000_000_000, lang="fr"), "3,50 Bn")
+
+    def test_fr_small_number_has_comma_no_suffix(self):
+        self.assertEqual(millify(750, lang="fr"), "750,00")
 
 
 if __name__ == '__main__':

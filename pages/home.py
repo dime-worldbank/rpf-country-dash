@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import html, dcc, callback, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -9,6 +9,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 from utils import (
     add_currency_column,
+    apply_locale,
     filter_country_sort_year,
     filter_geojson_by_country,
     empty_plot,
@@ -20,13 +21,29 @@ from utils import (
     millify
 )
 
-from components import slider, get_slider_config, pefa, budget_increment_analysis
-from trend_narrative import get_segment_narrative, InsightExtractor
+from components import fiscal_balance, slider, get_slider_config, pefa, budget_increment_analysis, budget_funding_execution
+from trend_narrative import InsightExtractor
+from trend_narrative_i18n import get_segment_narrative_i18n
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
-from constants import COFOG_CATS, FUNC_COLORS, MAP_DISCLAIMER
+from constants import (
+    COFOG_CATS,
+    COFOG_KEY_MAP,
+    ECON_KEY_MAP,
+    FUNC_COLORS,
+    get_map_disclaimer,
+    translate_econ,
+    translate_func,
+    VIEW_COMPOSITE,
+    VIEW_OFFICIAL,
+    VIEW_GFS,
+    VIEW_WEO,
+    COMPOSITE_VIEW_COUNTRIES,
+)
+from translations import t, genitive, localize_currency_name
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
+import server_store
 
 
 db = QueryService.get_instance()
@@ -44,12 +61,6 @@ def layout():
                         dbc.Tabs(
                             id="overview-tabs",
                             active_tab="overview-tab-time",
-                            children=[
-                                dbc.Tab(label="Over Time", tab_id="overview-tab-time"),
-                                dbc.Tab(
-                                    label="Across Space", tab_id="overview-tab-space"
-                                ),
-                            ],
                             style={"marginBottom": "2rem"},
                         ),
                         html.Div(id="overview-content"),
@@ -57,8 +68,21 @@ def layout():
                 )
             ),
             dcc.Store(id="stored-data-pefa"),
+            dcc.Store(id="stored-data-revenue-budget"),
+            dcc.Store(id="stored-data-government-revenue-expenditure"),
         ]
     )
+
+
+@callback(
+    Output("overview-tabs", "children"),
+    Input("stored-language", "data"),
+)
+def update_overview_tab_labels(lang):
+    return [
+        dbc.Tab(label=t("tab.over_time", lang), tab_id="overview-tab-time"),
+        dbc.Tab(label=t("tab.across_space", lang), tab_id="overview-tab-space"),
+    ]
 
 
 @callback(
@@ -68,30 +92,52 @@ def layout():
 )
 def fetch_pefa_data_once(pefa_data, shared_data):
     if pefa_data is None and shared_data:
-        pefa = db.get_pefa(shared_data["countries"])
-        return {
-            "pefa": pefa.to_dict("records"),
-        }
+        server_store.get("pefa")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-revenue-budget", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_revenue_budget_data_once(revenue_data, shared_data):
+    if revenue_data is None and shared_data:
+        server_store.get("togo_revenue_budget")
+        return {"ready": True}
+    return dash.no_update
+
+@callback(
+    Output("stored-data-government-revenue-expenditure", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
+    Input("stored-data", "data"),
+)
+def fetch_government_revenue_expenditure_data_once(gov_data, shared_data):
+    if gov_data is None and shared_data:
+        server_store.get("government_revenue_expenditure")
+        return {"ready": True}
     return dash.no_update
 
 @callback(
     Output("overview-content", "children"),
     Input("overview-tabs", "active_tab"),
+    Input("stored-language", "data"),
 )
-def render_overview_content(tab):
+def render_overview_content(tab, lang):
+    lang = lang or "en"
     if tab == "overview-tab-time":
         return html.Div(
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Total Expenditure")
+                        html.H3(children=t("heading.total_expenditure", lang))
                     )
                 ),
                 dbc.Row(
                     dbc.Col(
                         html.P(
                             id="overview-narrative",
-                            children="loading...",
+                            children=t("loading", lang),
                         )
                     )
                 ),
@@ -122,7 +168,91 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Spending by Functional Categories")
+                        html.H3(children=t("heading.who_funds_budget", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        [
+                            html.P(
+                                id="funding-narrative",
+                                children=t("loading", lang),
+                            ),
+                            html.P(
+                                id="execution-narrative",
+                                children=t("loading", lang),
+                            ),
+                        ]
+                    )
+                ),
+                dbc.Row(
+                    [
+                        # How is the budget funded?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="funding-source-terms",
+                                        options=[
+                                            {
+                                                "label": t("radio.budget", lang),
+                                                "value": "nominal",
+                                            },
+                                            {
+                                                "label": t("radio.inflation_adjusted_budget", lang),
+                                                "value": "real",
+                                            },
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("funding-source"),
+                            ],
+                            xs={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                        # How much of the budget is spent?
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="budget-execution-metric",
+                                        options=[
+                                            {
+                                                "label": t("radio.execution_rate", lang),
+                                                "value": "execution_rate",
+                                            },
+                                            {
+                                                "label": t("radio.variance", lang),
+                                                "value": "variance",
+                                            },
+                                        ],
+                                        value="execution_rate",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("budget-execution"),
+                            ],
+                            xs={"size": 12, "offset": 0},
+                            lg={"size": 6, "offset": 0},
+                        ),
+                    ],
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.spending_by_func", lang))
                     )
                 ),
                 dbc.Row(
@@ -138,7 +268,7 @@ def render_overview_content(tab):
                         dbc.Col(
                             html.P(
                                 id="functional-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
@@ -153,11 +283,11 @@ def render_overview_content(tab):
                         dbc.Col([
                             html.P(
                                 id="func-growth-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                             html.P(
                                 id="func-growth-instruction",
-                                children=html.Small(html.Em("By default, only Overall Budget, Health, Education, and General Public Services are shown in the chart. Click on the legend to view the year-on-year budget growth rate for other functional categories.")),
+                                children=html.Small(html.Em(t("instruction.budget_legend", lang))),
                             )
                         ], xs=12, lg=4),
                         dbc.Col([
@@ -166,11 +296,11 @@ def render_overview_content(tab):
                                     id="budget-increment-radio",
                                     options=[
                                         {
-                                            "label": "Budget",
+                                            "label": t("radio.budget", lang),
                                             "value": "domestic_funded_budget",
                                         },
                                         {
-                                            "label": "Inflation-adjusted Budget",
+                                            "label": t("radio.inflation_adjusted_budget", lang),
                                             "value": "real_domestic_funded_budget",
                                         },
                                     ],
@@ -192,7 +322,7 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Spending by Economic Categories")
+                        html.H3(children=t("heading.spending_by_econ", lang))
                     )
                 ),
                 dbc.Row(
@@ -208,7 +338,7 @@ def render_overview_content(tab):
                         dbc.Col(
                             html.P(
                                 id="economic-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                             xs={"size": 12, "offset": 0},
                             sm={"size": 12, "offset": 0},
@@ -224,14 +354,64 @@ def render_overview_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Quality of Budget Institutions")
+                        html.H3(children=t("heading.fiscal_balance", lang))
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(
+                            [
+                                dbc.Label(
+                                    t("deficit.view.label", lang),
+                                    html_for="revenue-expenditure-view",
+                                    className="mb-0",
+                                ),
+                                dbc.RadioItems(
+                                    id="revenue-expenditure-view",
+                                    options=[
+                                        {"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE},
+                                        {"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL},
+                                        {"label": t("deficit.view.gfs", lang), "value": VIEW_GFS},
+                                        {"label": t("deficit.view.weo", lang), "value": VIEW_WEO},
+                                    ],
+                                    value=VIEW_COMPOSITE,
+                                    inline=True,
+                                ),
+                            ],
+                            className="d-flex align-items-center flex-wrap gap-2 pb-2",
+                        )
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="revenue-expenditure-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=3,
+                        ),
+                        dbc.Col(
+                            chart_container("revenue-expenditure-combined"),
+                            xs=12, lg=9,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.quality_budget", lang))
                     )
                 ),
                 dbc.Row(
                     dbc.Col(
                         html.P(
                             id="pefa-narrative",
-                            children="loading...",
+                            children=t("loading", lang),
                         ),
                     ),
                 ),
@@ -264,7 +444,7 @@ def render_overview_content(tab):
                     dbc.Col(
                         html.H3(
                             id="regional-expenditure-heading",
-                            children="Regional Expenditure",
+                            children=t("heading.regional_expenditure", lang),
                         )
                     )
                 ),
@@ -288,11 +468,11 @@ def render_overview_content(tab):
                                     id="expenditure-plot-radio",
                                     options=[
                                         {
-                                            "label": "  Per capita expenditure",
+                                            "label": t("radio.per_capita_expenditure_plain", lang),
                                             "value": "percapita",
                                         },
                                         {
-                                            "label": "  Total expenditure",
+                                            "label": t("radio.total_expenditure_plain", lang),
                                             "value": "total",
                                         },
                                     ],
@@ -303,7 +483,7 @@ def render_overview_content(tab):
                                         "margin-right": "20px",
                                     },
                                 ),
-                                disclaimer_tooltip("warning-sign", MAP_DISCLAIMER),
+                                disclaimer_tooltip("warning-sign", get_map_disclaimer(lang), lang=lang),
                             ],
                             className="disclaimer-div",
                             style={
@@ -337,7 +517,7 @@ def render_overview_content(tab):
                             html.Br(),
                             html.P(
                                 id="subnational-spending-narrative",
-                                children="loading ...",
+                                children=t("loading", lang),
                             ),
                         ]
                     )
@@ -347,64 +527,63 @@ def render_overview_content(tab):
         )
 
 
-def total_figure(df, currency_name, currency_code):
+def total_figure(df, currency_name, currency_code, lang="en"):
     fig = go.Figure()
-    add_currency_column(df, 'real_expenditure', currency_code)
-    df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code))
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
+    add_currency_column(df, 'real_expenditure', currency_code, lang=lang)
+    df['central_expenditure_formatted'] = (df['expenditure'] - df['decentralized_expenditure']).apply(lambda x: format_currency(x, currency_code, lang=lang))
+    add_currency_column(df, 'decentralized_expenditure', currency_code, lang=lang)
     fig.add_trace(
         go.Scatter(
-            name="Inflation Adjusted",
+            name=t("trace.inflation_adjusted", lang),
             x=df.year,
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
             customdata=np.column_stack([df['real_expenditure_formatted']]),
-            hovertemplate="Inflation Adjusted Expenditure: %{customdata[0]}<extra></extra>",
+            hovertemplate=t("hover.inflation_adjusted_expenditure", lang) + ": %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
         go.Bar(
-            name="Central",
+            name=t("trace.central", lang),
             x=df.year,
             y=df.expenditure - df.decentralized_expenditure,
             marker_color=CENTRAL_COLOR,
             customdata=np.column_stack([df['central_expenditure_formatted']]),
-            hovertemplate="Central Expenditure: %{customdata[0]}<extra></extra>",
+            hovertemplate=t("hover.central_expenditure", lang) + ": %{customdata[0]}<extra></extra>",
         )
     )
     fig.add_trace(
         go.Bar(
-            name="Regional",
+            name=t("trace.regional", lang),
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color=REGIONAL_COLOR,
             customdata=np.column_stack([df['decentralized_expenditure_formatted']]),
-            hovertemplate="Regional Expenditure: %{customdata[0]}<extra></extra>",
+            hovertemplate=t("hover.regional_expenditure", lang) + ": %{customdata[0]}<extra></extra>",
         )
     )
 
-    format_currency_yaxis(fig, currency_name, "Total Expenditure")
+    format_currency_yaxis(fig, currency_name, t("axis.total_expenditure", lang))
     fig.update_layout(
         barmode="stack",
-        title="How has total expenditure changed over time?",
+        title=t("chart.total_expenditure_over_time", lang),
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
         hovermode="x unified",
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def per_capita_figure(df, currency_name, currency_code):
-    add_currency_column(df, 'per_capita_expenditure', currency_code)
-    add_currency_column(df, 'per_capita_real_expenditure', currency_code)
+def per_capita_figure(df, currency_name, currency_code, lang="en"):
+    add_currency_column(df, 'per_capita_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'per_capita_real_expenditure', currency_code, lang=lang)
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
     fig.add_trace(
         go.Scatter(
-            name="Poverty Rate",
+            name=t("trace.poverty_rate", lang),
             x=df.year,
             y=df.poverty_rate,
             mode="lines+markers",
@@ -417,47 +596,47 @@ def per_capita_figure(df, currency_name, currency_code):
 
     fig.add_trace(
         go.Scatter(
-            name="Inflation Adjusted",
+            name=t("trace.inflation_adjusted", lang),
             x=df.year,
             y=df.per_capita_real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
             customdata=np.column_stack([df['per_capita_real_expenditure_formatted']]),
-            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata[0]}<extra></extra>",
+            hovertemplate=t("hover.inflation_adjusted_per_capita", lang) + ": %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
     fig.add_trace(
         go.Bar(
-            name="Per Capita",
+            name=t("trace.per_capita", lang),
             x=df.year,
             y=df.per_capita_expenditure,
             marker_color="#686dc3",
             customdata=np.column_stack([df['per_capita_expenditure_formatted']]),
-            hovertemplate="Per Capita Public Spending: %{customdata[0]}<extra></extra>",
+            hovertemplate=t("hover.per_capita_spending", lang) + ": %{customdata[0]}<extra></extra>",
         ),
         secondary_y=False,
     )
 
     fig.update_xaxes(tickformat="d")
-    fig.update_yaxes(title_text=f"Per Capita Expenditure ({currency_name})", secondary_y=False, fixedrange=True)
+    fig.update_yaxes(title_text=t("axis.per_capita_expenditure", lang, currency_name=currency_name), secondary_y=False, fixedrange=True)
     fig.update_yaxes(
-        title_text="Poverty Rate (%)",
+        title_text=t("axis.poverty_rate", lang),
         secondary_y=True,
         range=[-1, 100],
     )
     fig.update_layout(
         hovermode="x unified",
         barmode="stack",
-        title="How has per capita expenditure changed over time?",
+        title=t("chart.per_capita_over_time", lang),
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def overview_narrative(df):
+def overview_narrative(df, lang="en"):
     country = df.country_name.iloc[0]
 
     # Compute segments on-the-fly (filter only on real_expenditure to match pre-computed)
@@ -468,31 +647,35 @@ def overview_narrative(df):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric="total real expenditure")
+    trend_narrative = get_segment_narrative_i18n(
+        extractor=extractor,
+        metric=t("metric.total_real_expenditure", lang),
+        lang=lang,
+    )
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
-        text = f"After accounting for inflation, {trend_narrative} "
+        text = t("narrative.after_inflation", lang, trend_narrative=trend_narrative)
     else:
         text = ""
     latest = df[df.year == df.year.max()].iloc[0].to_dict()
     end_year = latest["year"]
     decentral_mean = df.expenditure_decentralization.mean() * 100
     decentral_latest = latest["expenditure_decentralization"] * 100
-    decentral_text = f"On average, {decentral_mean:.1f}% of total public spending is executed by local/regional government. "
+    decentral_text = t("narrative.decentral_mean", lang, mean=decentral_mean)
     if decentral_latest > 0:
-        decentral_text += f"In {end_year}, which is the latest year with data available, expenditure decentralization is {decentral_latest:.1f}%. "
+        decentral_text += t("narrative.decentral_latest", lang, year=end_year, pct=decentral_latest)
     text += (
         decentral_text
         if decentral_mean > 0
-        else f"BOOST does not have any local/regional spending data for {country}. "
+        else t("narrative.no_regional_data", lang, country=t(f"country.{country}", lang))
     )
 
     return text
 
 
 
-def functional_figure(df):
+def functional_figure(df, lang="en"):
     categories = sorted(df.func.unique(), reverse=True)
 
     fig = go.Figure()
@@ -501,14 +684,14 @@ def functional_figure(df):
         cat_df = df[df.func == cat]
         fig.add_trace(
             go.Bar(
-                name=cat,
+                name=translate_func(cat, lang),
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=FUNC_COLORS[cat],
                 customdata=cat_df["expenditure_formatted"],
                 hovertemplate=(
-                    "<b>Year</b>: %{x}<br>"
-                    "<b>Expenditure</b>: %{customdata} (%{y:.1f}%)"
+                    "<b>" + t("hover.year", lang) + "</b>: %{x}<br>"
+                    "<b>" + t("hover.expenditure_label", lang) + "</b>: %{customdata} (%{y:.1f}%)"
                 ),
             )
         )
@@ -517,89 +700,117 @@ def functional_figure(df):
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
-        title="How has sector prioritization changed over time?",
+        title=t("chart.sector_prioritization", lang),
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def functional_narrative(df):
+def functional_narrative(df, lang="en"):
     country = df.country_name.iloc[0]
     categories = df.func.unique().tolist()
-    text = f"For {country}, BOOST provides functional spending data on {len(categories)} categories, based on Classification of the Functions of Government (COFOG). "
+    text = t("narrative.func_cofog_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
 
     if len(categories) < len(COFOG_CATS):
         missing_cats = set(COFOG_CATS) - set(categories)
+        # Use narrative form so "La catégorie manquante est la santé" reads
+        # naturally instead of the label-style "est Santé".
+        translated_missing = [translate_func(c, lang, narrative=True) for c in missing_cats]
         if len(missing_cats) == 1:
-            text += f"The cartegory we do not have data on is {list(missing_cats)[0]}. "
+            text += t("narrative.missing_single", lang, cats=translated_missing[0])
         else:
-            text += f"The cartegories we do not have data on include {', '.join(missing_cats)}. "
+            # Use _join_list to get "A, B et C" / "A, B, and C" — not the
+            # raw ", ".join which produces ungrammatical "A, B" with no "et".
+            text += t("narrative.missing_multi", lang,
+                      cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("func")["percentage"].mean().reset_index()
     n = 3
     top_funcs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
-    text += f"On average, the top {n} spending functional categories are "
-    text += format_func_cats_with_numbers(top_funcs, format_percentage)
+    text += t("narrative.func_top_n", lang, n=n)
+    text += _format_cat_list(top_funcs, "func", lambda n: format_percentage(n, lang), lang)
     text += "; "
 
     bottom_funcs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
-    text += f"while the bottom {n} spenders are "
-    text += format_func_cats_with_numbers(bottom_funcs, format_percentage)
+    text += t("narrative.func_bottom_n", lang, n=n)
+    text += _format_cat_list(bottom_funcs, "func", lambda n: format_percentage(n, lang), lang)
     text += ". "
 
     std_percentage = df.groupby("func")["percentage"].std().reset_index()
     m = 2
     stable_funcs = std_percentage.sort_values(by="percentage", ascending=True).head(m)
-    text += f"Relatively, public expenditure remain the most stable in "
-    text += format_func_cats_with_numbers(stable_funcs, format_std)
+    text += t("narrative.func_stable", lang)
+    text += _format_cat_list(stable_funcs, "func", lambda n: format_std(n, lang), lang)
     text += "; "
 
     flux_funcs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
-    text += f"while spending in "
-    text += format_func_cats_with_numbers(flux_funcs, format_std)
-    text += f" fluctuate the most over time. "
+    text += t("narrative.func_fluctuate", lang)
+    text += _format_cat_list(flux_funcs, "func", lambda n: format_std(n, lang), lang)
+    text += t("narrative.fluctuate_end", lang)
 
     return text
 
 
-def format_func_cats_with_numbers(df, format_number_func):
-    return format_cats_with_numbers(df, format_func_cat, format_number_func)
+def _join_list(items, lang):
+    """Join strings with the language's conjunction.
+
+      ["A"]           → "A"
+      ["A", "B"]      → "A et B" (FR) / "A and B" (EN)
+      ["A", "B", "C"] → "A, B et C" (FR) / "A, B, and C" (EN)
+    """
+    if not items:
+        return ""
+    if len(items) == 1:
+        return items[0]
+    and_word = t("word.and", lang)
+    if len(items) == 2:
+        return f" {and_word} ".join(items)
+    return ", ".join(items[:-1]) + f", {and_word} {items[-1]}"
 
 
-def format_cats_with_numbers(df, format_cat_func, format_number_func):
+def _format_cat_list(df, kind, format_num, lang="en"):
+    """Render a category dataframe as "A (40%), B (30%) et C (20%)".
+
+    *kind* is either ``"func"`` or ``"econ"`` — matches the dataframe
+    column and picks the right translator. Always uses the narrative
+    (articled, lowercase) form so the output flows as prose.
+    """
+    translator = translate_func if kind == "func" else translate_econ
     items = [
-        f"{format_cat_func(row)} ({format_number_func(row['percentage'])})"
+        f"{translator(row[kind], lang, narrative=True)} ({format_num(row['percentage'])})"
         for _, row in df.iterrows()
     ]
-
-    if len(items) == 2:
-        return " and ".join(items)
-    elif len(items) > 2:
-        return ", ".join(items[:-1]) + f", and {items[-1]}"
-    elif items:
-        return items[0]
-    else:
-        return ""
+    return _join_list(items, lang)
 
 
-def format_percentage(num):
-    return f"{num:.1f}%"
+def format_percentage(num, lang="en"):
+    """Format ``num`` as ``"12.3%"`` (EN) or comma decimals for FR/PT.
+
+    Output is concatenated directly into narratives via _format_cat_list
+    (it doesn't flow through t(), so the _FrenchFormatter in translations/
+    doesn't see it). Handle the decimal swap here.
+    """
+    result = f"{num:.1f}%"
+    if lang in {"fr", "pt"}:
+        result = result.replace(".", ",")
+    return result
 
 
-def format_std(num):
-    return f"std={num:.1f}"
-
-
-def format_func_cat(row):
-    return row["func"]
+def format_std(num, lang="en"):
+    """Format a standard-deviation value with a localized label and decimal."""
+    num_str = f"{num:.1f}"
+    if lang in {"fr", "pt"}:
+        num_str = num_str.replace(".", ",")
+    return f"{t('label.std_abbrev', lang)} = {num_str}"
 
 
 def subnational_spending_narrative(
     df_spending,
     df_poverty,
     currency_code,
+    lang="en",
     top_n=3,
     exp_thresh=0.5,
     per_capita_thresh=1000,
@@ -620,19 +831,29 @@ def subnational_spending_narrative(
 
     if top_n_percentage > exp_thresh:
         exp_narrative = [
-            f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure, indicating a significant concentration in these areas. ",
+            t("narrative.top_n_concentration", lang,
+              n=top_n, regions=', '.join(top_n_total.index),
+              pct=f"{top_n_percentage:.1%}"),
         ]
     else:
-        exp_narrative = [f"The top {top_n} regions—{', '.join(top_n_total.index)}—account for {top_n_percentage:.1%} of the total government expenditure."]
+        exp_narrative = [
+            t("narrative.top_n_regions", lang,
+              n=top_n, regions=', '.join(top_n_total.index),
+              pct=f"{top_n_percentage:.1%}"),
+        ]
 
-    exp_narrative.append(html.Em("(Select the Total expenditure option above to see the breakdown by total amount)."))
+    exp_narrative.append(html.Em(t("narrative.select_total", lang)))
 
     if per_capita_range > per_capita_thresh:
-        per_capita_narrative = f"Per capita spending varies widely across regions, ranging from {format_currency(per_capita_expenditure.min(), currency_code)} \
-            to {format_currency(per_capita_expenditure.max(), currency_code)}, with a median of {format_currency(per_capita_median, currency_code)}. This indicates substantial variation in resource allocation per person."
+        per_capita_narrative = t("narrative.per_capita_wide_variation", lang,
+                                  min_val=format_currency(per_capita_expenditure.min(), currency_code, lang=lang),
+                                  max_val=format_currency(per_capita_expenditure.max(), currency_code, lang=lang),
+                                  median=format_currency(per_capita_median, currency_code, lang=lang))
     else:
-        per_capita_narrative = f"Per capita spending ranges from {format_currency(per_capita_expenditure.min(), currency_code)} to {format_currency(per_capita_expenditure.max(), currency_code)}, \
-            with a median of {format_currency(per_capita_median, currency_code)}. The distribution is relatively even across regions."
+        per_capita_narrative = t("narrative.per_capita_even_distribution", lang,
+                                  min_val=format_currency(per_capita_expenditure.min(), currency_code, lang=lang),
+                                  max_val=format_currency(per_capita_expenditure.max(), currency_code, lang=lang),
+                                  median=format_currency(per_capita_median, currency_code, lang=lang))
 
     corr_narrative = ""
     if not df_poverty.empty:
@@ -645,8 +866,9 @@ def subnational_spending_narrative(
         if len(corr_df) >= 3:
             corr_narrative = get_correlation_text(
                 corr_df,
-                x_col={"col_name": "poverty", "display": "poverty rates"},
-                y_col={"col_name": "per_capita", "display": "per capita spending"},
+                x_col={"col_name": "poverty", "display": t("label.poverty_rates_lower", lang)},
+                y_col={"col_name": "per_capita", "display": t("label.per_capita_spending_lower", lang)},
+                lang=lang,
             )
             corr_narrative = corr_narrative[0].upper() + corr_narrative[1:]
 
@@ -654,13 +876,13 @@ def subnational_spending_narrative(
 
 
 
-def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
+def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme, lang="en"):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
     if df.empty:
-        return empty_plot("Sub-national expenditure data not available")
+        return empty_plot(t("error.subnat_expenditure_unavailable", lang))
     country_name = df.country_name.iloc[0]
     fig = px.choropleth_mapbox(
         df,
@@ -670,7 +892,7 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         locations="adm1_name",
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         zoom=zoom,
         range_color=[zmin, zmax],
         color_continuous_scale=get_map_colorscale(theme),
@@ -686,11 +908,14 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> Data not available<extra></extra>"
+    no_data_trace.hovertemplate = (
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        "<b>" + t("hover.expenditure_label", lang) + ":</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
+    )
     fig.add_trace(no_data_trace)
-    
+
     fig.update_layout(
-        title="How much was spent in each region?",
+        title=t("chart.regional_spending", lang),
         plot_bgcolor="white",
         margin=dict(l=40, r=40, t=60, b=80),
         coloraxis_colorbar=dict(
@@ -700,18 +925,21 @@ def regional_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat,
         ),
         legend=dict(orientation="h", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
-    fig.data[0].hovertemplate = "<b>Region:</b> %{location}<br><b>Expenditure:</b> %{z}<extra></extra>"
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
-    return fig
+    fig.data[0].hovertemplate = (
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        "<b>" + t("hover.expenditure_label", lang) + ":</b> %{z}<extra></extra>"
+    )
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
+    return apply_locale(fig, lang)
 
 
-def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme):
+def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, theme, lang="en"):
     all_regions = [feature["properties"]["region"] for feature in geojson["features"]]
     regions_without_data = [r for r in all_regions if r not in df.adm1_name.values]
     df_no_data = pd.DataFrame({"region_name": regions_without_data})
     df_no_data["adm1_name"] = None
     if df.empty:
-        return empty_plot("Sub-national population data not available ")
+        return empty_plot(t("error.subnat_population_unavailable", lang))
     country_name = df.country_name.iloc[0]
     df = df[df.adm1_name != "Central Scope"]
 
@@ -726,7 +954,7 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
         locations="adm1_name",
         featureidkey="properties.region",
         center={"lat": lat, "lon": lon},
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         zoom=zoom,
         range_color=[zmin, zmax],
         custom_data=["per_capita_expenditure_formatted"],
@@ -743,11 +971,15 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Per capita expenditure:</b> Data not available<extra></extra>"
+    per_capita_label = t("hover.per_capita_spending", lang)
+    no_data_trace.hovertemplate = (
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        + f"<b>{per_capita_label}:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
+    )
     fig.add_trace(no_data_trace)
 
     fig.update_layout(
-        title="How much was spent per person in each region?",
+        title=t("chart.regional_per_capita", lang),
         plot_bgcolor="white",
         margin=dict(l=40, r=40, t=60, b=80),
         coloraxis_colorbar=dict(
@@ -757,24 +989,27 @@ def regional_percapita_spending_choropleth(geojson, disputed_geojson, df, zmin, 
         ),
     )
     fig.data[0].hovertemplate = (
-        "<b>Region:</b> %{location}<br>"
-        + "<b>Per capita expenditure:</b> %{customdata[0]}<extra></extra>"
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        + f"<b>{per_capita_label}:</b> %{{customdata[0]}}<extra></extra>"
     )
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
-    return fig
+    return apply_locale(fig, lang)
 
 
 INCOME_LEVEL_THRESHOLD = {
-    "LIC": ("$3.00", "Low Income"),
-    "LMC": ("$4.20", "Lower Middle Income"),
-    "UMC": ("$8.30", "Upper Middle Income"),
-    "HIC": ("$8.30", "High Income"),
+    # (threshold, translation_key) — the level name is looked up at render
+    # time via t() so French users see "à faible revenu" etc. rather than
+    # the English "Low Income" literal leaking into FR narratives.
+    "LIC": ("$3.00", "income.low"),
+    "LMC": ("$4.20", "income.lower_middle"),
+    "UMC": ("$8.30", "income.upper_middle"),
+    "HIC": ("$8.30", "income.high"),
 }
 
-def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme):
+def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, lat, lon, zoom, income_level, theme, lang="en", selected_year=None):
     if df[df.region_name != "National"].empty:
-        return empty_plot("Sub-national poverty data not available")
+        return empty_plot(t("error.subnat_poverty_unavailable", lang))
     # TODO align accents across all datasets
     df = df.copy()
     df["region_name"] = df.region_name.map(lambda x: remove_accents(x))
@@ -797,11 +1032,10 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
         center={"lat": lat, "lon": lon},
         zoom=zoom,
         range_color=[zmin, zmax],
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         hover_data={"region_name": True, poverty_col: ":.2f"},
         color_continuous_scale=get_map_colorscale(theme),
     )
-    # TODO: add a note to Details modal, explaining poverty rate threshold used is country income-level dependent
 
     no_data_trace = px.choropleth_mapbox(
         df_no_data,
@@ -814,13 +1048,24 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
     ).data[0]
     no_data_trace.showscale = False
     no_data_trace.showlegend = False
-    no_data_trace.hovertemplate = "<b>Region:</b> %{location}<br><b>Poverty rate:</b> Data not available<extra></extra>"
+    poverty_label = t("trace.poverty_rate", lang)
+    no_data_trace.hovertemplate = (
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        + f"<b>{poverty_label}:</b> " + t("hover.data_not_available", lang) + "<extra></extra>"
+    )
     fig.add_trace(no_data_trace)
 
+    # Parallel footnotes. The carried-forward data year is shown only when the
+    # poverty survey year differs from the selected (expenditure) year — i.e. the
+    # map is showing an earlier survey. The threshold note always shows.
+    notes = []
+    if selected_year is None or year != selected_year:
+        notes.append(t("annotation.displaying_data_from", lang, year=year))
+    notes.append(_get_poverty_source_text(income_level, lang))
     fig.update_layout(
-        title="What percent of the population is living in poverty?",
+        title=t("chart.poverty_map", lang),
         plot_bgcolor="white",
-        margin=dict(l=40, r=40, t=60, b=80),
+        margin=dict(l=40, r=40, t=60, b=95),
         coloraxis_colorbar=dict(
             title="",
             orientation="v",
@@ -831,38 +1076,48 @@ def subnational_poverty_choropleth(geojson, disputed_geojson, df, zmin, zmax, la
                 xref="paper",
                 yref="paper",
                 x=0,
-                y=-0.13,
+                y=-0.13 - 0.06 * i,
                 xanchor="left",
-                text=f"Displaying data from {year}. {_get_poverty_source_text(income_level)}",
+                text=note,
                 showarrow=False,
                 font=dict(size=10),
-            ),
+            )
+            for i, note in enumerate(notes)
         ],
     )
     fig.data[0].hovertemplate = (
-        "<b>Region:</b> %{location}<br>"
-        + "<b>Poverty rate:</b> %{z:.2f}%<extra></extra>"
+        "<b>" + t("hover.region", lang) + ":</b> %{location}<br>"
+        + f"<b>{poverty_label}:</b> %{{z:.2f}}%<extra></extra>"
     )
-    fig = add_disputed_overlay(fig, disputed_geojson, zoom)
+    fig = add_disputed_overlay(fig, disputed_geojson, zoom, lang=lang)
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def _get_poverty_source_text(income_level):
+def _get_poverty_source_text(income_level, lang="en"):
     if income_level and income_level in INCOME_LEVEL_THRESHOLD:
-        threshold, level_name = INCOME_LEVEL_THRESHOLD[income_level]
-        return f"Poverty rate ({threshold} threshold for {level_name} country)."
-    return "Poverty rate ($3.00 threshold)."
+        threshold, level_key = INCOME_LEVEL_THRESHOLD[income_level]
+        return t(
+            "annotation.poverty_threshold", lang,
+            threshold=threshold, level_name=t(level_key, lang),
+        )
+    return t("annotation.poverty_threshold_default", lang)
 
 
 @callback(
     Output("regional-expenditure-heading", "children"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_heading(country):
+def update_heading(country, lang):
+    lang = lang or "en"
     if not country:
-        return "Regional Expenditure"
-    return f"{country} Regional Expenditure"
+        return t("heading.regional_expenditure", lang)
+    country_display = t(f"country.{country}", lang)
+    return t(
+        "heading.country_regional_expenditure", lang,
+        country=country_display, country_gen=genitive(lang, country_display),
+    )
 
 
 @callback(
@@ -872,18 +1127,23 @@ def update_heading(country):
     Input("stored-data", "data"),
     Input('stored-basic-country-data', 'data'),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def render_overview_total_figure(data, basic_country_data, country):
-    if not data or not basic_country_data:
+def render_overview_total_figure(data, basic_country_data, country, lang):
+    lang = lang or "en"
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
+    all_countries = server_store.get("expenditure_w_poverty")
     df = filter_country_sort_year(all_countries, country)
 
-    # Extract currency_name once at callback level
-    basic_info = pd.DataFrame(basic_country_data['basic_country_info']).T.loc[country]
-    currency_name = basic_info['currency_name']
+    basic_info = server_store.get("basic_country_info")[country]
     currency_code = basic_info['currency_code']
-    return total_figure(df, currency_name, currency_code), per_capita_figure(df, currency_name, currency_code), overview_narrative(df)
+    currency_name = localize_currency_name(
+        basic_info.get("currency_name"),
+        lang=lang,
+        currency_code=currency_code,
+    )
+    return total_figure(df, currency_name, currency_code, lang=lang), per_capita_figure(df, currency_name, currency_code, lang=lang), overview_narrative(df, lang=lang)
 
 
 @callback(
@@ -891,24 +1151,26 @@ def render_overview_total_figure(data, basic_country_data, country):
     Output("functional-narrative", "children"),
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
-    Input('stored-basic-country-data', 'data')
+    Input('stored-basic-country-data', 'data'),
+    Input("stored-language", "data"),
 )
-def render_overview_func_figure(data, country, basic_country_data):
-    if not data or not basic_country_data:
+def render_overview_func_figure(data, country, basic_country_data, lang):
+    lang = lang or "en"
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_by_country_func_year"])
+    all_countries = server_store.get("func_by_country_year")
     func_df = filter_country_sort_year(all_countries, country)
     total_per_year = func_df.groupby("year")["expenditure"].sum().reset_index()
     func_df = func_df.merge(total_per_year, on="year", suffixes=("", "_total"))
     func_df["percentage"] = (
         func_df["expenditure"] / func_df["expenditure_total"]
     ) * 100
-    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
     func_df["expenditure_formatted"] = func_df["expenditure"].apply(
-        lambda x: format_currency(x, currency_code)
+        lambda x: format_currency(x, currency_code, lang=lang)
     )
 
-    return functional_figure(func_df), functional_narrative(func_df)
+    return functional_figure(func_df, lang=lang), functional_narrative(func_df, lang=lang)
 
 
 @callback(
@@ -916,12 +1178,14 @@ def render_overview_func_figure(data, country, basic_country_data):
     Output("economic-narrative", "children"),
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
-    Input('stored-basic-country-data', 'data')
+    Input('stored-basic-country-data', 'data'),
+    Input("stored-language", "data"),
 )
-def render_overview_econ_figure(data, country, basic_country_data):
-    if not data or not basic_country_data:
+def render_overview_econ_figure(data, country, basic_country_data, lang):
+    lang = lang or "en"
+    if not data or not basic_country_data or not country:
         return dash.no_update, dash.no_update
-    all_countries = pd.DataFrame(data["expenditure_by_country_econ_year"])
+    all_countries = server_store.get("econ_by_country_year")
     econ_df = filter_country_sort_year(all_countries, country)
     total_per_year = econ_df.groupby("year")["expenditure"].sum().reset_index()
     econ_df = econ_df.merge(total_per_year, on="year", suffixes=("", "_total"))
@@ -929,9 +1193,9 @@ def render_overview_econ_figure(data, country, basic_country_data):
         econ_df["expenditure"] / econ_df["expenditure_total"]
     ) * 100
 
-    currency_code = basic_country_data["basic_country_info"][country]["currency_code"]
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
 
-    return economic_figure(econ_df, currency_code), economic_narrative(econ_df)
+    return economic_figure(econ_df, currency_code, lang=lang), economic_narrative(econ_df, lang=lang)
 
 
 ECON_CAT_MAP = {
@@ -944,6 +1208,9 @@ ECON_CAT_MAP = {
     "Other grants and transfers": "Grants and transfers",
     "Other expenses": "Other expenses",
 }
+
+# ECON_KEY_MAP moved to constants.py so chart helpers in components/
+# can import it without a circular dependency on pages/home.py.
 ECON_PALETTE = QUALITATIVE_ALT
 ECON_COLORS = {
     cat: ECON_PALETTE[i % len(ECON_PALETTE)]
@@ -951,7 +1218,7 @@ ECON_COLORS = {
 }
 
 
-def economic_figure(df, currency_code):
+def economic_figure(df, currency_code, lang="en"):
     categories = sorted(df.econ.unique(), reverse=True)
 
     fig = go.Figure()
@@ -960,18 +1227,18 @@ def economic_figure(df, currency_code):
         cat_df = df[df.econ == cat]
         cat_df_with_formatted = cat_df.copy()
         cat_df_with_formatted['expenditure_formatted'] = cat_df_with_formatted['expenditure'].apply(
-            lambda x: format_currency(x, currency_code)
+            lambda x: format_currency(x, currency_code, lang=lang)
         )
         fig.add_trace(
             go.Bar(
-                name=ECON_CAT_MAP[cat],
+                name=translate_econ(cat, lang),
                 x=cat_df.year,
                 y=cat_df.percentage,
                 marker_color=ECON_COLORS[cat],
                 customdata=np.column_stack([cat_df_with_formatted['expenditure_formatted']]),
                 hovertemplate=(
-                    "<b>Year</b>: %{x}<br>"
-                    "<b>Expenditure</b>: %{customdata} (%{y:.1f}%)"
+                    "<b>" + t("hover.year", lang) + "</b>: %{x}<br>"
+                    "<b>" + t("hover.expenditure_label", lang) + "</b>: %{customdata} (%{y:.1f}%)"
                 ),
             )
         )
@@ -980,60 +1247,53 @@ def economic_figure(df, currency_code):
     fig.update_yaxes(fixedrange=True)
     fig.update_layout(
         barmode="stack",
-        title="How much was spent on each economic category?",
+        title=t("chart.econ_category_spending", lang),
         plot_bgcolor="white",
         legend=dict(orientation="v", x=1.02, y=1, xanchor="left", yanchor="top"),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def economic_narrative(df):
+def economic_narrative(df, lang="en"):
     country = df.country_name.iloc[0]
     categories = df.econ.unique().tolist()
-    text = f"For {country}, BOOST provides spending data on {len(categories)} economic categories, generally based on Economic Classification of Expense outlined in the Government Finance Statistics (GFS) framework. "
+    text = t("narrative.econ_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
 
     if len(categories) < len(ECON_CAT_MAP):
         missing_cats = set(ECON_CAT_MAP.keys()) - set(categories)
-        missing_cats = list(ECON_CAT_MAP[c] for c in missing_cats)
-        if len(missing_cats) == 1:
-            text += f"The cartegory we do not have data on is {missing_cats[0]}. "
+        translated_missing = [translate_econ(c, lang, narrative=True) for c in missing_cats]
+        if len(translated_missing) == 1:
+            text += t("narrative.missing_single", lang, cats=translated_missing[0])
         else:
-            text += f"The cartegories we do not have data on include {', '.join(missing_cats)}. "
+            text += t("narrative.missing_multi", lang,
+                      cats=_join_list(translated_missing, lang))
 
     mean_percentage = df.groupby("econ")["percentage"].mean().reset_index()
     n = 3
     top_econs = mean_percentage.sort_values(by="percentage", ascending=False).head(n)
-    text += f"On average, the top {n} spending economic categories are "
-    text += format_econ_cats_with_numbers(top_econs, format_percentage)
+    text += t("narrative.econ_top_n", lang, n=n)
+    text += _format_cat_list(top_econs, "econ", lambda n: format_percentage(n, lang), lang)
     text += "; "
 
     bottom_econs = mean_percentage.sort_values(by="percentage", ascending=True).head(n)
-    text += f"while the bottom {n} spenders are "
-    text += format_econ_cats_with_numbers(bottom_econs, format_percentage)
+    text += t("narrative.econ_bottom_n", lang, n=n)
+    text += _format_cat_list(bottom_econs, "econ", lambda n: format_percentage(n, lang), lang)
     text += ". "
 
     std_percentage = df.groupby("econ")["percentage"].std().reset_index()
     m = 2
     stable_econs = std_percentage.sort_values(by="percentage", ascending=True).head(m)
-    text += f"Relatively, public expenditure remain the most stable in "
-    text += format_econ_cats_with_numbers(stable_econs, format_std)
+    text += t("narrative.econ_stable", lang)
+    text += _format_cat_list(stable_econs, "econ", lambda n: format_std(n, lang), lang)
     text += "; "
 
     flux_econs = std_percentage.sort_values(by="percentage", ascending=False).head(m)
-    text += f"while spending in "
-    text += format_econ_cats_with_numbers(flux_econs, format_std)
-    text += f" fluctuate the most over time. "
+    text += t("narrative.econ_fluctuate", lang)
+    text += _format_cat_list(flux_econs, "econ", lambda n: format_std(n, lang), lang)
+    text += t("narrative.fluctuate_end", lang)
 
     return text
-
-
-def format_econ_cats_with_numbers(df, format_number_func):
-    return format_cats_with_numbers(df, format_econ_cat, format_number_func)
-
-
-def format_econ_cat(row):
-    return ECON_CAT_MAP[row["econ"]]
 
 
 @callback(
@@ -1045,17 +1305,33 @@ def format_econ_cat(row):
     Output("year-slider", "tooltip"),
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_year_range(data, country):
-    try:
-        data = data["basic_country_info"]
-        expenditure_years = data[country].get("expenditure_years", [])
-        poverty_years = data[country].get("poverty_years", [])
-
-        slider_configs = get_slider_config(expenditure_years, poverty_years)
-        return slider_configs
-    except Exception as e:
+def update_year_range(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
         return {"display": "block"}, {}, 0, 0, 0, {}
+    try:
+        country_info = server_store.get("basic_country_info")
+        expenditure_years = country_info[country].get("expenditure_years", [])
+        poverty_years = country_info[country].get("poverty_years", [])
+
+        slider_configs = get_slider_config(expenditure_years, poverty_years, lang=lang)
+        return slider_configs
+    except (KeyError, TypeError, ValueError):
+        return {"display": "block"}, {}, 0, 0, 0, {}
+
+
+def _poverty_display_year(country, selected_year):
+    """Latest subnational-poverty survey year <= selected_year for this country,
+    or None. Shared by both subnational maps so the poverty map picks its
+    (possibly carried-forward) render year and the spending map can tell when its
+    selected year differs from it — labelling both only then."""
+    available_years = (
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("poverty_years", [])
+    )
+    relevant = [y for y in available_years if y <= selected_year]
+    return relevant[-1] if relevant else None
 
 
 @callback(
@@ -1066,30 +1342,32 @@ def update_year_range(data, country):
     Input("expenditure-plot-radio", "value"),
     Input("year-slider", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    Input("stored-language", "data"),
     State("theme-store", "data"),
 )
-def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries, theme):
+def render_subnational_spending_figures(data, country_data, country, plot_type, year, subnat_boundaries, lang, theme):
+    lang = lang or "en"
     if year is None or not data or not country_data or not country:
-        return empty_plot("Data not available")
+        return empty_plot(t("error.data_not_available", lang))
 
-    geojson = subnat_boundaries[country]
-    disputed_geojson = filter_geojson_by_country(data["disputed_boundaries"], country)
+    geojson = server_store.get("subnat_boundaries")
+    disputed_geojson = filter_geojson_by_country(server_store.get("disputed_boundaries"), country)
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
     filtered_geojson = filter_geojson_by_country(geojson, country)
-    df = pd.DataFrame(data["expenditure_by_country_geo1_year"])
+    df = server_store.get("geo1_expenditure")
     df = filter_country_sort_year(df, country)
     df = df[df.adm1_name != "Central Scope"]
-    currency_code = country_data["basic_country_info"][country]["currency_code"]
-    add_currency_column(df, 'expenditure', currency_code)
-    add_currency_column(df, 'per_capita_expenditure', currency_code)
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
+    add_currency_column(df, 'expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'per_capita_expenditure', currency_code, lang=lang)
 
     if df.empty or year not in df.year.unique():
-        return empty_plot("No expenditure data available for the selected year")
+        return empty_plot(t("error.no_expenditure_data_year", lang))
 
     df_for_year = df[df.year == year]
     legend_percapita_min, legend_percapita_max = (
@@ -1102,7 +1380,7 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     )
 
     if plot_type == "percapita":
-        return regional_percapita_spending_choropleth(
+        fig = regional_percapita_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1112,9 +1390,10 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lon,
             zoom,
             theme=theme,
+            lang=lang,
         )
     else:
-        return regional_spending_choropleth(
+        fig = regional_spending_choropleth(
             filtered_geojson,
             disputed_geojson,
             df_for_year,
@@ -1124,7 +1403,19 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
             lon,
             zoom,
             theme=theme,
+            lang=lang,
         )
+
+    # When the poverty map is showing a different (carried-forward) year, label the
+    # spending year here too so the two maps are unambiguous.
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is not None and poverty_year != year:
+        fig.add_annotation(
+            xref="paper", yref="paper", x=0, y=-0.13, xanchor="left",
+            text=t("annotation.displaying_data_from", lang, year=year),
+            showarrow=False, font=dict(size=10),
+        )
+    return fig
 
 
 @callback(
@@ -1134,42 +1425,44 @@ def render_subnational_spending_figures(data, country_data, country, plot_type, 
     Input("country-select", "value"),
     Input("year-slider", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    Input("stored-language", "data"),
     State("theme-store", "data"),
 )
-def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries, theme):
+def render_subnational_poverty_figure(subnational_data, country_data, country, year, subnat_boundaries, lang, theme):
+    lang = lang or "en"
     if year is None or not subnational_data or not country_data or not country:
-        return empty_plot("Data not available")
+        return empty_plot(t("error.data_not_available", lang))
 
-    geojson = subnat_boundaries[country]
+    geojson = server_store.get("subnat_boundaries")
     disputed_geojson = filter_geojson_by_country(
-        subnational_data["disputed_boundaries"], country
+        server_store.get("disputed_boundaries"), country
     )
     filtered_geojson = filter_geojson_by_country(geojson, country)
-    df = pd.DataFrame(subnational_data["subnational_poverty_rate"])
-    df = filter_country_sort_year(df, country)
+    df = server_store.get("subnational_poverty_rate")
+    # Poverty surveys are sparse and some predate START_YEAR. The map carries the
+    # latest survey forward to the selected year, so keep every survey year (unlike
+    # the annual charts) — otherwise early years can't reach their most recent
+    # survey (e.g. 2010–2013 would miss the 2008 survey and show "not available").
+    df = filter_country_sort_year(df, country, start_year=0)
 
-    legend_min, legend_max = country_data["basic_country_info"][country].get(
+    legend_min, legend_max = server_store.get("basic_country_info")[country].get(
         "poverty_bounds", (None, None)
     )
     lat, lon = [
-        country_data["basic_country_info"][country].get(k)
+        server_store.get("basic_country_info")[country].get(k)
         for k in ["display_lat", "display_lon"]
     ]
-    zoom = country_data["basic_country_info"][country]["zoom"]
+    zoom = server_store.get("basic_country_info")[country]["zoom"]
 
-    available_years = country_data["basic_country_info"][country].get(
-        "poverty_years", []
-    )
-    relevant_years = [x for x in available_years if x <= year]
+    poverty_year = _poverty_display_year(country, year)
+    if poverty_year is None or df.empty:
+        return empty_plot(t("error.poverty_unavailable", lang))
 
-    if not relevant_years or df.empty:
-        return empty_plot("Poverty data not available for this time period")
-
-    income_level = country_data["basic_country_info"][country].get("income_level")
+    income_level = server_store.get("basic_country_info")[country].get("income_level")
     return subnational_poverty_choropleth(
         filtered_geojson,
         disputed_geojson,
-        df[df.year == relevant_years[-1]],
+        df[df.year == poverty_year],
         legend_min,
         legend_max,
         lat,
@@ -1177,6 +1470,8 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
         zoom,
         income_level,
         theme=theme,
+        lang=lang,
+        selected_year=year,
     )
 
 
@@ -1186,35 +1481,38 @@ def render_subnational_poverty_figure(subnational_data, country_data, country, y
     Input("stored-basic-country-data", "data"),
     Input("country-select", "value"),
     Input("year-slider", "value"),
+    Input("stored-language", "data"),
 )
 def render_subnational_spending_narrative(
-    subnational_data, country_data, country, year
+    subnational_data, country_data, country, year, lang
 ):
+    lang = lang or "en"
     if year is None or not subnational_data or not country_data or not country:
-        return "Data not available"
+        return t("error.data_not_available", lang)
 
-    df_poverty = pd.DataFrame(subnational_data["subnational_poverty_rate"])
-    df_poverty = filter_country_sort_year(df_poverty, country)
+    df_poverty = server_store.get("subnational_poverty_rate")
+    # Keep every survey year (like the map, no START_YEAR clamp) and reference the
+    # same carried-forward survey the map shows, rather than averaging all years.
+    df_poverty = filter_country_sort_year(df_poverty, country, start_year=0)
 
-    available_years = country_data["basic_country_info"][country].get(
-        "poverty_years", []
-    )
-    currency_code = country_data["basic_country_info"][country]["currency_code"]
-    relevant_years = [x for x in available_years if x <= year]
+    poverty_year = _poverty_display_year(country, year)
+    currency_code = server_store.get("basic_country_info")[country]["currency_code"]
 
-    if not relevant_years or df_poverty.empty:
+    if poverty_year is None or df_poverty.empty:
         df_poverty = pd.DataFrame()
+    else:
+        df_poverty = df_poverty[df_poverty.year == poverty_year]
 
-    df_spending = pd.DataFrame(subnational_data["expenditure_by_country_geo1_year"])
+    df_spending = server_store.get("geo1_expenditure")
     df_spending = filter_country_sort_year(df_spending, country)
     df_spending = df_spending[
         (df_spending.adm1_name != "Central Scope") & (df_spending.year == year)
     ]
 
     if df_spending.empty:
-        return "No spending data available"
+        return t("error.no_spending_data", lang)
 
-    return subnational_spending_narrative(df_spending, df_poverty, currency_code)
+    return subnational_spending_narrative(df_spending, df_poverty, currency_code, lang=lang)
 
 
 @callback(
@@ -1224,21 +1522,23 @@ def render_subnational_spending_narrative(
     Input("stored-data", "data"),
     Input("stored-data-pefa", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def render_pefa_overall(data, pefa_data, country):
-    if not pefa_data or not data:
+def render_pefa_overall(data, pefa_data, country, lang):
+    lang = lang or "en"
+    if not pefa_data or not data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
-    pefa_df = pd.DataFrame(pefa_data["pefa"])
+    pefa_df = server_store.get("pefa")
     country_pefa_df = filter_country_sort_year(pefa_df, country)
 
-    all_countries_pov = pd.DataFrame(data["expenditure_w_poverty_by_country_year"])
+    all_countries_pov = server_store.get("expenditure_w_poverty")
     country_pov_df = filter_country_sort_year(all_countries_pov, country)
 
     return (
-        pefa.pefa_narrative(country_pefa_df),
-        pefa.pefa_overall_figure(country_pefa_df, country_pov_df),
-        pefa.pefa_pillar_heatmap(country_pefa_df),
+        pefa.pefa_narrative(country_pefa_df, lang=lang),
+        pefa.pefa_overall_figure(country_pefa_df, country_pov_df, lang=lang),
+        pefa.pefa_pillar_heatmap(country_pefa_df, lang=lang),
     )
 
 
@@ -1248,6 +1548,160 @@ def render_pefa_overall(data, pefa_data, country):
     Input("stored-data-func-econ", "data"),
     Input("country-select", "value"),
     Input("budget-increment-radio", "value"),
+    Input("stored-language", "data"),
 )
-def render_budget_func_changes(data, country, exp_type):
-    return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type)
+def render_budget_func_changes(data, country, exp_type, lang):
+    lang = lang or "en"
+    return budget_increment_analysis.render_fig_and_narrative(data, country, exp_type, lang=lang)
+
+
+@callback(
+    Output("funding-source", "figure"),
+    Output("funding-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("funding-source-terms", "value"),
+)
+def render_funding_source(data, country, lang, budget_terms):
+    lang = lang or "en"
+    budget_terms = budget_terms or "nominal"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return budget_funding_execution.render_funding(country, lang=lang, budget_terms=budget_terms)
+
+
+@callback(
+    Output("budget-execution", "figure"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("budget-execution-metric", "value"),
+)
+def render_budget_execution(data, country, lang, metric):
+    lang = lang or "en"
+    metric = metric or "execution_rate"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_figure(country, lang=lang, metric=metric)
+
+
+@callback(
+    Output("execution-narrative", "children"),
+    Input("stored-data", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_execution_narrative(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_narrative(country, lang=lang)
+
+
+def _get_revenue_budget_context(country):
+    """Load country-scoped fiscal-balance inputs from server store."""
+    national_df = filter_country_sort_year(server_store.get("togo_revenue_budget"), country)
+    gov_df = filter_country_sort_year(server_store.get("government_revenue_expenditure"), country)
+    gfs_df, weo_df = fiscal_balance.split_imf_sources(gov_df)
+    basic_info = server_store.get("basic_country_info")[country]
+    return national_df, gfs_df, weo_df, basic_info
+
+
+@callback(
+    Output("revenue-expenditure-view", "options"),
+    Output("revenue-expenditure-view", "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("stored-data-revenue-budget", "data"),
+    State("revenue-expenditure-view", "value"),
+)
+def update_revenue_expenditure_view_options(country, lang, revenue_data, current_view):
+    lang = lang or "en"
+
+    # Official needs a national report; composite needs GFS/WEO to be comparable,
+    # which only holds where subnational activity is negligible (Togo, not e.g. Colombia).
+    official_available = False
+    if country and revenue_data:
+        national_df, _, _, _ = _get_revenue_budget_context(country)
+        official_available = national_df is not None and not national_df.empty
+    composite_available = country in COMPOSITE_VIEW_COUNTRIES
+
+    available = {VIEW_GFS, VIEW_WEO}
+    if composite_available:
+        available.add(VIEW_COMPOSITE)
+    if official_available:
+        available.add(VIEW_OFFICIAL)
+
+    options = []
+    if composite_available:
+        options.append({"label": t("deficit.view.composite", lang), "value": VIEW_COMPOSITE})
+    if official_available:
+        options.append({"label": t("deficit.view.official", lang), "value": VIEW_OFFICIAL})
+    options.append({"label": t("deficit.view.gfs", lang), "value": VIEW_GFS})
+    options.append({"label": t("deficit.view.weo", lang), "value": VIEW_WEO})
+
+    # Default to the richest available view: composite, else official, else WEO
+    # (WEO has broader year coverage than GFS).
+    if composite_available:
+        default_view = VIEW_COMPOSITE
+    elif official_available:
+        default_view = VIEW_OFFICIAL
+    else:
+        default_view = VIEW_WEO
+
+    # Reset on country switch; otherwise keep the current view if still valid.
+    if ctx.triggered_id == "country-select" or current_view not in available:
+        new_view = default_view
+    else:
+        new_view = current_view
+
+    return options, new_view
+
+
+@callback(
+    Output("revenue-expenditure-combined", "figure"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
+)
+def render_revenue_expenditure_combined(revenue_data, gov_data, country, country_data, view_mode, lang):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
+    return fiscal_balance.combined_figure(
+        national_df, gfs_df, weo_df,
+        currency_code=basic_info["currency_code"],
+        currency_name=localize_currency_name(
+            basic_info.get("currency_name"),
+            lang=lang or "en",
+            currency_code=basic_info["currency_code"],
+        ),
+        view_mode=view_mode or VIEW_COMPOSITE,
+        lang=lang or "en",
+    )
+
+
+@callback(
+    Output("revenue-expenditure-narrative", "children"),
+    Input("stored-data-revenue-budget", "data"),
+    Input("stored-data-government-revenue-expenditure", "data"),
+    Input("country-select", "value"),
+    Input("stored-basic-country-data", "data"),
+    Input("revenue-expenditure-view", "value"),
+    Input("stored-language", "data"),
+)
+def render_revenue_expenditure_narrative(revenue_data, gov_data, country, country_data, view_mode, lang):
+    if not revenue_data or not gov_data or not country_data or not country:
+        return dash.no_update
+
+    national_df, gfs_df, weo_df, basic_info = _get_revenue_budget_context(country)
+    return fiscal_balance.narrative(
+        national_df, gfs_df, weo_df, basic_info["currency_code"],
+        view_mode=view_mode or VIEW_COMPOSITE,
+        lang=lang or "en",
+    )

@@ -1,6 +1,6 @@
-dash==2.17.1
+dash==2.18.2
 dash-bootstrap-components==1.6.0
-pandas>=2.0
+pandas>=2.1
 rsconnect-python
 databricks-sql-connector[pyarrow]
 databricks-sdk
@@ -11,4 +11,5 @@ bcrypt
 dotenv
 plotly==5.22.0
 colormath
-trend-narrative>=0.3.0
+trend-narrative>=0.5.0
+Babel

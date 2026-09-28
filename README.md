@@ -1,5 +1,5 @@
 # RPF-Country-Dash
-Dash app for displaying visualizations fro RPF project
+Dash app for displaying visualizations for RPF project
 
 ## Development
 
@@ -38,6 +38,105 @@ python -m unittest discover tests/
 
 Make sure all tests pass locally before sending a PR.
 
+## Internationalization (i18n)
+
+This application supports **English**, **French**, and **Brazilian Portuguese** with full internationalization:
+
+- **UI:** Language selector in the application header
+- **Narratives:** Automated spending and outcome narratives generated in both languages
+- **Metadata:** All chart titles, labels, and help text translated
+
+### Supported Languages
+
+| Code | Language |
+|------|----------|
+| `en` | English |
+| `fr` | Français |
+| `pt` | Português (Brasil) |
+
+### Using Different Languages
+
+Select your preferred language from the language dropdown in the application header. Your preference is stored in the browser.
+
+### For Developers: Working with Translations
+
+**Translation Files:**
+- `translations/__init__.py` - Translation system and grammar helpers (genitive, preposition, elision, article stripping)
+- `translations/en.py` - English translations (40KB)
+- `translations/fr.py` - French translations with grammatical properties (50KB)
+- `translations/pt.py` - Brazilian Portuguese translations with grammatical properties
+
+**Grammar Helpers for French and Portuguese:**
+
+The `translations/__init__.py` module provides language-specific grammar functions:
+- `genitive(lang, name)` - Handles "of X" constructions, including French `de/du/des` and Portuguese `de/da/do/das/dos`
+- `preposition(lang, noun_or_meta)` - Handles location expressions such as French `en/au/aux` and Portuguese `em/na/no/nas/nos`
+- `elide_que(lang, name)` - Handles French `que` vs `qu'` elision before vowels
+- `strip_article(lang, name)` - Removes leading articles for dropdown labels
+
+**Adding Translations:**
+
+1. Add English key-value pair to `translations/en.py`
+2. Add French translation to `translations/fr.py` and Brazilian Portuguese translation to `translations/pt.py`
+   - **All `sector.*`, `country.*`, and `func.*` entries that need grammar MUST use dict format with grammatical properties** to support dynamic prepositions:
+     ```python
+     "sector.health": {"name": "santé", "plural": False, "feminine": True},
+     "func.example": {"name": "exemple", "plural": False, "feminine": False},
+     "country.Kenya": {"name": "o Quênia", "plural": False, "feminine": False, "article": "o"},
+     ```
+   - **For metrics used in trend-narrative**, use dict format with grammatical properties:
+     ```python
+     "metric.example": {
+         "name": "les dépenses",
+         "plural": True,
+         "feminine": True
+     }
+     ```
+   - Plain string values are acceptable for other content that doesn't need grammatical agreement
+3. Use `t("key.name", lang)` to access translations in code
+4. For nouns used after "de/of", wrap with `genitive(lang, name)`
+5. For language-specific prepositions, use `preposition(lang, noun_or_meta)` with sector/func/country metadata
+
+**Testing Translations:**
+
+Narratives are generated via the `trend-narrative` package. To test:
+1. Set language to French or Portuguese in the UI
+2. Verify narrative text renders correctly with proper:
+   - Verb agreement (singular/plural)
+   - Decimal separators (comma in French and Portuguese: 0,52; period in English: 0.52)
+   - Article contractions (for example, French `du/de/des`, Portuguese `do/da/dos/das`)
+   - Genitive constructions
+
+### Narrative Generation
+
+This app generates automated narratives about government spending using the `trend-narrative` package. English and French are generated directly by that package. For Portuguese, the app first tries `trend-narrative` with `pt`, then `ptbr`; only if those language codes are unsupported does it fall back to English for the package-generated narrative fragment while the surrounding dashboard text remains Portuguese.
+
+#### Segment Narratives
+
+Analyze spending trends over time (e.g., "between 2015 and 2020, real expenditure increased 50%")
+
+**Supported Metrics:**
+- Real expenditure
+- Per capita spending
+- Total real expenditure
+
+#### Relationship Narratives
+
+Analyze correlations between spending and outcomes (e.g., "spending and health outcomes show a strong positive pattern")
+
+**Supported Outcomes:**
+- **Health:** UHC coverage index
+- **Education:** School attendance, Learning poverty rate
+
+#### Example French Narrative Output
+
+```
+Après prise en compte de l'inflation, entre 2015 et 2020, les dépenses 
+réelles ont augmenté de 50,00 (+50,00 %), maintenant une trajectoire constante.
+```
+
+Narratives respect language-specific formatting where package support is available. Portuguese dashboard templates and app-generated numbers use comma decimals and Portuguese article/preposition helpers; package-generated trend fragments use Portuguese output if `trend-narrative` accepts `pt` or `ptbr`, otherwise English fallback.
+
 ## Development within docker container
 1. Edit .env to update your environment variables after copying the sample env file. (Do not use quotations around the values)
 
@@ -61,3 +160,35 @@ SECRET_KEY=yoursecretkey
 ```
 
 The app will read usernames and salted passwords from the database, so be sure to configure them there: see `QueryService.get_user_credentials`. You may use [scripts/hash_password.py](scripts/hash_password.py) to hash passwords.
+
+## Persistent query cache
+
+Databricks queries are slow, so results are cached on local disk as parquet
+files. The cache survives worker/process restarts, so users rarely wait on a
+cold query. Credential queries bypass the disk cache (`persistent=False`).
+
+Invalidation is driven by an external clear endpoint. The upstream data
+pipeline calls it after loading new data; the endpoint clears both the parquet
+cache and the in-memory `server_store` so the next dashboard visitor sees
+fresh data. Repopulation is lazy — the first visitor after a clear pays the
+DB cost; everyone after them hits the cache.
+
+### Env vars
+
+| Name | Default | Purpose |
+|---|---|---|
+| `QUERY_CACHE_DIR` | `./cache/queries` | Directory where parquet files live. |
+| `CACHE_REFRESH_TOKEN` | *(unset)* | Shared secret for the clear endpoint. If unset, the endpoint returns `503`. |
+
+### Endpoint
+
+Set `CACHE_REFRESH_TOKEN` to a strong random value and have the pipeline call:
+
+```bash
+curl -X POST \
+  -H "X-Refresh-Token: $CACHE_REFRESH_TOKEN" \
+  https://<host>/api/cache/clear
+```
+
+Response is `{"status": "ok", "cleared_at": <epoch>}`. HTTP `200` = cleared,
+`401` = bad token, `503` = endpoint disabled (token env var unset).

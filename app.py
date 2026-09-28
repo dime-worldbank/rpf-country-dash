@@ -1,6 +1,4 @@
 import dash_bootstrap_components as dbc
-import pandas as pd
-import json
 import os
 
 
@@ -12,6 +10,7 @@ from dash import (
     Output,
     State,
     MATCH,
+    ALL,
     ctx,
     page_container,
     page_registry,
@@ -20,7 +19,6 @@ from dash import (
 )
 from urllib.parse import parse_qs, urlparse
 
-from components.func_operational_vs_capital_spending import prepare_prop_econ_by_func_df
 from components.source_metadata_popover import (
     CHART_METADATA,
     build_modal_children,
@@ -30,11 +28,13 @@ from components.source_metadata_popover import (
 from flask_login import logout_user, current_user
 from auth import AUTH_ENABLED
 from queries import QueryService
+import server_store
 from server import server
+from translations import t, strip_article, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
-    SHOW_FOOTER, FOOTER_ACKNOWLEDGMENT_TEXT,
+    SHOW_FOOTER,
 )
 
 app = Dash(
@@ -71,16 +71,36 @@ db = QueryService.get_instance()
 header = html.Div(
     [
         html.Div(
-            id="user-status-header",
-            children=[
+            [
                 html.A(
-                    children="logout",
+                    o["label"],
+                    id={"type": "lang-link", "index": o["value"]},
                     n_clicks=0,
-                    id="logout-button",
-                    style={"display": "none"},
+                    className="lang-link",
+                    style={"cursor": "pointer"},
                 )
+                for o in LANGUAGE_OPTIONS
             ],
-        )
+            id="language-links",
+            className="language-links",
+        ),
+        html.A(
+            # A masked Span colors via `background-color` so the icon can
+            # follow the theme (white in wbg, black in quartz) — plain <img>
+            # can't inherit a fill color. See #logout-button rules in
+            # assets/90_custom.css.
+            children=html.Span(className="logout-icon", role="img",
+                               **{"aria-label": t("nav.logout", DEFAULT_LANGUAGE)}),
+            n_clicks=0,
+            id="logout-button",
+            style={"display": "none"},
+        ),
+        dbc.Tooltip(
+            t("nav.logout", DEFAULT_LANGUAGE),
+            id="logout-tooltip",
+            target="logout-button",
+            placement="bottom-start",
+        ),
     ],
     id="header",
 )
@@ -102,12 +122,8 @@ sidebar = html.Div(
         ),
         html.Hr(),
         dbc.Nav(
-            [
-                dbc.NavLink("Overview", href=get_relative_path("home"), active="exact"),
-                dbc.NavLink("Education", href=get_relative_path("education"), active="exact"),
-                dbc.NavLink("Health", href=get_relative_path("health"), active="exact"),
-                dbc.NavLink("About", href=get_relative_path("about"), active="exact"),
-            ],
+            id="sidebar-nav",
+            vertical=True,
             pills=True,
         ),
     ],
@@ -123,7 +139,11 @@ app_footer = html.Div(
             href="https://www.worldbank.org/",
             target="_blank",
         ),
-        html.Span(FOOTER_ACKNOWLEDGMENT_TEXT, className="footer-acknowledgment"),
+        html.Span(
+            t("footer.supported_by", DEFAULT_LANGUAGE),
+            id="footer-acknowledgment",
+            className="footer-acknowledgment",
+        ),
         html.A(
             html.Img(src=app.get_asset_url("FM_umbrella_trust_fund_logo.jpg"), alt="Financial Management Umbrella Trust Fund", className="footer-logo"),
             href="https://www.worldbank.org/en/programs/financial-management-umbrella-program",
@@ -145,6 +165,7 @@ dummy_div = html.Div(id="div-for-redirect")
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
+        dcc.Store(id="stored-language", storage_type="local", data=DEFAULT_LANGUAGE),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
         dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
@@ -170,6 +191,48 @@ def layout():
 
 
 app.layout = layout
+
+
+@app.callback(
+    Output("stored-language", "data"),
+    Input({"type": "lang-link", "index": ALL}, "n_clicks"),
+)
+def update_language(clicks):
+    if not ctx.triggered_id:
+        return DEFAULT_LANGUAGE
+    return ctx.triggered_id["index"]
+
+
+@app.callback(
+    Output({"type": "lang-link", "index": ALL}, "className"),
+    Input("stored-language", "data"),
+)
+def update_active_lang(lang):
+    return [
+        "lang-link active-lang" if o["value"] == lang else "lang-link"
+        for o in LANGUAGE_OPTIONS
+    ]
+
+
+@app.callback(
+    Output("sidebar-nav", "children"),
+    Input("stored-language", "data"),
+)
+def update_nav_links(lang):
+    return [
+        dbc.NavLink(t("nav.overview", lang), href=get_relative_path("home"), active="exact"),
+        dbc.NavLink(t("nav.education", lang), href=get_relative_path("education"), active="exact"),
+        dbc.NavLink(t("nav.health", lang), href=get_relative_path("health"), active="exact"),
+        dbc.NavLink(t("nav.about", lang), href=get_relative_path("about"), active="exact"),
+    ]
+
+
+@app.callback(
+    Output("footer-acknowledgment", "children"),
+    Input("stored-language", "data"),
+)
+def update_footer_acknowledgment(lang):
+    return t("footer.supported_by", lang or DEFAULT_LANGUAGE)
 
 
 @app.callback(
@@ -199,20 +262,25 @@ def display_page_or_redirect(pathname, logout_clicks):
 @app.callback(Output("logout-button", "style"), Input("url", "pathname"))
 def update_logout_button_visibility(pathname):
     if AUTH_ENABLED and current_user.is_authenticated:
-        return {"display": "block", "text-decoration": "underline", "cursor": "pointer"}
+        return {"display": "block", "cursor": "pointer"}
     else:
         return {"display": "none"}
+
+
+@app.callback(
+    Output("logout-tooltip", "children"),
+    Input("stored-language", "data"),
+)
+def update_logout_tooltip(lang):
+    return t("nav.logout", lang or DEFAULT_LANGUAGE)
 
 
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
 def fetch_data_once(data):
     if data is None:
-        df = db.get_expenditure_w_poverty_by_country_year()
+        df = server_store.get("expenditure_w_poverty")
         countries = sorted(df["country_name"].unique())
-        return {
-            "countries": countries,
-            "expenditure_w_poverty_by_country_year": df.to_dict("records"),
-        }
+        return {"ready": True, "countries": countries}
     return no_update
 
 @app.callback(
@@ -220,44 +288,8 @@ def fetch_data_once(data):
 )
 def fetch_func_data_once(data):
     if data is None:
-        func_econ_df = db.get_expenditure_by_country_func_econ_year()
-
-        agg_dict = {
-            "expenditure": "sum",
-            "budget": "sum",
-            "real_expenditure": "sum",
-            "domestic_funded_budget": "sum",
-            "decentralized_expenditure": "sum",
-            "central_expenditure": "sum",
-            "per_capita_expenditure": "sum",
-            "per_capita_real_expenditure": "sum",
-        }
-
-        func_df = func_econ_df.groupby(
-            ["country_name", "year", "func"], as_index=False
-        ).agg(agg_dict)
-        func_df["expenditure_decentralization"] = (
-            func_df["decentralized_expenditure"] / func_df["expenditure"]
-        )
-        func_df["real_domestic_funded_budget"] = (
-            func_df["real_expenditure"] / func_df["expenditure"]
-        ) * func_df["domestic_funded_budget"]
-        econ_df = func_econ_df.groupby(
-            ["country_name", "year", "econ"], as_index=False
-        ).agg(agg_dict)
-        econ_df["expenditure_decentralization"] = (
-            econ_df["decentralized_expenditure"] / econ_df["expenditure"]
-        )
-        prop_econ_by_func_df = prepare_prop_econ_by_func_df(func_econ_df, agg_dict)
-
-        return {
-            "expenditure_by_country_func_econ_year": func_econ_df.to_dict("records"),
-            "expenditure_by_country_func_year": func_df.to_dict("records"),
-            "expenditure_by_country_econ_year": econ_df.to_dict("records"),
-            "econ_expenditure_prop_by_func_country_year": prop_econ_by_func_df.to_dict(
-                "records"
-            ),
-        }
+        server_store.get("func_econ_raw")
+        return {"ready": True}
     return no_update
 
 
@@ -268,32 +300,12 @@ def fetch_func_data_once(data):
 )
 def fetch_subnational_data_once(data, country_data):
     if data is None and country_data:
-        countries = country_data["countries"]
-        df_disputed = db.get_disputed_boundaries(countries)
-
-        disputed_geojson = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "properties": {"country": x[0], "region": x[2]},
-                    "geometry": json.loads(x[1]),
-                }
-                for x in zip(df_disputed.country_name, df_disputed.boundary, df_disputed.region_name)
-            ],
-        }
-
-        poverty_df = db.get_subnational_poverty_rate(countries)
-        geo1_df = db.get_expenditure_by_country_geo1_year()
-        geo1_func_df = db.expenditure_and_outcome_by_country_geo1_func_year()
-        geo0_sub_func_df = db.get_expenditure_by_country_sub_func_year()
-
-        return {
-            "subnational_poverty_rate": poverty_df.to_dict("records"),
-            "disputed_boundaries": disputed_geojson,
-            "expenditure_by_country_geo1_year": geo1_df.to_dict("records"),
-            "expenditure_and_outcome_by_country_geo1_func_year": geo1_func_df.to_dict("records"),
-            "expenditure_by_country_sub_func_year": geo0_sub_func_df.to_dict("records"),
-        }
+        server_store.get("subnational_poverty_rate")
+        server_store.get("disputed_boundaries")
+        server_store.get("geo1_expenditure")
+        server_store.get("geo1_func_expenditure")
+        server_store.get("sub_func_expenditure")
+        return {"ready": True}
     return no_update
 
 
@@ -302,16 +314,28 @@ def fetch_subnational_data_once(data, country_data):
     Output("country-select", "value"),
     Input("stored-data", "data"),
     Input("url", "search"),
+    Input("stored-language", "data"),
     State("country-select", "value"),
 )
-def display_data(data, search, current_country):
+def display_data(data, search, lang, current_country):
     """
     Populate country dropdown and optionally select country from URL.
     Usage: ?country=Kenya or ?country=Kenya&theme=wbg
+
+    The dropdown value remains the raw English country name (used as a
+    data key throughout the app). Only the visible label is localized.
     """
+    lang = lang or "en"
+
     def get_country_select_options(countries):
-        options = list({"label": c, "value": c} for c in countries)
-        options[0]["selected"] = True
+        # Dropdown label drops the article ("Kenya", not "le Kenya") while
+        # `value` stays the raw English key used throughout the app.
+        options = [
+            {"label": strip_article(lang, t(f"country.{c}", lang)), "value": c}
+            for c in countries
+        ]
+        if options:
+            options[0]["selected"] = True
         return options
 
     if data is not None:
@@ -328,9 +352,9 @@ def display_data(data, search, current_country):
                     selected_country = url_country
             return get_country_select_options(countries), selected_country
 
-        # URL changed but we already have a country selected - keep current
+        # URL changed or language changed but we already have a country — keep it
         return get_country_select_options(countries), current_country
-    return ["No data available"], ""
+    return [t("error.no_data_available", lang)], ""
 
 
 @app.callback(
@@ -341,51 +365,8 @@ def display_data(data, search, current_country):
 )
 def fetch_country_data_once(countries, subnational_data, country_data):
     if country_data is None and countries and subnational_data:
-        country_labels = [x["label"] for x in countries]
-        country_df = db.get_basic_country_data(country_labels)
-        country_info = country_df.set_index("country_name").T.to_dict()
-
-        expenditure_df = pd.DataFrame(
-            subnational_data["expenditure_by_country_geo1_year"],
-            columns=["country_name", "year"],
-        )
-        poverty_df = pd.DataFrame(
-            subnational_data["subnational_poverty_rate"],
-            columns=["country_name", "year", "poverty_rate"],
-        )
-
-        expenditure_years = (
-            expenditure_df.groupby("country_name")["year"]
-            .apply(lambda x: sorted(x.unique()))
-            .to_dict()
-        )
-        poverty_years = (
-            poverty_df.groupby("country_name")["year"]
-            .apply(lambda x: sorted(x.unique()))
-            .to_dict()
-        )
-
-        poverty_level_stats = (
-            pd.merge(country_df, poverty_df, on="country_name")
-            .groupby("income_level")["poverty_rate"]
-            .agg(["min", "max"])
-            .reset_index()
-        )
-        poverty_level_stats = (
-            poverty_level_stats.set_index("income_level").apply(tuple, axis=1).to_dict()
-        )
-
-        for country, years in expenditure_years.items():
-            country_info[country]["expenditure_years"] = years
-
-        for country, years in poverty_years.items():
-            country_info[country]["poverty_years"] = years
-
-        for country, info in country_info.items():
-            country_income_level = info["income_level"]
-            info["poverty_bounds"] = poverty_level_stats[country_income_level]
-
-        return {"basic_country_info": country_info}
+        server_store.get("basic_country_info")
+        return {"ready": True}
     return no_update
 
 
@@ -395,31 +376,13 @@ def fetch_country_data_once(countries, subnational_data, country_data):
     Input("country-select", "value"),
 )
 def fetch_subnat_boundary_data_once(geo_data, country):
-    if not country:
+    if not country or geo_data:
         return no_update
 
-    if geo_data is None:
-        data_to_store = {}
-    else:
-        data_to_store = geo_data
-
-    if data_to_store.get(country):
-        return data_to_store
-
-    db = QueryService.get_instance()
-    df = db.get_adm_boundaries([country])
-    boundaries_geojson = {
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "properties": {"country": x[0], "region": x[1]},
-                "geometry": json.loads(x[2]),
-            }
-            for x in zip(df.country_name, df.admin1_region, df.boundary)
-        ],
-    }
-    data_to_store[country] = boundaries_geojson
-    return data_to_store
+    # Factory loads all countries' boundaries in one DB call; once populated,
+    # the store's "ready" flag gates every downstream map-rendering callback.
+    server_store.get("subnat_boundaries")
+    return {"ready": True}
 
 
 @app.callback(
@@ -535,15 +498,17 @@ def fetch_source_metadata_once(data):
     Input({"type": "source-info-btn", "index": MATCH}, "n_clicks"),
     State("country-select", "value"),
     State("stored-source-metadata", "data"),
+    State("stored-language", "data"),
     prevent_initial_call=True,
 )
-def open_source_info_modal(n_clicks, country, source_meta):
+def open_source_info_modal(n_clicks, country, source_meta, lang):
     if not n_clicks:
         return no_update, no_update
 
+    lang = lang or "en"
     index = ctx.triggered_id["index"]
-    info = build_modal_info(index, country, source_meta)
-    return True, build_modal_children(info)
+    info = build_modal_info(index, country, source_meta, lang=lang)
+    return True, build_modal_children(info, lang=lang)
 
 
 @app.callback(

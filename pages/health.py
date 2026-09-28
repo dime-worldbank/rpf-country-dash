@@ -5,15 +5,17 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
-from constants import MAP_DISCLAIMER
+from constants import get_map_disclaimer
+from translations import t, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
+import server_store
 from utils import (
     add_currency_column,
+    apply_locale,
     empty_plot,
     filter_country_sort_year,
     format_currency,
-    generate_error_prompt,
     get_percentage_change_text,
     millify,
     require_login,
@@ -26,9 +28,15 @@ from components.edu_health_across_space import (
     update_hd_index_map,
     render_func_subnat_rank,
 )
+from components.year_slider import slider
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
-from trend_narrative import get_relationship_narrative, get_segment_narrative, InsightExtractor
+from components import budget_funding_execution
+from trend_narrative import InsightExtractor
+from trend_narrative_i18n import (
+    get_relationship_narrative_i18n,
+    get_segment_narrative_i18n,
+)
 
 db = QueryService.get_instance()
 
@@ -45,12 +53,6 @@ def layout():
                         dbc.Tabs(
                             id="health-tabs",
                             active_tab="health-tab-time",
-                            children=[
-                                dbc.Tab(label="Over Time", tab_id="health-tab-time"),
-                                dbc.Tab(
-                                    label="Across Space", tab_id="health-tab-space"
-                                ),
-                            ],
                             style={"marginBottom": "2rem"},
                         ),
                         html.Div(id="health-content"),
@@ -60,9 +62,19 @@ def layout():
             dcc.Store(id="stored-data-health-total"),
             dcc.Store(id="stored-data-health-outcome"),
             dcc.Store(id="stored-data-health-private"),
-            dcc.Store(id="stored-data-health-sub-func"),
         ]
     )
+
+@callback(
+    Output("health-tabs", "children"),
+    Input("stored-language", "data"),
+)
+def update_health_tab_labels(lang):
+    return [
+        dbc.Tab(label=t("tab.over_time", lang), tab_id="health-tab-time"),
+        dbc.Tab(label=t("tab.across_space", lang), tab_id="health-tab-space"),
+    ]
+
 
 @callback(
     Output("stored-data-health-total", "data"),
@@ -71,13 +83,8 @@ def layout():
 )
 def fetch_health_total_data_once(health_data, shared_data):
     if health_data is None and shared_data:
-        # filter shared data down to health specific
-        exp_by_func = pd.DataFrame(shared_data["expenditure_by_country_func_year"])
-        pub_exp = exp_by_func[exp_by_func.func == "Health"]
-
-        return {
-            "health_public_expenditure": pub_exp.to_dict("records"),
-        }
+        server_store.get("health_public_expenditure")
+        return {"ready": True}
     return dash.no_update
 
 
@@ -87,11 +94,8 @@ def fetch_health_total_data_once(health_data, shared_data):
 )
 def fetch_health_outcome_data_once(health_data):
     if health_data is None:
-        uhc_index = db.get_universal_health_coverage_index()
-
-        return {
-            "uhc_index": uhc_index.to_dict("records"),
-        }
+        server_store.get("uhc_index")
+        return {"ready": True}
     return dash.no_update
 
 
@@ -101,37 +105,26 @@ def fetch_health_outcome_data_once(health_data):
 )
 def fetch_health_private_data_once(health_data):
     if health_data is None:
-        priv_exp = db.get_health_private_expenditure()
-        return {
-            "health_private_expenditure": priv_exp.to_dict("records"),
-        }
-    return dash.no_update
-
-
-@callback(
-    Output("stored-data-health-sub-func", "data"),
-    Input("stored-data-health-sub-func", "data"),
-)
-def fetch_health_sub_func_data_once(health_data):
-    if health_data is None:
-        exp_by_sub_func = db.get_expenditure_by_country_sub_func_year()
-        return {
-            "expenditure_by_country_sub_func_year": exp_by_sub_func.to_dict("records"),
-        }
+        server_store.get("health_private_expenditure")
+        return {"ready": True}
     return dash.no_update
 
 
 @callback(
     Output("health-content", "children"),
     Input("health-tabs", "active_tab"),
+    Input("stored-language", "data"),
 )
-def render_health_content(tab):
+def render_health_content(tab, lang):
+    lang = lang or "en"
     if tab == "health-tab-time":
+        sector_name = t("sector.health", lang)
+        sector_gen = genitive(lang, sector_name)
         return html.Div(
             [
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Who Pays for Healthcare?")
+                        html.H3(children=t("heading.who_pays_health", lang))
                     )
                 ),
                 dbc.Row(
@@ -139,7 +132,7 @@ def render_health_content(tab):
                         [
                             html.P(
                                 id="health-public-private-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                             html.P(
                                 id="health-narrative",
@@ -172,7 +165,7 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Public Spending & Health Outcome")
+                        html.H3(children=t("heading.public_spending_health_outcome", lang))
                     )
                 ),
                 dbc.Row(
@@ -192,7 +185,7 @@ def render_health_content(tab):
                                 ),
                                 html.P(
                                     id="health-outcome-narrative",
-                                    children="loading...",
+                                    children=t("loading", lang),
                                 ),
                             ],
                             xs={"size": 12, "offset": 0},
@@ -209,7 +202,89 @@ def render_health_content(tab):
                 ),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Operational vs. Capital Spending")
+                        html.H3(children=t(
+                            "heading.budget_funded_executed", lang,
+                            sector=sector_name, sector_gen=sector_gen,
+                        ))
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.P(
+                                id="health-funding-narrative",
+                                children=t("loading", lang),
+                            ),
+                            xs=12, lg=4,
+                        ),
+                        dbc.Col(
+                            [
+                                html.Div(
+                                    dbc.RadioItems(
+                                        id="health-funding-terms",
+                                        options=[
+                                            {"label": t("radio.budget", lang), "value": "nominal"},
+                                            {"label": t("radio.inflation_adjusted_budget", lang), "value": "real"},
+                                        ],
+                                        value="nominal",
+                                        inline=True,
+                                        style={"padding": "10px"},
+                                        labelStyle={"margin-right": "20px"},
+                                    ),
+                                    className="disclaimer-div",
+                                ),
+                                chart_container("health-funding-source"),
+                            ],
+                            xs=12, lg=8,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.P(
+                            id="health-execution-narrative",
+                            children=t("loading", lang),
+                        )
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Div(
+                            dbc.RadioItems(
+                                id="health-budget-execution-metric",
+                                options=[
+                                    {"label": t("radio.execution_rate", lang), "value": "execution_rate"},
+                                    {"label": t("radio.variance", lang), "value": "variance"},
+                                ],
+                                value="execution_rate",
+                                inline=True,
+                                style={"padding": "10px"},
+                                labelStyle={"margin-right": "20px"},
+                            ),
+                            className="disclaimer-div",
+                        )
+                    )
+                ),
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            chart_container("health-budget-execution"),
+                            xs=12, lg=6,
+                        ),
+                        dbc.Col(
+                            chart_container("health-econ-execution"),
+                            xs=12, lg=6,
+                        ),
+                    ]
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.Hr(),
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        html.H3(children=t("heading.operational_vs_capital", lang))
                     )
                 ),
                 dbc.Row(
@@ -234,25 +309,13 @@ def render_health_content(tab):
                 dbc.Row(
                     [
                         dbc.Col(width=1),
-                        html.Div(
-                            id="year_slider_health_container",
-                            children=[
-                                dcc.Slider(
-                                    id="year-slider-health",
-                                    min=0,
-                                    max=0,
-                                    value=None,
-                                    step=None,
-                                    included=False,
-                                ),
-                            ],
-                        ),
+                        slider("year-slider-health", "year_slider_health_container"),
                     ]
                 ),
                 dbc.Row(style={"height": "20px"}),
                 dbc.Row(
                     dbc.Col(
-                        html.H3(children="Centrally vs. Geographically Allocated Health Spending")
+                        html.H3(children=t("heading.central_vs_geo_health", lang))
                     )
                 ),
                 dbc.Row(
@@ -260,7 +323,7 @@ def render_health_content(tab):
                         [
                             html.P(
                                 id="health-sub-func-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                         ]
                     )
@@ -286,7 +349,7 @@ def render_health_content(tab):
                     dbc.Col(
                         html.H3(
                             id="health-subnational-title",
-                            children="Public Spending vs. Health Outcomes across Regions",
+                            children=t("heading.public_spending_health_regions", lang),
                         )
                     )
                 ),
@@ -294,11 +357,11 @@ def render_health_content(tab):
                     dbc.Col(
                         [
                             html.P(
-                                children="Disparities in public health spending across regions can impact Universal Health Coverage (UHC) by creating gaps in service access and financial protection. Since primary healthcare is central to UHC, regions with lower per capita health spending may struggle to provide essential services, leading to weaker coverage in maternal health, infectious disease control, and chronic disease management. Analyzing subnational disparities in geographically allocated health spending helps assess whether resources align with UHC goals and identify regions at risk of inadequate healthcare access.",
+                                children=t("narrative.health_subnational_context", lang),
                             ),
                             html.P(
                                 id="health-subnational-motivation",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                         ]
                     )
@@ -311,11 +374,11 @@ def render_health_content(tab):
                                     id="health-expenditure-type",
                                     options=[
                                         {
-                                            "label": "Per capita health expenditure",
+                                            "label": t("radio.per_capita_expenditure", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.health"))),
                                             "value": "per_capita_expenditure",
                                         },
                                         {
-                                            "label": "Total health expenditure",
+                                            "label": t("radio.total_expenditure", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.health"))),
                                             "value": "expenditure",
                                         },
                                     ],
@@ -326,7 +389,7 @@ def render_health_content(tab):
                                         "margin-right": "20px",
                                     },
                                 ),
-                                disclaimer_tooltip("health-expenditure-warning", MAP_DISCLAIMER),
+                                disclaimer_tooltip("health-expenditure-warning", get_map_disclaimer(lang), lang=lang),
                             ],
                             className="disclaimer-div",
                             style={
@@ -362,7 +425,7 @@ def render_health_content(tab):
                         [
                             html.P(
                                 id="health-subnational-narrative",
-                                children="loading...",
+                                children=t("loading", lang),
                             ),
                         ]
                     )
@@ -382,44 +445,44 @@ def render_health_content(tab):
         )
 
 
-def total_health_figure(df, currency_code):
+def total_health_figure(df, currency_code, lang="en"):
     fig = go.Figure()
 
     if df is None:
         return fig
-    add_currency_column(df, 'real_expenditure', currency_code)
-    add_currency_column(df, 'central_expenditure', currency_code)
-    add_currency_column(df, 'decentralized_expenditure', currency_code)
+    add_currency_column(df, 'real_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'central_expenditure', currency_code, lang=lang)
+    add_currency_column(df, 'decentralized_expenditure', currency_code, lang=lang)
     fig.add_trace(
         go.Scatter(
-            name="Inflation Adjusted",
+            name=t("trace.inflation_adjusted", lang),
             customdata=df['real_expenditure_formatted'],
             x=df.year,
             y=df.real_expenditure,
             mode="lines+markers",
             marker_color="darkblue",
-            hovertemplate="<b>Real Expenditure</b>: %{customdata}<extra></extra>",
+            hovertemplate="<b>" + t("hover.real_expenditure", lang) + "</b>: %{customdata}<extra></extra>",
 
         ),
     )
     fig.add_trace(
         go.Bar(
-            name="Central",
+            name=t("trace.central", lang),
             customdata=df['central_expenditure_formatted'],
             x=df.year,
             y=df.central_expenditure,
             marker_color=CENTRAL_COLOR,
-            hovertemplate="<b>Real Central Expenditure</b>: %{customdata}<extra></extra>",
+            hovertemplate="<b>" + t("hover.real_central_expenditure", lang) + "</b>: %{customdata}<extra></extra>",
         ),
     )
     fig.add_trace(
         go.Bar(
-            name="Regional",
+            name=t("trace.regional", lang),
             customdata=df['decentralized_expenditure_formatted'],
             x=df.year,
             y=df.decentralized_expenditure,
             marker_color=REGIONAL_COLOR,
-            hovertemplate="<b>Real Decentralized Expenditure</b>: %{customdata}<extra></extra>",
+            hovertemplate="<b>" + t("hover.real_decentralized_expenditure", lang) + "</b>: %{customdata}<extra></extra>",
         ),
     )
 
@@ -428,16 +491,16 @@ def total_health_figure(df, currency_code):
     fig.update_layout(
         barmode="stack",
         hovermode="x unified",
-        title="How has govt spending on health changed over time?",
+        title=t("chart.health_spending_over_time", lang),
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1),
     )
 
-    return fig
+    return apply_locale(fig, lang)
 
 
-def health_narrative(data, country):
-    spending = pd.DataFrame(data["health_public_expenditure"])
+def health_narrative(data, country, lang="en"):
+    spending = server_store.get("health_public_expenditure")
     spending = filter_country_sort_year(spending, country)
 
     plot_df = (
@@ -447,11 +510,15 @@ def health_narrative(data, country):
         .sort_values("year")
     )
     extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative(extractor=extractor, metric="real expenditure")
+    trend_narrative = get_segment_narrative_i18n(
+        extractor=extractor,
+        metric=t("metric.real_expenditure", lang),
+        lang=lang,
+    )
 
     if trend_narrative:
         trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
-        text = f"After accounting for inflation, {trend_narrative} "
+        text = t("narrative.after_inflation", lang, trend_narrative=trend_narrative)
     else:
         text = ""
 
@@ -473,7 +540,7 @@ def health_narrative(data, country):
         end_value_central - start_value_central
     ) / start_value_central
 
-    text += f"In this time period, the central government's inflation-adjusted spending has {get_percentage_change_text(spending_growth_rate_central)} "
+    text += t("narrative.central_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_central, lang=lang))
 
     if not np.isnan(
         spending[spending.year == start_year].decentralized_expenditure.values[0]
@@ -493,21 +560,28 @@ def health_narrative(data, country):
         spending_growth_rate_decentralized = (
             end_value_decentralized - start_value_decentralized
         ) / start_value_decentralized
-        spending_change_regional = f"while the subnational government's inflation-adjusted spending has {get_percentage_change_text(spending_growth_rate_decentralized)}. "
+        spending_change_regional = t("narrative.subnational_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_decentralized, lang=lang))
     else:
-        spending_change_regional = (
-            ". The subnational government's data is not available for this period. "
-        )
+        spending_change_regional = t("narrative.subnational_unavailable", lang)
 
     text += spending_change_regional
 
     decentralization = spending[
         spending.year == end_year
     ].expenditure_decentralization.values[0]
+    sector_name = t("sector.health", lang)
+    sector_gen = genitive(lang, sector_name)
     if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = "The extent of health spending decentralization is unknown due to a lack of subnational public expenditure data."
+        spending_decentralization = t(
+            "narrative.decentralization_unknown", lang,
+            sector=sector_name, sector_gen=sector_gen,
+        )
     else:
-        spending_decentralization = f"By {end_year}, {decentralization:.1%} of health spending has been decentralized."
+        spending_decentralization = t(
+            "narrative.decentralization_by_year", lang,
+            year=end_year, pct=f"{decentralization:.1%}",
+            sector=sector_name, sector_gen=sector_gen,
+        )
     text += spending_decentralization
 
     return text
@@ -519,46 +593,59 @@ def health_narrative(data, country):
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
 )
-def render_overview_total_figure(data, country, country_data):
-    if not data or not country_data:
+def render_overview_total_figure(data, country, country_data, lang):
+    lang = lang or "en"
+    if not data or not country_data or not country:
         return dash.no_update, dash.no_update
 
-    all_countries = pd.DataFrame(data["health_public_expenditure"])
+    all_countries = server_store.get("health_public_expenditure")
     df = filter_country_sort_year(all_countries, country)
 
     if df.empty:
         return (
-            empty_plot("No data available for this period"),
-            generate_error_prompt("DATA_UNAVAILABLE"),
+            empty_plot(t("error.no_data_period", lang)),
+            t("error.data_unavailable", lang),
         )
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
-    fig = total_health_figure(df, currency_code)
-    return fig, health_narrative(data, country)
+    fig = total_health_figure(df, currency_code, lang=lang)
+    return fig, health_narrative(data, country, lang=lang)
 
 
-def public_private_narrative(df, country):
+def public_private_narrative(df, country, lang="en"):
     latest_year = df.year.max()
     earliest_year = df.year.min()
     text = ""
     try:
         latest_gov_share = df[df.year == latest_year].public_percentage.values[0]
         earliest_gov_share = df[df.year == earliest_year].public_percentage.values[0]
-        trend = "increased" if latest_gov_share > earliest_gov_share else "decreased"
+        trend = t("word.increased", lang) if latest_gov_share > earliest_gov_share else t("word.decreased", lang)
         household_ratio = (
             df[df.year == latest_year].real_expenditure_private.values[0]
             / df.real_expenditure_public.values[0]
         )
         if earliest_year != latest_year:
-            text += f"In {country}, the government's share of spending on health {trend} from {earliest_gov_share:.0%} to {latest_gov_share:.0%} between {earliest_year} and {latest_year}. "
+            country_display = t(f"country.{country}", lang)
+            country_meta = _LANGUAGES[lang].get(f"country.{country}")
+            sector_meta = _LANGUAGES[lang].get("sector.health")
+            text += t("narrative.govt_share_trend", lang,
+                       country=country_display,
+                       country_loc=preposition(lang, country_meta, capitalize=True),
+                       sector_prep=preposition(lang, sector_meta), trend=trend,
+                       earliest_pct=f"{earliest_gov_share:.0%}",
+                       latest_pct=f"{latest_gov_share:.0%}",
+                       earliest_year=earliest_year, latest_year=latest_year)
 
-        text += f"For every unit of spending on health by the government, households spent {household_ratio:.1f} units in {latest_year}. "
+        text += t("narrative.household_ratio", lang,
+                   sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.health")),
+                   ratio=f"{household_ratio:.1f}", year=latest_year)
 
     except IndexError:
-        return generate_error_prompt("DATA_UNAVAILABLE")
+        return t("error.data_unavailable", lang)
     except:
-        return generate_error_prompt("GENERIC_ERROR")
+        return t("error.generic", lang)
     return text
 
 
@@ -569,19 +656,21 @@ def public_private_narrative(df, country):
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
 )
-def render_public_private_figure(private_data, public_data, country, country_data):
-    if not private_data or not public_data:
+def render_public_private_figure(private_data, public_data, country, country_data, lang):
+    lang = lang or "en"
+    if not private_data or not public_data or not country_data or not country:
         return dash.no_update, dash.no_update
 
-    fig_title = "What % was spent by the govt vs household?"
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+    fig_title = t("chart.pct_govt_vs_household", lang)
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
 
-    private = pd.DataFrame(private_data["health_private_expenditure"])
+    private = server_store.get("health_private_expenditure")
     private = filter_country_sort_year(private, country)
 
-    public_data = pd.DataFrame(public_data["health_public_expenditure"])
-    public = filter_country_sort_year(public_data, country)
+    public_df = server_store.get("health_public_expenditure")
+    public = filter_country_sort_year(public_df, country)
 
     merged = pd.merge(
         private,
@@ -596,15 +685,13 @@ def render_public_private_figure(private_data, public_data, country, country_dat
 
     if merged.empty:
         if public.empty:
-            prompt = generate_error_prompt(
-                "DATA_UNAVAILABLE_DATASET_NAME", dataset_name="health public spending"
-            )
+            prompt = t("error.data_unavailable_named", lang,
+                       dataset_name="health public spending")
         elif private.empty:
-            prompt = generate_error_prompt(
-                "DATA_UNAVAILABLE_DATASET_NAME", dataset_name="health private spending"
-            )
+            prompt = t("error.data_unavailable_named", lang,
+                       dataset_name="health private spending")
         else:
-            prompt = "Available public and private spending data on health do not have an overlapping time period."
+            prompt = t("error.no_overlapping_data", lang, sector_prep=preposition(lang, _LANGUAGES[lang].get("sector.health")))
         return (empty_plot(prompt, fig_title=fig_title), prompt)
 
     merged["private_percentage"] = merged["real_expenditure_private"] / (
@@ -612,19 +699,19 @@ def render_public_private_figure(private_data, public_data, country, country_dat
     )
     merged["public_percentage"] = 1 - merged["private_percentage"]
 
-    add_currency_column(merged, 'real_expenditure_private', currency_code)
-    add_currency_column(merged, 'real_expenditure_public', currency_code)
+    add_currency_column(merged, 'real_expenditure_private', currency_code, lang=lang)
+    add_currency_column(merged, 'real_expenditure_public', currency_code, lang=lang)
 
     fig = go.Figure()
 
     fig.add_trace(
         go.Bar(
-            name="Public Expenditure",
+            name=t("trace.public_expenditure", lang),
             y=merged["year"].astype(str),
             x=merged.public_percentage,
             orientation="h",
             customdata=merged.real_expenditure_public_formatted,
-            hovertemplate="<b>Real Public Expenditure </b>: %{customdata}<extra></extra>",
+            hovertemplate="<b>" + t("hover.real_public_expenditure", lang) + "</b>: %{customdata}<extra></extra>",
             marker=dict(
                 color="darkblue",
             ),
@@ -636,12 +723,12 @@ def render_public_private_figure(private_data, public_data, country, country_dat
 
     fig.add_trace(
         go.Bar(
-            name="Private Expenditure",
+            name=t("trace.private_expenditure", lang),
             y=merged["year"].astype(str),
             x=merged.private_percentage,
             orientation="h",
             customdata=merged.real_expenditure_private_formatted,
-            hovertemplate="<b>Real Private Expenditure</b>: %{customdata}<extra></extra>",
+            hovertemplate="<b>" + t("hover.real_private_expenditure", lang) + "</b>: %{customdata}<extra></extra>",
             marker=dict(
                 color="rgb(255, 191, 0)",
             ),
@@ -657,27 +744,28 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         title=fig_title,
     )
 
-    narrative = public_private_narrative(merged, country)
-    return fig, narrative
+    narrative = public_private_narrative(merged, country, lang=lang)
+    return apply_locale(fig, lang), narrative
 
 
-def outcome_measure():
-    return f"We use inflation-adjusted per capita public spending as a measure for public financial resource allocation per person on health and universal health coverage index as an indicator for health outcome."
+def outcome_measure(lang="en"):
+    return t("narrative.health_outcome_measure", lang)
 
 
-def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
+def outcome_narrative(outcome_df, expenditure_df, country, currency_code, lang="en"):
     exp_df = expenditure_df.dropna(subset=["per_capita_real_expenditure"])
     out_df = outcome_df.dropna(subset=["universal_health_coverage_index"])
 
-    result = get_relationship_narrative(
+    result = get_relationship_narrative_i18n(
         reference_years=exp_df["year"].values,
         reference_values=exp_df["per_capita_real_expenditure"].values,
         comparison_years=out_df["year"].values,
         comparison_values=out_df["universal_health_coverage_index"].values,
-        reference_name="per capita health spending",
-        comparison_name="universal health coverage index",
-        reference_format=lambda x: format_currency(x, currency_code),
+        reference_name=t("metric.per_capita_health_spending", lang),
+        comparison_name=t("metric.uhc_index", lang),
+        reference_format=lambda x: format_currency(x, currency_code, lang=lang),
         comparison_format=".1f",
+        lang=lang,
     )
     return result["narrative"]
 
@@ -690,24 +778,26 @@ def outcome_narrative(outcome_df, expenditure_df, country, currency_code):
     Input("stored-data-health-total", "data"),
     Input("country-select", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
 )
-def render_health_outcome(outcome_data, total_data, country, country_data):
-    if not total_data or not outcome_data:
+def render_health_outcome(outcome_data, total_data, country, country_data, lang):
+    lang = lang or "en"
+    if not total_data or not outcome_data or not country_data or not country:
         return dash.no_update, dash.no_update, dash.no_update
 
-    uhc = pd.DataFrame(outcome_data["uhc_index"])
+    uhc = server_store.get("uhc_index")
     uhc = filter_country_sort_year(uhc, country)
 
-    pub_exp = pd.DataFrame(total_data["health_public_expenditure"])
+    pub_exp = server_store.get("health_public_expenditure")
     pub_exp = filter_country_sort_year(pub_exp, country)
-    currency_code = country_data['basic_country_info'][country]['currency_code']
-    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code)
-    
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
+    add_currency_column(pub_exp, 'per_capita_real_expenditure', currency_code, lang=lang)
+
     fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
         go.Scatter(
-            name="Universal health coverage index",
+            name=t("trace.uhc_index", lang),
             x=uhc.year,
             y=uhc.universal_health_coverage_index,
             mode="lines+markers",
@@ -720,14 +810,14 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
 
     fig.add_trace(
         go.Scatter(
-            name="Inflation adjusted per capita public spending",
+            name=t("trace.inflation_adjusted_per_capita_health", lang),
             customdata=pub_exp['per_capita_real_expenditure_formatted'],
             x=pub_exp.year,
             y=pub_exp.per_capita_real_expenditure,
             mode="lines",
             marker_color="darkblue",
             opacity=0.6,
-            hovertemplate="Inflation Adjusted Per Capita Public Spending: %{customdata}<extra></extra>",
+            hovertemplate=t("hover.inflation_adjusted_per_capita", lang) + ": %{customdata}<extra></extra>",
         ),
         secondary_y=False,
     )
@@ -745,7 +835,7 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
             bgcolor="rgba(0,0,0,0)",
         ),
         title=dict(
-            text="How has health outcome changed?",
+            text=t("chart.health_outcome", lang),
             y=0.95,
             x=0.5,
             xanchor="center",
@@ -759,8 +849,8 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
     )
     fig.update_yaxes(range=[0, 120], secondary_y=True)
 
-    narrative = outcome_narrative(uhc, pub_exp, country, currency_code)
-    return fig, outcome_measure(), narrative
+    narrative = outcome_narrative(uhc, pub_exp, country, currency_code, lang=lang)
+    return apply_locale(fig, lang), outcome_measure(lang=lang), narrative
 
 
 @callback(
@@ -770,10 +860,12 @@ def render_health_outcome(outcome_data, total_data, country, country_data):
         Input("stored-data-func-econ", "data"),
         Input("country-select", "value"),
         Input("page-selector", "data"),
+        Input("stored-language", "data"),
     ],
 )
-def render_operational_vs_capital_breakdown(data, country_name, page_func):
-    return render_econ_breakdown(data, country_name, page_func)
+def render_operational_vs_capital_breakdown(data, country_name, page_func, lang):
+    lang = lang or "en"
+    return render_econ_breakdown(data, country_name, page_func, lang=lang)
 
 
 @callback(
@@ -785,9 +877,10 @@ def render_operational_vs_capital_breakdown(data, country_name, page_func):
     Output("year-slider-health", "tooltip"),
     Input("stored-data-subnational", "data"),
     Input("country-select", "value"),
+    Input("stored-language", "data"),
 )
-def update_health_year_range(data, country):
-    return update_year_slider(data, country, 'Health')
+def update_health_year_range(data, country, lang):
+    return update_year_slider(data, country, 'Health', lang=lang or "en")
 
 
 @callback(
@@ -799,21 +892,27 @@ def update_health_year_range(data, country):
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
 )
-def render_health_subnat_overview(func_data, sub_func_data, country, selected_year, country_data):
-    currency_code = country_data['basic_country_info'][country]['currency_code']
+def render_health_subnat_overview(func_data, sub_func_data, country, selected_year, country_data, lang):
+    if not country_data or not country:
+        return empty_plot("Loading..."), empty_plot("Loading..."), "Loading..."    
+    lang = lang or "en"
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
     return render_func_subnat_overview(
-        func_data, sub_func_data, country, selected_year, 'Health', currency_code
+        func_data, sub_func_data, country, selected_year, 'Health', currency_code, lang=lang
     )
 
 @callback(
     Output("health-subnational-motivation", "children"),
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
+    Input("stored-language", "data"),
 )
-def update_health_subnational_motivation_narrative(country_name, year):
-    narrative = f'To examine this for {country_name}, we analyze per capita public health spending in {year} as a measure of financial resource allocation at the subnational level and use the UHC index as an indicator of Universal Health Coverage.'
-    return narrative
+def update_health_subnational_motivation_narrative(country_name, year, lang):
+    lang = lang or "en"
+    return t("narrative.health_subnational_motivation", lang,
+             country=t(f"country.{country_name}", lang), year=year)
 
 
 @callback(
@@ -824,14 +923,16 @@ def update_health_subnational_motivation_narrative(country_name, year):
     Input("year-slider-health", "value"),
     Input("health-expenditure-type", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    Input("stored-language", "data"),
     State("theme-store", "data"),
 )
 def update_health_expenditure_map(
-    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, theme
+    subnational_data, country_data, country, year, expenditure_type, subnat_boundaries, lang, theme
 ):
+    lang = lang or "en"
     return update_func_expenditure_map(
         subnational_data, country_data, country, year,
-        expenditure_type, subnat_boundaries, 'Health', theme=theme
+        expenditure_type, subnat_boundaries, 'Health', theme=theme, lang=lang
     )
 
 
@@ -842,13 +943,15 @@ def update_health_expenditure_map(
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
     Input("stored-data-subnat-boundaries", "data"),
+    Input("stored-language", "data"),
     State("theme-store", "data"),
 )
 def update_health_index_map(
-    subnational_data, country_data, country, year, subnat_boundaries, theme
+    subnational_data, country_data, country, year, subnat_boundaries, lang, theme
 ):
+    lang = lang or "en"
     return update_hd_index_map(
-        subnational_data, country_data, country, year, subnat_boundaries, 'Health', theme=theme
+        subnational_data, country_data, country, year, subnat_boundaries, 'Health', theme=theme, lang=lang
     )
 
 
@@ -859,7 +962,62 @@ def update_health_index_map(
     Input("country-select", "value"),
     Input("year-slider-health", "value"),
     Input("stored-basic-country-data", "data"),
+    Input("stored-language", "data"),
 )
-def render_health_subnat_rank(subnational_data, country, base_year, country_data):
-    currency_code = country_data['basic_country_info'][country]['currency_code']
-    return render_func_subnat_rank(subnational_data, country, base_year, 'Health', currency_code)
+def render_health_subnat_rank(subnational_data, country, base_year, country_data, lang):
+    lang = lang or "en"
+    currency_code = server_store.get("basic_country_info")[country]['currency_code']
+    return render_func_subnat_rank(subnational_data, country, base_year, 'Health', currency_code, lang=lang)
+
+
+@callback(
+    Output("health-funding-source", "figure"),
+    Output("health-funding-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("health-funding-terms", "value"),
+)
+def render_health_funding(data, country, lang, budget_terms):
+    lang = lang or "en"
+    budget_terms = budget_terms or "nominal"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    return budget_funding_execution.render_funding(
+        country, lang=lang, budget_terms=budget_terms, sector="Health"
+    )
+
+
+@callback(
+    Output("health-budget-execution", "figure"),
+    Output("health-econ-execution", "figure"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    Input("health-budget-execution-metric", "value"),
+)
+def render_health_budget_execution(data, country, lang, metric):
+    lang = lang or "en"
+    metric = metric or "execution_rate"
+    if not data or not country:
+        return dash.no_update, dash.no_update
+    overall = budget_funding_execution.render_execution_figure(
+        country, lang=lang, metric=metric, sector="Health"
+    )
+    by_category = budget_funding_execution.render_econ_execution_figure(
+        country, lang=lang, metric=metric, sector="Health"
+    )
+    return overall, by_category
+
+
+@callback(
+    Output("health-execution-narrative", "children"),
+    Input("stored-data-func-econ", "data"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+)
+def render_health_execution_narrative(data, country, lang):
+    lang = lang or "en"
+    if not data or not country:
+        return dash.no_update
+    return budget_funding_execution.render_execution_narrative(country, lang=lang, sector="Health")
