@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import threading
 import pandas as pd
 from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
@@ -23,7 +24,7 @@ QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 
 def credentials_provider():
-    print("Initializing credential provider...")
+    logging.info("Initializing credential provider...")
     config = Config(
         host = f"https://{SERVER_HOSTNAME}",
         client_id     = os.getenv("DATABRICKS_CLIENT_ID"),
@@ -43,6 +44,10 @@ class QueryService:
     def __init__(self):
         self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR)
 
+        # Databricks SQL connections are not thread-safe (DB-API threadsafety=1),
+        # so each thread keeps its own; it's closed by Connection.__del__ on thread exit.
+        self._local = threading.local()
+
         self.country_whitelist = None
         if PUBLIC_ONLY:
             query = f"""
@@ -51,6 +56,47 @@ class QueryService:
                 WHERE boost_public = 'Yes'
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
+
+    # ---- Connection management ------------------------------------------------
+    def _create_connection(self):
+        http_path = os.getenv("DATABRICKS_HTTP_PATH")
+        access_token = os.getenv("DATABRICKS_ACCESS_TOKEN")
+        try:
+            conn = sql.connect(
+                server_hostname=SERVER_HOSTNAME,
+                http_path=http_path,
+                credentials_provider=credentials_provider,
+            )
+            logging.info("Connected using service principal OAuth")
+            return conn
+        except Exception as e:
+            if access_token:
+                logging.warning("Service principal auth failed: %s. Falling back to access token.", e)
+                conn = sql.connect(
+                    server_hostname=SERVER_HOSTNAME,
+                    http_path=http_path,
+                    access_token=access_token,
+                )
+                logging.info("Connected using access token")
+                return conn
+            else:
+                raise
+
+    def _get_connection(self):
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            conn = self._create_connection()
+            self._local.conn = conn
+        return conn
+
+    def _close_connection(self):
+        conn = getattr(self._local, "conn", None)
+        self._local.conn = None
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
 
     def clear_cache(self):
         self._cache.clear()
@@ -64,20 +110,24 @@ class QueryService:
                 return cached
 
         start = time.time()
-        with sql.connect(
-            server_hostname = SERVER_HOSTNAME,
-            http_path = os.getenv("DATABRICKS_HTTP_PATH"),
-            credentials_provider=credentials_provider,
-        ) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            df = cursor.fetchall_arrow().to_pandas()
+        try:
+            df = self._execute_with_connection(query)
+        except sql.exc.Error as e:
+            logging.warning("Query failed, reconnecting: %s", e)
+            self._close_connection()
+            df = self._execute_with_connection(query)
 
-        logging.info(f"DB MISS (queried) took {time.time() - start:.2f} sec. query: {query}")
+        logging.info("DB MISS (queried) took %.2f sec. query: %s", time.time() - start, query)
 
         if persistent:
             self._cache.set(query, df)
         return df.copy(deep=True)
+
+    def _execute_with_connection(self, query):
+        conn = self._get_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            return cursor.fetchall_arrow().to_pandas()
 
     def fetch_data(self, query):
         df = self.execute_query(query)
