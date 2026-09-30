@@ -10,6 +10,7 @@ from scipy import stats
 from colormath.color_objects import sRGBColor, CMYKColor
 from colormath.color_conversions import convert_color
 from auth import AUTH_ENABLED
+import server_store
 from collections import OrderedDict
 from constants import (
     START_YEAR,
@@ -528,8 +529,16 @@ def apply_locale(fig, lang="en"):
     return fig
 
 
+def get_currency_code(country):
+    return (
+        server_store.lookup("basic_country_info", {}).get(country, {}).get("currency_code")
+    )
+
+
 def format_currency(value, currency_code, lang="en"):
     """Format a number as currency with the given currency code."""
+    if not currency_code:
+        return millify(value, lang=lang)
     return f"{millify(value, lang=lang)} {currency_code}"
 
 

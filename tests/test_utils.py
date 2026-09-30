@@ -239,6 +239,13 @@ class TestFormatCurrency(unittest.TestCase):
         result = format_currency(5000, "BTN")
         self.assertTrue(result.endswith(" BTN"))
 
+    def test_missing_currency_code_falls_back_to_millify(self):
+        # Country metadata isn't always available; degrade to a bare magnitude
+        # rather than rendering "1.50 M None".
+        self.assertEqual(format_currency(1_500_000, None), "1.50 M")
+        self.assertEqual(format_currency(1_500_000, ""), "1.50 M")
+        self.assertEqual(format_currency(1_500_000, None, lang="fr"), "1,50 M")
+
 
 
 class TestAddCurrencyColumn(unittest.TestCase):

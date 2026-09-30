@@ -1,5 +1,8 @@
 import dash
-from dash import html, dcc, callback, Input, Output, State
+from dash import (
+    html, dcc, callback, clientside_callback, ClientsideFunction, ctx,
+    Input, Output, State,
+)
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
@@ -17,10 +20,10 @@ from utils import (
     filter_country_sort_year,
     format_currency,
     get_percentage_change_text,
-    millify,
     require_login,
 )
 import numpy as np
+from components import edu_spending_by_level as esl
 from components.year_slider import slider, get_slider_config
 from components.func_operational_vs_capital_spending import render_econ_breakdown
 from components.edu_health_across_space import (
@@ -310,6 +313,7 @@ def render_education_content(tab, lang):
                         ),
                     ]
                 ),
+                esl.layout(lang),
             ]
         )
     elif tab == "edu-tab-space":
@@ -619,6 +623,81 @@ def render_overview_total_figure(data, basic_country_data, country, lang):
 
     fig = total_edu_figure(df, currency_code, lang=lang)
     return fig, education_narrative(data, country, lang=lang)
+
+
+@callback(
+    Output(esl.ECON_FILTER_ID, "options"),
+    Output(esl.ECON_FILTER_ID, "value"),
+    Input("country-select", "value"),
+    Input("stored-language", "data"),
+    State(esl.ECON_FILTER_ID, "value"),
+)
+def update_edu_func_sub_econ_options(country, lang, current_value):
+    lang = lang or "en"
+    return esl.get_econ_category_options(country, lang, current_value)
+
+
+@callback(
+    Output(esl.OUTCOME_FILTER_ID, "value"),
+    Output(esl.OUTCOME_HINT_ID, "children"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input(esl.OUTCOME_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def default_outcome_for_econ(econ_filter, _indicator, lang):
+    # The indicator is both Input and Output so the hint can tell an
+    # auto-selection (category changed) from a manual pick (indicator changed).
+    lang = lang or "en"
+    return esl.sync_outcome_indicator(econ_filter, ctx.triggered_prop_ids, lang)
+
+
+@callback(
+    Output(esl.SPENDING_CHART_ID, "figure"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_econ(country, econ_filter, lang):
+    lang = lang or "en"
+    return esl.spending_figure(country, econ_filter, lang)
+
+
+@callback(
+    Output(esl.NARRATIVE_ID, "children"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input(esl.OUTCOME_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_func_sub_narrative(country, econ_filter, indicator, lang):
+    lang = lang or "en"
+    return esl.spending_narrative(country, econ_filter, indicator, lang)
+
+
+@callback(
+    Output(esl.OUTCOME_CHART_ID, "figure"),
+    Input("country-select", "value"),
+    Input(esl.ECON_FILTER_ID, "value"),
+    Input(esl.OUTCOME_FILTER_ID, "value"),
+    Input("stored-language", "data"),
+)
+def render_edu_level_outcome(country, econ_filter, indicator, lang):
+    lang = lang or "en"
+    return esl.outcome_figure(country, econ_filter, indicator, lang)
+
+
+# Linked hover: hovering a year on either chart mirrors it on the other when
+# that chart plots the same year, and both hover boxes sit at the top of the
+# plot (see assets/linked_hover.js). The figure inputs let the pinning start
+# as soon as a chart renders.
+clientside_callback(
+    ClientsideFunction(namespace="linked_hover", function_name="sync"),
+    Output(esl.HOVER_SYNC_ID, "data"),
+    Input(esl.SPENDING_CHART_ID, "hoverData"),
+    Input(esl.OUTCOME_CHART_ID, "hoverData"),
+    Input(esl.SPENDING_CHART_ID, "figure"),
+    Input(esl.OUTCOME_CHART_ID, "figure"),
+)
 
 
 def public_private_narrative(df, country, lang="en"):
