@@ -1,5 +1,6 @@
 from dash import dcc, html
 
+from constants import START_YEAR
 from translations import t
 
 
@@ -32,8 +33,10 @@ def get_slider_config(expenditure_years, outcome_years, lang="en"):
     @param outcome_years: list of years from the outcome dataset
     @return: tuple with (style, marks, selected_year, min_year, max_year, tooltip)
     """
-    expenditure_years.sort()
-    outcome_years.sort()
+    # Clamp to the display floor so the slider matches the charts (which filter to
+    # >= START_YEAR); a raw expenditure year like 2009 would otherwise show here.
+    expenditure_years = sorted(y for y in expenditure_years if y >= START_YEAR)
+    outcome_years = sorted(y for y in outcome_years if y >= START_YEAR)
 
     if not expenditure_years:
         marks = {
@@ -50,17 +53,19 @@ def get_slider_config(expenditure_years, outcome_years, lang="en"):
             {"template": t("error.data_not_available", lang), "always_visible": True},
         )
 
-    common_years = [year for year in expenditure_years if year in outcome_years]
-    min_year, max_year = expenditure_years[0], expenditure_years[-1]
+    # Marks span the union of both datasets: a year present in only one (spending
+    # without outcome, or outcome without spending like a later poverty survey)
+    # still shows, styled incomplete. Both-present years are styled complete.
+    common_years = set(expenditure_years) & set(outcome_years)
+    all_years = sorted(set(expenditure_years) | set(outcome_years))
 
     marks = {}
-    for year in expenditure_years:
-        if year in common_years:
-            marks[str(year)] = {"label": str(year), "style": YEAR_COMPLETE_STYLE}
-        else:
-            marks[str(year)] = {"label": str(year), "style": YEAR_PARTIAL_STYLE}
+    for year in all_years:
+        style = YEAR_COMPLETE_STYLE if year in common_years else YEAR_PARTIAL_STYLE
+        marks[str(year)] = {"label": str(year), "style": style}
 
-    selected_year = max(common_years) if common_years else max_year
+    min_year, max_year = all_years[0], all_years[-1]
+    selected_year = max(common_years) if common_years else expenditure_years[-1]
     return (
         {"display": "block"},
         marks,

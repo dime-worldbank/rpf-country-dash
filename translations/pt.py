@@ -33,11 +33,13 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Resultado fiscal",
     "heading.regional_expenditure": "Despesa regional",
     "heading.country_regional_expenditure": "Despesa regional {country_gen}",
+    "heading.who_funds_budget": "Orçamento total",
     "heading.who_pays_education": "Quem paga pela educação?",
     "heading.who_pays_health": "Quem paga pela saúde?",
-    "heading.public_spending_education_outcome": "Despesa pública e resultados educacionais",
-    "heading.public_spending_health_outcome": "Despesa pública e resultados de saúde",
-    "heading.operational_vs_capital": "Despesa operacional vs. despesa de capital",
+    "heading.budget_funded_executed": "Como o orçamento {sector_gen} é financiado e executado?",
+    "heading.public_spending_education_outcome": "Como a despesa se relaciona com os resultados educacionais?",
+    "heading.public_spending_health_outcome": "Como a despesa se relaciona com os resultados de saúde?",
+    "heading.operational_vs_capital": "Onde o dinheiro é gasto?",
     "heading.central_vs_geo_education": "Despesa em educação centralizada vs. alocada geograficamente",
     "heading.central_vs_geo_health": "Despesa em saúde centralizada vs. alocada geograficamente",
     "heading.public_spending_education_regions": "Despesa pública vs. resultados educacionais entre regiões",
@@ -74,6 +76,10 @@ TRANSLATIONS = {
     "chart.subnational_func_spending": "Despesa subnacional {func_gen}",
     "chart.subnational_outcome": "{outcome_name} subnacional",
     "chart.budget_func_fluctuation": "Como os orçamentos por categorias funcionais oscilam ao longo do tempo?",
+    "chart.budget_by_funding_source": "Como o orçamento é financiado?",
+    "chart.total_budget_over_time": "Como o orçamento total mudou?",
+    "chart.budget_execution": "Quanto do orçamento é executado?",
+    "chart.budget_execution_by_category": "Como a execução varia por categoria de despesa?",
 
     # --- Trace / legend names ---
     "trace.inflation_adjusted": "Ajustado pela inflação",
@@ -82,6 +88,9 @@ TRANSLATIONS = {
     "trace.public_expenditure": "Despesa pública",
     "trace.private_expenditure": "Despesa privada",
     "trace.poverty_rate": "Taxa de pobreza",
+    "trace.domestic_funded": "Financiamento doméstico",
+    "trace.foreign_funded": "Financiamento externo",
+    "trace.total_budget": "Orçamento total",
     "trace.per_capita": "Per capita",
     "trace.pefa_score": "Pontuação PEFA",
     "trace.uhc_index": "Índice de cobertura universal de saúde",
@@ -132,12 +141,18 @@ TRANSLATIONS = {
     "level.secondary": "Secundário",
     "level.tertiary": "Terciário",
     "axis.yoy_growth_rate": "Taxa de crescimento anual (%)",
+    "axis.budget_share": "Parcela do orçamento (%)",
+    "axis.execution_rate": "Orçamento executado (%)",
+    "axis.execution_variance": "Desvio em relação ao orçamento (%)",
+    "axis.pefa_pi1": "PEFA PI-1<br>(pontuação de credibilidade orçamentária)",
     "radio.per_capita_expenditure": "Despesa per capita {sector_prep}",
     "radio.total_expenditure": "Despesa total {sector_prep}",
     "radio.per_capita_expenditure_plain": "  Despesa per capita",
     "radio.total_expenditure_plain": "  Despesa total",
     "radio.budget": "Orçamento",
     "radio.inflation_adjusted_budget": "Orçamento ajustado pela inflação",
+    "radio.execution_rate": "Taxa de execução",
+    "radio.variance": "Desvio",
 
     # --- Rótulos de filtros / listas suspensas ---
     "label.economic_category": "Categoria econômica",
@@ -202,6 +217,7 @@ TRANSLATIONS = {
     "country.Bangladesh": {"name": "o Bangladesh", "plural": False, "feminine": False, "article": "o"},
     "country.Bhutan": {"name": "o Butão", "plural": False, "feminine": False, "article": "o"},
     "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False, "article": ""},
+    "country.Burundi": {"name": "o Burundi", "plural": False, "feminine": False, "article": "o"},
     "country.Chile": {"name": "o Chile", "plural": False, "feminine": False, "article": "o"},
     "country.Colombia": {"name": "a Colômbia", "plural": False, "feminine": True, "article": "a"},
     "country.Congo, Dem. Rep.": {"name": "a República Democrática do Congo", "plural": False, "feminine": True, "article": "a"},
@@ -209,6 +225,7 @@ TRANSLATIONS = {
     "country.Kenya": {"name": "o Quênia", "plural": False, "feminine": False, "article": "o"},
     "country.Liberia": {"name": "a Libéria", "plural": False, "feminine": True, "article": "a"},
     "country.Mozambique": {"name": "Moçambique", "plural": False, "feminine": False, "article": ""},
+    "country.Moldova": {"name": "a Moldávia", "plural": False, "feminine": True, "article": "a"},
     "country.Nigeria": {"name": "a Nigéria", "plural": False, "feminine": True, "article": "a"},
     "country.Pakistan": {"name": "o Paquistão", "plural": False, "feminine": False, "article": "o"},
     "country.Paraguay": {"name": "o Paraguai", "plural": False, "feminine": False, "article": "o"},
@@ -254,6 +271,11 @@ TRANSLATIONS = {
     "metric.electricity": {"name": "o acesso à energia elétrica", "plural": False, "feminine": False, "article": "o"},
     "metric.internet": {"name": "o acesso à internet", "plural": False, "feminine": False, "article": "o"},
 
+    "metric.domestic_funded_share": {"name": "a parcela do orçamento domesticamente financiada", "plural": False, "feminine": True, "article": "a"},
+    "metric.total_budget": {"name": "o orçamento total", "plural": False, "feminine": False, "article": "o"},
+    "phrase.sector_budget": "orçamento {sector_gen}",
+    "phrase.sector_budget_real": "orçamento {sector_gen} ajustado pela inflação",
+    "metric.total_budget_real": {"name": "o orçamento total ajustado pela inflação", "plural": False, "feminine": False, "article": "o"},
     "label.per_capita_spending_lower": "a despesa per capita",
     "label.poverty_rates_lower": "as taxas de pobreza",
 
@@ -361,6 +383,8 @@ TRANSLATIONS = {
     "econ.wage_bill.narrative": "a folha salarial",
     "econ.non_wage_recurrent": "Despesa recorrente não salarial",
     "econ.non_wage_recurrent.narrative": "a despesa recorrente não salarial",
+    "econ.other_recurrent": "Outras despesas recorrentes",
+    "econ.other_recurrent.narrative": "outras despesas recorrentes",
 
     # --- Functional / economic narratives ---
     "narrative.missing_single": "Não temos dados para {cats}. ",
@@ -400,8 +424,8 @@ TRANSLATIONS = {
 
     # --- Annotations / operational vs capital ---
     "annotation.displaying_data_from": "Exibindo dados de {year}",
-    "annotation.poverty_threshold": "Taxa de pobreza (linha de {threshold} para país de {level_name}).",
-    "annotation.poverty_threshold_default": "Taxa de pobreza (linha de US$ 3,00).",
+    "annotation.poverty_threshold": "Taxa de pobreza: linha de {threshold} para país de {level_name}",
+    "annotation.poverty_threshold_default": "Taxa de pobreza: linha de US$ 3,00",
     "narrative.econ_breakdown_intro": "{country_loc}, {emp_pct:.0f}% da despesa {func_gen} foi alocada à remuneração de empregados e {other_pct:.0f}% a despesas recorrentes não salariais em {year}.{emp_narrative}",
     "narrative.emp_comp_high": " Isso indica que uma parcela significativa da despesa é direcionada a salários e benefícios, deixando margem limitada para custos operacionais não salariais, como {resources} e manutenção de instalações.",
     "narrative.emp_comp_balanced": " Isso indica uma alocação equilibrada entre salários e outros recursos operacionais para apoiar a prestação de serviços.",
@@ -473,6 +497,15 @@ TRANSLATIONS = {
     "narrative.grew_modest": "cresceu a uma taxa modesta de {rate:.1f}%",
     "narrative.external_financing_included": "Esta análise atualmente inclui financiamento externo porque os dados orçamentários usados têm granularidade limitada. Idealmente, ele seria excluído devido à sua volatilidade.",
     "narrative.external_financing_excluded": "Esta análise exclui financiamento externo, pois ele tende a ser volátil.",
+    "narrative.funding_source_average": "Em média, ao longo deste período, {domestic_share:.1f}% do orçamento {country_gen} foi financiado domesticamente, e os {foreign_share:.1f}% restantes foram financiados por fontes externas.",
+    "narrative.funding_source_unavailable": "A divisão entre financiamento doméstico e externo não está disponível nos dados.",
+    "narrative.execution_under": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, com subexecução constante — cerca de {gap:.1f}% do {budget} aprovado fica sem ser gasto a cada ano.",
+    "narrative.execution_on_track": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, acompanhando de perto o planejado — sinal de um {budget} credível.",
+    "narrative.execution_over": "{country} executou em média {mean:.1f}% do seu {budget} aprovado, gastando regularmente mais do que o aprovado.",
+    "narrative.econ_execution_breakdown": "No {budget}, no mesmo período, a categoria {high} teve, em média, a maior execução, com {high_rate:.1f}%, enquanto a categoria {low} ficou, em média, mais para trás, com {low_rate:.1f}%.",
+    "narrative.execution_recent_rose": "Nos últimos {n} anos, a execução subiu de {first:.1f}% para {last:.1f}%.",
+    "narrative.execution_recent_fell": "Nos últimos {n} anos, a execução caiu de {first:.1f}% para {last:.1f}%.",
+    "narrative.execution_recent_steady": "Nos últimos {n} anos, a execução manteve-se praticamente estável, em {latest:.1f}% no último ano.",
     "instruction.budget_legend": "Por padrão, apenas Orçamento geral, Saúde, Educação e Serviços públicos gerais aparecem no gráfico. Clique na legenda para ver a taxa anual de crescimento do orçamento das outras categorias funcionais.",
 
     # --- Outcome names / ranks ---
@@ -538,6 +571,7 @@ TRANSLATIONS = {
     "source.togo_dgb.label": "Relatório oficial do Togo",
     "source.togo_dgb.description": "Receita e despesa realizadas a partir do Relatório anual de Execução Orçamentária. Valores não monetários equivalentes são subtraídos de receita e despesa para comparabilidade com os dados do FMI.",
     "chart.outcome_secondary.info": "Para se alinhar ao nível “Secundário” combinado mostrado no lado da despesa, os valores do secundário apresentados aqui são a média dos números do secundário inferior e do secundário superior reportados pelo UIS da UNESCO (ignorando qualquer subnível ausente).",
+    "chart.budget_execution.info": "A taxa de execução é a despesa efetiva como proporção do orçamento aprovado (despesa ÷ orçamento aprovado). Seguindo o marco PEFA (PI-1), uma execução dentro de ±5% do orçamento aprovado recebe nota A (a mais credível), ±10% nota B, e ±15% nota C; além disso, é D. A visão de variação mostra o mesmo valor como desvio em relação a 100%. O fundo sombreado indica essas mesmas zonas — A, B e C aninhadas em torno da linha de referência, D além delas —, cada uma nomeada na escala à direita. O gráfico é sempre desenhado de 80% a 120%, para que a mesma distância signifique o mesmo em todos os gráficos; um ano além disso aparece como uma seta na borda, com o seu valor real indicado.",
     "chart.revenue_expenditure_combined.info": "A visão composta combina as fontes disponíveis em uma única linha do tempo. Quando há relatório nacional oficial disponível, ele tem prioridade; o GFS do FMI preenche anos históricos anteriores, e o WEO projeta anos futuros. Receita e despesa aparecem como linhas no painel superior; o saldo (Receita - Despesa) aparece como barras no painel inferior.",
 
     # --- Déficit / fiscal balance ---
