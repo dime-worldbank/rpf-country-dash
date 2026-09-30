@@ -7,7 +7,7 @@ pages/education.py and delegate here.
 """
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import dcc, html, no_update
 
 import server_store
 from constants import (
@@ -34,7 +34,10 @@ from components.source_metadata_popover import chart_container
 # has one place to import section ids from.
 ECON_FILTER_ID = "education-func-sub-econ-filter"
 OUTCOME_FILTER_ID = "education-outcome-indicator"
+OUTCOME_HINT_ID = "education-outcome-indicator-hint"
 NARRATIVE_ID = "education-func-sub-narrative"
+# Dummy output of the linked-hover clientside callback (assets/linked_hover.js).
+HOVER_SYNC_ID = "education-level-hover-sync"
 
 _STORE_KEY = "edu_func_sub_econ_expenditure"
 
@@ -202,6 +205,34 @@ def get_econ_category_options(country, lang, current_value):
 def default_outcome_indicator(econ_filter):
     """The natural service-delivery indicator for a selected economic category."""
     return _ECON_DEFAULT_OUTCOME.get(econ_filter, DEFAULT_OUTCOME)
+
+
+def outcome_hint(econ_filter, lang="en"):
+    """Note under the indicator dropdown saying which category picked it.
+
+    ``None`` when the category has no natural indicator (e.g. "all"), so the
+    line stays empty.
+    """
+    if econ_filter not in _ECON_DEFAULT_OUTCOME:
+        return None
+    econ_label = translate_econ(econ_filter, lang)
+    return "↳ " + t("hint.recommended_for", lang, econ=econ_label)
+
+
+def sync_outcome_indicator(econ_filter, triggered_prop_ids, lang="en"):
+    """(value, hint) for the indicator dropdown after a filter change.
+
+    A category change auto-selects its natural indicator and shows the hint.
+    A pick the user made themselves is kept as-is and the hint is cleared.
+    ``triggered_prop_ids`` is ``dash.ctx.triggered_prop_ids`` from the callback.
+    """
+    user_picked = (
+        f"{OUTCOME_FILTER_ID}.value" in triggered_prop_ids
+        and f"{ECON_FILTER_ID}.value" not in triggered_prop_ids
+    )
+    if user_picked:
+        return no_update, None
+    return default_outcome_indicator(econ_filter), outcome_hint(econ_filter, lang)
 
 
 def spending_figure(country, econ_filter, lang="en"):
@@ -408,13 +439,23 @@ def layout(lang="en"):
             dbc.Row(dbc.Col(html.H3(children=t("heading.edu_func_sub_econ", lang)))),
             econ_outcome_filter.filter_bar(
                 ECON_FILTER_ID, OUTCOME_FILTER_ID, outcome_options, DEFAULT_OUTCOME, lang,
+                outcome_hint_id=OUTCOME_HINT_ID,
             ),
             dbc.Row(dbc.Col(html.P(id=NARRATIVE_ID, children=t("loading", lang)))),
+            # clear_on_unhover: leaving one chart clears the hover mirrored
+            # onto the other by the linked-hover callback.
             dbc.Row(
                 [
-                    dbc.Col(chart_container(SPENDING_CHART_ID), xs=12, lg=6),
-                    dbc.Col(chart_container(OUTCOME_CHART_ID), xs=12, lg=6),
+                    dbc.Col(
+                        chart_container(SPENDING_CHART_ID, clear_on_unhover=True),
+                        xs=12, lg=6,
+                    ),
+                    dbc.Col(
+                        chart_container(OUTCOME_CHART_ID, clear_on_unhover=True),
+                        xs=12, lg=6,
+                    ),
                 ]
             ),
+            dcc.Store(id=HOVER_SYNC_ID),
         ]
     )

@@ -12,37 +12,44 @@ from translations import t
 
 ALL_ECON = "__all__"
 
-def _filter_item(label_key, select_id, value, options, lang):
-    """One labeled dropdown (label on top of the select)."""
-    return html.Div(
-        [
-            html.Div(
-                [
-                    dbc.Label(
-                        t(label_key, lang),
-                        html_for=select_id,
-                        className="edu-filter-label mb-0",
-                    ),
-                ],
-                className="edu-filter-label-row",
-            ),
-            dbc.Select(
-                id=select_id,
-                size="sm",
-                className="econ-filter-select",
-                value=value,
-                options=options,
-            ),
-        ],
-        className="edu-filter-item",
-    )
+def _filter_item(label_key, select_id, value, options, lang, hint_id=None):
+    """One labeled dropdown (label on top of the select).
+
+    ``hint_id`` adds an initially empty line under the select for a short note
+    the page callback fills in (e.g. why an option was auto-selected).
+    """
+    children = [
+        html.Div(
+            [
+                dbc.Label(
+                    t(label_key, lang),
+                    html_for=select_id,
+                    className="edu-filter-label mb-0",
+                ),
+            ],
+            className="edu-filter-label-row",
+        ),
+        dbc.Select(
+            id=select_id,
+            size="sm",
+            className="econ-filter-select",
+            value=value,
+            options=options,
+        ),
+    ]
+    if hint_id:
+        children.append(html.Small(id=hint_id, className="edu-filter-hint"))
+    return html.Div(children, className="edu-filter-item")
 
 
-def filter_bar(econ_id, outcome_id, outcome_options, outcome_value, lang="en"):
+def filter_bar(
+    econ_id, outcome_id, outcome_options, outcome_value, lang="en", outcome_hint_id=None,
+):
     """The two-dropdown filter bar (economic category + indicator).
 
     ``outcome_options`` is a list of ``{"label", "value"}`` dicts; the economic
     category options are populated per country by the page callback.
+    ``outcome_hint_id`` adds a hint line under the indicator dropdown.
     """
     lang = lang or "en"
     return html.Div(
@@ -60,6 +67,7 @@ def filter_bar(econ_id, outcome_id, outcome_options, outcome_value, lang="en"):
                 outcome_value,
                 outcome_options,
                 lang,
+                hint_id=outcome_hint_id,
             ),
         ],
         className="edu-filter-bar",

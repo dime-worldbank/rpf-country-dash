@@ -238,15 +238,16 @@ def source_info_button(index):
     )
 
 
-def chart_container(chart_id):
+def chart_container(chart_id, **graph_props):
     """Wrap a chart with the Details button overlaid in top-right.
 
     Args:
         chart_id: HTML id for the container and chart metadata key
+        **graph_props: extra ``dcc.Graph`` props (e.g. ``clear_on_unhover``)
     """
     from dash import dcc
 
-    graph = dcc.Graph(id=chart_id, config={"displayModeBar": False})
+    graph = dcc.Graph(id=chart_id, config={"displayModeBar": False}, **graph_props)
 
     return html.Div(
         [

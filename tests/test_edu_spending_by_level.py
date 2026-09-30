@@ -6,6 +6,19 @@ import server_store
 import components.edu_spending_by_level as esl
 
 
+def _walk_layout(node):
+    """Every component in a layout tree (children may be a list or one node)."""
+    yield node
+    children = getattr(node, "children", None)
+    if children is None or isinstance(children, str):
+        return
+    if not isinstance(children, (list, tuple)):
+        children = [children]
+    for child in children:
+        if not isinstance(child, (str, int, float)):
+            yield from _walk_layout(child)
+
+
 def _spending_row(year, econ, value, func_sub="Primary Education"):
     return dict(
         country_name="Testland",
@@ -170,6 +183,78 @@ class TestReportedYearsAreConsistent(unittest.TestCase):
             esl.spending_narrative("Testland", esl.ALL_ECON, "completion_rate", "en"),
             "No data available for this period",
         )
+
+
+class TestOutcomeAutoSelectHint(unittest.TestCase):
+    """The hint under the indicator dropdown appears only when the indicator
+    was auto-selected from the economic category, never after a manual pick.
+    """
+
+    ECON = f"{esl.ECON_FILTER_ID}.value"
+    OUTCOME = f"{esl.OUTCOME_FILTER_ID}.value"
+
+    def test_category_change_autoselects_and_shows_hint(self):
+        value, hint = esl.sync_outcome_indicator(
+            "Wage bill", {self.ECON: esl.ECON_FILTER_ID}, "en"
+        )
+        self.assertEqual(value, "teacher_salary")
+        self.assertEqual(hint, "↳ Recommended for Wage bill")
+
+    def test_manual_pick_keeps_value_and_clears_hint(self):
+        value, hint = esl.sync_outcome_indicator(
+            "Wage bill", {self.OUTCOME: esl.OUTCOME_FILTER_ID}, "en"
+        )
+        self.assertIs(value, esl.no_update)
+        self.assertIsNone(hint)
+
+    def test_chained_change_counts_as_autoselect(self):
+        # Category and indicator both in the trigger set: the indicator changed
+        # because the category did, so it is still an auto-selection.
+        value, hint = esl.sync_outcome_indicator(
+            "Capital expenditures",
+            {self.ECON: esl.ECON_FILTER_ID, self.OUTCOME: esl.OUTCOME_FILTER_ID},
+            "en",
+        )
+        self.assertEqual(value, "electricity")
+        self.assertEqual(hint, "↳ Recommended for Capital expenditures")
+
+    def test_initial_load_and_all_categories_have_no_hint(self):
+        value, hint = esl.sync_outcome_indicator(esl.ALL_ECON, {}, "en")
+        self.assertEqual(value, esl.DEFAULT_OUTCOME)
+        self.assertIsNone(hint)
+
+    def test_hint_is_translated(self):
+        self.assertEqual(
+            esl.outcome_hint("Wage bill", "fr"),
+            "↳ Recommandé pour Masse salariale",
+        )
+        self.assertEqual(
+            esl.outcome_hint("Wage bill", "pt"),
+            "↳ Recomendado para Folha salarial",
+        )
+
+    def test_layout_has_hint_slot_under_indicator(self):
+        ids = [getattr(n, "id", None) for n in _walk_layout(esl.layout("en"))]
+        self.assertIn(esl.OUTCOME_HINT_ID, ids)
+
+
+class TestLinkedHoverWiring(unittest.TestCase):
+    """The linked-hover callback relies on both graphs clearing hoverData on
+    unhover (so leaving one chart clears its mirror) and on its dummy output
+    store being in the layout.
+    """
+
+    def test_both_graphs_clear_on_unhover_and_store_present(self):
+        nodes = list(_walk_layout(esl.layout("en")))
+        self.assertIn(esl.HOVER_SYNC_ID, [getattr(n, "id", None) for n in nodes])
+        for chart_id in (esl.SPENDING_CHART_ID, esl.OUTCOME_CHART_ID):
+            # The container div shares the graph's id; only the Graph has the prop.
+            graphs = [
+                n for n in nodes
+                if getattr(n, "id", None) == chart_id and hasattr(n, "clear_on_unhover")
+            ]
+            self.assertEqual(len(graphs), 1, chart_id)
+            self.assertTrue(graphs[0].clear_on_unhover, chart_id)
 
 
 if __name__ == "__main__":

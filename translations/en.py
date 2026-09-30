@@ -159,6 +159,7 @@ TRANSLATIONS = {
     "outcome.electricity": "Schools with electricity",
     "outcome.internet": "Schools with internet",
     "dropdown.all_econ_categories": "All economic categories",
+    "hint.recommended_for": "Recommended for {econ}",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source: BOOST & CPI: World Bank",

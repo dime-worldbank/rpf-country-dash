@@ -37,6 +37,16 @@ body.theme-wbg .form-select.econ-filter-select:focus {
     padding-left: 0.25rem;
     color: #6c757d;  /* theme muted gray (matches .text-muted) */
 }
+/* Note under a dropdown, e.g. why the indicator was auto-selected. */
+.edu-filter-hint {
+    font-size: 0.75rem;
+    padding-left: 0.25rem;
+    margin-top: 0.2rem;
+    color: #0d6efd;
+}
+.edu-filter-hint:empty {
+    display: none;
+}
 
 /* Detail row styling in modal */
 .detail-row {

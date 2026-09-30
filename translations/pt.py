@@ -162,6 +162,7 @@ TRANSLATIONS = {
     "outcome.electricity": "Escolas com energia elétrica",
     "outcome.internet": "Escolas com internet",
     "dropdown.all_econ_categories": "Todas as categorias econômicas",
+    "hint.recommended_for": "Recomendado para {econ}",
 
     # --- Source annotations / footer / disclaimer ---
     "source.boost_cpi": "Fonte: BOOST e IPC: Banco Mundial",
