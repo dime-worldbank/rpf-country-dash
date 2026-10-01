@@ -1,6 +1,9 @@
+import os
+import threading
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
+from databricks import sql
 from queries import QueryService, PUBLIC_ONLY
 
 class TestQueryService(unittest.TestCase):
@@ -118,6 +121,82 @@ class TestQueryService(unittest.TestCase):
         df = self.query_service.get_boost_source_urls()
         self.assertEqual(len(df), 1)
         self.assertEqual(df.iloc[0]["country_name"], "Kenya")
+
+
+def _mock_connection(df=None):
+    conn = MagicMock()
+    cursor = conn.cursor.return_value.__enter__.return_value
+    cursor.fetchall_arrow.return_value.to_pandas.return_value = (
+        df if df is not None else pd.DataFrame({"x": [1]})
+    )
+    return conn
+
+
+@patch("queries.PUBLIC_ONLY", False)
+class TestQueryServiceConnection(unittest.TestCase):
+
+    def setUp(self):
+        self.connect_patcher = patch("queries.sql.connect")
+        self.mock_connect = self.connect_patcher.start()
+        self.service = QueryService()
+
+    def tearDown(self):
+        self.connect_patcher.stop()
+
+    def test_falls_back_to_access_token_when_oauth_fails(self):
+        token_conn = _mock_connection()
+        self.mock_connect.side_effect = [Exception("oauth failed"), token_conn]
+
+        with patch.dict(os.environ, {"DATABRICKS_ACCESS_TOKEN": "tok"}):
+            self.service.execute_query("SELECT 1", persistent=False)
+
+        self.assertEqual(self.mock_connect.call_count, 2)
+        self.assertEqual(self.mock_connect.call_args.kwargs["access_token"], "tok")
+
+
+
+    def test_connection_reused_within_thread_but_not_shared_across_threads(self):
+        self.mock_connect.side_effect = lambda **kwargs: _mock_connection()
+        conns = {}
+
+        def run(name):
+            self.service.execute_query("SELECT 1", persistent=False)
+            self.service.execute_query("SELECT 2", persistent=False)
+            conns[name] = self.service._local.conn
+
+        threads = [threading.Thread(target=run, args=(i,)) for i in range(2)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        self.assertEqual(self.mock_connect.call_count, 2)
+        self.assertIsNot(conns[0], conns[1])
+
+    def test_reconnects_and_retries_on_databricks_error(self):
+        stale_conn = _mock_connection()
+        stale_conn.cursor.return_value.__enter__.return_value.execute.side_effect = (
+            sql.exc.ServerOperationError("Invalid SessionHandle")
+        )
+        expected = pd.DataFrame({"x": [42]})
+        self.mock_connect.side_effect = [stale_conn, _mock_connection(expected)]
+
+        df = self.service.execute_query("SELECT 1", persistent=False)
+
+        pd.testing.assert_frame_equal(df, expected)
+        stale_conn.close.assert_called_once()
+        self.assertEqual(self.mock_connect.call_count, 2)
+
+    def test_does_not_retry_non_databricks_errors(self):
+        conn = _mock_connection()
+        conn.cursor.return_value.__enter__.return_value.execute.side_effect = ValueError("bug")
+        self.mock_connect.return_value = conn
+
+        with self.assertRaises(ValueError):
+            self.service.execute_query("SELECT 1", persistent=False)
+
+        self.mock_connect.assert_called_once()
+        conn.close.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()
