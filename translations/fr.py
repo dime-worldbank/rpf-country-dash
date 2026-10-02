@@ -36,10 +36,10 @@ TRANSLATIONS = {
     "heading.public_spending_education_outcome": "Quel est le lien entre les dépenses et les résultats éducatifs ?",
     "heading.public_spending_health_outcome": "Quel est le lien entre les dépenses et les résultats sanitaires ?",
     "heading.operational_vs_capital": "À quoi sert l'argent ?",
-    "heading.central_vs_geo_education": "Dépenses d'éducation centralisées vs. géographiquement allouées",
-    "heading.central_vs_geo_health": "Dépenses de santé centralisées vs. géographiquement allouées",
-    "heading.public_spending_education_regions": "Dépenses publiques vs. résultats éducatifs par région",
-    "heading.public_spending_health_regions": "Dépenses publiques vs. résultats sanitaires par région",
+    "heading.central_vs_geo_education": "Dépenses d'éducation : niveau central c. répartition géographique",
+    "heading.central_vs_geo_health": 'Dépenses de santé : niveau central c. répartition géographique',
+    "heading.public_spending_education_regions": "Dépenses publiques c. résultats éducatifs par région",
+    "heading.public_spending_health_regions": 'Dépenses publiques c. résultats sanitaires par région',
 
     # --- Chart titles ---
     "chart.fiscal_balance_over_time": "Comment le solde budgétaire a-t-il évolué au fil du temps ?",
@@ -175,6 +175,13 @@ TRANSLATIONS = {
 
     # --- Sector names with grammatical metadata for preposition/genitive agreement ---
     "sector.health": {"name": "santé", "plural": False, "feminine": True},
+    # Mid-sentence region phrases, from the official REGION labels of the Togo
+    # BOOST workbook (REGION DES PLATEAUX, REGION DE LA KARA, ...).
+    "region.Togo.Centrale": "la région Centrale",
+    "region.Togo.Kara": "la région de la Kara",
+    "region.Togo.Maritime": "la région Maritime",
+    "region.Togo.Plateaux": "la région des Plateaux",
+    "region.Togo.Savanes": "la région des Savanes",
     "sector.education": {"name": "éducation", "plural": False, "feminine": True},
     "sector.health.facilities": {"name": "infrastructures sanitaires", "plural": True, "feminine": True},
     "sector.education.facilities": {"name": "infrastructures éducatives", "plural": True, "feminine": True},
@@ -313,9 +320,9 @@ TRANSLATIONS = {
     # --- Narrative templates: Spending ---
     "narrative.central_spending_change": "Au cours de cette période, les dépenses ajustées à l'inflation du gouvernement central {change_text} ",
     "narrative.subnational_spending_change": "tandis que les dépenses ajustées à l'inflation du gouvernement infranational {change_text}. ",
-    "narrative.subnational_unavailable": ". Les données du gouvernement infranational ne sont pas disponibles pour cette période. ",
+    "narrative.subnational_unavailable": '. Les données des collectivités territoriales ne sont pas disponibles pour cette période. ',
     "narrative.decentralization_by_year": "En {year}, {pct} des dépenses {sector_gen} ont été décentralisées.",
-    "narrative.decentralization_unknown": "L'étendue de la décentralisation des dépenses {sector_gen} est inconnue en raison d'un manque de données sur les dépenses publiques infranationales.",
+    "narrative.decentralization_unknown": "Le degré de décentralisation des dépenses {sector_gen} est inconnu en raison de l'absence de données sur les dépenses publiques locales.",
 
     # --- Narrative templates: Public vs Private ---
     "narrative.govt_share_trend": "{country_loc}, la part des dépenses publiques {sector_prep} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",
@@ -493,7 +500,7 @@ TRANSLATIONS = {
     "narrative.edu_subnational_motivation": "Pour examiner cela pour {country}, nous analysons les dépenses publiques par habitant en éducation en {year} comme mesure de l'allocation des ressources financières au niveau infranational et utilisons le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation.",
 
     # --- Health across space ---
-    "narrative.health_subnational_context": "Les disparités dans les dépenses publiques de santé entre les régions peuvent avoir un impact sur la couverture sanitaire universelle (UHC) en créant des écarts dans l'accès aux services et la protection financière. Étant donné que les soins de santé primaires sont au cœur de la UHC, les régions avec des dépenses de santé par habitant plus faibles peuvent avoir du mal à fournir des services essentiels, entraînant une couverture plus faible en santé maternelle, lutte contre les maladies infectieuses et gestion des maladies chroniques. L'analyse des disparités infranationales dans les dépenses de santé géographiquement allouées aide à évaluer si les ressources sont alignées sur les objectifs de la UHC et à identifier les régions à risque d'accès insuffisant aux soins de santé.",
+    "narrative.health_subnational_context": "Les disparités régionales dans les dépenses publiques de santé peuvent compromettre la couverture sanitaire universelle (CSU, ou UHC en anglais) en créant des écarts dans l'accès aux services et dans la protection financière. Étant donné que les soins de santé primaires sont au cœur de la CSU, les régions avec des dépenses de santé par habitant plus faibles peuvent avoir du mal à fournir des services essentiels, entraînant une couverture plus faible en santé maternelle, lutte contre les maladies infectieuses et gestion des maladies chroniques. L'analyse des disparités infranationales dans les dépenses de santé géographiquement allouées aide à évaluer si les ressources sont alignées sur les objectifs de la CSU et à identifier les régions à risque d'accès insuffisant aux soins de santé.",
     "narrative.health_subnational_motivation": "Pour examiner cela pour {country}, nous analysons les dépenses publiques de santé par habitant en {year} comme mesure de l'allocation des ressources financières au niveau infranational et utilisons l'indice UHC comme indicateur de la couverture sanitaire universelle.",
 
     # --- Subnational rank narrative ---
@@ -501,7 +508,7 @@ TRANSLATIONS = {
     # {que_worst} holds the right form of "que" — "que " or "qu'" — so the
     # sentence elides correctly before vowel-initial region names
     # ("tandis qu'Afar" vs "tandis que Kampala").
-    "narrative.subnat_rank_roi": " Parmi les régions infranationales, le retour sur investissement (ROI) des dépenses publiques {func_prep}, mesuré par {outcome_name}, a été le plus élevé pour {best} tandis {que_worst}{worst} a eu le plus faible.",
+    "narrative.subnat_rank_roi": ' Parmi les régions, le retour sur investissement (ROI) des dépenses publiques {func_de}, mesuré par {outcome_name}, a été le plus élevé pour {best} et le plus faible pour {worst}.',
     "label.per_capita_expenditure_on": "Dépenses par habitant {func_prep}",
     # Lowercase form: includes the article "les" since its only consumer
     # is mid-sentence correlation narratives ("entre les dépenses par
@@ -603,7 +610,7 @@ TRANSLATIONS = {
     "narrative.execution_under": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, avec une sous-exécution constante — environ {gap:.1f} % du {budget} approuvé reste non dépensé chaque année.",
     "narrative.execution_on_track": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en suivant de près la planification — signe d'un {budget} crédible.",
     "narrative.execution_over": "{country} a exécuté en moyenne {mean:.1f} % de son {budget} approuvé, en dépensant régulièrement plus que ce qui était prévu.",
-    "narrative.econ_execution_breakdown": "Au sein du {budget}, sur la même période, la catégorie {high} a le mieux exécuté, à {high_rate:.1f} %, tandis que la catégorie {low} a le plus accusé de retard, à {low_rate:.1f} %.",
+    "narrative.econ_execution_breakdown": "Au sein du {budget}, sur la même période, la catégorie {high_gen} a enregistré le meilleur taux d'exécution, à {high_rate:.1f} %, tandis que la catégorie {low_gen} a accusé le plus fort retard, à {low_rate:.1f} %.",
     "narrative.execution_recent_rose": "Au cours des {n} dernières années, l'exécution a augmenté, passant de {first:.1f} % à {last:.1f} %.",
     "narrative.execution_recent_fell": "Au cours des {n} dernières années, l'exécution a diminué, passant de {first:.1f} % à {last:.1f} %.",
     "narrative.execution_recent_steady": "Au cours des {n} dernières années, l'exécution est restée globalement stable, à {latest:.1f} % la dernière année.",
@@ -621,7 +628,7 @@ TRANSLATIONS = {
     # UHC", "selon la fréquentation scolaire"). Falls back to the bare form
     # in English since articles aren't needed.
     "outcome.school_attendance.narrative": "la fréquentation scolaire des 6-17 ans",
-    "outcome.uhc_index.narrative": "l'indice UHC",
+    "outcome.uhc_index.narrative": "l'indice CSU (ou UHC)",
 
     # --- Sankey rank labels ---
     "rank.1st": "1er",

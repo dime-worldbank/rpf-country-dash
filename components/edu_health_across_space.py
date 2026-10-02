@@ -7,7 +7,7 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t, genitive, preposition, _LANGUAGES, elide_que
+from translations import t, genitive, preposition, _LANGUAGES, elide_que, de_bare
 from constants import translate_func_sub
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
@@ -668,6 +668,14 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
     return apply_locale(fig, lang), narrative
 
 
+def _region_phrase(lang, country, region):
+    """The region as written mid-sentence ("la région des Plateaux") when the
+    catalog has a phrase for it, otherwise its name."""
+    key = f"region.{country}.{region}"
+    phrase = t(key, lang)
+    return region if phrase == key else phrase
+
+
 def _func_subnat_rank_narrative(year, func, data, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
     func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
@@ -710,10 +718,13 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
     )
     func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
     func_prep = preposition(lang, func_meta) if func_meta else f"in {func_lower}"
+    country = data["country_name"].iloc[0] if "country_name" in data.columns else None
     narrative += t(
         "narrative.subnat_rank_roi", lang,
-        func_prep=func_prep, outcome_name=outcome_narrative,
-        best=best_ROI, worst=worst_ROI,
+        func_prep=func_prep, func_de=de_bare(lang, func_lower),
+        outcome_name=outcome_narrative,
+        best=_region_phrase(lang, country, best_ROI),
+        worst=_region_phrase(lang, country, worst_ROI),
         # que_worst handles elision of "que" before a vowel-initial region
         # name ("tandis qu'Afar") in French. English template ignores it.
         que_worst=elide_que(lang, worst_ROI),

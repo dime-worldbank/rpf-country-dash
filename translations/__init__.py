@@ -309,6 +309,16 @@ def _preposition_fr(noun_or_meta):
         return "à"  # no article — use "à"
 
 
+def de_bare(lang, noun):
+    """French "de" before a bare noun, elided before a vowel: "de santé",
+    "d'éducation". Other languages get the noun unchanged."""
+    if lang != "fr" or not noun:
+        return noun
+    if noun[0].lower() in _FRENCH_VOWELS:
+        return f"d'{noun}"
+    return f"de {noun}"
+
+
 def elide_que(lang, name):
     """Return the language-appropriate equivalent of "that"/"que".
 
