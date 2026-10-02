@@ -1,6 +1,7 @@
 import os
 import threading
 import unittest
+from decimal import Decimal
 from unittest.mock import patch, MagicMock
 import pandas as pd
 from databricks import sql
@@ -10,6 +11,9 @@ from queries import QueryService, PUBLIC_ONLY
 class TestQueryService(unittest.TestCase):
 
     def setUp(self):
+        backend = patch("queries.DB_BACKEND", "databricks")
+        backend.start()
+        self.addCleanup(backend.stop)
         self.patcher = patch.object(QueryService, "execute_query")
         self.mock_execute_query = self.patcher.start()
         self.mock_table_df = pd.DataFrame({
@@ -137,6 +141,9 @@ def _mock_connection(df=None):
 class TestQueryServiceConnection(unittest.TestCase):
 
     def setUp(self):
+        backend = patch("queries.DB_BACKEND", "databricks")
+        backend.start()
+        self.addCleanup(backend.stop)
         self.connect_patcher = patch("queries.sql.connect")
         self.mock_connect = self.connect_patcher.start()
         self.service = QueryService()
@@ -237,6 +244,22 @@ class TestQueryServicePostgres(unittest.TestCase):
         self.assertEqual(namespace, "postgres:db.example:6543/prd_mega")
         self.assertNotIn("secret", namespace)
 
+    def test_missing_dsn_fails_at_startup_naming_the_variable(self):
+        with patch.dict(os.environ):
+            del os.environ["POSTGRES_DSN"]
+            with self.assertRaisesRegex(RuntimeError, "POSTGRES_DSN"):
+                QueryService()
+
+    def test_invalid_dsn_error_does_not_echo_the_dsn(self):
+        with patch.dict(os.environ, {"POSTGRES_DSN": "host=db password=s3cret leaked"}):
+            with self.assertRaisesRegex(RuntimeError, "POSTGRES_DSN") as raised:
+                QueryService()
+
+        self.assertNotIn("s3cret", str(raised.exception))
+        self.assertNotIn("leaked", str(raised.exception))
+        self.assertIsNone(raised.exception.__cause__)
+        self.assertTrue(raised.exception.__suppress_context__)
+
     @patch("queries.psycopg.connect")
     def test_returns_dataframe_with_column_names(self, pg_connect):
         pg_connect.return_value = _pg_connection(
@@ -255,6 +278,28 @@ class TestQueryServicePostgres(unittest.TestCase):
 
         self.assertEqual(df["decentralized"].dtype, "float64")
         self.assertTrue(df["decentralized"].isna().all())
+
+    @patch("queries.psycopg.connect")
+    def test_numeric_column_is_float64(self, pg_connect):
+        pg_connect.return_value = _pg_connection(
+            [(Decimal("1234567890.12"),), (None,)], ["executed"], [1700])
+
+        df = QueryService().execute_query("SELECT executed FROM t", persistent=False)
+
+        self.assertEqual(df["executed"].dtype, "float64")
+        self.assertEqual(df["executed"].iloc[0], 1234567890.12)
+        self.assertTrue(pd.isna(df["executed"].iloc[1]))
+
+    @patch("queries.psycopg.connect")
+    def test_empty_result_keeps_float_columns_float64(self, pg_connect):
+        pg_connect.return_value = _pg_connection([], ["executed", "approved", "year"], [701, 1700, 23])
+
+        df = QueryService().execute_query("SELECT executed, approved, year FROM t", persistent=False)
+
+        self.assertTrue(df.empty)
+        self.assertEqual(df["executed"].dtype, "float64")
+        self.assertEqual(df["approved"].dtype, "float64")
+        self.assertEqual(df["year"].dtype, "int64")
 
     @patch("queries.psycopg.connect")
     def test_reconnects_once_when_the_connection_dropped(self, pg_connect):

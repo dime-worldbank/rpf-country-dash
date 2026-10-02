@@ -4,6 +4,7 @@ import logging
 import threading
 import pandas as pd
 import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
@@ -28,6 +29,8 @@ SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
 DB_BACKEND = os.getenv("DB_BACKEND", "databricks")
 # int2, int4, int8, float4, float8, numeric
 PG_NUMERIC_TYPES = {21, 23, 20, 700, 701, 1700}
+# float4, float8, numeric
+PG_FLOAT_TYPES = {700, 701, 1700}
 
 def credentials_provider():
     logging.info("Initializing credential provider...")
@@ -66,11 +69,18 @@ class QueryService:
     @staticmethod
     def _cache_namespace():
         """Cache namespace of the configured data source. Databricks keeps the default
-        namespace, so caches it wrote stay valid; PostgreSQL is identified by host, port
-        and database, never by its credentials."""
+        namespace, so caches it wrote stay valid; PostgreSQL is identified by the host,
+        port and database of its DSN, never by its credentials."""
         if DB_BACKEND != "postgres":
             return ""
-        info = psycopg.conninfo.conninfo_to_dict(os.environ["POSTGRES_DSN"])
+        dsn = os.getenv("POSTGRES_DSN")
+        if not dsn:
+            raise RuntimeError("DB_BACKEND=postgres requires POSTGRES_DSN")
+        try:
+            info = conninfo_to_dict(dsn)
+        except psycopg.ProgrammingError:
+            # libpq parse errors quote fragments of the DSN, which may hold the password.
+            raise RuntimeError("POSTGRES_DSN is not a valid PostgreSQL connection string") from None
         return f"postgres:{info.get('host', '')}:{info.get('port', '5432')}/{info.get('dbname', '')}"
 
     # ---- Connection management ------------------------------------------------
@@ -152,11 +162,15 @@ class QueryService:
     @staticmethod
     def _to_dataframe(cursor):
         # Numeric columns as numbers, NULL as NaN (an all-NULL column would
-        # otherwise stay object/None), like the Databricks arrow result.
+        # otherwise stay object/None). Float and numeric columns are float64,
+        # also in an empty result, the dtype of the DOUBLE columns these
+        # tables have on Databricks.
         df = pd.DataFrame(cursor.fetchall(), columns=[c.name for c in cursor.description])
         for c in cursor.description:
             if c.type_code in PG_NUMERIC_TYPES:
                 df[c.name] = pd.to_numeric(df[c.name])
+            if c.type_code in PG_FLOAT_TYPES:
+                df[c.name] = df[c.name].astype("float64")
         return df
 
     def fetch_data(self, query):
