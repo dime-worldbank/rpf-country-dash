@@ -7,7 +7,7 @@ import re
 import traceback
 from dash import html
 from components.year_slider import get_slider_config
-from translations import t, genitive, preposition, _LANGUAGES, elide_que, de_bare
+from translations import t, genitive, preposition, _LANGUAGES
 from constants import translate_func_sub
 from viz_theme import (
     DIVERGING, CENTRAL_COLOR, REGIONAL_COLOR, TREEMAP_PALETTE,
@@ -664,19 +664,17 @@ def render_func_subnat_rank(subnational_data, country, base_year, func, currency
                 showarrow=False,
             )
 
-    narrative = _func_subnat_rank_narrative(base_year, func, data, lang=lang)
+    narrative = _func_subnat_rank_narrative(base_year, func, data, country, lang=lang)
     return apply_locale(fig, lang), narrative
 
 
 def _region_phrase(lang, country, region):
     """The region as written mid-sentence ("la région des Plateaux") when the
     catalog has a phrase for it, otherwise its name."""
-    key = f"region.{country}.{region}"
-    phrase = t(key, lang)
-    return region if phrase == key else phrase
+    return _LANGUAGES[lang].get(f"region.{country}.{region}", region)
 
 
-def _func_subnat_rank_narrative(year, func, data, lang="en"):
+def _func_subnat_rank_narrative(year, func, data, country, lang="en"):
     func_lower = t(f"sector.{func.lower()}", lang)
     func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
 
@@ -685,7 +683,7 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
     outcome_name_lower = re.sub(r'\buhc\b', 'UHC', outcome_name.lower(), flags=re.IGNORECASE)
 
     # For the correlation narrative, pass articled display names so the
-    # generated French reads "entre les dépenses... et l'indice UHC..."
+    # generated French reads "entre les dépenses... et l'indice CSU..."
     # rather than the ungrammatical bare-noun concatenation.
     outcome_display = (
         t(f"{outcome_name_key}.narrative", lang)
@@ -710,23 +708,19 @@ def _func_subnat_rank_narrative(year, func, data, lang="en"):
     worst_ROI = data[data["ROI"] == data.ROI.min()].adm1_name.values[0]
 
     # Use the .narrative form (with definite article in French) for
-    # mid-sentence interpolation — "mesuré par l'indice UHC" not
-    # "mesuré par indice UHC".
+    # mid-sentence interpolation — "mesuré par l'indice CSU" not
+    # "mesuré par indice CSU".
     outcome_narrative = (
         t(f"{outcome_name_key}.narrative", lang)
         if outcome_name_key else outcome_name_lower
     )
     func_meta = _LANGUAGES[lang].get(f"sector.{func.lower()}")
     func_prep = preposition(lang, func_meta) if func_meta else f"in {func_lower}"
-    country = data["country_name"].iloc[0] if "country_name" in data.columns else None
     narrative += t(
         "narrative.subnat_rank_roi", lang,
-        func_prep=func_prep, func_de=de_bare(lang, func_lower),
+        func_prep=func_prep, func_de=genitive(lang, func_lower),
         outcome_name=outcome_narrative,
         best=_region_phrase(lang, country, best_ROI),
         worst=_region_phrase(lang, country, worst_ROI),
-        # que_worst handles elision of "que" before a vowel-initial region
-        # name ("tandis qu'Afar") in French. English template ignores it.
-        que_worst=elide_que(lang, worst_ROI),
     )
     return narrative
