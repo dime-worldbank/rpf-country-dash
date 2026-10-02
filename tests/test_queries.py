@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
 from databricks import sql
+import psycopg
 from queries import QueryService, PUBLIC_ONLY
 
 class TestQueryService(unittest.TestCase):
@@ -200,4 +201,61 @@ class TestQueryServiceConnection(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def _pg_connection(rows, columns, type_codes):
+    conn = MagicMock()
+    cursor = conn.cursor.return_value.__enter__.return_value
+    cursor.description = [MagicMock(type_code=code) for code in type_codes]
+    for desc, name in zip(cursor.description, columns):
+        desc.name = name
+    cursor.fetchall.return_value = rows
+    return conn
+
+
+@patch("queries.PUBLIC_ONLY", False)
+@patch("queries.DB_BACKEND", "postgres")
+@patch.dict(os.environ, {"POSTGRES_DSN": "postgresql://u:p@db/prd_mega"})
+class TestQueryServicePostgres(unittest.TestCase):
+
+    @patch("queries.sql.connect")
+    @patch("queries.psycopg.connect")
+    def test_connects_to_postgres_dsn(self, pg_connect, dbx_connect):
+        pg_connect.return_value = _pg_connection([(1,)], ["x"], [20])
+
+        QueryService().execute_query("SELECT 1", persistent=False)
+
+        pg_connect.assert_called_once_with("postgresql://u:p@db/prd_mega", autocommit=True)
+        dbx_connect.assert_not_called()
+
+    @patch("queries.psycopg.connect")
+    def test_returns_dataframe_with_column_names(self, pg_connect):
+        pg_connect.return_value = _pg_connection(
+            [("Togo", 2021), ("Togo", 2022)], ["country_name", "year"], [25, 20])
+
+        df = QueryService().execute_query("SELECT country_name, year FROM t", persistent=False)
+
+        pd.testing.assert_frame_equal(
+            df, pd.DataFrame({"country_name": ["Togo", "Togo"], "year": [2021, 2022]}))
+
+    @patch("queries.psycopg.connect")
+    def test_null_numeric_column_is_float_nan(self, pg_connect):
+        pg_connect.return_value = _pg_connection([(None,), (None,)], ["decentralized"], [701])
+
+        df = QueryService().execute_query("SELECT decentralized FROM t", persistent=False)
+
+        self.assertEqual(df["decentralized"].dtype, "float64")
+        self.assertTrue(df["decentralized"].isna().all())
+
+    @patch("queries.psycopg.connect")
+    def test_reconnects_once_when_the_connection_dropped(self, pg_connect):
+        stale = _pg_connection([], ["x"], [20])
+        stale.cursor.return_value.__enter__.return_value.execute.side_effect = (
+            psycopg.OperationalError("server closed the connection unexpectedly"))
+        pg_connect.side_effect = [stale, _pg_connection([(42,)], ["x"], [20])]
+
+        df = QueryService().execute_query("SELECT 1", persistent=False)
+
+        self.assertEqual(df["x"].tolist(), [42])
+        self.assertEqual(pg_connect.call_count, 2)
 

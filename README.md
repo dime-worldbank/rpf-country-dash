@@ -137,6 +137,16 @@ réelles ont augmenté de 50,00 (+50,00 %), maintenant une trajectoire constante
 
 Narratives respect language-specific formatting where package support is available. Portuguese dashboard templates and app-generated numbers use comma decimals and Portuguese article/preposition helpers; package-generated trend fragments use Portuguese output if `trend-narrative` accepts `pt` or `ptbr`, otherwise English fallback.
 
+## PostgreSQL instead of Databricks
+
+```bash
+DB_BACKEND=postgres
+POSTGRES_DSN=postgresql://user:password@host:5432/prd_mega
+```
+
+The queries are unchanged: the database must be named `prd_mega` and hold the
+`boost` and `indicator` schemas with the same tables as Databricks.
+
 ## Development within docker container
 1. Edit .env to update your environment variables after copying the sample env file. (Do not use quotations around the values)
 
