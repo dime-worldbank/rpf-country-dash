@@ -615,11 +615,15 @@ def _format_econ_execution_clause(df, sector, lang="en"):
         name = translate_econ(bucket, lang)
         return name[0].lower() + name[1:]
 
+    def label_gen(bucket):
+        # "la catégorie des autres dépenses récurrentes", "… de la masse salariale"
+        return genitive(lang, translate_econ(bucket, lang, narrative=True))
+
     return t(
         "narrative.econ_execution_breakdown", lang,
         budget=_budget_label(sector, lang),
-        high=label(high_bucket), high_rate=means[high_bucket],
-        low=label(low_bucket), low_rate=means[low_bucket],
+        high=label(high_bucket), high_gen=label_gen(high_bucket), high_rate=means[high_bucket],
+        low=label(low_bucket), low_gen=label_gen(low_bucket), low_rate=means[low_bucket],
     )
 
 
