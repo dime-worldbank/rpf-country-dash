@@ -48,7 +48,7 @@ class QueryService:
         return QueryService._instance
 
     def __init__(self):
-        self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR)
+        self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR, namespace=self._cache_namespace())
 
         # Databricks SQL connections are not thread-safe (DB-API threadsafety=1),
         # so each thread keeps its own; it's closed by Connection.__del__ on thread exit.
@@ -62,6 +62,16 @@ class QueryService:
                 WHERE boost_public = 'Yes'
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
+
+    @staticmethod
+    def _cache_namespace():
+        """Cache namespace of the configured data source. Databricks keeps the default
+        namespace, so caches it wrote stay valid; PostgreSQL is identified by host, port
+        and database, never by its credentials."""
+        if DB_BACKEND != "postgres":
+            return ""
+        info = psycopg.conninfo.conninfo_to_dict(os.environ["POSTGRES_DSN"])
+        return f"postgres:{info.get('host', '')}:{info.get('port', '5432')}/{info.get('dbname', '')}"
 
     # ---- Connection management ------------------------------------------------
     def _create_connection(self):

@@ -199,8 +199,10 @@ class TestQueryServiceConnection(unittest.TestCase):
         self.mock_connect.assert_called_once()
         conn.close.assert_not_called()
 
-if __name__ == "__main__":
-    unittest.main()
+class TestCacheNamespaceDatabricks(unittest.TestCase):
+    @patch("queries.DB_BACKEND", "databricks")
+    def test_databricks_keeps_the_default_namespace(self):
+        self.assertEqual(QueryService._cache_namespace(), "")
 
 
 def _pg_connection(rows, columns, type_codes):
@@ -227,6 +229,13 @@ class TestQueryServicePostgres(unittest.TestCase):
 
         pg_connect.assert_called_once_with("postgresql://u:p@db/prd_mega", autocommit=True)
         dbx_connect.assert_not_called()
+
+    def test_cache_namespace_names_the_database_without_credentials(self):
+        with patch.dict(os.environ, {"POSTGRES_DSN": "postgresql://user:secret@db.example:6543/prd_mega"}):
+            namespace = QueryService._cache_namespace()
+
+        self.assertEqual(namespace, "postgres:db.example:6543/prd_mega")
+        self.assertNotIn("secret", namespace)
 
     @patch("queries.psycopg.connect")
     def test_returns_dataframe_with_column_names(self, pg_connect):
@@ -259,3 +268,6 @@ class TestQueryServicePostgres(unittest.TestCase):
         self.assertEqual(df["x"].tolist(), [42])
         self.assertEqual(pg_connect.call_count, 2)
 
+
+if __name__ == "__main__":
+    unittest.main()

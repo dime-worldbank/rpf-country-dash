@@ -145,7 +145,10 @@ POSTGRES_DSN=postgresql://user:password@host:5432/prd_mega
 ```
 
 The queries are unchanged: the database must be named `prd_mega` and hold the
-`boost` and `indicator` schemas with the same tables as Databricks.
+`boost` and `indicator` schemas with the same tables as Databricks. With
+`AUTH_ENABLED=1` it also needs the `sboost4` schema, whose
+`dashboard_user_credentials` table holds the login credentials (see
+`QueryService.get_user_credentials`).
 
 ## Development within docker container
 1. Edit .env to update your environment variables after copying the sample env file. (Do not use quotations around the values)
