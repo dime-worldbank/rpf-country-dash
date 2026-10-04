@@ -83,7 +83,7 @@ TRANSLATIONS = {
     "trace.total_budget": "Budget total",
     "trace.per_capita": "Par habitant",
     "trace.pefa_score": "Score PEFA",
-    "trace.uhc_index": "Indice de couverture sanitaire universelle",
+    "trace.uhc_index": "Indice CSU",
     "trace.attendance_rate": "Taux de fréquentation des 6-17 ans",
     "trace.learning_poverty": "taux de pauvreté des apprentissages",
     "trace.inflation_adjusted_per_capita": "dépenses publiques par habitant ajustées à l'inflation",
@@ -268,7 +268,7 @@ TRANSLATIONS = {
         "feminine": True,
     },
     "metric.uhc_index": {
-        "name": "l'indice de couverture sanitaire universelle",
+        "name": "l'indice CSU",
         "plural": False,
         "feminine": False,
     },
@@ -332,7 +332,7 @@ TRANSLATIONS = {
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",
-    "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
+    "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle (CSU) comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",
     "narrative.outcome_meanwhile": " Parallèlement, {pcc}",
 

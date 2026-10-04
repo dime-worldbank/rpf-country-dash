@@ -87,6 +87,12 @@ class FixedStringsTest(unittest.TestCase):
         self.assertIn("CSU", t("source.health_outcome", "fr"))
         self.assertNotIn("UHC", t("source.health_outcome", "fr"))
 
+    def test_csu_on_the_over_time_tab(self):
+        self.assertIn("l'indice de couverture sanitaire universelle (CSU) comme indicateur",
+                      t("narrative.health_outcome_measure", "fr"))
+        self.assertEqual(t("trace.uhc_index", "fr"), "Indice CSU")
+        self.assertEqual(t("metric.uhc_index", "fr"), "l'indice CSU")
+
 
 class RoiNarrativeTest(unittest.TestCase):
 
