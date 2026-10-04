@@ -30,7 +30,7 @@ from auth import AUTH_ENABLED
 from queries import QueryService
 import server_store
 from server import server
-from translations import t, strip_article, LANGUAGE_OPTIONS, DEFAULT_LANGUAGE
+from translations import t, strip_article, LANGUAGE_OPTIONS, initial_ui_language, selected_language
 from utils import get_login_path, get_prefixed_path
 from viz_theme import (
     DEFAULT_THEME, VALID_THEMES, init_plotly_theme,
@@ -41,6 +41,8 @@ from viz_theme import (
 # Comma-separated raw English country names, matching `country_name` in the
 # data; empty means every country present in the data.
 COUNTRIES = [c.strip() for c in os.getenv("COUNTRIES", "").split(",") if c.strip()]
+# Language the interface opens in before a visitor picks one.
+INITIAL_LANGUAGE = initial_ui_language(os.getenv("DEFAULT_LANGUAGE"))
 
 app = Dash(
     __name__,
@@ -95,13 +97,13 @@ header = html.Div(
             # can't inherit a fill color. See #logout-button rules in
             # assets/90_custom.css.
             children=html.Span(className="logout-icon", role="img",
-                               **{"aria-label": t("nav.logout", DEFAULT_LANGUAGE)}),
+                               **{"aria-label": t("nav.logout", INITIAL_LANGUAGE)}),
             n_clicks=0,
             id="logout-button",
             style={"display": "none"},
         ),
         dbc.Tooltip(
-            t("nav.logout", DEFAULT_LANGUAGE),
+            t("nav.logout", INITIAL_LANGUAGE),
             id="logout-tooltip",
             target="logout-button",
             placement="bottom-start",
@@ -158,7 +160,7 @@ app_footer = html.Div(
             target="_blank",
         ),
         html.Span(
-            t("footer.supported_by", DEFAULT_LANGUAGE),
+            t("footer.supported_by", INITIAL_LANGUAGE),
             id="footer-acknowledgment",
             className="footer-acknowledgment",
         ),
@@ -183,7 +185,9 @@ dummy_div = html.Div(id="div-for-redirect")
 def layout():
     html_contents = [
         dcc.Location(id="url", refresh=False),
-        dcc.Store(id="stored-language", storage_type="local", data=DEFAULT_LANGUAGE),
+        # Session storage: each visit opens in INITIAL_LANGUAGE; a language
+        # picked by the visitor lasts while the browser tab stays open.
+        dcc.Store(id="stored-language", storage_type="session", data=INITIAL_LANGUAGE),
         dcc.Store(id="theme-store", data=DEFAULT_THEME),
         dcc.Store(id="default-theme-store", data=DEFAULT_THEME),
         header,
@@ -214,11 +218,10 @@ app.layout = layout
 @app.callback(
     Output("stored-language", "data"),
     Input({"type": "lang-link", "index": ALL}, "n_clicks"),
+    State("stored-language", "data"),
 )
-def update_language(clicks):
-    if not ctx.triggered_id:
-        return DEFAULT_LANGUAGE
-    return ctx.triggered_id["index"]
+def update_language(_clicks, stored):
+    return selected_language(ctx.triggered_id, stored, INITIAL_LANGUAGE)
 
 
 @app.callback(
@@ -250,7 +253,7 @@ def update_nav_links(lang):
     Input("stored-language", "data"),
 )
 def update_footer_acknowledgment(lang):
-    return t("footer.supported_by", lang or DEFAULT_LANGUAGE)
+    return t("footer.supported_by", lang or INITIAL_LANGUAGE)
 
 
 @app.callback(
@@ -290,7 +293,7 @@ def update_logout_button_visibility(pathname):
     Input("stored-language", "data"),
 )
 def update_logout_tooltip(lang):
-    return t("nav.logout", lang or DEFAULT_LANGUAGE)
+    return t("nav.logout", lang or INITIAL_LANGUAGE)
 
 
 @app.callback(Output("stored-data", "data"), Input("stored-data", "data"))
@@ -345,7 +348,7 @@ def display_data(data, search, lang, current_country):
     The dropdown value remains the raw English country name (used as a
     data key throughout the app). Only the visible label is localized.
     """
-    lang = lang or "en"
+    lang = lang or INITIAL_LANGUAGE
 
     def get_country_select_options(countries):
         # Dropdown label drops the article ("Kenya", not "le Kenya") while
@@ -527,7 +530,7 @@ def open_source_info_modal(n_clicks, country, source_meta, lang):
     if not n_clicks:
         return no_update, no_update
 
-    lang = lang or "en"
+    lang = lang or INITIAL_LANGUAGE
     index = ctx.triggered_id["index"]
     info = build_modal_info(index, country, source_meta, lang=lang)
     return True, build_modal_children(info, lang=lang)

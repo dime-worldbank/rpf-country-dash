@@ -20,6 +20,23 @@ LANGUAGE_OPTIONS = [
 ]
 
 DEFAULT_LANGUAGE = "en"
+SUPPORTED_LANGUAGES = {option["value"] for option in LANGUAGE_OPTIONS}
+
+
+def selected_language(triggered_id, stored, opening):
+    """Language to store: the clicked language link, otherwise (page load)
+    the visitor's stored choice if supported, otherwise the opening language."""
+    if triggered_id:
+        return triggered_id["index"]
+    return stored if stored in SUPPORTED_LANGUAGES else opening
+
+
+def initial_ui_language(value):
+    """Language the interface opens in, from a setting such as the
+    DEFAULT_LANGUAGE environment variable; unset or unsupported values give
+    DEFAULT_LANGUAGE."""
+    code = (value or "").strip().lower()
+    return code if code in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
 
 
 # Matches a digit-dot-digit sequence — used to swap English decimal points
