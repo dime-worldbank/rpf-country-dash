@@ -156,11 +156,11 @@ class QueryService:
         with conn.cursor() as cursor:
             cursor.execute(query)
             if DB_BACKEND == "postgres":
-                return self._to_dataframe(cursor)
+                return self._pg_to_dataframe(cursor)
             return cursor.fetchall_arrow().to_pandas()
 
     @staticmethod
-    def _to_dataframe(cursor):
+    def _pg_to_dataframe(cursor):
         # Numeric columns as numbers, NULL as NaN (an all-NULL column would
         # otherwise stay object/None). Float and numeric columns are float64,
         # also in an empty result, the dtype of the DOUBLE columns these
