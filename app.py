@@ -19,7 +19,7 @@ from dash import (
 )
 from urllib.parse import parse_qs, urlparse
 
-from components.country_selector import country_select_style, country_selector
+from components.country_selector import country_selector, selector_styles
 from components.source_metadata_popover import (
     CHART_METADATA,
     build_modal_children,
@@ -333,6 +333,8 @@ def fetch_subnational_data_once(data, country_data):
     Output("country-select", "options"),
     Output("country-select", "value"),
     Output("country-select", "style"),
+    Output("country-label", "children"),
+    Output("country-label", "style"),
     Input("stored-data", "data"),
     Input("url", "search"),
     Input("stored-language", "data"),
@@ -344,18 +346,19 @@ def display_data(data, search, lang, current_country):
     Usage: ?country=Kenya or ?country=Kenya&theme=wbg
 
     The dropdown value remains the raw English country name (used as a
-    data key throughout the app). Only the visible label is localized.
+    data key throughout the app). Only the visible label is localized; the
+    same label is shown as plain text when a single country is configured.
     """
     lang = lang or INITIAL_LANGUAGE
-    style = no_update if data is None else country_select_style(COUNTRIES, data.get("countries"))
+    styles = (no_update, no_update) if data is None else selector_styles(COUNTRIES, data.get("countries"))
+
+    def country_label(country):
+        # Drops the article ("Kenya", not "le Kenya")
+        return strip_article(lang, t(f"country.{country}", lang))
 
     def get_country_select_options(countries):
-        # Dropdown label drops the article ("Kenya", not "le Kenya") while
         # `value` stays the raw English key used throughout the app.
-        options = [
-            {"label": strip_article(lang, t(f"country.{c}", lang)), "value": c}
-            for c in countries
-        ]
+        options = [{"label": country_label(c), "value": c} for c in countries]
         if options:
             options[0]["selected"] = True
         return options
@@ -374,11 +377,13 @@ def display_data(data, search, lang, current_country):
                 url_country = params.get("country", [None])[0]
                 if url_country and url_country in countries:
                     selected_country = url_country
-            return get_country_select_options(countries), selected_country, style
+            return (get_country_select_options(countries), selected_country, styles[0],
+                    country_label(selected_country), styles[1])
 
         # URL changed or language changed but we already have a country — keep it
-        return get_country_select_options(countries), current_country, style
-    return [t("error.no_data_available", lang)], "", style
+        return (get_country_select_options(countries), current_country, styles[0],
+                country_label(current_country), styles[1])
+    return [t("error.no_data_available", lang)], "", styles[0], "", styles[1]
 
 
 @app.callback(

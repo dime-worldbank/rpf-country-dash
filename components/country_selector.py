@@ -5,19 +5,24 @@ HIDDEN = {"display": "none"}
 
 
 def country_selector(countries):
-    """Sidebar country dropdown and the separator below it.
+    """Sidebar country dropdown, the label that replaces it, and the separator below.
 
-    With exactly one configured country there is nothing to choose: the
-    dropdown stays in the layout, since callbacks read its value, but is
-    hidden along with its separator.
+    With exactly one configured country there is nothing to choose: the country
+    name is shown as plain text, so it reads as fixed rather than clickable. The
+    dropdown stays in the layout, hidden, since callbacks read its value.
     """
-    if len(countries) == 1:
-        return [dbc.Select(id="country-select", size="sm", style=HIDDEN)]
-    return [dbc.Select(id="country-select", size="sm"), html.Hr()]
+    single = len(countries) == 1
+    return [
+        dbc.Select(id="country-select", size="sm", **({"style": HIDDEN} if single else {})),
+        html.Div(id="country-label", className="country-label", style={} if single else HIDDEN),
+        html.Hr(),
+    ]
 
 
-def country_select_style(configured, available):
-    """Dropdown style once the data has loaded: hidden for a single
-    configured country present in the data, visible otherwise so that the
-    no-data message, shown as the dropdown's only option, can be read."""
-    return HIDDEN if len(configured) == 1 and configured[0] in (available or []) else {}
+def selector_styles(configured, available):
+    """(dropdown style, label style) once the data has loaded: the label for a single
+    configured country present in the data; otherwise the dropdown, so that the
+    no-data message, shown as its only option, can be read."""
+    if len(configured) == 1 and configured[0] in (available or []):
+        return HIDDEN, {}
+    return {}, HIDDEN
