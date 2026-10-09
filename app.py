@@ -19,6 +19,7 @@ from dash import (
 )
 from urllib.parse import parse_qs, urlparse
 
+from components.country_selector import country_select_style, country_selector
 from components.source_metadata_popover import (
     CHART_METADATA,
     build_modal_children,
@@ -132,15 +133,20 @@ sidebar = html.Div(
                         "marginRight": "auto",
                         "marginTop": "20px"
                     }
-                )
+                ),
+                # Caption under the emblem: the country and the partner
+                # institution. Proper names, so not run through translations.
+                html.Div(
+                    [
+                        html.Div("Togo", className="brand-country"),
+                        html.Div("Direction Générale du Budget", className="brand-institution"),
+                    ],
+                    className="brand-caption",
+                ),
             ]
         ),
         html.Hr(),
-        dbc.Select(
-            id="country-select",
-            size="sm",
-        ),
-        html.Hr(),
+        *country_selector(COUNTRIES),
         dbc.Nav(
             id="sidebar-nav",
             vertical=True,
@@ -335,6 +341,7 @@ def fetch_subnational_data_once(data, country_data):
 @app.callback(
     Output("country-select", "options"),
     Output("country-select", "value"),
+    Output("country-select", "style"),
     Input("stored-data", "data"),
     Input("url", "search"),
     Input("stored-language", "data"),
@@ -349,6 +356,7 @@ def display_data(data, search, lang, current_country):
     data key throughout the app). Only the visible label is localized.
     """
     lang = lang or INITIAL_LANGUAGE
+    style = no_update if data is None else country_select_style(COUNTRIES, data.get("countries"))
 
     def get_country_select_options(countries):
         # Dropdown label drops the article ("Kenya", not "le Kenya") while
@@ -375,11 +383,11 @@ def display_data(data, search, lang, current_country):
                 url_country = params.get("country", [None])[0]
                 if url_country and url_country in countries:
                     selected_country = url_country
-            return get_country_select_options(countries), selected_country
+            return get_country_select_options(countries), selected_country, style
 
         # URL changed or language changed but we already have a country — keep it
-        return get_country_select_options(countries), current_country
-    return [t("error.no_data_available", lang)], ""
+        return get_country_select_options(countries), current_country, style
+    return [t("error.no_data_available", lang)], "", style
 
 
 @app.callback(

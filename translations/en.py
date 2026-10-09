@@ -29,6 +29,8 @@ TRANSLATIONS = {
     "heading.fiscal_balance": "Fiscal Balance",
     "heading.regional_expenditure": "Regional Expenditure",
     "heading.country_regional_expenditure": "{country} Regional Expenditure",
+    "heading.finances_in_numbers": "Public finances in numbers",
+    "heading.country_finances_in_numbers": "{country}'s public finances in numbers",
     "heading.who_funds_budget": "Total Budget",
     "heading.who_pays_education": "Who pays for education?",
     "heading.who_pays_health": "Who pays for healthcare?",

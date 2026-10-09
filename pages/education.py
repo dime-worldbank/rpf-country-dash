@@ -10,6 +10,7 @@ from translations import t, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
+from components.country_title import country_title, register_country_title
 from utils import (
     add_currency_column,
     apply_locale,
@@ -52,6 +53,7 @@ def layout():
             dbc.Card(
                 dbc.CardBody(
                     [
+                        country_title("education"),
                         dbc.Tabs(
                             id="education-tabs",
                             active_tab="edu-tab-time",
@@ -77,6 +79,9 @@ def update_edu_tab_labels(lang):
         dbc.Tab(label=t("tab.over_time", lang), tab_id="edu-tab-time"),
         dbc.Tab(label=t("tab.across_space", lang), tab_id="edu-tab-space"),
     ]
+
+
+register_country_title("education")
 
 
 @callback(

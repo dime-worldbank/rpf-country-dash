@@ -45,6 +45,7 @@ from translations import t, genitive, localize_currency_name
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
+from components.country_title import country_title, register_country_title
 
 
 db = QueryService.get_instance()
@@ -59,6 +60,7 @@ def layout():
             dbc.Card(
                 dbc.CardBody(
                     [
+                        country_title("overview"),
                         dbc.Tabs(
                             id="overview-tabs",
                             active_tab="overview-tab-time",
@@ -84,6 +86,9 @@ def update_overview_tab_labels(lang):
         dbc.Tab(label=t("tab.over_time", lang), tab_id="overview-tab-time"),
         dbc.Tab(label=t("tab.across_space", lang), tab_id="overview-tab-space"),
     ]
+
+
+register_country_title("overview")
 
 
 @callback(
