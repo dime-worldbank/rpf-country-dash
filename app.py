@@ -131,7 +131,16 @@ sidebar = html.Div(
                         "marginRight": "auto",
                         "marginTop": "20px"
                     }
-                )
+                ),
+                # Caption under the emblem: the country and the partner
+                # institution. Proper names, so not run through translations.
+                html.Div(
+                    [
+                        html.Div("Togo", className="brand-country"),
+                        html.Div("Direction Générale du Budget", className="brand-institution"),
+                    ],
+                    className="brand-caption",
+                ),
             ]
         ),
         html.Hr(),
