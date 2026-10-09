@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 from constants import get_map_disclaimer
-from translations import t, genitive, preposition, _LANGUAGES
+from translations import t, definite, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -762,7 +762,7 @@ def render_public_private_figure(private_data, public_data, country, basic_count
 
 
 def outcome_measure(country, lang="en"):
-    return t("narrative.education_outcome_measure", lang, country=t(f"country.{country}", lang))
+    return t("narrative.education_outcome_measure", lang, country=definite(lang, t(f"country.{country}", lang, meta=True)))
 
 
 def outcome_narrative(outcome_df, pov_df, expenditure_df, country, currency_code, lang="en"):
@@ -969,7 +969,7 @@ def render_education_subnat_overview(func_econ_data, sub_func_data, country, sel
 def update_education_subnational_motivation_narrative(country_name, year, lang):
     lang = lang or "en"
     return t("narrative.edu_subnational_motivation", lang,
-             country=t(f"country.{country_name}", lang), year=year)
+             country=definite(lang, t(f"country.{country_name}", lang, meta=True)), year=year)
 
 
 @callback(

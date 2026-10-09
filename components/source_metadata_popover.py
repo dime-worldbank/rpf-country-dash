@@ -3,7 +3,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 
 from constants import START_YEAR
-from translations import t
+from translations import t, definite
 
 
 # ---------------------------------------------------------------------------
@@ -289,7 +289,7 @@ def _build_source_section(section, country_name=None, lang="en"):
     coverage = section.get("coverage")
     if coverage:
         label = (
-            t("detail.coverage_for", lang, country=t(f"country.{country_name}", lang))
+            t("detail.coverage_for", lang, country=definite(lang, t(f"country.{country_name}", lang, meta=True)))
             if country_name
             else t("detail.coverage", lang)
         )

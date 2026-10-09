@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from translations import t, genitive
+from translations import t, definite, genitive
 from trend_narrative import InsightExtractor, TrendDetector
 from trend_narrative_i18n import get_segment_narrative_i18n
 from constants import translate_econ
@@ -635,7 +635,7 @@ RECENT_YEARS = 5
 
 
 def format_execution_narrative(df, country, lang="en", sector=None):
-    country_label = t(f"country.{country}", lang)
+    country_label = definite(lang, t(f"country.{country}", lang, meta=True))
     budget = _budget_label(sector, lang)
     plot_df = df.dropna(subset=["execution_rate"]).sort_values("year")
     mean_rate = plot_df["execution_rate"].mean()

@@ -447,3 +447,31 @@ def genitive(lang, name):
     if lang == "en":
         return "of " + _noun_name(name)
     return _noun_name(name) if isinstance(name, dict) else name
+
+
+def definite(lang, noun_or_meta, capitalize=False):
+    """Return *noun_or_meta* with its definite article, for a noun used as subject or
+    object: "le Togo", "la Colombie", "l'Albanie", "les Philippines".
+
+    French catalog entries store bare names, so French adds the article from the
+    entry's "plural" / "feminine" keys and elides it before a vowel. Portuguese
+    entries already carry theirs ("o Togo"), and English takes none, so both return
+    the name as stored.
+
+    capitalize : bool, default False
+        Capitalize the first letter, for a noun that starts a sentence ("Le Togo").
+    """
+    name = _noun_name(noun_or_meta)
+    if lang == "fr" and isinstance(noun_or_meta, dict) and name:
+        name = strip_article("fr", name)
+        if noun_or_meta.get("plural", False):
+            name = f"les {name}"
+        elif name[0].lower() in _FRENCH_VOWELS:
+            name = f"l'{name}"
+        elif noun_or_meta.get("feminine", False):
+            name = f"la {name}"
+        else:
+            name = f"le {name}"
+    if capitalize and name:
+        name = name[0].upper() + name[1:]
+    return name
