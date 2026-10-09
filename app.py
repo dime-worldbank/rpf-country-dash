@@ -353,15 +353,18 @@ def display_data(data, search, lang, current_country):
     Usage: ?country=Kenya or ?country=Kenya&theme=wbg
 
     The dropdown value remains the raw English country name (used as a
-    data key throughout the app). Only the visible label is localized; the
-    same label is shown as plain text when a single country is configured.
+    data key throughout the app). Only the visible label is localized.
     """
-    lang = lang or "en"
+    lang = lang or INITIAL_LANGUAGE
     style = no_update if data is None else country_select_style(COUNTRIES, data.get("countries"))
 
     def get_country_select_options(countries):
+        # Dropdown label drops the article ("Kenya", not "le Kenya") while
         # `value` stays the raw English key used throughout the app.
-        options = [{"label": country_label(c), "value": c} for c in countries]
+        options = [
+            {"label": strip_article(lang, t(f"country.{c}", lang)), "value": c}
+            for c in countries
+        ]
         if options:
             options[0]["selected"] = True
         return options

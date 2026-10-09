@@ -195,14 +195,6 @@
     flex-direction: column;
 }
 
-/* The single configured country, in place of the dropdown: same size and
-   left padding as the small select, without its arrow. */
-#sidebar .country-label {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-}
-
 #page-content {
     margin: 3rem 2rem 1rem 14rem;
     padding: 1rem 1rem;
