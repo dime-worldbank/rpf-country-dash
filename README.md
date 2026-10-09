@@ -56,7 +56,7 @@ This application supports **English**, **French**, and **Brazilian Portuguese** 
 
 ### Using Different Languages
 
-Select your preferred language from the language dropdown in the application header. Your preference is stored in the browser.
+Select your preferred language from the language dropdown in the application header. The choice lasts for the browser session; each new visit opens in the language set by `DEFAULT_LANGUAGE` (en, fr or pt; default en).
 
 ### For Developers: Working with Translations
 
