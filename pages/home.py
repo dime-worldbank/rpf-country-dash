@@ -41,7 +41,7 @@ from constants import (
     VIEW_WEO,
     COMPOSITE_VIEW_COUNTRIES,
 )
-from translations import t, genitive, localize_currency_name
+from translations import t, definite, genitive, localize_currency_name
 from viz_theme import QUALITATIVE_ALT, get_map_colorscale, CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -669,7 +669,7 @@ def overview_narrative(df, lang="en"):
     text += (
         decentral_text
         if decentral_mean > 0
-        else t("narrative.no_regional_data", lang, country=t(f"country.{country}", lang))
+        else t("narrative.no_regional_data", lang, country=definite(lang, t(f"country.{country}", lang, meta=True)))
     )
 
     return text
@@ -712,7 +712,8 @@ def functional_figure(df, lang="en"):
 def functional_narrative(df, lang="en"):
     country = df.country_name.iloc[0]
     categories = df.func.unique().tolist()
-    text = t("narrative.func_cofog_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
+    text = t("narrative.func_cofog_intro", lang, country=definite(lang, t(f"country.{country}", lang, meta=True)),
+             count=len(categories))
 
     if len(categories) < len(COFOG_CATS):
         missing_cats = set(COFOG_CATS) - set(categories)
@@ -1259,7 +1260,8 @@ def economic_figure(df, currency_code, lang="en"):
 def economic_narrative(df, lang="en"):
     country = df.country_name.iloc[0]
     categories = df.econ.unique().tolist()
-    text = t("narrative.econ_intro", lang, country=t(f"country.{country}", lang), count=len(categories))
+    text = t("narrative.econ_intro", lang, country=definite(lang, t(f"country.{country}", lang, meta=True)),
+             count=len(categories))
 
     if len(categories) < len(ECON_CAT_MAP):
         missing_cats = set(ECON_CAT_MAP.keys()) - set(categories)

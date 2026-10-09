@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from constants import get_map_disclaimer
-from translations import t, genitive, preposition, _LANGUAGES
+from translations import t, definite, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
@@ -917,7 +917,7 @@ def render_health_subnat_overview(func_data, sub_func_data, country, selected_ye
 def update_health_subnational_motivation_narrative(country_name, year, lang):
     lang = lang or "en"
     return t("narrative.health_subnational_motivation", lang,
-             country=t(f"country.{country_name}", lang), year=year)
+             country=definite(lang, t(f"country.{country_name}", lang, meta=True)), year=year)
 
 
 @callback(
