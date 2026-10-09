@@ -4,7 +4,6 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import numpy as np
 from constants import get_map_disclaimer
 from translations import t, genitive, preposition, _LANGUAGES
 from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
@@ -17,11 +16,11 @@ from utils import (
     empty_plot,
     filter_country_sort_year,
     format_currency,
-    get_percentage_change_text,
     millify,
     require_login,
 )
 from components.func_operational_vs_capital_spending import render_econ_breakdown
+from components.sector_spending_narrative import sector_spending_narrative
 from components.edu_health_across_space import (
     update_year_slider,
     render_func_subnat_overview,
@@ -33,11 +32,7 @@ from components.year_slider import slider
 from components.disclaimer_div import disclaimer_tooltip
 from components.source_metadata_popover import chart_container, empty_modal
 from components import budget_funding_execution
-from trend_narrative import InsightExtractor
-from trend_narrative_i18n import (
-    get_relationship_narrative_i18n,
-    get_segment_narrative_i18n,
-)
+from trend_narrative_i18n import get_relationship_narrative_i18n
 
 db = QueryService.get_instance()
 
@@ -501,95 +496,9 @@ def total_health_figure(df, currency_code, lang="en"):
 
 
 def health_narrative(data, country, lang="en"):
-    spending = server_store.get("health_public_expenditure")
-    spending = filter_country_sort_year(spending, country)
-
-    plot_df = (
-        spending.dropna(subset=["real_expenditure"])
-        .groupby("year")["real_expenditure"].sum()
-        .reset_index()
-        .sort_values("year")
+    return sector_spending_narrative(
+        server_store.get("health_public_expenditure"), country, "sector.health", lang=lang
     )
-    extractor = InsightExtractor(plot_df["year"].values, plot_df["real_expenditure"].values)
-    trend_narrative = get_segment_narrative_i18n(
-        extractor=extractor,
-        metric=t("metric.real_expenditure", lang, meta=True),
-        lang=lang,
-    )
-
-    if trend_narrative:
-        trend_narrative = trend_narrative[0].lower() + trend_narrative[1:]
-        text = t("narrative.after_inflation", lang, trend_narrative=trend_narrative)
-    else:
-        text = ""
-
-    spending = spending.dropna(subset=["real_expenditure", "central_expenditure"])
-    start_year = spending.year.min()
-    end_year = spending.year.max()
-
-    spending["real_central_expenditure"] = (
-        spending.real_expenditure / spending.expenditure * spending.central_expenditure
-    )
-    start_value_central = spending[
-        spending.year == start_year
-    ].real_central_expenditure.values[0]
-    end_value_central = spending[
-        spending.year == end_year
-    ].real_central_expenditure.values[0]
-
-    spending_growth_rate_central = (
-        end_value_central - start_value_central
-    ) / start_value_central
-
-    text += t("narrative.central_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_central, lang=lang))
-
-    start_decentralized = spending[
-        spending.year == start_year
-    ].decentralized_expenditure.values[0]
-    # A country with no subnational tracking at all sums to 0.0 rather than NaN
-    # in the func aggregation, so 0 means "not tracked" here, not a real zero.
-    # It would also make the growth rate below divide by zero.
-    if not np.isnan(start_decentralized) and start_decentralized != 0:
-        spending["real_decentralized_expenditure"] = (
-            spending.real_expenditure
-            / spending.expenditure
-            * spending.decentralized_expenditure
-        )
-        start_value_decentralized = spending[
-            spending.year == start_year
-        ].real_decentralized_expenditure.values[0]
-        end_value_decentralized = spending[
-            spending.year == end_year
-        ].real_decentralized_expenditure.values[0]
-
-        spending_growth_rate_decentralized = (
-            end_value_decentralized - start_value_decentralized
-        ) / start_value_decentralized
-        spending_change_regional = t("narrative.subnational_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_decentralized, lang=lang))
-    else:
-        spending_change_regional = t("narrative.subnational_unavailable", lang)
-
-    text += spending_change_regional
-
-    decentralization = spending[
-        spending.year == end_year
-    ].expenditure_decentralization.values[0]
-    sector_name = t("sector.health", lang)
-    sector_gen = genitive(lang, t("sector.health", lang, meta=True))
-    if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = t(
-            "narrative.decentralization_unknown", lang,
-            sector=sector_name, sector_gen=sector_gen,
-        )
-    else:
-        spending_decentralization = t(
-            "narrative.decentralization_by_year", lang,
-            year=end_year, pct=f"{decentralization:.1%}",
-            sector=sector_name, sector_gen=sector_gen,
-        )
-    text += spending_decentralization
-
-    return text
 
 
 @callback(
