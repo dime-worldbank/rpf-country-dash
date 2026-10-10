@@ -134,12 +134,14 @@ sidebar = html.Div(
                         "marginTop": "20px"
                     }
                 ),
-                # Caption under the emblem: the country and the partner
-                # institution. Proper names, so not run through translations.
+                # Caption under the emblem: the partner institution's chain, as on
+                # its letterhead. Proper names, so not run through translations.
                 html.Div(
                     [
-                        html.Div("Togo", className="brand-country"),
-                        html.Div("Direction Générale du Budget", className="brand-institution"),
+                        html.Div("République Togolaise", className="brand-country"),
+                        html.Div("Ministère des Finances et du Budget", className="brand-institution"),
+                        html.Div("Secrétariat Général", className="brand-institution"),
+                        html.Div("Direction Générale du Budget et des Finances", className="brand-institution"),
                     ],
                     className="brand-caption",
                 ),
