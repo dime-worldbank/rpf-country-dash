@@ -26,6 +26,19 @@ class TestPersistentQueryCache(unittest.TestCase):
     def test_hash_is_whitespace_sensitive(self):
         self.assertNotEqual(_hash_query("SELECT 1"), _hash_query("SELECT  1"))
 
+    def test_namespaces_do_not_share_entries(self):
+        databricks = PersistentQueryCache(self.cache_dir)
+        postgres = PersistentQueryCache(self.cache_dir, namespace="postgres:db:5432/prd_mega")
+        databricks.set("SELECT 1", self.df)
+
+        self.assertIsNone(postgres.get("SELECT 1"))
+        self.assertIsNone(PersistentQueryCache(self.cache_dir, namespace="postgres:db:5432/prd_mega").get("SELECT 1"))
+
+    def test_default_namespace_keeps_the_file_name_of_existing_caches(self):
+        self._make().set("SELECT 1", self.df)
+
+        self.assertTrue(os.path.exists(os.path.join(self.cache_dir, f"{_hash_query('SELECT 1')}.parquet")))
+
     def test_miss_returns_none(self):
         self.assertIsNone(self._make().get("SELECT 1"))
 

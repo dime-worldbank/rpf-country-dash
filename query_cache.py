@@ -22,17 +22,26 @@ def _hash_query(query_text: str) -> str:
 
 
 class PersistentQueryCache:
-    def __init__(self, cache_dir: str):
+    """`namespace` separates entries of different data sources sharing one cache_dir;
+    the empty namespace keys entries by the query text alone."""
+
+    def __init__(self, cache_dir: str, namespace: str = ""):
         self._cache_dir = cache_dir
+        self._namespace = namespace
         self._mem: dict[str, pd.DataFrame] = {}
         self._lock = threading.Lock()
         os.makedirs(self._cache_dir, exist_ok=True)
+
+    def _key(self, query_text: str) -> str:
+        if not self._namespace:
+            return _hash_query(query_text)
+        return _hash_query(f"{self._namespace}\n{query_text}")
 
     def _parquet_path(self, key_hash: str) -> str:
         return os.path.join(self._cache_dir, f"{key_hash}.parquet")
 
     def get(self, query_text: str) -> Optional[pd.DataFrame]:
-        key_hash = _hash_query(query_text)
+        key_hash = self._key(query_text)
         path = self._parquet_path(key_hash)
 
         with self._lock:
@@ -55,7 +64,7 @@ class PersistentQueryCache:
         return df.copy(deep=True)
 
     def set(self, query_text: str, df: pd.DataFrame) -> None:
-        key_hash = _hash_query(query_text)
+        key_hash = self._key(query_text)
         path = self._parquet_path(key_hash)
 
         try:

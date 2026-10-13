@@ -4,6 +4,7 @@ pandas>=2.1
 rsconnect-python
 databricks-sql-connector[pyarrow]
 databricks-sdk
+psycopg[binary]
 gunicorn
 shapely
 flask_login

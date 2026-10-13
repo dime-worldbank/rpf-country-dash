@@ -3,6 +3,8 @@ import time
 import logging
 import threading
 import pandas as pd
+import psycopg
+from psycopg.conninfo import conninfo_to_dict
 from databricks import sql
 from databricks.sdk.core import Config, oauth_service_principal
 from databricks.sdk import WorkspaceClient
@@ -22,6 +24,13 @@ INDICATOR_SCHEMA = os.getenv("INDICATOR_SCHEMA", "indicator")
 # Invalidation is via the external refresh endpoint in server.py.
 QUERY_CACHE_DIR = os.getenv("QUERY_CACHE_DIR", "./cache/queries")
 SERVER_HOSTNAME = os.getenv("DATABRICKS_SERVER_HOSTNAME")
+# "postgres" runs the same queries against the PostgreSQL database in
+# POSTGRES_DSN; that database must be named prd_mega.
+DB_BACKEND = os.getenv("DB_BACKEND", "databricks")
+# int2, int4, int8, float4, float8, numeric
+PG_NUMERIC_TYPES = {21, 23, 20, 700, 701, 1700}
+# float4, float8, numeric
+PG_FLOAT_TYPES = {700, 701, 1700}
 
 def credentials_provider():
     logging.info("Initializing credential provider...")
@@ -42,7 +51,7 @@ class QueryService:
         return QueryService._instance
 
     def __init__(self):
-        self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR)
+        self._cache = PersistentQueryCache(cache_dir=QUERY_CACHE_DIR, namespace=self._cache_namespace())
 
         # Databricks SQL connections are not thread-safe (DB-API threadsafety=1),
         # so each thread keeps its own; it's closed by Connection.__del__ on thread exit.
@@ -57,8 +66,27 @@ class QueryService:
             """
             self.country_whitelist = self.execute_query(query)["country_name"].tolist()
 
+    @staticmethod
+    def _cache_namespace():
+        """Cache namespace of the configured data source. Databricks keeps the default
+        namespace, so caches it wrote stay valid; PostgreSQL is identified by the host,
+        port and database of its DSN, never by its credentials."""
+        if DB_BACKEND != "postgres":
+            return ""
+        dsn = os.getenv("POSTGRES_DSN")
+        if not dsn:
+            raise RuntimeError("DB_BACKEND=postgres requires POSTGRES_DSN")
+        try:
+            info = conninfo_to_dict(dsn)
+        except psycopg.ProgrammingError:
+            # libpq parse errors quote fragments of the DSN, which may hold the password.
+            raise RuntimeError("POSTGRES_DSN is not a valid PostgreSQL connection string") from None
+        return f"postgres:{info.get('host', '')}:{info.get('port', '5432')}/{info.get('dbname', '')}"
+
     # ---- Connection management ------------------------------------------------
     def _create_connection(self):
+        if DB_BACKEND == "postgres":
+            return psycopg.connect(os.environ["POSTGRES_DSN"], autocommit=True)
         http_path = os.getenv("DATABRICKS_HTTP_PATH")
         access_token = os.getenv("DATABRICKS_ACCESS_TOKEN")
         try:
@@ -112,7 +140,7 @@ class QueryService:
         start = time.time()
         try:
             df = self._execute_with_connection(query)
-        except sql.exc.Error as e:
+        except (sql.exc.Error, psycopg.OperationalError) as e:
             logging.warning("Query failed, reconnecting: %s", e)
             self._close_connection()
             df = self._execute_with_connection(query)
@@ -127,7 +155,23 @@ class QueryService:
         conn = self._get_connection()
         with conn.cursor() as cursor:
             cursor.execute(query)
+            if DB_BACKEND == "postgres":
+                return self._pg_to_dataframe(cursor)
             return cursor.fetchall_arrow().to_pandas()
+
+    @staticmethod
+    def _pg_to_dataframe(cursor):
+        # Numeric columns as numbers, NULL as NaN (an all-NULL column would
+        # otherwise stay object/None). Float and numeric columns are float64,
+        # also in an empty result, the dtype of the DOUBLE columns these
+        # tables have on Databricks.
+        df = pd.DataFrame(cursor.fetchall(), columns=[c.name for c in cursor.description])
+        for c in cursor.description:
+            if c.type_code in PG_NUMERIC_TYPES:
+                df[c.name] = pd.to_numeric(df[c.name])
+            if c.type_code in PG_FLOAT_TYPES:
+                df[c.name] = df[c.name].astype("float64")
+        return df
 
     def fetch_data(self, query):
         df = self.execute_query(query)
