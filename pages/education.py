@@ -751,6 +751,7 @@ def render_public_private_figure(private_data, public_data, country, basic_count
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
     )
+    fig.update_yaxes(type="category")
 
     narrative = public_private_narrative(merged, country, lang=lang)
     return apply_locale(fig, lang), narrative
