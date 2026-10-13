@@ -1,7 +1,8 @@
 """The household vs government charts on the education and health pages.
 
 Years are categories on these charts: a numeric axis spreads a single year over
-a range and labels fractional ticks (2020.6 ... 2021.4).
+a range and labels fractional ticks (2020.6 ... 2021.4). Every year is a bar;
+on long series only every third year is labelled.
 """
 
 import unittest
@@ -49,6 +50,24 @@ class PublicPrivateFigureTest(unittest.TestCase):
                 # Category axes run upward in this order; the rows arrive newest first.
                 self.assertEqual(fig.layout.yaxis.categoryorder, "category ascending")
                 self.assertEqual([sorted(trace.y) for trace in fig.data], [["2017", "2021"]] * 2)
+
+    def test_short_series_labels_every_year(self):
+        for page, prefix in ((education, "edu"), (health, "health")):
+            with self.subTest(page=page.__name__):
+                fig = self._figure(page, prefix, [2017, 2021])
+                self.assertEqual(list(fig.layout.yaxis.tickvals), ["2017", "2021"])
+
+    def test_long_series_keeps_every_bar_but_labels_every_third_year(self):
+        years = list(range(2010, 2024))
+        for page, prefix in ((education, "edu"), (health, "health")):
+            with self.subTest(page=page.__name__):
+                fig = self._figure(page, prefix, years)
+                self.assertEqual(
+                    [sorted(trace.y) for trace in fig.data], [[str(y) for y in years]] * 2
+                )
+                self.assertEqual(
+                    list(fig.layout.yaxis.tickvals), ["2011", "2014", "2017", "2020", "2023"]
+                )
 
 
 if __name__ == "__main__":
