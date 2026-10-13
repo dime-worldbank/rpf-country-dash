@@ -11,6 +11,7 @@ from viz_theme import CENTRAL_COLOR, REGIONAL_COLOR
 from queries import QueryService
 import server_store
 from utils import (
+    year_ticks,
     add_currency_column,
     apply_locale,
     empty_plot,
@@ -743,6 +744,9 @@ def render_public_private_figure(private_data, public_data, country, country_dat
         legend=dict(orientation="h", yanchor="bottom", y=1, traceorder="normal"),
         title=fig_title,
     )
+    fig.update_yaxes(type="category", categoryorder="category ascending")
+    # Label every third year on long series to keep the axis readable.
+    fig.update_yaxes(tickvals=[str(y) for y in year_ticks(merged["year"])])
 
     narrative = public_private_narrative(merged, country, lang=lang)
     return apply_locale(fig, lang), narrative
