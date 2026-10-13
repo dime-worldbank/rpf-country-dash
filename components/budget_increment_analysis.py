@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from constants import FUNC_COLORS, translate_func
+from constants import END_YEAR, FUNC_COLORS, translate_func
 from translations import t
 import server_store
 
@@ -44,6 +44,12 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     funded = country_budget_changes_df["domestic_funded_budget"]
     country_budget_changes_df = country_budget_changes_df[
         funded.notna() & (round(funded) != 0)
+    ]
+    # A year past END_YEAR has a budget but may have no deflator yet: without an
+    # amount in the selected terms it is left out, not counted as zero.
+    country_budget_changes_df = country_budget_changes_df[
+        (country_budget_changes_df["year"] <= END_YEAR)
+        | country_budget_changes_df[exp_type].notna()
     ]
     # No budget to plot either way — without this the year arithmetic below
     # runs on an empty frame and raises.

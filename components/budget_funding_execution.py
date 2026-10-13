@@ -112,6 +112,9 @@ def clear_cache():
 
 def _build_funding(country, lang, budget_terms, sector):
     funding_df = _prepare_funding_df(_scoped_frame(country, sector, end_year=None))
+    if budget_terms == "real":
+        # A year past END_YEAR may have no deflator yet, hence no real-terms amount.
+        funding_df = funding_df[(funding_df["year"] <= END_YEAR) | funding_df["real_budget"].notna()]
     if funding_df.empty:
         unavailable = t("error.data_unavailable", lang)
         return empty_plot(unavailable), unavailable

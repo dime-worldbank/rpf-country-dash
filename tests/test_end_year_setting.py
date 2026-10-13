@@ -10,8 +10,12 @@ import constants
 
 class YearSettingTest(unittest.TestCase):
     def test_unset_or_empty_gives_default(self):
-        for env in ({}, {"END_YEAR": ""}, {"END_YEAR": "  "}):
-            with self.subTest(env=env), patch.dict(os.environ, env, clear=True):
+        for raw in (None, "", "  "):
+            env = dict(os.environ)
+            env.pop("END_YEAR", None)
+            if raw is not None:
+                env["END_YEAR"] = raw
+            with self.subTest(raw=raw), patch.dict(os.environ, env, clear=True):
                 self.assertEqual(constants.year_setting("END_YEAR", 2024), 2024)
 
     def test_year_is_read(self):
@@ -28,7 +32,7 @@ class YearSettingTest(unittest.TestCase):
         try:
             with patch.dict(os.environ, {"END_YEAR": "2025"}):
                 self.assertEqual(importlib.reload(constants).END_YEAR, 2025)
-            with patch.dict(os.environ, {}, clear=True):
+            with patch.dict(os.environ, {"END_YEAR": ""}):
                 self.assertEqual(importlib.reload(constants).END_YEAR, 2024)
         finally:
             importlib.reload(constants)
