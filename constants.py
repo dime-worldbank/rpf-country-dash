@@ -1,12 +1,31 @@
+import os
+
 from translations import t
 from viz_theme import QUALITATIVE, create_category_color_map
 
 
 START_YEAR = 2010
 
+
+def year_setting(name, default):
+    """The year in environment variable ``name``, or ``default`` when unset or empty."""
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        year = int(raw)
+    except ValueError:
+        raise ValueError(f"{name} must be a year, got {raw!r}") from None
+    if year < START_YEAR:
+        raise ValueError(f"{name} must be {START_YEAR} or later, got {year}")
+    return year
+
+
 # Display ceiling. Charts stop at the last year with complete actuals; pass
 # end_year explicitly to opt out (e.g. IMF WEO forecasts, which run past it).
-END_YEAR = 2024
+# The END_YEAR environment variable moves it once a year's accounts are closed;
+# charts of the budget alone (funding sources, budget changes) are not capped.
+END_YEAR = year_setting("END_YEAR", 2024)
 
 TREND_THRESHOLDS = 0.4
 

@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from translations import t, definite, genitive
 from trend_narrative import InsightExtractor, TrendDetector
 from trend_narrative_i18n import get_segment_narrative_i18n
-from constants import translate_econ
+from constants import END_YEAR, translate_econ
 from components.func_operational_vs_capital_spending import CAPEX, OP_WAGE_BILL
 from viz_theme import QUALITATIVE, lighten_color
 from utils import (
@@ -54,14 +54,17 @@ PEFA_REFERENCE_COLOR = "#4A5058"  # dark slate
 PEFA_LABEL_COLOR = "#6B7078"  # muted: the rating axis labels the background
 
 
-def _scoped_frame(country, sector):
-    """One country's rows: the national table, or one sector's of the functional one."""
+def _scoped_frame(country, sector, end_year=END_YEAR):
+    """One country's rows: the national table, or one sector's of the functional one.
+
+    ``end_year`` None keeps years past END_YEAR, for charts of the budget alone.
+    """
     if sector:
         df = server_store.get("func_by_country_year")
         df = df[df["func"] == sector]
     else:
         df = server_store.get("expenditure_w_poverty")
-    return filter_country_sort_year(df, country)
+    return filter_country_sort_year(df, country, end_year=end_year)
 
 
 def _prepare_funding_df(df):
@@ -108,7 +111,7 @@ def clear_cache():
 
 
 def _build_funding(country, lang, budget_terms, sector):
-    funding_df = _prepare_funding_df(_scoped_frame(country, sector))
+    funding_df = _prepare_funding_df(_scoped_frame(country, sector, end_year=None))
     if funding_df.empty:
         unavailable = t("error.data_unavailable", lang)
         return empty_plot(unavailable), unavailable

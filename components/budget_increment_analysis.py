@@ -26,8 +26,9 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     if not data:
         return empty_plot(t("loading", lang)), t("loading", lang)
     country_budget_changes_df = server_store.get("func_by_country_year")
+    # Budget amounts only: a year whose accounts are not closed yet still shows.
     country_budget_changes_df = filter_country_sort_year(
-        country_budget_changes_df, country
+        country_budget_changes_df, country, end_year=None
     )
     # Where the source carries no funding split at all, fall back to the total
     # budget rather than dropping every row: how spending grew is still worth
