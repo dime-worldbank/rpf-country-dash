@@ -420,9 +420,10 @@ app.clientside_callback(
 
 app.clientside_callback(
     """
-    function(country, pathname, theme, defaultTheme) {
+    function(country, pathname, theme, defaultTheme, countryOptions) {
+        // The country goes in links only when there is more than one to choose from.
         var params = new URLSearchParams();
-        if (country) params.set('country', country);
+        if (country && countryOptions && countryOptions.length > 1) params.set('country', country);
         if (theme && theme !== defaultTheme) params.set('theme', theme);
         var queryString = params.toString();
         var suffix = queryString ? '?' + queryString : '';
@@ -449,7 +450,10 @@ app.clientside_callback(
         Input("url", "pathname"),
         Input("theme-store", "data"),
     ],
-    State("default-theme-store", "data"),
+    [
+        State("default-theme-store", "data"),
+        State("country-select", "options"),
+    ],
     prevent_initial_call=True,
 )
 
