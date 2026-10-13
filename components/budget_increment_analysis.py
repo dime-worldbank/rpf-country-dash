@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from constants import END_YEAR, FUNC_COLORS, translate_func
+from constants import FUNC_COLORS, translate_func
 from translations import t
 import server_store
 
@@ -26,9 +26,8 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     if not data:
         return empty_plot(t("loading", lang)), t("loading", lang)
     country_budget_changes_df = server_store.get("func_by_country_year")
-    # Budget amounts only: a year whose accounts are not closed yet still shows.
     country_budget_changes_df = filter_country_sort_year(
-        country_budget_changes_df, country, end_year=None
+        country_budget_changes_df, country
     )
     # Where the source carries no funding split at all, fall back to the total
     # budget rather than dropping every row: how spending grew is still worth
@@ -44,16 +43,6 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     funded = country_budget_changes_df["domestic_funded_budget"]
     country_budget_changes_df = country_budget_changes_df[
         funded.notna() & (round(funded) != 0)
-    ]
-    # A year past END_YEAR has a budget but may have no deflator yet: unless every
-    # function has an amount in the selected terms, the year is left out, so the
-    # overall budget is never a sum of some functions or a zero.
-    complete = (
-        country_budget_changes_df[exp_type].notna()
-        .groupby(country_budget_changes_df["year"]).transform("all")
-    )
-    country_budget_changes_df = country_budget_changes_df[
-        (country_budget_changes_df["year"] <= END_YEAR) | complete
     ]
     # No budget to plot either way — without this the year arithmetic below
     # runs on an empty frame and raises.

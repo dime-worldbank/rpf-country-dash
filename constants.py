@@ -23,8 +23,7 @@ def year_setting(name, default):
 
 # Display ceiling. Charts stop at the last year with complete actuals; pass
 # end_year explicitly to opt out (e.g. IMF WEO forecasts, which run past it).
-# The END_YEAR environment variable moves it once a year's accounts are closed;
-# charts of the budget alone (funding sources, budget changes) are not capped.
+# The END_YEAR environment variable moves it once a year's accounts are closed.
 END_YEAR = year_setting("END_YEAR", 2024)
 
 TREND_THRESHOLDS = 0.4
