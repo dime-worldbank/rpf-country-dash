@@ -41,12 +41,14 @@ class PublicPrivateFigureTest(unittest.TestCase):
                 self.assertEqual(fig.layout.yaxis.type, "category")
                 self.assertEqual([list(trace.y) for trace in fig.data], [["2021"], ["2021"]])
 
-    def test_several_years_are_categories(self):
+    def test_several_years_run_oldest_at_the_bottom(self):
         for page, prefix in ((education, "edu"), (health, "health")):
             with self.subTest(page=page.__name__):
                 fig = self._figure(page, prefix, [2017, 2021])
                 self.assertEqual(fig.layout.yaxis.type, "category")
-                self.assertEqual(sorted(fig.data[0].y), ["2017", "2021"])
+                # Category axes run upward in this order; the rows arrive newest first.
+                self.assertEqual(fig.layout.yaxis.categoryorder, "category ascending")
+                self.assertEqual([sorted(trace.y) for trace in fig.data], [["2017", "2021"]] * 2)
 
 
 if __name__ == "__main__":
