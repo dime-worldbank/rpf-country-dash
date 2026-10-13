@@ -32,11 +32,13 @@ def _national(open_year_deflated=False):
     return data_mapping._add_real_funding_split_columns(df)
 
 
-def _by_function():
+def _by_function(deflated_in_open_year=()):
     rows = [
         {"country_name": "Togo", "func": func, "year": year, "budget": base + 10 * i,
          "domestic_funded_budget": base + 10 * i,
-         "real_domestic_funded_budget": None if year == OPEN_YEAR else 0.9 * (base + 10 * i)}
+         "real_domestic_funded_budget": (
+             None if year == OPEN_YEAR and func not in deflated_in_open_year
+             else 0.9 * (base + 10 * i))}
         for func, base in (("Education", 100.0), ("Health", 50.0))
         for i, year in enumerate(YEARS)
     ]
@@ -95,6 +97,14 @@ class EndYearScopeTest(unittest.TestCase):
             True, "Togo", "real_domestic_funded_budget", "en")
         self.assertNotIn(OPEN_YEAR, _years_plotted(fig))
         self.assertNotIn("-100", narrative)
+
+    @patch("components.budget_increment_analysis.server_store.get")
+    def test_real_budget_changes_leave_out_an_open_year_deflated_for_some_functions(self, mock_get):
+        # The overall budget of that year would sum Education alone.
+        mock_get.side_effect = {"func_by_country_year": _by_function({"Education"})}.__getitem__
+        fig, _ = budget_increment_analysis.render_fig_and_narrative(
+            True, "Togo", "real_domestic_funded_budget", "en")
+        self.assertNotIn(OPEN_YEAR, _years_plotted(fig))
 
 
 if __name__ == "__main__":

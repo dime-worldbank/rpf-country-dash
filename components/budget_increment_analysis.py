@@ -45,11 +45,15 @@ def render_fig_and_narrative(data, country, exp_type, lang="en"):
     country_budget_changes_df = country_budget_changes_df[
         funded.notna() & (round(funded) != 0)
     ]
-    # A year past END_YEAR has a budget but may have no deflator yet: without an
-    # amount in the selected terms it is left out, not counted as zero.
+    # A year past END_YEAR has a budget but may have no deflator yet: unless every
+    # function has an amount in the selected terms, the year is left out, so the
+    # overall budget is never a sum of some functions or a zero.
+    complete = (
+        country_budget_changes_df[exp_type].notna()
+        .groupby(country_budget_changes_df["year"]).transform("all")
+    )
     country_budget_changes_df = country_budget_changes_df[
-        (country_budget_changes_df["year"] <= END_YEAR)
-        | country_budget_changes_df[exp_type].notna()
+        (country_budget_changes_df["year"] <= END_YEAR) | complete
     ]
     # No budget to plot either way — without this the year arithmetic below
     # runs on an empty frame and raises.
