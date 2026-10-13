@@ -113,6 +113,19 @@ def parse_rgba_str(s):
         return vals
     return [211, 211, 211, 0.3]  # Default fallback color
 
+def year_ticks(years, every=3, show_all_up_to=3):
+    """Which years to label on an axis that has one mark per year.
+
+    Up to ``show_all_up_to`` distinct years every one is labelled. Beyond
+    that only every ``every``-th year is, counting back from the latest so
+    the most recent year is always labelled (2023, 2020, 2017, ...). Returns
+    the years ascending.
+    """
+    years = sorted({int(y) for y in years})
+    if len(years) <= show_all_up_to:
+        return years
+    latest = years[-1]
+    return [y for y in years if (latest - y) % every == 0]
 
 def filter_country_sort_year(df, country, start_year=START_YEAR, end_year=END_YEAR):
     """
