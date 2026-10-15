@@ -226,7 +226,7 @@ def create_funding_source_figure(
 
     fig.update_layout(
         plot_bgcolor="white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.03),
+        legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="left", x=0),
         hovermode="x unified",
     )
     return apply_locale(fig, lang)

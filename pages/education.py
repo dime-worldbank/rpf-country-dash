@@ -580,29 +580,21 @@ def education_narrative(data, country, lang="en"):
         spending_growth_rate_decentralized = (
             end_value_decentralized - start_value_decentralized
         ) / start_value_decentralized
-        spending_change_regional = t("narrative.subnational_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_decentralized, lang=lang))
+        text += t("narrative.subnational_spending_change", lang, change_text=get_percentage_change_text(spending_growth_rate_decentralized, lang=lang))
     else:
-        spending_change_regional = t("narrative.subnational_unavailable", lang)
-
-    text += spending_change_regional
+        text = text.rstrip() + ". "  # no subnational data: just close the sentence
 
     decentralization = spending[
         spending.year == end_year
     ].expenditure_decentralization.values[0]
     sector_name = t("sector.education", lang)
     sector_gen = genitive(lang, t("sector.education", lang, meta=True))
-    if pd.isna(decentralization) or decentralization == 0:
-        spending_decentralization = t(
-            "narrative.decentralization_unknown", lang,
-            sector=sector_name, sector_gen=sector_gen,
-        )
-    else:
-        spending_decentralization = t(
+    if not (pd.isna(decentralization) or decentralization == 0):
+        text += t(
             "narrative.decentralization_by_year", lang,
             year=end_year, pct=f"{decentralization:.1%}",
             sector=sector_name, sector_gen=sector_gen,
         )
-    text += spending_decentralization
 
     return text
 

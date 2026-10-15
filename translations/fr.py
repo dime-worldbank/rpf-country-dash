@@ -329,9 +329,7 @@ TRANSLATIONS = {
     # --- Narrative templates: Spending ---
     "narrative.central_spending_change": "Au cours de cette période, les dépenses ajustées à l'inflation du gouvernement central {change_text} ",
     "narrative.subnational_spending_change": "tandis que les dépenses ajustées à l'inflation des collectivités territoriales {change_text}. ",
-    "narrative.subnational_unavailable": ". Les données des collectivités territoriales ne sont pas disponibles pour cette période. ",
     "narrative.decentralization_by_year": "En {year}, {pct} des dépenses {sector_gen} ont été décentralisées.",
-    "narrative.decentralization_unknown": "Le degré de décentralisation des dépenses {sector_gen} est inconnu en raison de l'absence de données sur les dépenses publiques locales.",
 
     # --- Narrative templates: Public vs Private ---
     "narrative.govt_share_trend": "{country_loc}, la part des dépenses publiques {sector_prep} {trend} de {earliest_pct} à {latest_pct} entre {earliest_year} et {latest_year}. ",

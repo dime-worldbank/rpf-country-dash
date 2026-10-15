@@ -45,17 +45,6 @@ class ExecutionClauseTest(unittest.TestCase):
 
 class FixedStringsTest(unittest.TestCase):
 
-    def test_subnational_and_decentralization_sentences(self):
-        self.assertEqual(
-            t("narrative.subnational_unavailable", "fr").strip(" ."),
-            "Les données des collectivités territoriales ne sont pas disponibles pour cette période",
-        )
-        self.assertEqual(
-            t("narrative.decentralization_unknown", "fr", sector_gen="de la santé", sector="santé"),
-            "Le degré de décentralisation des dépenses de la santé est inconnu en raison de l'absence "
-            "de données sur les dépenses publiques locales.",
-        )
-
     def test_subnational_change_uses_the_same_term(self):
         self.assertIn("des collectivités territoriales",
                       t("narrative.subnational_spending_change", "fr", change_text="ont augmenté de 5 %"))
