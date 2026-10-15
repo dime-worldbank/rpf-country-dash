@@ -9,6 +9,8 @@ from components.func_operational_vs_capital_spending import CAPEX, OP_WAGE_BILL
 from viz_theme import QUALITATIVE, lighten_color
 from utils import (
     apply_locale,
+    currency_axis_title,
+    scale_currency_axes,
     format_year_axis,
     empty_plot,
     filter_country_sort_year,
@@ -196,6 +198,9 @@ def create_funding_source_figure(
     )
 
     format_year_axis(fig)
+    unit = scale_currency_axes(
+        fig, ["y2" if has_split else "y"], df[total_col].max(), currency_code, lang
+    )
     if has_split:
         fig.update_yaxes(
             title_text=t("axis.budget_share", lang),
@@ -207,7 +212,7 @@ def create_funding_source_figure(
             barmode="stack",
             title=t("chart.budget_by_funding_source", lang),
             yaxis2=dict(
-                title_text=total_name,
+                title_text=currency_axis_title(total_name, unit),
                 overlaying="y",
                 side="right",
                 showgrid=False,
@@ -216,7 +221,7 @@ def create_funding_source_figure(
             ),
         )
     else:
-        fig.update_yaxes(title_text=total_name, rangemode="tozero", fixedrange=True)
+        fig.update_yaxes(title_text=currency_axis_title(total_name, unit), rangemode="tozero", fixedrange=True)
         fig.update_layout(title=t("chart.total_budget_over_time", lang), showlegend=False)
 
     fig.update_layout(

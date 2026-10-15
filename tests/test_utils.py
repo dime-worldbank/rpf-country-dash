@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from pandas.testing import assert_frame_equal
 import math
 from utils import (
@@ -13,6 +14,8 @@ from utils import (
     year_ticks,
     format_currency_yaxis,
     millify,
+    scale_currency_axes,
+    currency_axis_title,
 )
 
 class TestUtils(unittest.TestCase):
@@ -365,3 +368,92 @@ class TestYearTicks(unittest.TestCase):
     def test_accepts_a_series_with_duplicates(self):
         years = pd.Series([2023, 2023, 2022, 2021, 2020, 2019])
         self.assertEqual(year_ticks(years), [2020, 2023])
+
+
+class TestScaleCurrencyAxes(unittest.TestCase):
+    """Money axes are divided by a readable magnitude and the unit goes in the
+    title, so ticks stay plain numbers in every language (plotly's own
+    k/M/B/T abbreviations are English-only)."""
+
+    def _fig(self, *rows):
+        fig = go.Figure()
+        for y in rows:
+            fig.add_trace(go.Bar(x=list(range(2018, 2018 + len(y))), y=y))
+        fig.update_layout(barmode="stack")
+        return fig
+
+    def test_french_billions_become_milliards(self):
+        fig = self._fig([1.2e9, 1.4e9], [0.6e9, 0.7e9])
+        self.assertEqual(scale_currency_axes(fig, ["y"], 2.1e9, "FCFA", "fr"), "milliards de FCFA")
+        self.assertEqual(list(fig.data[0].y), [1.2, 1.4])
+        self.assertEqual(list(fig.data[1].y), [0.6, 0.7])
+        self.assertEqual(list(fig.data[0].x), [2018, 2019])
+
+    def test_english_and_portuguese_wording(self):
+        self.assertEqual(scale_currency_axes(self._fig([1.2e9]), ["y"], 1.2e9, "FCFA", "en"), "FCFA, in billions")
+        self.assertEqual(scale_currency_axes(self._fig([1.2e9]), ["y"], 1.2e9, "FCFA", "pt"), "bilhões de FCFA")
+
+    def test_french_elides_before_a_vowel(self):
+        self.assertEqual(scale_currency_axes(self._fig([1.2e9]), ["y"], 1.2e9, "euros", "fr"), "milliards d'euros")
+
+    def test_french_stays_in_milliards_above_a_trillion(self):
+        # A French "billion" is 10**12; readers used to English would misread it.
+        fig = self._fig([1.5e12])
+        self.assertEqual(scale_currency_axes(fig, ["y"], 2e12, "FCFA", "fr"), "milliards de FCFA")
+        self.assertEqual(list(fig.data[0].y), [1500.0])
+
+    def test_trillions_and_thousands(self):
+        self.assertEqual(scale_currency_axes(self._fig([1.5e12]), ["y"], 2e12, "FCFA", "en"), "FCFA, in trillions")
+        self.assertEqual(scale_currency_axes(self._fig([12_500]), ["y"], 15_500, "FCFA", "pt"), "milhares de FCFA")
+
+    def test_small_or_missing_peak_keeps_the_bare_currency(self):
+        fig = self._fig([40.0, 55.0])
+        self.assertEqual(scale_currency_axes(fig, ["y"], 100.0, "FCFA", "fr"), "FCFA")
+        self.assertEqual(scale_currency_axes(fig, ["y"], float("nan"), "FCFA", "fr"), "FCFA")
+        self.assertEqual(scale_currency_axes(fig, ["y"], None, "FCFA", "fr"), "FCFA")
+        self.assertEqual(list(fig.data[0].y), [40.0, 55.0])
+
+    def test_only_the_requested_axis_is_scaled(self):
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=[2020, 2021], y=[60.0, 40.0]))  # share of budget, %
+        fig.add_trace(go.Scatter(x=[2020, 2021], y=[1.1e9, 1.3e9], yaxis="y2"))
+        fig.update_layout(yaxis2=dict(overlaying="y", side="right"))
+        self.assertEqual(scale_currency_axes(fig, ["y2"], 1.3e9, "XOF", "fr"), "milliards de XOF")
+        self.assertEqual(list(fig.data[0].y), [60.0, 40.0])
+        self.assertEqual(list(fig.data[1].y), [1.1, 1.3])
+
+    def test_axes_sharing_a_unit_are_scaled_together(self):
+        fig = make_subplots(rows=2, cols=1)
+        fig.add_trace(go.Scatter(x=[2020, 2021], y=[1.5e12, 1.7e12]), row=1, col=1)
+        fig.add_trace(go.Bar(x=[2020, 2021], y=[-3e11, -1e11]), row=2, col=1)
+        self.assertEqual(scale_currency_axes(fig, ["y", "y2"], 1.7e12, "FCFA", "en"), "FCFA, in trillions")
+        self.assertEqual(list(fig.data[0].y), [1.5, 1.7])
+        self.assertEqual(list(fig.data[1].y), [-0.3, -0.1])
+
+    def test_explicit_range_is_rescaled(self):
+        fig = go.Figure(go.Scatter(x=[2020, 2021], y=[1.5e5, 2.5e5]))
+        fig.update_yaxes(range=[0, 3.0e5])
+        self.assertEqual(scale_currency_axes(fig, ["y"], 2.5e5, "FCFA", "en"), "FCFA, in thousands")
+        self.assertEqual(list(fig.layout.yaxis.range), [0.0, 300.0])
+
+    def test_horizontal_bars_scale_the_x_values(self):
+        fig = go.Figure(go.Bar(y=["2020", "2021"], x=[2.4e9, 2.6e9], orientation="h"))
+        self.assertEqual(scale_currency_axes(fig, ["x"], 2.6e9, "FCFA", "fr"), "milliards de FCFA")
+        self.assertEqual(list(fig.data[0].x), [2.4, 2.6])
+        self.assertEqual(list(fig.data[0].y), ["2020", "2021"])
+
+    def test_undeclared_secondary_axis_does_not_crash(self):
+        fig = go.Figure(go.Scatter(x=[2020], y=[1.1e9], yaxis="y2"))
+        self.assertEqual(scale_currency_axes(fig, ["y2"], 1.1e9, "FCFA", "fr"), "milliards de FCFA")
+
+    def test_axis_title_wraps_only_when_long(self):
+        self.assertEqual(currency_axis_title("GDP", "BTN"), "GDP (BTN)")
+        self.assertEqual(currency_axis_title("Total Expenditure", "FCFA, in billions"),
+                         "Total Expenditure<br>(FCFA, in billions)")
+        self.assertEqual(currency_axis_title("", "milliards de XOF"), "milliards de XOF")
+
+    def test_format_currency_yaxis_titles_with_the_unit(self):
+        fig = self._fig([1.2e9, 1.4e9], [0.6e9, 0.7e9])
+        format_currency_yaxis(fig, "FCFA", "Dépenses totales", lang="fr", peak=2.1e9)
+        self.assertEqual(fig.layout.yaxis.title.text, "Dépenses totales<br>(milliards de FCFA)")
+        self.assertEqual(list(fig.data[0].y), [1.2, 1.4])

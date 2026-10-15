@@ -112,8 +112,14 @@ TRANSLATIONS = {
     "hover.data_not_available": "Données non disponibles",
 
     # --- Axis labels ---
+    # Money-axis units: {currency} is the bare currency name, {of_currency}
+    # the genitive phrase from translations.genitive() ("de FCFA", "d'euros").
+    "unit.thousands": "milliers {of_currency}",
+    "unit.millions": "millions {of_currency}",
+    "unit.billions": "milliards {of_currency}",
+    "unit.trillions": "billions {of_currency}",
     "axis.total_expenditure": "Dépenses totales",
-    "axis.per_capita_expenditure": "Dépenses par habitant ({currency_name})",
+    "axis.per_capita_expenditure": "Dépenses par habitant",
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",

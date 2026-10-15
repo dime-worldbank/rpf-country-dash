@@ -17,7 +17,9 @@ from utils import (
     get_correlation_text,
     remove_accents,
     require_login,
+    currency_axis_title,
     format_currency_yaxis,
+    scale_currency_axes,
     format_currency,
     millify
 )
@@ -570,13 +572,16 @@ def total_figure(df, currency_name, currency_code, lang="en"):
         )
     )
 
-    format_currency_yaxis(fig, currency_name, t("axis.total_expenditure", lang))
     fig.update_layout(
         barmode="stack",
         title=t("chart.total_expenditure_over_time", lang),
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
         hovermode="x unified",
+    )
+    format_currency_yaxis(
+        fig, currency_name, t("axis.total_expenditure", lang), lang=lang,
+        peak=df[["expenditure", "real_expenditure"]].max().max(),
     )
 
     return apply_locale(fig, lang)
@@ -625,7 +630,7 @@ def per_capita_figure(df, currency_name, currency_code, lang="en"):
     )
 
     format_year_axis(fig)
-    fig.update_yaxes(title_text=t("axis.per_capita_expenditure", lang, currency_name=currency_name), secondary_y=False, fixedrange=True)
+    fig.update_yaxes(secondary_y=False, fixedrange=True)
     fig.update_yaxes(
         title_text=t("axis.poverty_rate", lang),
         secondary_y=True,
@@ -638,6 +643,9 @@ def per_capita_figure(df, currency_name, currency_code, lang="en"):
         plot_bgcolor="white",
         legend=dict(orientation="h", yanchor="bottom", y=1.03),
     )
+    peak = df[["per_capita_expenditure", "per_capita_real_expenditure"]].max().max()
+    unit = scale_currency_axes(fig, ["y"], peak, currency_name, lang)
+    fig.update_yaxes(title_text=currency_axis_title(t("axis.per_capita_expenditure", lang), unit), secondary_y=False)
 
     return apply_locale(fig, lang)
 

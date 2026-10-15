@@ -114,8 +114,14 @@ TRANSLATIONS = {
     "hover.grade": "Nota",
     "hover.pillar": "Pilar",
     "hover.score": "Pontuação",
+    # Money-axis units: {currency} is the bare currency name, {of_currency}
+    # the genitive phrase from translations.genitive() ("de FCFA", "d'euros").
+    "unit.thousands": "milhares {of_currency}",
+    "unit.millions": "milhões {of_currency}",
+    "unit.billions": "bilhões {of_currency}",
+    "unit.trillions": "trilhões {of_currency}",
     "axis.total_expenditure": "Despesa total",
-    "axis.per_capita_expenditure": "Despesa per capita ({currency_name})",
+    "axis.per_capita_expenditure": "Despesa per capita",
     "axis.poverty_rate": "Taxa de pobreza (%)",
     "axis.quality_budget_institutions": "Qualidade das instituições orçamentárias",
     "axis.pct_total_func_expenditure": "Percentual da despesa total {func_gen}",

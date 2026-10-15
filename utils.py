@@ -16,7 +16,7 @@ from constants import (
     END_YEAR,
     TREND_THRESHOLDS,
 )
-from translations import t
+from translations import genitive, t
 from dash import dcc, get_app, html
 from flask_login import current_user
 from math import isnan
@@ -537,13 +537,65 @@ def format_year_axis(fig):
     return fig
 
 
-def format_currency_yaxis(fig, currency_name, y_title, x_format="d"):
-    """Format chart axes with currency unit."""
+def currency_axis_title(label, unit):
+    """``"Total Expenditure (FCFA, in billions)"``, with the unit dropped to a
+    second line when the whole would overflow the axis; just ``unit`` when
+    there is no label."""
+    if not label:
+        return unit
+    title = f"{label} ({unit})"
+    # Beyond ~30 characters a rotated title outgrows a 450px chart's plot height.
+    return title if len(title) <= 30 else f"{label}<br>({unit})"
+
+
+def format_currency_yaxis(fig, currency_name, y_title, x_format="d", lang="en", peak=None):
+    """Format chart axes with the currency unit. Given ``peak``, the largest
+    y value plotted, the values are scaled to a readable magnitude and the
+    title names it: "Total Expenditure (FCFA, in billions)".
+    """
     fig.update_xaxes(tickformat=x_format)
-    fig.update_yaxes(fixedrange=True, title_text=f"{y_title} ({currency_name})")
+    unit = scale_currency_axes(fig, ["y"], peak, currency_name, lang)
+    fig.update_yaxes(fixedrange=True, title_text=currency_axis_title(y_title, unit))
     if x_format == "d":
         format_year_axis(fig)
     return fig
+
+
+# Plotly abbreviates big tick values with the English k / M / B / T only, so
+# money axes are divided by a magnitude and the unit goes in the axis title.
+_UNIT_KEYS = {3: "unit.thousands", 6: "unit.millions", 9: "unit.billions", 12: "unit.trillions"}
+# A French "billion" is 10**12 and is easily misread by anyone used to the
+# English short scale, so French stops at milliards: "2 000 milliards".
+_UNIT_MAX_EXPONENT = {"fr": 9}
+
+
+def scale_currency_axes(fig, axes, peak, currency, lang="en"):
+    """Divide the money ``axes`` (``["y"]``, ``["y", "y2"]``, ``["x"]``) by the
+    magnitude that fits ``peak``, the largest value plotted on them, and
+    return the unit for the axis title: "milliards de FCFA" in French,
+    "FCFA, in billions" in English, or just "FCFA" when the values are small
+    enough to print as they are. Explicit axis ranges are rescaled as well;
+    hover text is unaffected since every money chart formats it from customdata.
+    """
+    peak = abs(float(peak)) if peak is not None and not math.isnan(peak) else 0.0
+    if peak < 1e4:  # plotly prints plain numbers below 10**4; so do we
+        return currency
+    exponent = min(3 * (math.floor(math.log10(peak)) // 3), _UNIT_MAX_EXPONENT.get(lang, 12))
+    factor = 10 ** exponent
+    for axis_id in axes:
+        letter = axis_id[0]
+        for trace in fig.data:
+            if "yaxis" in trace and (trace[letter + "axis"] or letter) == axis_id and trace[letter] is not None:
+                trace[letter] = np.asarray(trace[letter], dtype=float) / factor
+        try:
+            axis = fig.layout[letter + "axis" + axis_id[1:]]  # "y2" -> "yaxis2"
+        except LookupError:  # referenced by a trace but never declared
+            continue
+        if axis.range is not None:
+            axis.range = [r / factor for r in axis.range]
+    return t(
+        _UNIT_KEYS[exponent], lang, currency=currency, of_currency=genitive(lang, currency)
+    ).strip(" ,")
 
 
 def apply_locale(fig, lang="en"):

@@ -24,7 +24,7 @@ from constants import (
 )
 from trend_narrative import InsightExtractor, TrendDetector
 from translations import t
-from utils import add_currency_column, empty_plot, format_currency, apply_locale
+from utils import add_currency_column, empty_plot, format_currency, apply_locale, scale_currency_axes
 from viz_theme import SOLID_BLUE, WARM_BRIGHTER
 
 REVENUE_COLOR = SOLID_BLUE
@@ -314,7 +314,15 @@ def combined_figure(national_df, gfs_df, weo_df, currency_code, currency_name=No
         )
 
 
-    y_unit = currency_name or currency_code or ""
+    amounts = pd.concat([
+        df[col]
+        for df in (national_df, gfs_pre, weo_post)
+        if df is not None and not df.empty
+        for col in ("revenue", "expenditure", "balance")
+    ])
+    y_unit = scale_currency_axes(
+        fig, ["y", "y2"], amounts.abs().max(), currency_name or currency_code or "", lang
+    )
     if y_unit:
         fig.add_annotation(
             text=t("deficit.chart.amount_axis", lang, unit=y_unit),
