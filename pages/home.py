@@ -826,7 +826,6 @@ def subnational_spending_narrative(
     df_poverty,
     currency_code,
     lang="en",
-    top_n=3,
     exp_thresh=0.5,
     per_capita_thresh=1000,
 ):
@@ -835,27 +834,16 @@ def subnational_spending_narrative(
         .sum()
         .sort_values(ascending=False)
     )
-    top_n_total = total_expenditure.head(top_n)
-    total_expenditure_sum = total_expenditure.sum()
-    top_n_percentage = top_n_total.sum() / total_expenditure_sum
+    top_region = total_expenditure.index[0]
+    top_share = total_expenditure.iloc[0] / total_expenditure.sum()
     per_capita_expenditure = df_spending.groupby("adm1_name")[
         "per_capita_expenditure"
     ].mean()
     per_capita_range = per_capita_expenditure.max() - per_capita_expenditure.min()
     per_capita_median = per_capita_expenditure.median()
 
-    if top_n_percentage > exp_thresh:
-        exp_narrative = [
-            t("narrative.top_n_concentration", lang,
-              n=top_n, regions=', '.join(top_n_total.index),
-              pct=f"{top_n_percentage:.1%}"),
-        ]
-    else:
-        exp_narrative = [
-            t("narrative.top_n_regions", lang,
-              n=top_n, regions=', '.join(top_n_total.index),
-              pct=f"{top_n_percentage:.1%}"),
-        ]
+    key = "narrative.top_region_concentration" if top_share > exp_thresh else "narrative.top_region"
+    exp_narrative = [t(key, lang, region=top_region, pct=f"{top_share:.1%}")]
 
     exp_narrative.append(html.Em(t("narrative.select_total", lang)))
 

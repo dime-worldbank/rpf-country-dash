@@ -490,8 +490,8 @@ TRANSLATIONS = {
     "narrative.econ_fluctuate": "tandis que les postes les plus fluctuants sont ",
 
     # --- Subnational narrative (home overview) ---
-    "narrative.top_n_concentration": "Les {n} premières régions — {regions} — représentent {pct} des dépenses publiques totales, indiquant une concentration significative dans ces zones. ",
-    "narrative.top_n_regions": "Les {n} premières régions — {regions} — représentent {pct} des dépenses publiques totales.",
+    "narrative.top_region_concentration": "La première région, {region}, représente {pct} des dépenses publiques totales, ce qui indique une concentration significative dans cette zone. ",
+    "narrative.top_region": "La première région, {region}, représente {pct} des dépenses publiques totales. ",
     "narrative.select_total": "(Sélectionnez l'option Dépenses totales ci-dessus pour voir la répartition par montant total).",
     "narrative.per_capita_wide_variation": "Les dépenses par habitant varient considérablement entre les régions, allant de {min_val} à {max_val}, avec une médiane de {median}. Cela indique une variation substantielle dans l'allocation des ressources par personne.",
     "narrative.per_capita_even_distribution": "Les dépenses par habitant vont de {min_val} à {max_val}, avec une médiane de {median}. La distribution est relativement homogène entre les régions.",

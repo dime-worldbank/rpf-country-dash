@@ -403,8 +403,8 @@ TRANSLATIONS = {
     "narrative.econ_fluctuate": "while the most fluctuating spending items are ",
 
     # --- Subnational narrative (home overview) ---
-    "narrative.top_n_concentration": "The top {n} regions—{regions}—account for {pct} of the total government expenditure, indicating a significant concentration in these areas. ",
-    "narrative.top_n_regions": "The top {n} regions—{regions}—account for {pct} of the total government expenditure.",
+    "narrative.top_region_concentration": "The top region, {region}, accounts for {pct} of the total government expenditure, indicating a significant concentration there. ",
+    "narrative.top_region": "The top region, {region}, accounts for {pct} of the total government expenditure. ",
     "narrative.select_total": "(Select the Total expenditure option above to see the breakdown by total amount).",
     "narrative.per_capita_wide_variation": "Per capita spending varies widely across regions, ranging from {min_val} to {max_val}, with a median of {median}. This indicates substantial variation in resource allocation per person.",
     "narrative.per_capita_even_distribution": "Per capita spending ranges from {min_val} to {max_val}, with a median of {median}. The distribution is relatively even across regions.",

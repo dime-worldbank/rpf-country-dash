@@ -365,8 +365,8 @@ TRANSLATIONS = {
     "narrative.econ_fluctuate": "enquanto os itens de despesa mais oscilantes são ",
 
     # --- Subnational narratives ---
-    "narrative.top_n_concentration": "As {n} principais regiões - {regions} - representam {pct} da despesa governamental total, indicando concentração significativa nessas áreas. ",
-    "narrative.top_n_regions": "As {n} principais regiões - {regions} - representam {pct} da despesa governamental total.",
+    "narrative.top_region_concentration": "A principal região, {region}, representa {pct} da despesa governamental total, indicando concentração significativa nessa área. ",
+    "narrative.top_region": "A principal região, {region}, representa {pct} da despesa governamental total. ",
     "narrative.select_total": "(Selecione a opção Despesa total acima para ver a decomposição por valor total).",
     "narrative.per_capita_wide_variation": "A despesa per capita varia amplamente entre regiões, de {min_val} a {max_val}, com mediana de {median}. Isso indica variação substancial na alocação de recursos por pessoa.",
     "narrative.per_capita_even_distribution": "A despesa per capita varia de {min_val} a {max_val}, com mediana de {median}. A distribuição é relativamente uniforme entre regiões.",
