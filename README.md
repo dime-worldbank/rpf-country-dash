@@ -38,6 +38,92 @@ python -m unittest discover tests/
 
 Make sure all tests pass locally before sending a PR.
 
+## Adding a new chart
+
+A chart is four pieces: the data it reads, a figure builder, the layout and
+callback that put it on a page, and its translations.
+`components/budget_funding_execution.py` ("How is the budget financed?", wired
+up in `pages/home.py`) is a complete example to copy from.
+
+1. **Data.** Charts never query the database directly; they read DataFrames
+   from `server_store.get("<key>")`. If the data isn't there yet, add a method
+   to `QueryService` in `queries.py` and register a loader under a new key in
+   `function_data_mapping` in `data_mapping.py`. The loader runs on the first
+   `get` of the key and its result is cached (see *Persistent query cache*).
+   Derived columns belong in a transformation loader in `data_mapping.py`,
+   next to the existing ones, not in the chart code.
+
+2. **Figure builder.** Write a pure function that takes a DataFrame and
+   returns a `go.Figure`, e.g. `create_<chart>_figure(df, currency_code,
+   lang="en")`, so it can be tested without Dash. House conventions, all in
+   `utils.py` unless noted:
+   - Filter with `filter_country_sort_year(df, country)` and return
+     `empty_plot(t("error.<key>", lang))` when nothing is left.
+   - Every visible string goes through `t()`: chart title (`chart.*`), axis
+     labels (`axis.*`), trace names (`trace.*`), hover labels (`hover.*`).
+   - Money values: format them with `add_currency_column` / `format_currency`
+     into `customdata` and reference that in `hovertemplate`, so hover text is
+     localized. Then scale the axis with
+     `scale_currency_axes(fig, ["y"], peak, currency, lang)` and put the unit
+     it returns in the axis title with `currency_axis_title` (or call
+     `format_currency_yaxis`, which does both). Ticks stay plain numbers and
+     the title says "milliards de FCFA". Year axes: `format_year_axis(fig)`.
+   - Colours come from `viz_theme.py` (`QUALITATIVE`, `CENTRAL_COLOR`,
+     `REGIONAL_COLOR`, ...). Fonts, grid lines and margins come from the global
+     template, so don't set them per chart. `plot_bgcolor="white"`,
+     `hovermode="x unified"` and `fixedrange=True` on value axes are the
+     house style.
+   - Finish with `return apply_locale(fig, lang)`, which sets the decimal
+     separator for French and Portuguese.
+   - Keep narrative text in a separate function that returns a string (or
+     Dash components) built from `t("narrative.*")` templates; see *Narrative
+     Generation* for the trend sentences.
+
+3. **Layout.** In the page's `layout()`, add `chart_container("<chart-id>")`
+   from `components/source_metadata_popover.py`. It creates the `dcc.Graph`
+   with that id plus the ⓘ button. Add an `html.Div` next to it for the
+   narrative, e.g. `id="<chart-id>-narrative"`. Register the chart's data
+   sources under the same id in `CHART_METADATA` in that module, otherwise the
+   ⓘ popover has nothing to show.
+
+4. **Callback.** In the page module, render the figure (and narrative)
+   whenever the shared data, country or language changes:
+
+   ```python
+   @callback(
+       Output("<chart-id>", "figure"),
+       Output("<chart-id>-narrative", "children"),
+       Input("stored-data", "data"),
+       Input("country-select", "value"),
+       Input("stored-language", "data"),
+   )
+   def render_<chart>(data, country, lang):
+       lang = lang or "en"
+       if not data or not country:
+           return dash.no_update, dash.no_update
+       df = filter_country_sort_year(server_store.get("<key>"), country)
+       currency_code = server_store.get("basic_country_info")[country]["currency_code"]
+       return create_<chart>_figure(df, currency_code, lang=lang), <chart>_narrative(df, lang=lang)
+   ```
+
+   Add an `Input` for any control of its own (a `dbc.RadioItems` for nominal
+   vs real, for instance). If the chart is the first to use a dataset, add a
+   `dcc.Store(id="stored-data-<x>")` to the layout and a
+   `fetch_<x>_data_once` callback like the ones at the top of
+   `pages/home.py`, so the first visit triggers the load.
+
+5. **Translations.** Add every new key to `translations/en.py`, `fr.py` and
+   `pt.py` (see *Adding Translations* below). A key missing from a language
+   silently falls back to English, so check the French and Portuguese pages.
+
+6. **Tests.** Add a `unittest` case under `tests/`. Drive the render function
+   with a `server_store.get` stand-in, a dict keyed like the real store (see
+   `tests/test_budget_funding_execution.py`), and assert on `fig.data` and
+   `fig.layout` rather than on pixels. Page modules call `dash.register_page`
+   on import, so create `dash.Dash(__name__, use_pages=True, pages_folder="")`
+   first, as `tests/test_public_private_figure.py` does. Then run
+   `python -m unittest discover tests/`.
+
 ## Internationalization (i18n)
 
 This application supports **English**, **French**, and **Brazilian Portuguese** with full internationalization:
