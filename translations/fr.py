@@ -39,6 +39,7 @@ TRANSLATIONS = {
     "heading.central_vs_geo_education": "Dépenses d'éducation centralisées vs. géographiquement allouées",
     "heading.central_vs_geo_health": "Dépenses de santé centralisées vs. géographiquement allouées",
     "heading.public_spending_education_regions": "Dépenses publiques vs. résultats éducatifs par région",
+    "heading.edu_func_sub_econ": "Dépenses publiques par niveau d'enseignement",
     "heading.public_spending_health_regions": "Dépenses publiques vs. résultats sanitaires par région",
 
     # --- Chart titles ---
@@ -47,6 +48,14 @@ TRANSLATIONS = {
     "chart.per_capita_over_time": "Comment les dépenses par habitant ont-elles évolué au fil du temps ?",
     "chart.sector_prioritization": "Comment la priorisation sectorielle a-t-elle évolué au fil du temps ?",
     "chart.edu_spending_over_time": "Comment les dépenses publiques en éducation ont-elles évolué au fil du temps ?",
+    # Titres d'axe. Volontairement courts : la légende nomme déjà les niveaux, et
+    # un titre d'axe Y plus long que la zone de tracé (~350 px) est coupé, pas
+    # réduit. « publiques » est porté par le titre de section juste au-dessus.
+    "chart.edu_func_sub_econ": "Dépenses par habitant ajustées à l'inflation",
+    "chart.teacher_salary": "Salaire relatif des enseignants (ratio)",
+    "chart.completion_rate": "Taux d'achèvement (%)",
+    "chart.schools_electricity": "Écoles disposant de l'électricité (%)",
+    "chart.schools_internet": "Écoles disposant d'un accès à Internet (%)",
     "chart.health_spending_over_time": "Comment les dépenses publiques en santé ont-elles évolué au fil du temps ?",
     "chart.pct_govt_vs_household": "Quel % a été dépensé par l'État vs les ménages ?",
     "chart.education_outcome": "Comment les résultats éducatifs ont-ils évolué ?",
@@ -115,6 +124,20 @@ TRANSLATIONS = {
     "axis.poverty_rate": "Taux de pauvreté (%)",
     "axis.quality_budget_institutions": "Qualité des institutions budgétaires",
     "axis.pct_total_func_expenditure": "Pourcentage des dépenses totales {func_gen}",
+
+    # --- Niveaux d'enseignement ---
+    "level.pre_primary": "Préprimaire",
+    "level.primary": "Primaire",
+    "level.primary_secondary": "Primaire et secondaire",
+    "level.post_secondary": "Post-secondaire non supérieur",
+    # Formes longues pour les narratifs ("l'enseignement secondaire").
+    "level.primary.long": "l'enseignement primaire",
+    "level.primary_secondary.long": "l'enseignement primaire et secondaire",
+    "level.secondary.long": "l'enseignement secondaire",
+    "level.post_secondary.long": "l'enseignement post-secondaire non supérieur",
+    "level.tertiary.long": "l'enseignement supérieur",
+    "level.secondary": "Secondaire",
+    "level.tertiary": "Supérieur",
     "axis.yoy_growth_rate": "Taux de croissance annuel (%)",
     "axis.budget_share": "Part du budget (%)",
     "axis.execution_rate": "Budget exécuté (%)",
@@ -130,6 +153,16 @@ TRANSLATIONS = {
     "radio.inflation_adjusted_budget": "Budget ajusté à l'inflation",
     "radio.execution_rate": "Taux d'exécution",
     "radio.variance": "Déviation",
+
+    # --- Étiquettes de menu déroulant / filtre ---
+    "label.economic_category": "Catégorie économique",
+    "label.outcome_indicator": "Indicateur de résultat",
+    "outcome.completion_rate": "Taux d'achèvement",
+    "outcome.teacher_salary": "Salaire des enseignants vs professions comparables",
+    "outcome.electricity": "Écoles avec électricité",
+    "outcome.internet": "Écoles avec Internet",
+    "dropdown.all_econ_categories": "Toutes les catégories économiques",
+    "hint.recommended_for": "Recommandé pour {econ}",
 
     # --- Source annotations ---
     "source.boost_cpi": "Source : BOOST & IPC : World Bank",
@@ -297,6 +330,14 @@ TRANSLATIONS = {
         "feminine": False,
     },
 
+    # Dynamic metrics for the func-sub spending section's trend narrative.
+    # Include the article (get_segment_narrative uses the name as-is in FR).
+    "metric.level_spending": {"name": "les dépenses pour {level}", "plural": True, "feminine": True},
+    "metric.completion_rate": {"name": "le taux d'achèvement", "plural": False, "feminine": False},
+    "metric.teacher_salary": {"name": "le salaire des enseignants par rapport aux professions comparables", "plural": False, "feminine": False},
+    "metric.electricity": {"name": "l'accès à l'électricité", "plural": False, "feminine": False},
+    "metric.internet": {"name": "l'accès à Internet", "plural": False, "feminine": False},
+
     # Plain-string labels used mid-sentence by get_correlation_text on the
     # Overview – Across Space tab. Include the definite article so the
     # surrounding template ("la corrélation entre {y_name} et {x_name} …")
@@ -323,6 +364,10 @@ TRANSLATIONS = {
 
     # --- Narrative templates: Outcomes ---
     "narrative.education_outcome_general": "De manière générale, si les résultats éducatifs liés à l'accès peuvent être conceptuellement rattachés à la disponibilité des finances publiques, ceux liés à la qualité présentent une chaîne de causalité plus complexe.",
+    "narrative.func_sub_most_least": "{scope}, entre {start} et {end}, {most} a reçu le plus de dépenses par habitant ajustées à l'inflation, avec une moyenne de {most_val} par an, tandis que {least} en a reçu le moins, à {least_val}.",
+    "narrative.func_sub_single": "{scope}, entre {start} et {end}, {level} était le seul niveau avec des dépenses déclarées, avec une moyenne de {level_val} par habitant et par an.",
+    "narrative.econ_scope_all": "Toutes catégories économiques confondues",
+    "narrative.econ_scope_one": "Pour {econ}",
     "narrative.education_outcome_measure": "Pour vérifier si c'est le cas pour {country}, nous pouvons utiliser les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour l'éducation, le taux de fréquentation scolaire des enfants de 6 à 17 ans comme approximation de l'accès à l'éducation, et le taux de pauvreté des apprentissages comme indicateur de la qualité de l'éducation.",
     "narrative.health_outcome_measure": "Nous utilisons les dépenses publiques par habitant ajustées à l'inflation comme mesure de l'allocation des ressources financières publiques par personne pour la santé et l'indice de couverture sanitaire universelle comme indicateur des résultats sanitaires.",
     "narrative.outcome_from_to": "De {start_year} à {end_year}, {pcc}",
@@ -653,6 +698,15 @@ TRANSLATIONS = {
     "source.pefa.label": "Évaluation PEFA",
     "source.edu_private.label": "Dépenses privées d'éducation",
     "source.health_private.label": "Dépenses de santé payées de la poche des ménages",
+    # Étiquettes et descriptions de la fenêtre « sources ». Les étiquettes de
+    # l'interface sont abrégées pour tenir ; le nom officiel complet de
+    # l'indicateur ODD 4 de l'UNESCO et son code figurent ici, où la place existe.
+    "source.teacher_salary.label": "Salaire des enseignants par rapport aux professions comparables",
+    "source.teacher_salary.description": "Indicateur ODD 4.c.5 de l'UNESCO — « Salaire moyen des enseignants par rapport aux autres professions nécessitant un niveau de qualification comparable ». Le rapport entre le salaire statutaire d'un enseignant et la rémunération des travailleurs ayant des qualifications comparables. Une valeur de 1,0 signifie que les enseignants sont rémunérés au même niveau que des professions similaires ; en dessous de 1,0, moins ; au-dessus, davantage. Indique l'attractivité et l'équité de la rémunération de l'enseignement.",
+    "source.completion_rate.label": "Taux d'achèvement",
+    "source.completion_rate.description": "Indicateur ODD 4.1.2 de l'UNESCO — « Taux d'achèvement (enseignement primaire, premier et deuxième cycles de l'enseignement secondaire) ». Le pourcentage d'une cohorte qui achève un niveau d'enseignement donné.",
+    "source.school_services.label": "Services de base des écoles",
+    "source.school_services.description": "Indicateur ODD 4.a.1 de l'UNESCO — « Proportion d'établissements scolaires offrant des services essentiels, par type de service ». Couvre deux indicateurs de prestation de services, chacun rapporté pour les écoles primaires et secondaires : le pourcentage d'écoles disposant de l'électricité et le pourcentage d'écoles disposant d'un accès à Internet à des fins pédagogiques.",
 
     # --- Source metadata modal (source names) — shared across sources ---
     "source_name.world_bank_boost": "BOOST de la Banque mondiale",
@@ -660,6 +714,7 @@ TRANSLATIONS = {
     "source_name.world_bank": "Banque mondiale",
     "source_name.world_bank_icp": "ICP de la Banque mondiale",
     "source_name.global_data_lab": "Global Data Lab",
+    "source_name.unesco_uis": "Institut de statistique de l'UNESCO (ISU)",
     "source_name.who_gho": "OMS (GHO)",
     "source_name.who_health_db": "Base de données mondiale des dépenses de santé de l'OMS",
     "source_name.pefa_secretariat": "Secrétariat PEFA",
@@ -679,6 +734,7 @@ TRANSLATIONS = {
     "source.imf_weo.description": "Utilise les valeurs publiées par le FMI pour les Recettes (GGR) et les Dépenses (GGX) au niveau des Administrations publiques.",
     "source.togo_dgb.label": "Rapport officiel du Togo",
     "source.togo_dgb.description": "Recettes et dépenses réalisées issues du Rapport d'exécution du budget de l'État annuel. Un même montant non liquide (recette non liquide = dépenses en atténuation de recettes) est soustrait des recettes et des dépenses afin d'assurer la comparabilité avec les données du FMI.",
+    "chart.outcome_secondary.info": "Pour s'aligner sur le niveau « Secondaire » combiné du côté des dépenses, les valeurs du secondaire présentées ici correspondent à la moyenne des chiffres du premier et du deuxième cycle du secondaire publiés par l'ISU de l'UNESCO (en ignorant tout sous-niveau manquant).",
     "chart.budget_execution.info": "Le taux d'exécution correspond aux dépenses réelles rapportées au budget approuvé (dépenses ÷ budget approuvé). Selon le cadre PEFA (PI-1), une exécution à ±5 % du budget approuvé obtient la note A (la plus crédible), à ±10 % la note B, et à ±15 % la note C ; au-delà, c'est un D. La vue en écart présente la même donnée comme écart par rapport à 100 %. Le fond ombré indique ces mêmes zones — A, B et C imbriquées autour de la ligne de référence, D au-delà —, chacune nommée sur l'échelle de droite. Le graphique est toujours tracé de 80 % à 120 %, afin qu'une même distance ait partout le même sens ; une année au-delà apparaît sous forme de flèche au bord, accompagnée de sa valeur réelle.",
     "chart.revenue_expenditure_combined.info": "La vue composite combine les sources disponibles sur une même chronologie. Lorsqu'un rapport national officiel est disponible, il est utilisé en priorité ; les SFP du FMI complètent les années historiques antérieures, et les PEM fournissent les projections. Les recettes et dépenses sont représentées par des courbes dans le panneau supérieur ; le solde (Recettes − Dépenses) apparaît sous forme de barres dans le panneau inférieur, où les valeurs positives indiquent un excédent et les valeurs négatives un déficit. Les vues à source unique affichent toutes les années de données disponibles pour cette source.",
 
