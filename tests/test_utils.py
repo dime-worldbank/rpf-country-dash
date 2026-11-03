@@ -10,6 +10,7 @@ from utils import (
     calculate_cagr,
     format_currency,
     add_currency_column,
+    year_ticks,
     format_currency_yaxis,
     millify,
 )
@@ -348,3 +349,19 @@ class TestMillify(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class TestYearTicks(unittest.TestCase):
+
+    def test_short_series_labels_every_year(self):
+        self.assertEqual(year_ticks([2021, 2022, 2023]), [2021, 2022, 2023])
+
+    def test_long_series_labels_every_third_year_back_from_the_latest(self):
+        self.assertEqual(year_ticks(range(2010, 2024)), [2011, 2014, 2017, 2020, 2023])
+
+    def test_gaps_count_in_calendar_years_not_positions(self):
+        self.assertEqual(year_ticks([2015, 2016, 2018, 2020, 2021, 2023]), [2020, 2023])
+
+    def test_accepts_a_series_with_duplicates(self):
+        years = pd.Series([2023, 2023, 2022, 2021, 2020, 2019])
+        self.assertEqual(year_ticks(years), [2020, 2023])
