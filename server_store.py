@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 _MISSING = object()  # sentinel to distinguish "not cached" from cached None
 
 _store = {}
+_failed = set()  # keys whose loader raised; tracked apart from _store so has() still means "successfully cached"
 _lock = threading.Lock()
 
 
@@ -29,12 +30,22 @@ def set(key, value):
 def _lookup_raw(key):
     """Return the raw cached value (no copy), or _MISSING if not found.
 
-    On miss, auto-populates via data_mapping.function_data_mapping.
+    On miss, auto-populates via data_mapping.function_data_mapping. A failed
+    load is remembered in _failed (not _store) — otherwise a table that's
+    genuinely absent (e.g. togo_revenue_budget for most countries) gets
+    re-queried, and its ~10s Databricks round-trip re-paid, on every single
+    callback that touches it, rather than once until the next explicit cache
+    clear. Keeping failures out of _store means has() still means
+    "successfully cached": a group loader (e.g. _load_func_econ_group) that
+    gates on has() to avoid redundant DB calls would otherwise see a cached
+    failure as success, skip populating its sibling keys, and recurse forever
+    as each sibling's own lookup re-triggers the same short-circuited loader.
     """
     with _lock:
-        value = _store.get(key, _MISSING)
-    if value is not _MISSING:
-        return value
+        if key in _store:
+            return _store[key]
+        if key in _failed:
+            return _MISSING
 
     # Lazy import to avoid circular dependency (data_mapping imports server_store).
     from data_mapping import function_data_mapping
@@ -47,15 +58,15 @@ def _lookup_raw(key):
         value = loader()
     except Exception:
         logger.exception("server_store: loader for '%s' failed", key)
+        with _lock:
+            _failed.add(key)
         return _MISSING
 
     with _lock:
         # Another thread may have beaten us — use theirs
-        existing = _store.get(key, _MISSING)
-        if existing is not _MISSING:
-            return existing
-        _store[key] = value
-    return value
+        if key not in _store:
+            _store[key] = value
+        return _store[key]
 
 
 def lookup(key, default=None):
@@ -89,4 +100,5 @@ def clear():
     """Drop all cached values; factories stay registered and repopulate lazily."""
     with _lock:
         _store.clear()
+        _failed.clear()
     logger.info("server_store cleared")
