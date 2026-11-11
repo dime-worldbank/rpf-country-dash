@@ -74,7 +74,7 @@ def _format_econ_narrative(data, country_name, func, lang="en"):
 
     func_gen = genitive(lang, func_label)
     country_display = t(f"country.{country_name}", lang)
-    country_meta = _LANGUAGES[lang].get(f"country.{country_name}")
+    country_meta = _LANGUAGES[lang].get(f"country.{country_name}") or country_display
     intro_text = t("narrative.econ_breakdown_intro", lang,
                     country=country_display,
                     country_loc=preposition(lang, country_meta, capitalize=True),

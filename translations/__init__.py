@@ -21,6 +21,8 @@ LANGUAGE_OPTIONS = [
 
 DEFAULT_LANGUAGE = "en"
 
+_COUNTRY_PREFIX = "country."
+
 
 # Matches a digit-dot-digit sequence — used to swap English decimal points
 # for comma-decimal languages inside *substituted values only*.
@@ -82,7 +84,11 @@ def t(key, lang=None, **kwargs):
     if lang is None:
         lang = DEFAULT_LANGUAGE
     translations = _LANGUAGES.get(lang, _LANGUAGES[DEFAULT_LANGUAGE])
-    template = translations.get(key, _LANGUAGES[DEFAULT_LANGUAGE].get(key, key))
+    template = translations.get(key, _LANGUAGES[DEFAULT_LANGUAGE].get(key))
+    if template is None:
+        # Countries present in the data but not registered here fall back to
+        # the database's country name rather than the raw "country.X" key.
+        template = key[len(_COUNTRY_PREFIX):] if key.startswith(_COUNTRY_PREFIX) else key
 
     # If template is a dict (metadata), extract the display name for template rendering
     if isinstance(template, dict):
