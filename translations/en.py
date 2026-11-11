@@ -199,6 +199,7 @@ TRANSLATIONS = {
     "country.Albania": {"name": "Albania", "plural": False, "feminine": False},
     "country.Bangladesh": {"name": "Bangladesh", "plural": False, "feminine": False},
     "country.Bhutan": {"name": "Bhutan", "plural": False, "feminine": False},
+    "country.Bulgaria": {"name": "Bulgaria", "plural": False, "feminine": False},
     "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False},
     "country.Burundi": {"name": "Burundi", "plural": False, "feminine": False},
     "country.Chile": {"name": "Chile", "plural": False, "feminine": False},
@@ -212,10 +213,12 @@ TRANSLATIONS = {
     "country.Nigeria": {"name": "Nigeria", "plural": False, "feminine": False},
     "country.Pakistan": {"name": "Pakistan", "plural": False, "feminine": False},
     "country.Paraguay": {"name": "Paraguay", "plural": False, "feminine": False},
+    "country.Peru": {"name": "Peru", "plural": False, "feminine": False},
     "country.South Africa": {"name": "South Africa", "plural": False, "feminine": False},
     "country.Togo": {"name": "Togo", "plural": False, "feminine": False},
     "country.Tunisia": {"name": "Tunisia", "plural": False, "feminine": False},
     "country.Uruguay": {"name": "Uruguay", "plural": False, "feminine": False},
+    "country.Yemen": {"name": "Yemen", "plural": False, "feminine": False},
 
     # --- Metric names (used by trend-narrative library) ---
     "metric.total_real_expenditure": "total real expenditure",
