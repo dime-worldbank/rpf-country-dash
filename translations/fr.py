@@ -210,6 +210,7 @@ TRANSLATIONS = {
     "country.Albania": {"name": "Albanie", "plural": False, "feminine": True},
     "country.Bangladesh": {"name": "Bangladesh", "plural": False, "feminine": False},
     "country.Bhutan": {"name": "Bhoutan", "plural": False, "feminine": False},
+    "country.Bulgaria": {"name": "Bulgarie", "plural": False, "feminine": True},
     "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False},
     "country.Burundi": {"name": "Burundi", "plural": False, "feminine": False},
     "country.Chile": {"name": "Chili", "plural": False, "feminine": False},
@@ -223,10 +224,12 @@ TRANSLATIONS = {
     "country.Nigeria": {"name": "Nigéria", "plural": False, "feminine": False},
     "country.Pakistan": {"name": "Pakistan", "plural": False, "feminine": False},
     "country.Paraguay": {"name": "Paraguay", "plural": False, "feminine": False},
+    "country.Peru": {"name": "Pérou", "plural": False, "feminine": False},
     "country.South Africa": {"name": "Afrique du Sud", "plural": False, "feminine": True},
     "country.Togo": {"name": "Togo", "plural": False, "feminine": False},
     "country.Tunisia": {"name": "Tunisie", "plural": False, "feminine": True},
     "country.Uruguay": {"name": "Uruguay", "plural": False, "feminine": False},
+    "country.Yemen": {"name": "Yémen", "plural": False, "feminine": False},
 
     # --- Metric names (used by trend-narrative library) ---
     # Each entry is a dict bundling the display name with grammatical

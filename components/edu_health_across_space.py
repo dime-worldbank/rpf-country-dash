@@ -237,7 +237,7 @@ def _sub_func_narrative(data_by_func_admin0, data_by_func_sub_geo0, country, sel
         func_gen = genitive(lang, func_name)
 
         country_display = t(f"country.{country}", lang)
-        country_meta = _LANGUAGES[lang].get(f"country.{country}")
+        country_meta = _LANGUAGES[lang].get(f"country.{country}") or country_display
         text = t("narrative.subnat_intro", lang,
                  country=country_display,
                  country_loc=preposition(lang, country_meta, capitalize=True),

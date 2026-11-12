@@ -174,6 +174,7 @@ TRANSLATIONS = {
     "country.Albania": {"name": "a Albânia", "plural": False, "feminine": True, "article": "a"},
     "country.Bangladesh": {"name": "o Bangladesh", "plural": False, "feminine": False, "article": "o"},
     "country.Bhutan": {"name": "o Butão", "plural": False, "feminine": False, "article": "o"},
+    "country.Bulgaria": {"name": "a Bulgária", "plural": False, "feminine": True, "article": "a"},
     "country.Burkina Faso": {"name": "Burkina Faso", "plural": False, "feminine": False, "article": ""},
     "country.Burundi": {"name": "o Burundi", "plural": False, "feminine": False, "article": "o"},
     "country.Chile": {"name": "o Chile", "plural": False, "feminine": False, "article": "o"},
@@ -187,10 +188,12 @@ TRANSLATIONS = {
     "country.Nigeria": {"name": "a Nigéria", "plural": False, "feminine": True, "article": "a"},
     "country.Pakistan": {"name": "o Paquistão", "plural": False, "feminine": False, "article": "o"},
     "country.Paraguay": {"name": "o Paraguai", "plural": False, "feminine": False, "article": "o"},
+    "country.Peru": {"name": "o Peru", "plural": False, "feminine": False, "article": "o"},
     "country.South Africa": {"name": "a África do Sul", "plural": False, "feminine": True, "article": "a"},
     "country.Togo": {"name": "o Togo", "plural": False, "feminine": False, "article": "o"},
     "country.Tunisia": {"name": "a Tunísia", "plural": False, "feminine": True, "article": "a"},
     "country.Uruguay": {"name": "o Uruguai", "plural": False, "feminine": False, "article": "o"},
+    "country.Yemen": {"name": "o Iêmen", "plural": False, "feminine": False, "article": "o"},
 
     # --- COFOG sub-functions ---
     "func_sub.agriculture": "Agricultura",

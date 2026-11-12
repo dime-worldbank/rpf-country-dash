@@ -629,7 +629,7 @@ def public_private_narrative(df, country, lang="en"):
         )
         if earliest_year != latest_year:
             country_display = t(f"country.{country}", lang)
-            country_meta = _LANGUAGES[lang].get(f"country.{country}")
+            country_meta = _LANGUAGES[lang].get(f"country.{country}") or country_display
             sector_meta = _LANGUAGES[lang].get("sector.health")
             text += t("narrative.govt_share_trend", lang,
                        country=country_display,
